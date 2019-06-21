@@ -29,8 +29,10 @@ function onClickHandler(info, tab) {
 
 // convert relative url paths
 function convertUrlToAbsolute(origin, path) {
-    if (path.indexOf('://') > 0 || path.indexOf('//') === 0) {
+    if (path.indexOf('://') > 0) {
         return path
+    } else if (path.indexOf('//') === 0) {
+        return 'https:' + path;
     } else {
         return new URL(origin).origin + path;
     }
