@@ -72,7 +72,7 @@ async function printBookmarks(bookmarks) {
         if (!settings.showTitles) {
             title.classList.add('hide');
         }
-        title.innerHTML = bookmark.title;
+        title.textContent = bookmark.title;
 
         main.appendChild(content);
         main.appendChild(title);
@@ -238,7 +238,7 @@ function saveBookmarkSettings() {
     }
     // find image index
     if (title !== targetTileTitle) {
-        targetNode.children[0].children[1].innerHTML = title;
+        targetNode.children[0].children[1].textContent = title;
         // sortable ids changed so rewrite to storage
         let order = sortable.toArray();
         browser.storage.local.set({"sort":order});
