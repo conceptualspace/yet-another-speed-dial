@@ -1,8 +1,34 @@
+// yet another speed dial
+// copyright 2019 dev@conceptualspace.net
+// absolutely no warranty is expressed or implied
 
+'use strict';
+
+const defaults = {
+    wallpaper: true,
+    wallpaperSrc: 'img/bg.jpg',
+    backgroundColor: '#111111',
+    largeTiles: true,
+    showTitles: true,
+};
+
+let settings = null;
 let speedDialId = null;
 
+
+function onClickHandler(info, tab) {
+    if (info.menuItemId === 'addToSpeedDial') {
+        getThumbnails(tab.url);
+        browser.bookmarks.create({
+            parentId: speedDialId,
+            title: tab.title,
+            url: tab.url
+        });
+    }
+}
+
+// convert relative url paths
 function convertUrlToAbsolute(origin, path) {
-    // convert relative url paths
     if (path.indexOf('://') > 0 || path.indexOf('//') === 0) {
         return path
     } else {
@@ -57,7 +83,6 @@ function getOgImage(url) {
                 "96x96"
             ];
             for (let size of sizes) {
-                // maybe drop icon attribute to pick up apple touch shortcuts and win8 tiles
                 let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
                 if (icon) {
                     let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
@@ -107,12 +132,12 @@ function saveThumbnails(url, images) {
                 }
                 thumbnails = thumbnails.flat();
                 browser.storage.local.set({[url]:{thumbnails, thumbIndex: 0}})
-                    .then(resolve());
+                    .then(() => resolve());
             });
     });
 }
 
-
+// requires <all_urls> permission to capture image without a user gesture
 function getScreenshot(url) {
     return new Promise(function(resolve, reject) {
         // make sure we are capturing the right thing
@@ -146,7 +171,7 @@ function updateBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
         browser.bookmarks.get(id).then(bookmark => {
             getThumbnails(bookmark[0].url);
-            //todo: message the page script to refresh
+            //todo: message page script to refresh
         })
     }
 }
@@ -154,54 +179,31 @@ function updateBookmark(id, bookmarkInfo) {
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
         browser.storage.local.remove(bookmarkInfo.node.url);
-        //todo: message the page script to refresh
+        //todo: message page script to refresh
     }
 }
 
-// await browser.storage.local.get(null)
+function init() {
+    // ff triggers 'moved' for bookmarks saved to different folder than default
+    browser.bookmarks.onMoved.addListener(updateBookmark);
+    browser.bookmarks.onRemoved.addListener(removeBookmark);
+    browser.contextMenus.onClicked.addListener(onClickHandler);
 
+    // context menu -> "add to speed dial"
+    browser.contextMenus.create({"title": "Add to Speed Dial", "contexts":['page'], "documentUrlPatterns":['<all_urls>'], "id": "addToSpeedDial"});
 
-getSpeedDialId();
-
-//browser.bookmarks.onCreated.addListener(updateBookmark);
-// ff triggers 'moved' when a folder other than the default is selected. in our case since we use the 'speed dial' folder
-// we need to listen for moves not creates
-
-// listen for bookmark being created and capture thumbnail
-// requires <all_urls> permission to capture the image without a user gesture
-browser.bookmarks.onMoved.addListener(updateBookmark);
-browser.bookmarks.onRemoved.addListener(removeBookmark);
-
-// context menu -> "add to speed dial"
-function onClickHandler(info, tab) {
-    if (info.menuItemId === 'addToSpeedDial') {
-        //getScreenshot(tab.url);
-        getThumbnails(tab.url);
-        browser.bookmarks.create({
-            parentId: speedDialId,
-            title: tab.title,
-            url: tab.url
-        });
-        // tab.favIconUrl
-    }
-}
-
-browser.contextMenus.onClicked.addListener(onClickHandler);
-browser.contextMenus.create({"title": "Add to Speed Dial", "contexts":['page'], "documentUrlPatterns":['<all_urls>'], "id": "addToSpeedDial"});
-
-browser.runtime.onInstalled.addListener(function() {
-    // set defaults
-    const defaults = {
-        wallpaper: true,
-        wallpaperSrc: 'img/bg.jpg',
-        backgroundColor: '#111111',
-        largeTiles: true,
-        showTitles: true,
-    };
-    // restore any saved settings
+    // set default settings
     browser.storage.local.get('settings').then(store => {
-        let storedSettings = store.settings || {};
-        let settings = Object.assign({}, defaults, storedSettings);
-        browser.storage.local.set({settings});
+        if (store.settings) {
+            settings = Object.assign({}, defaults, store.settings);
+        } else {
+            settings = defaults;
+        }
+        browser.storage.local.set({settings}).then(() => {
+            // engage
+            getSpeedDialId();
+        });
     });
-});
+}
+
+init();
