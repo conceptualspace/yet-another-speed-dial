@@ -1,0 +1,214 @@
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: linear-gradient(to right, #4389A2, #5C258D);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: small;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 25px 10px 25px;
+    transition: opacity 220ms linear;
+    opacity: 0;
+}
+
+#noBookmarks {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 100px;
+    color: #ffffff;
+}
+
+.hide {
+    opacity: 0;
+}
+
+.tile {
+    width: 188px;
+    height: 140px;
+    border-radius: 12px;
+    margin: 12px;
+}
+
+.tile:hover {
+
+}
+
+.tile-main {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+}
+
+.tile-content {
+    width: 100%;
+    height: 122px;
+    border-color: transparent;
+    border-radius: inherit;
+    background-origin: content-box;
+    background-position: 50%;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.tile-title {
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 5px 10px 0 10px;
+}
+
+a {
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.selected {
+    opacity: 0;
+}
+
+.dragging {
+    opacity: 1;
+}
+
+.menu {
+    visibility: hidden;
+    opacity: 0;
+    position: fixed;
+    z-index: 2;
+    background-color: #111111;
+    color: #ffffff;
+    border: 1px solid grey;
+    transition: visibility 0s, opacity 160ms ease;
+}
+.menu-options {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 10px 0;
+}
+.menu-separator {
+    padding: 5px;
+}
+.menu-option {
+    cursor: default;
+    padding: 5px 25px;
+}
+.menu-option:hover {
+    background-color: #333333;
+}
+
+.modal {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    z-index: 2;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0,0,0,0.6);
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #111111;
+    color: #ffffff;
+    border: 1px solid #000000;
+    border-radius: 6px;
+    padding: 5px;
+    width: 420px;
+    box-shadow: 0 18px 18px rgba(0, 0, 0, 0.2);
+}
+
+.modalImg-item {
+    height: 180px;
+}
+/* The Close Button */
+.closeBtn {
+    color: #aaaaaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.closeBtn:hover,
+.closeBtn:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.tileForm {
+    padding: .6em;
+}
+
+.formItem {
+    width: 100%;
+    padding: .4em;
+}
+
+.formItem > input,
+.formItem > textarea,
+.formItem > button {
+    padding: .6em;
+    width: 100%;
+}
+
+.formItem > button {
+    color: #ffffff;
+    border: none;
+}
+
+.formItem > .save {
+    background-color: #1681d9;
+}
+.formItem > .close {
+    background-color: dimgrey;
+}
+
+.formItem > .save:hover {
+    background-color: #1692EA;
+}
+
+.formItem > .close:hover {
+    background-color: #707070;
+}
+
+input {
+    border: 1px solid black
+}
+input:focus {
+    outline: 2px solid gold;
+}
+
+/* overrides */
+.fc-slide {
+    padding: 0;
+}
+
+.fc-slide img {
+    height: 180px;
+}
+
+.fc-image img, .fc-image picture {
+    height: 180px;
+}
+
+.fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    color: #ccc;
+}

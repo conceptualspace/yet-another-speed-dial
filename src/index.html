@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Speed Dial</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+    <link rel="stylesheet" href="css/flexCarousel.min.css" type="text/css">
+	<link rel="stylesheet" href="css/index.css" type="text/css">
+</head>
+
+<body>
+
+    <div id="noBookmarks">Add bookmarks to your Other Bookmarks > Speed Dial folder to see them here.</div>
+    <div class="container" id="wrap"></div>
+
+    <div class="menu" id="contextMenu">
+        <ul class="menu-options">
+            <li id="newTab" class="menu-option">Open in new tab</li>
+            <li id="newWin" class="menu-option">Open in new window</li>
+            <li id="newPrivate" class="menu-option">Open in new private window</li>
+            <li class="menu-separator"></li>
+            <li id="edit" class="menu-option">Edit</li>
+            <li id="delete" class="menu-option">Delete</li>
+        </ul>
+    </div>
+
+    <div id="tileModal" class="modal">
+
+        <!-- Modal content -->
+        <div class="modal-content">
+
+            <form class="tileForm" action="">
+                <div class="formItem"><label for="modalTitle">Title</label></div>
+                <div class="formItem"><input id="modalTitle" type="text"></div>
+
+                <div class="formItem"><label for="modalURL" class="last-name">Address</label></div>
+                <div class="formItem"><input id="modalURL" type="text" disabled></div>
+
+
+                    <div class="formItem"><label for="modalImgInput" class="last-name">Image</label><br></div>
+                <!--
+               <input id="modalImgInput" type="file">
+               -->
+
+                <div id="modalImgContainer" class="formItem"></div>
+
+                        <div class="formItem"><button id="modalSave" class="save">Save</button></div>
+                            <div class="formItem"><button class="close">Cancel</button></div>
+            </form>
+        </div>
+
+    </div>
+
+    <script src="js/Sortable.min.js"></script>
+    <script src="js/CSSPlugin.min.js"></script>
+    <script src="js/TweenLite.min.js"></script>
+    <script src="js/jquery-3.4.1.slim.min.js"></script>
+    <script src="js/flexCarousel.min.js"></script>
+    <script src="js/index.js"></script>
+</body>

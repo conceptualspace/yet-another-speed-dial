@@ -1,0 +1,215 @@
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: #111111;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-size: small;
+    color: white;
+    display: flex;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    user-select: none;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    margin: 0 auto;
+}
+
+.settings {
+    width: 300px;
+}
+
+h1 {
+    font-weight: lighter;
+    /*
+    background-image: url('../icons/icon48-white.png');
+    background-repeat: no-repeat;
+    background-position: right;
+     */
+}
+
+hr {
+    border: 1px solid rgba(255,255,255,0.1);
+    margin: 2em 0 2em 0;
+}
+
+div {
+    padding: 0.3em 0;
+}
+
+a {
+    text-decoration: none;
+    color: white;
+}
+a:hover {
+    background-color: rgba(255,255,255,0.2);
+}
+
+button {
+    padding: .6em;
+    width: 100%;
+    background-color: #1681d9;
+    color: #ffffff;
+    border: none;
+}
+
+button:hover {
+    background-color: #1692EA;
+}
+
+.default {
+    background-color: #cccccc;
+    color: #000000;
+}
+.default:hover {
+    background-color: #ffffff;
+}
+
+#preview {
+    width: 160px;
+    max-height: 160px;
+    margin-bottom: 0.8em;
+    padding: 0.4em;
+    display: none;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+}
+
+#previewContainer {
+    display: none;
+}
+
+.row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    align-items: center;
+}
+
+.column {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.controls {
+    align-items: end;
+}
+
+
+/* The switch - the box around the slider */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+/* Hide default HTML checkbox */
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* The slider */
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .2s;
+    transition: .2s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .2s;
+    transition: .2s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+}
+
+/* Rounded sliders */
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+input[type="color"] {
+    opacity: 0;
+    display: block;
+    width: 50px;
+    height: 24px;
+    border: none;
+}
+#color-picker-wrapper {
+    width: 50px;
+    padding: 0;
+    border-radius: 34px;
+    border: 1px solid rgba(255,255,255,0.2);
+    /*float: left;*/
+}
+
+[type="file"] {
+    height: 0;
+    overflow: hidden;
+    width: 0;
+}
+
+[type="file"] + label {
+    background: #cccccc;
+    border: none;
+    border-radius: 4px;
+    color: #000000;
+    cursor: default;
+    display: inline-block;
+    outline: none;
+    padding: 0.3em 1em;
+    position: relative;
+    transition: all 0.2s;
+    vertical-align: middle;
+    margin-bottom: .4em;
+}
+
+[type="file"] + label:hover {
+    background-color: #ffffff;
+}
+
+#toast {
+    display: flex;
+    justify-content: center;
+    opacity: 0;
+    color: lightgreen;
+    transition: opacity 200ms ease-in-out;
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+<head>
+	<title>Settings</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+	<link rel="stylesheet" href="css/settings.css" type="text/css">
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="settings" id="settingsDiv">
+            <h1>Speed Dial Settings</h1>
+            <hr>
+            <div>
+                <div class='row'>
+                    <div class='column'>
+                        <label>Wallpaper</label>
+                    </div>
+                    <div class='column controls'>
+                        <label class="switch">
+                            <input type="checkbox" id="wallpaper" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class='row' id="previewContainer">
+                    <div class='column'>
+                    </div>
+                    <div class='column controls'>
+                        <img id="preview" src="#">
+                        <input type="file" id="file" />
+                        <label for="file">Browse...</label>
+                    </div>
+                </div>
+
+                <div class='row'>
+                    <div class='column'>
+                        <label>Background Color</label>
+                    </div>
+                    <div class='column controls'>
+                        <div id="color-picker-wrapper">
+                            <input type="color" id="color-picker">
+                        </div>
+                    </div>
+                </div>
+
+                <div class='row'>
+                    <div class='column'>
+                        <label>Large Tiles</label>
+                    </div>
+                    <div class='column controls'>
+                        <label class="switch">
+                            <input type="checkbox" id="largeTiles" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class='row'>
+                    <div class='column'>
+                        <label>Show Labels</label>
+                    </div>
+                    <div class='column controls'>
+                        <label class="switch">
+                            <input type="checkbox" id="showTitles" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- how can this be done?? -->
+                <!--
+                <div class='row'>
+                    <div class='column'>
+                        <label>Show on Home Page</label>
+                    </div>
+                    <div class='column controls'>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class='row'>
+                    <div class='column'>
+                        <label>Show on New Tab Page</label>
+                    </div>
+                    <div class='column controls'>
+                        <label class="switch">
+                            <input type="checkbox" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+                -->
+
+            </div>
+<!--
+            <hr>
+
+            <div>
+                <button id="regenerate">Regenerate Thumbnails</button>
+            </div>
+-->
+            <hr>
+
+            <div>
+                <button id="saveBtn">Save</button>
+            </div>
+
+            <hr>
+
+            <div id="toast">Settings saved!</div>
+
+        </div>
+    </div>
+<script src="js/settings.js"></script>
+</body>
