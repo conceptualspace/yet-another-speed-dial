@@ -43,7 +43,6 @@ async function printBookmarks(bookmarks) {
     for (let bookmark of bookmarks) {
 
         let result = await getThumbs(bookmark.url);
-        let iconURL = null;
         let thumbUrl = null;
 
         if (result) {
@@ -146,9 +145,12 @@ function removeBookmark(url) {
 }
 
 function sort() {
-    browser.storage.local.get(['sort'], function(result) {
-        sortable.sort(result.sort);
-    });
+    browser.storage.local.get('sort')
+        .then(result => {
+            if (result.sort) {
+                sortable.sort(result.sort);
+            }
+        });
 }
 
 const menu = document.getElementById('contextMenu');
@@ -296,10 +298,6 @@ function animate() {
         var x = node.offsetLeft;
         var y = node.offsetTop;
         boxes[i] = { node, transform, x, y };
-    }
-
-    for (var i = 0; i < inputs.length; i++) {
-        inputs[i].addEventListener("change", layout);
     }
 
     window.addEventListener("resize", () => { dirty = true; });
