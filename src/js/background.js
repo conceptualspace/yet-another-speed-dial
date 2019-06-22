@@ -23,6 +23,8 @@ function onClickHandler(info, tab) {
             parentId: speedDialId,
             title: tab.title,
             url: tab.url
+        }).then(response => {
+            browser.runtime.sendMessage({"reload":true});
         });
     }
 }
@@ -172,16 +174,19 @@ async function getSpeedDialId() {
 function updateBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
         browser.bookmarks.get(id).then(bookmark => {
-            getThumbnails(bookmark[0].url);
-            //todo: message page script to refresh
+            getThumbnails(bookmark[0].url)
+                .then(result => {
+                    browser.runtime.sendMessage({"reload":true});
+                })
         })
     }
 }
 
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
-        browser.storage.local.remove(bookmarkInfo.node.url);
-        //todo: message page script to refresh
+        browser.storage.local.remove(bookmarkInfo.node.url).then(response => {
+            browser.runtime.sendMessage({"reload":true});
+        });
     }
 }
 

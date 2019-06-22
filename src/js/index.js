@@ -407,3 +407,13 @@ closeModal.onclick = function(e) {
 };
 
 modalSave.addEventListener("click", saveBookmarkSettings);
+
+function handleMessage(message) {
+    if (message.reload) {
+        // todo: make this more elegant / specific to the change
+        // applySettings();
+        location.reload(true);
+    }
+}
+
+browser.runtime.onMessage.addListener(handleMessage);

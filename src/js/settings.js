@@ -50,9 +50,8 @@ function saveSettings() {
         setTimeout(function() {
             toast.style.opacity = "0";
         }, 3500);
-        console.log("settings saved");
+        browser.runtime.sendMessage({"reload":true});
     });
-    // todo: message any open speed dial
 }
 
 color_picker.onchange = function() {
