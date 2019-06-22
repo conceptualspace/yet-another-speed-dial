@@ -1,8 +1,20 @@
+// yet another speed dial
+// copyright 2019 dev@conceptualspace.net
+// absolutely no warranty is expressed or implied
+
+'use strict';
 
 let bookmarksContainer = document.getElementById('wrap');
 
 let speedDialId = null;
-let settings = {};
+let settings = null;
+let defaults = {
+    wallpaper: true,
+    wallpaperSrc: 'img/bg.jpg',
+    backgroundColor: '#111111',
+    largeTiles: true,
+    showTitles: true,
+};
 
 // get speed dial folder or create one
 // const bookmarksTree = await browser.bookmarks.getTree();
@@ -86,13 +98,21 @@ async function printBookmarks(bookmarks) {
 
 function applySettings() {
     browser.storage.local.get('settings').then(store => {
-        settings = store.settings || {};
-        if (settings.backgroundColor) {
-            document.body.style.background = settings.backgroundColor;
+        if (store.settings) {
+            settings = Object.assign({}, defaults, store.settings);
+        } else {
+            settings = defaults;
         }
         if (settings.wallpaper && settings.wallpaperSrc) {
             document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
             document.body.style.backgroundSize = 'cover';
+        } else {
+            document.body.style.background = settings.backgroundColor;
+            // dynamically set text color based on background
+            // todo replace this horrible hack omg
+            if (settings.backgroundColor.replace('#','0x') > (0xffffff/2)) {
+                document.styleSheets[1].cssRules[10].style.setProperty('color', '#000000');
+            }
         }
     });
 }

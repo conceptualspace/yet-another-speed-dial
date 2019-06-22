@@ -195,6 +195,7 @@ function init() {
     browser.contextMenus.create({"title": "Add to Speed Dial", "contexts":['page'], "documentUrlPatterns":['<all_urls>'], "id": "addToSpeedDial"});
 
     // set default settings
+    // todo: remove? settings loaded directly in index.js
     browser.storage.local.get('settings').then(store => {
         if (store.settings) {
             settings = Object.assign({}, defaults, store.settings);
