@@ -4,9 +4,35 @@
 
 'use strict';
 
-let bookmarksContainer = document.getElementById('wrap');
+// speed dial
+const bookmarksContainer = document.getElementById('wrap');
+const menu = document.getElementById('contextMenu');
+const settingsMenu = document.getElementById('settingsMenu');
+const modal = document.getElementById('tileModal');
+const closeModal = document.getElementsByClassName("close")[0];
+const modalSave = document.getElementById('modalSave');
+const sidenav = document.getElementById("sidenav");
+const modalTitle = document.getElementById("modalTitle");
+const modalURL = document.getElementById("modalURL");
+const modalImgContainer = document.getElementById("modalImgContainer");
+const modalImgInput = document.getElementById("modalImgInput");
+const noBookmarks = document.getElementById('noBookmarks');
 
-let speedDialId = null;
+// settings sidebar
+const reader = new FileReader();
+const color_picker = document.getElementById("color-picker");
+const color_picker_wrapper = document.getElementById("color-picker-wrapper");
+const imgInput = document.getElementById("file");
+const imgPreview = document.getElementById("preview");
+const wallPaperEnabled = document.getElementById("wallpaper");
+const previewContainer = document.getElementById("previewContainer");
+const largeTilesInput = document.getElementById("largeTiles");
+const showTitlesInput = document.getElementById("showTitles");
+const verticalAlignInput = document.getElementById("verticalAlign");
+const saveBtn = document.getElementById("saveBtn");
+const settingsDiv = document.getElementById("settingsDiv");
+const toast = document.getElementById("toast");
+
 let settings = null;
 let defaults = {
     wallpaper: true,
@@ -14,10 +40,17 @@ let defaults = {
     backgroundColor: '#111111',
     largeTiles: true,
     showTitles: true,
+    verticalAlign: false
 };
 
+let speedDialId = null;
+let sortable = null;
+
+let targetTileHref = null;
+let targetTileTitle = null;
+let targetNode = null;
+
 // get speed dial folder or create one
-// const bookmarksTree = await browser.bookmarks.getTree();
 function getSpeedDial() {
     return browser.bookmarks.search({title: 'Speed Dial'})
         .then(result => result.length && result[0])
@@ -30,10 +63,6 @@ function getSpeedDial() {
         })
 }
 
-function getBookmarks(folderId) {
-    return browser.bookmarks.getChildren(folderId)
-}
-
 function createSpeedDial() {
     return browser.bookmarks.create({
         title: 'Speed Dial',
@@ -42,11 +71,37 @@ function createSpeedDial() {
         .then(result => result.id)
 }
 
+function getBookmarks(folderId) {
+    return browser.bookmarks.getChildren(folderId)
+}
+
+function removeBookmark(url) {
+    browser.bookmarks.search({url})
+        .then(bookmarks => {
+            for (let bookmark of bookmarks) {
+                if (bookmark.parentId === speedDialId) {
+                    targetNode.style.display = 'none';
+                    browser.storage.local.remove(url);
+                    browser.bookmarks.remove(bookmark.id);
+                }
+            }
+        })
+}
+
 function getThumbs(bookmarkUrl) {
     return browser.storage.local.get(bookmarkUrl)
         .then(result => {
             if (result[bookmarkUrl]) {
                 return result[bookmarkUrl];
+            }
+        });
+}
+
+function sort() {
+    browser.storage.local.get('sort')
+        .then(result => {
+            if (result.sort) {
+                sortable.sort(result.sort);
             }
         });
 }
@@ -96,102 +151,6 @@ async function printBookmarks(bookmarks) {
     bookmarksContainer.style.opacity = "1";
 }
 
-function applySettings() {
-    browser.storage.local.get('settings').then(store => {
-        if (store.settings) {
-            settings = Object.assign({}, defaults, store.settings);
-        } else {
-            settings = defaults;
-        }
-        if (settings.wallpaper && settings.wallpaperSrc) {
-            document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
-            document.body.style.backgroundSize = 'cover';
-        } else {
-            document.body.style.background = settings.backgroundColor;
-            // dynamically set text color based on background
-            // todo replace this horrible hack omg
-            if (settings.backgroundColor.replace('#','0x') > (0xffffff/2)) {
-                document.styleSheets[1].cssRules[10].style.setProperty('color', '#000000');
-            }
-        }
-    });
-}
-
-applySettings();
-
-getSpeedDial()
-    .then(speedDialId => {
-        if (speedDialId) {
-            getBookmarks(speedDialId)
-                .then(bookmarks => {
-                    if (bookmarks.length) {
-                        printBookmarks(bookmarks)
-                    } else {
-                        noBookmarks.style.display = 'flex';
-                    }
-                })
-                //.then(import { animate } from './animate.js');
-        } else {
-            noBookmarks.style.display = 'flex';
-            createSpeedDial()
-                .then(speedDialId => getBookmarks(speedDialId))
-                .then(bookmarks => printBookmarks(bookmarks))
-        }
-    });
-
-let sortable = new Sortable(bookmarksContainer, {
-    animation: 160,
-    ghostClass: 'selected',
-    dragClass: 'dragging',
-    store: {
-        set: function(sortable) {
-            let order = sortable.toArray();
-            browser.storage.local.set({"sort":order});
-        }
-    }
-});
-
-function removeBookmark(url) {
-    browser.bookmarks.search({url})
-        .then(bookmarks => {
-            for (let bookmark of bookmarks) {
-                if (bookmark.parentId === speedDialId) {
-                    targetNode.style.display = 'none';
-                    browser.storage.local.remove(url);
-                    browser.bookmarks.remove(bookmark.id);
-                }
-            }
-        })
-}
-
-function sort() {
-    browser.storage.local.get('sort')
-        .then(result => {
-            if (result.sort) {
-                sortable.sort(result.sort);
-            }
-        });
-}
-
-const menu = document.getElementById('contextMenu');
-const settingsMenu = document.getElementById('settingsMenu');
-let targetTileHref = null;
-let targetTileTitle = null;
-let targetNode = null;
-
-const modal = document.getElementById('tileModal');
-const closeModal = document.getElementsByClassName("close")[0];
-const modalSave = document.getElementById('modalSave');//.onclick = saveBookmarkSettings();
-
-const sidenav = document.getElementById("sidenav");
-
-let modalTitle = document.getElementById("modalTitle");
-let modalURL = document.getElementById("modalURL");
-let modalImgContainer = document.getElementById("modalImgContainer");
-let modalImgInput = document.getElementById("modalImgInput");
-
-const noBookmarks = document.getElementById('noBookmarks');
-
 function showContextMenu(top, left) {
     menu.style.left = left + 'px';
     menu.style.top = top + 'px';
@@ -213,8 +172,16 @@ function hideMenus() {
     settingsMenu.style.opacity = "0";
 }
 
+function openSettings() {
+    sidenav.style.transform = "translateX(0%)";
+}
+
 function hideSettings() {
     sidenav.style.transform = "translateX(100%)";
+}
+
+function hideModal() {
+    modal.style.display = "none";
 }
 
 async function buildModal(url, title) {
@@ -301,26 +268,6 @@ function saveBookmarkSettings() {
         });
 }
 
-// override context menu
-document.addEventListener( "contextmenu", function(e) {
-    e.preventDefault();
-    hideSettings();
-    if (e.target.className === 'tile-content') {
-        targetNode = e.target.parentElement.parentElement;
-        targetTileHref = e.target.parentElement.parentElement.href;
-        targetTileTitle = e.target.nextElementSibling.innerText;
-        showContextMenu(e.pageY, e.pageX);
-        return false;
-    } else if (e.target.className === 'container') {
-        showSettingsMenu(e.pageY, e.pageX);
-        return false;
-    }
-});
-
-function hideModal() {
-    modal.style.display = "none";
-}
-
 function animate() {
     var inputs = document.querySelectorAll("input");
     var nodes  = document.querySelectorAll(".tile");
@@ -375,17 +322,156 @@ function animate() {
 
 }
 
-function openSettings() {
-    sidenav.style.transform = "translateX(0%)";
-    //document.getElementById("wrap").style.marginLeft = "250px";
+function readURL(input) {
+    if (input.files && input.files[0]) {
+        reader.readAsDataURL(input.files[0]);
+    }
 }
+
+function applySettings() {
+    return new Promise(function(resolve, reject) {
+        // populate settings nav
+        wallPaperEnabled.checked = settings.wallpaper;
+        color_picker.value = settings.backgroundColor;
+        showTitlesInput.checked = settings.showTitles;
+        largeTilesInput.checked = settings.largeTiles;
+        verticalAlignInput.checked = settings.verticalAlign;
+
+        if (settings.wallpaperSrc) {
+            imgPreview.setAttribute('src', settings.wallpaperSrc);
+            imgPreview.style.display = 'block';
+        }
+        if (settings.wallpaper) {
+            previewContainer.style.display = 'flex';
+        }
+
+        // apply settings to speed dial
+        if (!settings.showTitles) {
+            document.documentElement.style.setProperty('--title-opacity', '0');
+        } else {
+            document.documentElement.style.setProperty('--title-opacity', '1');
+        }
+
+        if (settings.wallpaper && settings.wallpaperSrc) {
+            document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+            document.body.style.backgroundSize = 'cover';
+        } else {
+            document.body.style.background = settings.backgroundColor;
+            // dynamically set text color based on background
+            if (settings.backgroundColor.replace('#', '0x') > (0xffffff / 2)) {
+                document.documentElement.style.setProperty('--color', '#000000');
+                //document.styleSheets[1].cssRules[10].style.setProperty('color', '#000000');
+            } else {
+                document.documentElement.style.setProperty('--color', '#ffffff');
+            }
+        }
+
+        if (settings.verticalAlign) {
+            document.documentElement.style.setProperty('--vertical-align', 'center');
+            document.documentElement.style.setProperty('--top-padding', '0');
+        } else {
+            document.documentElement.style.setProperty('--vertical-align', 'start');
+            document.documentElement.style.setProperty('--top-padding', '50px');
+        }
+
+        resolve();
+    });
+}
+
+// load or set defaults
+function initSettings () {
+    return new Promise(function(resolve, reject) {
+        browser.storage.local.get('settings').then(store => {
+            if (store.settings) {
+                settings = Object.assign({}, defaults, store.settings);
+                resolve();
+            } else {
+                settings = defaults;
+                browser.storage.local.set({settings}).then(settings => resolve())
+            }
+        });
+    });
+}
+
+function saveSettings() {
+    settings.wallpaper = wallPaperEnabled.checked;
+    settings.wallpaperSrc = imgPreview.src;
+    settings.backgroundColor = color_picker.value;
+    settings.showTitles = showTitlesInput.checked;
+    settings.largeTiles = largeTilesInput.checked;
+    settings.verticalAlign = verticalAlignInput.checked;
+
+    browser.storage.local.set({settings})
+        .then(()=> {
+            toast.style.opacity = "1";
+            setTimeout(function() {
+                toast.style.opacity = "0";
+            }, 3500);
+            applySettings();
+        });
+}
+
+function init() {
+    getSpeedDial()
+        .then(speedDialId => {
+            if (speedDialId) {
+                getBookmarks(speedDialId)
+                    .then(bookmarks => {
+                        if (bookmarks.length) {
+                            printBookmarks(bookmarks)
+                        } else {
+                            noBookmarks.style.display = 'flex';
+                        }
+                    })
+            } else {
+                noBookmarks.style.display = 'flex';
+                createSpeedDial()
+                    .then(speedDialId => getBookmarks(speedDialId))
+                    .then(bookmarks => printBookmarks(bookmarks))
+            }
+        });
+
+    sortable = new Sortable(bookmarksContainer, {
+        animation: 160,
+        ghostClass: 'selected',
+        dragClass: 'dragging',
+        store: {
+            set: function(sortable) {
+                let order = sortable.toArray();
+                browser.storage.local.set({"sort":order});
+            }
+        }
+    });
+}
+
+function handleMessage(message) {
+    if (message.bookmarkUpdated || message.bookmarkRemoved) {
+        bookmarksContainer.innerHTML = "";
+        init();
+    }
+}
+
+browser.runtime.onMessage.addListener(handleMessage);
+
+// override context menu
+document.addEventListener( "contextmenu", function(e) {
+    e.preventDefault();
+    hideSettings();
+    if (e.target.className === 'tile-content') {
+        targetNode = e.target.parentElement.parentElement;
+        targetTileHref = e.target.parentElement.parentElement.href;
+        targetTileTitle = e.target.nextElementSibling.innerText;
+        showContextMenu(e.pageY, e.pageX);
+        return false;
+    } else if (e.target.className === 'container') {
+        showSettingsMenu(e.pageY, e.pageX);
+        return false;
+    }
+});
 
 // listen for menu item
 window.addEventListener("click", e => {
-    // required to accommodate carousel clicks
-    //e.preventDefault();
     hideMenus();
-
     switch (e.target.className) {
         case 'tile-content':
         case 'tile-title':
@@ -436,97 +522,22 @@ window.addEventListener("keydown", event => {
     }
 });
 
+modalSave.addEventListener("click", saveBookmarkSettings);
+
 closeModal.onclick = function(e) {
     e.preventDefault();
     hideModal();
 };
-
-modalSave.addEventListener("click", saveBookmarkSettings);
-
-function handleMessage(message) {
-    if (message.reload) {
-        // todo: make this more elegant / specific to the change
-        // ex. removing a tile reloads page..
-        // applySettings();
-        location.reload(true);
-    }
-}
-
-browser.runtime.onMessage.addListener(handleMessage);
-
-
-// settings
-const reader = new FileReader();
-const color_picker = document.getElementById("color-picker");
-const color_picker_wrapper = document.getElementById("color-picker-wrapper");
-const imgInput = document.getElementById("file");
-const imgPreview = document.getElementById("preview");
-const wallPaperEnabled = document.getElementById("wallpaper");
-const previewContainer = document.getElementById("previewContainer");
-const largeTilesInput = document.getElementById("largeTiles");
-const showTitlesInput = document.getElementById("showTitles");
-const saveBtn = document.getElementById("saveBtn");
-const settingsDiv = document.getElementById("settingsDiv");
-const toast = document.getElementById("toast");
-
-
-function initSettings () {
-    browser.storage.local.get('settings').then(store => {
-        settings = store.settings;
-        if (!settings) {
-            settingsDiv.innerHTML = "Error loading settings. Please try again";
-            return;
-        }
-
-        wallPaperEnabled.checked = settings.wallpaper;
-        color_picker.value = settings.backgroundColor;
-        showTitlesInput.checked = settings.showTitles;
-        largeTilesInput.checked = settings.largeTiles;
-
-        if (settings.wallpaperSrc) {
-            imgPreview.setAttribute('src', settings.wallpaperSrc);
-            imgPreview.style.display = 'block';
-        }
-
-        if (settings.wallpaper) {
-            previewContainer.style.display = 'flex';
-        }
-    });
-}
-
-function saveSettings() {
-    settings.wallpaper = wallPaperEnabled.checked;
-    settings.wallpaperSrc = imgPreview.src;
-    settings.backgroundColor = color_picker.value;
-    settings.showTitles = showTitlesInput.checked;
-    settings.largeTiles = largeTilesInput.checked;
-
-    browser.storage.local.set({settings})
-        .then(()=> {
-            toast.style.opacity = "1";
-            setTimeout(function() {
-                toast.style.opacity = "0";
-            }, 3500);
-            browser.runtime.sendMessage({"reload":true});
-        });
-}
 
 color_picker.onchange = function() {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
 };
 color_picker_wrapper.style.backgroundColor = color_picker.value;
 
-
 reader.onload = function (e) {
     imgPreview.setAttribute('src', e.target.result);
     imgPreview.style.display = 'block';
 };
-
-function readURL(input) {
-    if (input.files && input.files[0]) {
-        reader.readAsDataURL(input.files[0]);
-    }
-}
 
 imgInput.onchange = function() {
     readURL(this);
@@ -544,4 +555,4 @@ wallPaperEnabled.onchange = function() {
     }
 };
 
-initSettings();
+initSettings().then(() => applySettings()).then(() => init());

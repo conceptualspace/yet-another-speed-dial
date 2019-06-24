@@ -4,27 +4,18 @@
 
 'use strict';
 
-const defaults = {
-    wallpaper: true,
-    wallpaperSrc: 'img/bg.jpg',
-    backgroundColor: '#111111',
-    largeTiles: true,
-    showTitles: true,
-};
-
-let settings = null;
 let speedDialId = null;
-
 
 function onClickHandler(info, tab) {
     if (info.menuItemId === 'addToSpeedDial') {
-        getThumbnails(tab.url);
         browser.bookmarks.create({
             parentId: speedDialId,
             title: tab.title,
             url: tab.url
         }).then(response => {
-            browser.runtime.sendMessage({"bookmarkUpdated":true});
+            getThumbnails(tab.url).then(response => {
+                browser.runtime.sendMessage({"bookmarkUpdated":true});
+            });
         });
     }
 }
@@ -197,21 +188,14 @@ function init() {
     browser.contextMenus.onClicked.addListener(onClickHandler);
 
     // context menu -> "add to speed dial"
-    browser.contextMenus.create({"title": "Add to Speed Dial", "contexts":['page'], "documentUrlPatterns":['<all_urls>'], "id": "addToSpeedDial"});
-
-    // set default settings
-    // todo: remove? settings loaded directly in index.js
-    browser.storage.local.get('settings').then(store => {
-        if (store.settings) {
-            settings = Object.assign({}, defaults, store.settings);
-        } else {
-            settings = defaults;
-        }
-        browser.storage.local.set({settings}).then(() => {
-            // engage
-            getSpeedDialId();
-        });
+    browser.contextMenus.create({
+        "title": "Add to Speed Dial",
+        "contexts":['page'],
+        "documentUrlPatterns":['<all_urls>'],
+        "id": "addToSpeedDial"
     });
+
+    getSpeedDialId();
 }
 
 init();
