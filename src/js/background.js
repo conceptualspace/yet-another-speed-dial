@@ -14,7 +14,14 @@ function onClickHandler(info, tab) {
             url: tab.url
         }).then(response => {
             getThumbnails(tab.url).then(response => {
-                browser.runtime.sendMessage({"bookmarkUpdated":true});
+                // update any open speed dial tabs
+                browser.tabs.query({currentWindow: true}).then(tabs => {
+                    for (let tab of tabs) {
+                        if (tab.title === "Speed Dial") {
+                            browser.runtime.sendMessage({"bookmarkUpdated": true});
+                        }
+                    }
+                });
             });
         });
     }
@@ -166,9 +173,6 @@ function updateBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
         browser.bookmarks.get(id).then(bookmark => {
             getThumbnails(bookmark[0].url)
-                .then(result => {
-                    browser.runtime.sendMessage({"bookmarkUpdated":true});
-                })
         })
     }
 }
