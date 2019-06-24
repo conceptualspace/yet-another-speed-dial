@@ -15,12 +15,15 @@ function onClickHandler(info, tab) {
         }).then(response => {
             getThumbnails(tab.url).then(response => {
                 // update any open speed dial tabs
+                let speedDialOpen = false;
                 browser.tabs.query({currentWindow: true}).then(tabs => {
                     for (let tab of tabs) {
                         if (tab.title === "Speed Dial") {
-                            browser.runtime.sendMessage({"bookmarkUpdated": true});
+                            speedDialOpen = true;
+                            break;
                         }
                     }
+                    browser.runtime.sendMessage({"bookmarkUpdated": true});
                 });
             });
         });
