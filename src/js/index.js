@@ -351,6 +351,43 @@ function contrast(rgb) {
     }
 }
 
+function getAverageRGB(imgPath) {
+    return new Promise(function(resolve, reject) {
+        let img = new Image();
+        img.onload = function () {
+            let blockSize = 5; // only visit every 5 pixels
+            let canvas = document.createElement('canvas');
+            let context = canvas.getContext && canvas.getContext('2d');
+            let data, width, height;
+            let i = -4;
+            let length;
+            let rgb = [0,0,0];
+            let count = 0;
+
+            height = canvas.height = img.naturalHeight || img.offsetHeight || img.height;
+            width = canvas.width = img.naturalWidth || img.offsetWidth || img.width;
+
+            context.drawImage(img, 0, 0);
+            data = context.getImageData(0, 0, width, height);
+            length = data.data.length;
+
+            while ((i += blockSize * 4) < length) {
+                ++count;
+                rgb[0] += data.data[i];
+                rgb[1] += data.data[i + 1];
+                rgb[2] += data.data[i + 2];
+            }
+
+            rgb[0] = ~~(rgb[0] / count);
+            rgb[1] = ~~(rgb[1] / count);
+            rgb[2] = ~~(rgb[2] / count);
+
+            resolve(rgb);
+        };
+        img.src = imgPath;
+    });
+}
+
 function applySettings() {
     return new Promise(function(resolve, reject) {
         // populate settings nav
@@ -379,10 +416,14 @@ function applySettings() {
         if (settings.wallpaper && settings.wallpaperSrc) {
             document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
             document.body.style.backgroundSize = 'cover';
-        } else {
-            // text color should apply to wallpaper styles too
-            document.body.style.background = settings.backgroundColor;
             // dynamically set text color based on background
+            // todo: confirm this is performant
+            getAverageRGB(settings.wallpaperSrc).then(rgb => {
+                let textColor = contrast(rgb);
+                document.documentElement.style.setProperty('--color', textColor);
+            });
+        } else {
+            document.body.style.background = settings.backgroundColor;
             let textColor = contrast(hexToRgb(settings.backgroundColor));
             document.documentElement.style.setProperty('--color', textColor);
         }
