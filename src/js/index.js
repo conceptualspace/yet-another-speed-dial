@@ -330,6 +330,7 @@ function applySettings() {
         // populate settings nav
         wallPaperEnabled.checked = settings.wallpaper;
         color_picker.value = settings.backgroundColor;
+        color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
         showTitlesInput.checked = settings.showTitles;
         largeTilesInput.checked = settings.largeTiles;
         verticalAlignInput.checked = settings.verticalAlign;
@@ -353,6 +354,7 @@ function applySettings() {
             document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
             document.body.style.backgroundSize = 'cover';
         } else {
+            // text color should apply to wallpaper styles too
             document.body.style.background = settings.backgroundColor;
             // dynamically set text color based on background
             //todo: replace with w3c algorithm
@@ -532,7 +534,6 @@ closeModal.onclick = function(e) {
 color_picker.onchange = function() {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
 };
-color_picker_wrapper.style.backgroundColor = color_picker.value;
 
 reader.onload = function (e) {
     imgPreview.setAttribute('src', e.target.result);
