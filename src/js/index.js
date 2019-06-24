@@ -325,6 +325,32 @@ function readURL(input) {
     }
 }
 
+function hexToRgb(color) {
+    let colors = color.replace("#", "").match(/.{2}/g);
+    return colors.map(c => parseInt("0x"+c));
+}
+
+// given a color, return whether white or black has the most contrast
+// approximates w3c accessibility algorithm
+function contrast(rgb) {
+    let srgb = [];
+    rgb.forEach(function(c, i) {
+        c = c / 255;
+        if (c <= 0.03928) {
+            c = c/12.92
+        } else {
+            c = Math.pow((c + 0.055) / 1.055, 2.4);
+        }
+        srgb[i] = c
+    });
+    let l = ((0.2126 * srgb[0]) + (0.7152 * srgb[1]) + (0.0722 * srgb[2]));
+    if (l > 0.179) {
+        return '#000000'
+    } else {
+        return '#ffffff'
+    }
+}
+
 function applySettings() {
     return new Promise(function(resolve, reject) {
         // populate settings nav
@@ -357,13 +383,8 @@ function applySettings() {
             // text color should apply to wallpaper styles too
             document.body.style.background = settings.backgroundColor;
             // dynamically set text color based on background
-            //todo: replace with w3c algorithm
-            if (settings.backgroundColor.replace('#', '0x') > (0xffffff / 2)) {
-                document.documentElement.style.setProperty('--color', '#000000');
-                //document.styleSheets[1].cssRules[10].style.setProperty('color', '#000000');
-            } else {
-                document.documentElement.style.setProperty('--color', '#ffffff');
-            }
+            let textColor = contrast(hexToRgb(settings.backgroundColor));
+            document.documentElement.style.setProperty('--color', textColor);
         }
 
         if (settings.verticalAlign) {
