@@ -171,10 +171,12 @@ function hideMenus() {
 
 function openSettings() {
     sidenav.style.transform = "translateX(0%)";
+    //sidenav.style.boxShadow ="0px 2px 8px 0px rgba(0,0,0,0.5)";
 }
 
 function hideSettings() {
     sidenav.style.transform = "translateX(100%)";
+    //sidenav.style.boxShadow = "none";
 }
 
 function hideModal() {

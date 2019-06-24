@@ -242,7 +242,7 @@ input:focus {
     top: 0; /* Stay at the top */
     right: 0;
     background: rgba(0,0,0,1);
-    box-shadow: 0px 2px 8px 0px rgba(0,0,0,0.5);
+    box-shadow: none;
     overflow-x: hidden; /* Disable horizontal scroll */
     transition: 360ms; /* 0.5 second transition effect to slide in the sidenav */
     color: white;
