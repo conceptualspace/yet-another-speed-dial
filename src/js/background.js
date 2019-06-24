@@ -24,7 +24,7 @@ function onClickHandler(info, tab) {
             title: tab.title,
             url: tab.url
         }).then(response => {
-            browser.runtime.sendMessage({"reload":true});
+            browser.runtime.sendMessage({"bookmarkUpdated":true});
         });
     }
 }
@@ -176,7 +176,7 @@ function updateBookmark(id, bookmarkInfo) {
         browser.bookmarks.get(id).then(bookmark => {
             getThumbnails(bookmark[0].url)
                 .then(result => {
-                    browser.runtime.sendMessage({"reload":true});
+                    browser.runtime.sendMessage({"bookmarkUpdated":true});
                 })
         })
     }
@@ -185,7 +185,7 @@ function updateBookmark(id, bookmarkInfo) {
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
         browser.storage.local.remove(bookmarkInfo.node.url).then(response => {
-            browser.runtime.sendMessage({"reload":true});
+            browser.runtime.sendMessage({"bookmarkRemoved":true});
         });
     }
 }

@@ -1,3 +1,9 @@
+// yet another speed dial
+// copyright 2019 dev@conceptualspace.net
+// absolutely no warranty is expressed or implied
+
+'use strict';
+
 const reader = new FileReader();
 const color_picker = document.getElementById("color-picker");
 const color_picker_wrapper = document.getElementById("color-picker-wrapper");
@@ -11,13 +17,12 @@ const saveBtn = document.getElementById("saveBtn");
 const settingsDiv = document.getElementById("settingsDiv");
 const toast = document.getElementById("toast");
 
-let settings = null;
 
 function initSettings () {
     browser.storage.local.get('settings').then(store => {
         settings = store.settings;
         if (!settings) {
-            settingsDiv.innerHTML = "Error loading settings. Please try again"
+            settingsDiv.innerHTML = "Error loading settings. Please try again";
             return;
         }
 

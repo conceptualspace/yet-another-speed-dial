@@ -6,13 +6,17 @@
 	<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
     <link rel="stylesheet" href="css/flexCarousel.min.css" type="text/css">
 	<link rel="stylesheet" href="css/index.css" type="text/css">
+    <link rel="stylesheet" href="css/settings.css" type="text/css">
 </head>
 
 <body>
-
+<!-- new install -->
     <div id="noBookmarks">Add bookmarks to your Other Bookmarks > Speed Dial folder to see them here.</div>
+
+<!-- speed dial content injected here -->
     <div class="container" id="wrap"></div>
 
+<!-- context menus -->
     <div class="menu" id="contextMenu">
         <ul class="menu-options">
             <li id="newTab" class="menu-option">Open in new tab</li>
@@ -24,31 +28,95 @@
         </ul>
     </div>
 
+    <div class="menu" id="settingsMenu">
+        <ul class="menu-options">
+            <li id="openSettings" class="menu-option">Settings...</li>
+        </ul>
+    </div>
+
+<!-- tile modal window -->
     <div id="tileModal" class="modal">
-
-        <!-- Modal content -->
         <div class="modal-content">
-
             <form class="tileForm" action="">
                 <div class="formItem"><label for="modalTitle">Title</label></div>
                 <div class="formItem"><input id="modalTitle" type="text"></div>
-
                 <div class="formItem"><label for="modalURL" class="last-name">Address</label></div>
                 <div class="formItem"><input id="modalURL" type="text" disabled></div>
-
-
-                    <div class="formItem"><label for="modalImgInput" class="last-name">Image</label><br></div>
+                <div class="formItem"><label class="last-name">Image</label><br></div>
                 <!--
                <input id="modalImgInput" type="file">
                -->
-
                 <div id="modalImgContainer" class="formItem"></div>
-
-                        <div class="formItem"><button id="modalSave" class="save">Save</button></div>
-                            <div class="formItem"><button class="close">Cancel</button></div>
+                <div class="formItem"><button id="modalSave" class="save">Save</button></div>
+                <div class="formItem"><button class="close">Cancel</button></div>
             </form>
         </div>
+    </div>
 
+<!-- settings nav -->
+    <div id="sidenav" class="sidenav">
+        <div class="settings" id="settingsDiv">
+            <h1>Speed Dial Settings</h1>
+            <hr>
+            <div class='row'>
+                <div class='column'>
+                    <label>Wallpaper</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input type="checkbox" id="wallpaper" class="settingsCtl" checked>
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row' id="previewContainer">
+                <div class='column'>
+                </div>
+                <div class='column controls'>
+                    <img id="preview" src="#">
+                    <input type="file" id="file" class="settingsCtl">
+                    <label for="file" class="settingsCtl">Browse...</label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label>Background Color</label>
+                </div>
+                <div class='column controls'>
+                    <div id="color-picker-wrapper">
+                        <input type="color" id="color-picker" class="settingsCtl">
+                    </div>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label>Large Tiles</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input type="checkbox" id="largeTiles" class="settingsCtl" checked>
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label>Show Labels</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input type="checkbox" id="showTitles" class="settingsCtl" checked>
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <hr>
+            <div>
+                <button id="saveBtn" class="settingsCtl">Save</button>
+            </div>
+            <hr>
+            <div id="toast">Settings saved!</div>
+        </div>
     </div>
 
     <script src="js/Sortable.min.js"></script>
