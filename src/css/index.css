@@ -38,6 +38,8 @@ body {
     align-items: center;
     padding: 100px;
     color: #ffffff;
+    position: fixed;
+    width: 100%;
 }
 
 .hide {

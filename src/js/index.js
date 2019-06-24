@@ -30,7 +30,6 @@ const largeTilesInput = document.getElementById("largeTiles");
 const showTitlesInput = document.getElementById("showTitles");
 const verticalAlignInput = document.getElementById("verticalAlign");
 const saveBtn = document.getElementById("saveBtn");
-const settingsDiv = document.getElementById("settingsDiv");
 const toast = document.getElementById("toast");
 
 let settings = null;
@@ -129,9 +128,7 @@ async function printBookmarks(bookmarks) {
 
         let content = document.createElement('div');
         content.classList.add('tile-content');
-        //console.log(icon);
         content.style.backgroundImage = "url("+thumbUrl+")";
-        //content.style.backgroundImage = "url('img/screenshot.png')";
 
         let title = document.createElement('div');
         title.classList.add('tile-title');
@@ -358,6 +355,7 @@ function applySettings() {
         } else {
             document.body.style.background = settings.backgroundColor;
             // dynamically set text color based on background
+            //todo: replace with w3c algorithm
             if (settings.backgroundColor.replace('#', '0x') > (0xffffff / 2)) {
                 document.documentElement.style.setProperty('--color', '#000000');
                 //document.styleSheets[1].cssRules[10].style.setProperty('color', '#000000');
@@ -447,6 +445,8 @@ function init() {
 function handleMessage(message) {
     if (message.bookmarkUpdated || message.bookmarkRemoved) {
         bookmarksContainer.innerHTML = "";
+        //todo nobookmarks is clunky
+        noBookmarks.style.display = 'none';
         init();
     }
 }
