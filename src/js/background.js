@@ -175,9 +175,7 @@ function updateBookmark(id, bookmarkInfo) {
 
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId) {
-        browser.storage.local.remove(bookmarkInfo.node.url).then(response => {
-            browser.runtime.sendMessage({"bookmarkRemoved":true});
-        });
+        browser.storage.local.remove(bookmarkInfo.node.url)
     }
 }
 
