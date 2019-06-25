@@ -28,7 +28,7 @@ body {
     justify-content: center;
     padding: var(--top-padding) 25px 10px 25px;
     height: 100%;
-    transition: opacity 220ms linear;
+    transition: opacity 200ms linear;
     opacity: 0;
 }
 
