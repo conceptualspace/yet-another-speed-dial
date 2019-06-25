@@ -37,14 +37,6 @@ const tabMessagePort = browser.runtime.connect({name:"tabMessagePort"});
 let cache = null;
 
 let settings = null;
-let defaults = {
-    wallpaper: true,
-    wallpaperSrc: 'img/bg.jpg',
-    backgroundColor: '#111111',
-    largeTiles: true,
-    showTitles: true,
-    verticalAlign: false
-};
 
 let speedDialId = null;
 let sortable = null;
@@ -471,21 +463,6 @@ function applySettings() {
     });
 }
 
-// load or set defaults
-function initSettings () {
-    return new Promise(function(resolve, reject) {
-        browser.storage.local.get('settings').then(store => {
-            if (store.settings) {
-                settings = Object.assign({}, defaults, store.settings);
-                resolve();
-            } else {
-                settings = defaults;
-                browser.storage.local.set({settings}).then(settings => resolve())
-            }
-        });
-    });
-}
-
 function saveSettings() {
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
@@ -501,6 +478,7 @@ function saveSettings() {
                 toast.style.opacity = "0";
             }, 3500);
             applySettings();
+            tabMessagePort.postMessage({updateSettings: true});
         });
 }
 
@@ -620,13 +598,12 @@ wallPaperEnabled.onchange = function() {
 
 function init() {
 
-    initSettings().then(() => applySettings());
-
     tabMessagePort.onMessage.addListener(function(m) {
         if (m.ready) {
             cache = m.cache;
+            settings = m.settings;
             speedDialId = m.speedDialId;
-            getBookmarks(speedDialId)
+            applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
             cache = m.cache;
             bookmarksContainer.innerHTML = "";

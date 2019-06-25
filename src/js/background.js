@@ -6,6 +6,15 @@
 
 let messagePort = null;
 let speedDialId = null;
+let settings = null;
+let defaults = {
+    wallpaper: true,
+    wallpaperSrc: 'img/bg.jpg',
+    backgroundColor: '#111111',
+    largeTiles: true,
+    showTitles: true,
+    verticalAlign: false
+};
 let cache = {};
 let ready = false;
 let firstRun = true;
@@ -22,7 +31,7 @@ function getSpeedDialId() {
         ready = true;
         if (messagePort && firstRun) {
             firstRun = false;
-            messagePort.postMessage({ready, cache, speedDialId});
+            messagePort.postMessage({ready, cache, settings, speedDialId});
         }
     });
 }
@@ -193,8 +202,6 @@ function getScreenshot(url) {
     });
 }
 
-
-
 function updateBookmark(id, bookmarkInfo) {
     console.log("bookmark updated");
     if (bookmarkInfo.parentId === speedDialId) {
@@ -225,23 +232,31 @@ function pushToCache(url, i=0) {
     });
 }
 
+function updateSettings() {
+    browser.storage.local.get('settings').then(result => {
+        settings = Object.assign({}, defaults, result.settings);
+    });
+}
+
 function connected(p) {
     messagePort = p;
     messagePort.onMessage.addListener(function(m) {
         if (m.getCache) {
             if (ready && speedDialId) {
-                messagePort.postMessage({ready, cache, speedDialId});
+                messagePort.postMessage({ready, cache, settings, speedDialId});
             } else {
                 messagePort.postMessage({ready:false});
             }
         }
-        if (m.updateCache) {
+        else if (m.updateCache) {
             pushToCache(m.url, m.i);
+        }
+        else if (m.updateSettings) {
+            updateSettings();
         }
 
     });
 }
-
 
 function init() {
     browser.runtime.onConnect.addListener(connected);
@@ -253,6 +268,11 @@ function init() {
     // build a thumbnail cache of url:thumbUrl pairs
     browser.storage.local.get().then(result => {
         if (result) {
+            if (result.settings) {
+                settings = Object.assign({}, defaults, result.settings);
+            } else {
+                settings = defaults;
+            }
             const entries = Object.entries(result);
             for (let e of entries) {
                 if (e[0] !== "settings" && e[0] !== "sort") {
@@ -263,7 +283,6 @@ function init() {
         }
         getSpeedDialId();
     });
-
 
     // context menu -> "add to speed dial"
     browser.contextMenus.create({
