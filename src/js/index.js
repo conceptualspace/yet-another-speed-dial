@@ -122,8 +122,8 @@ function printBookmarks(bookmarks) {
     }
 
     bookmarksContainer.appendChild(fragment);
-    animate();
     sort();
+    animate();
 
     bookmarksContainer.style.opacity = "1";
 }
