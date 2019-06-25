@@ -23,7 +23,9 @@ function onClickHandler(info, tab) {
                             break;
                         }
                     }
-                    browser.runtime.sendMessage({"bookmarkUpdated": true});
+                    if (speedDialOpen) {
+                        browser.runtime.sendMessage({"bookmarkUpdated": true});
+                    }
                 });
             });
         });
