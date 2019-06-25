@@ -35,37 +35,13 @@ const toast = document.getElementById("toast");
 const tabMessagePort = browser.runtime.connect({name:"tabMessagePort"});
 
 let cache = null;
-
 let settings = null;
-
 let speedDialId = null;
 let sortable = null;
-
 let targetTileHref = null;
 let targetTileTitle = null;
 let targetNode = null;
 
-// get speed dial folder or create one
-function getSpeedDial() {
-    return new Promise(function(resolve, reject) {
-        browser.runtime.sendMessage({
-            getSpeedDialId: true
-        }).then(result => {
-            if (result.speedDialId) {
-                speedDialId = result.speedDialId;
-                resolve(speedDialId);
-            }
-        });
-    });
-}
-
-function createSpeedDial() {
-    return browser.bookmarks.create({
-        title: 'Speed Dial',
-        type: 'folder'
-    })
-        .then(result => result.id)
-}
 
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
@@ -108,20 +84,6 @@ function sort() {
         });
 }
 
-function getCache() {
-    return new Promise(function(resolve, reject) {
-        browser.runtime.sendMessage({
-            getStorageCache: true
-        }).then(result => {
-            if (result) {
-                cache = result.storageCache;
-                speedDialId = result.speedDialId;
-                resolve();
-            }
-        });
-    });
-}
-
 function printBookmarks(bookmarks) {
     let fragment = document.createDocumentFragment();
     for (let bookmark of bookmarks) {
@@ -157,7 +119,6 @@ function printBookmarks(bookmarks) {
         main.appendChild(title);
         a.appendChild(main);
         fragment.appendChild(a);
-
     }
 
     bookmarksContainer.appendChild(fragment);
@@ -481,8 +442,6 @@ function saveSettings() {
             tabMessagePort.postMessage({updateSettings: true});
         });
 }
-
-
 
 function handleMessage(message) {
     if (message.bookmarkUpdated || message.bookmarkRemoved) {
