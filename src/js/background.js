@@ -26,6 +26,7 @@ function getSpeedDialId() {
         } else {
             browser.bookmarks.create({title: 'Speed Dial', type: 'folder'}).then(result => {
                 speedDialId = result.id;
+                browser.storage.local.set({'speedDialId':speedDialId})
             });
         }
         ready = true;
@@ -260,14 +261,13 @@ function connected(p) {
 
 function init() {
     browser.runtime.onConnect.addListener(connected);
-    // ff triggers 'moved' for bookmarks saved to different folder than default
-    browser.bookmarks.onMoved.addListener(updateBookmark);
-    browser.bookmarks.onRemoved.addListener(removeBookmark);
-    browser.contextMenus.onClicked.addListener(onClickHandler);
 
     // build a thumbnail cache of url:thumbUrl pairs
     browser.storage.local.get().then(result => {
         if (result) {
+            if (result.speedDialId) {
+                speedDialId = result.speedDialId
+            }
             if (result.settings) {
                 settings = Object.assign({}, defaults, result.settings);
             } else {
@@ -275,14 +275,24 @@ function init() {
             }
             const entries = Object.entries(result);
             for (let e of entries) {
-                if (e[0] !== "settings" && e[0] !== "sort") {
+                if (e[0] !== "settings" && e[0] !== "sort" && e[0] !== "speedDialId") {
                     let index = e[1].thumbIndex;
                     cache[e[0]] = e[1].thumbnails[index];
                 }
             }
+            ready = true;
+            if (messagePort && firstRun) {
+                firstRun = false;
+                messagePort.postMessage({ready, cache, settings, speedDialId});
+            }
         }
-        getSpeedDialId();
     });
+
+    browser.runtime.onInstalled.addListener(getSpeedDialId);
+    // ff triggers 'moved' for bookmarks saved to different folder than default
+    browser.bookmarks.onMoved.addListener(updateBookmark);
+    browser.bookmarks.onRemoved.addListener(removeBookmark);
+    browser.contextMenus.onClicked.addListener(onClickHandler);
 
     // context menu -> "add to speed dial"
     browser.contextMenus.create({
