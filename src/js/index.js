@@ -32,6 +32,10 @@ const verticalAlignInput = document.getElementById("verticalAlign");
 const saveBtn = document.getElementById("saveBtn");
 const toast = document.getElementById("toast");
 
+const tabMessagePort = browser.runtime.connect({name:"tabMessagePort"});
+
+let cache = null;
+
 let settings = null;
 let defaults = {
     wallpaper: true,
@@ -51,15 +55,16 @@ let targetNode = null;
 
 // get speed dial folder or create one
 function getSpeedDial() {
-    return browser.bookmarks.search({title: 'Speed Dial'})
-        .then(result => result.length && result[0])
-        .then(result => {
-            if (result) {
-                if (!result) { return; }
-                speedDialId = result.id;
-                return result.id
+    return new Promise(function(resolve, reject) {
+        browser.runtime.sendMessage({
+            getSpeedDialId: true
+        }).then(result => {
+            if (result.speedDialId) {
+                speedDialId = result.speedDialId;
+                resolve(speedDialId);
             }
-        })
+        });
+    });
 }
 
 function createSpeedDial() {
@@ -71,7 +76,13 @@ function createSpeedDial() {
 }
 
 function getBookmarks(folderId) {
-    return browser.bookmarks.getChildren(folderId)
+    browser.bookmarks.getChildren(folderId).then(result => {
+        if (result.length) {
+            printBookmarks(result)
+        } else {
+            noBookmarks.style.display = 'flex';
+        }
+    });
 }
 
 function removeBookmark(url) {
@@ -105,17 +116,30 @@ function sort() {
         });
 }
 
-async function printBookmarks(bookmarks) {
-    for (let bookmark of bookmarks) {
+function getCache() {
+    return new Promise(function(resolve, reject) {
+        browser.runtime.sendMessage({
+            getStorageCache: true
+        }).then(result => {
+            if (result) {
+                cache = result.storageCache;
+                speedDialId = result.speedDialId;
+                resolve();
+            }
+        });
+    });
+}
 
-        let result = await getThumbs(bookmark.url);
+function printBookmarks(bookmarks) {
+    let fragment = document.createDocumentFragment();
+    for (let bookmark of bookmarks) {
         let thumbUrl = null;
 
-        if (result) {
+        if (cache[bookmark.url]) {
             // if the image is a blob:
             //iconURL = URL.createObjectURL(result.icon);
             //iconURL = result.icon;
-            thumbUrl = result.thumbnails[result.thumbIndex];
+            thumbUrl = cache[bookmark.url];
         } else {
             thumbUrl = "../img/default.png";
         }
@@ -140,11 +164,14 @@ async function printBookmarks(bookmarks) {
         main.appendChild(content);
         main.appendChild(title);
         a.appendChild(main);
-        bookmarksContainer.appendChild(a);
+        fragment.appendChild(a);
 
     }
+
+    bookmarksContainer.appendChild(fragment);
     animate();
     sort();
+
     bookmarksContainer.style.opacity = "1";
 }
 
@@ -260,7 +287,9 @@ function saveBookmarkSettings() {
                 let thumbnails = result[url].thumbnails;
                 thumbIndex = thumbnails.indexOf(selectedImageSrc);
                 if (thumbIndex >= 0) {
-                    browser.storage.local.set({[url]:{thumbnails, thumbIndex}});
+                    browser.storage.local.set({[url]:{thumbnails, thumbIndex}}).then(result => {
+                        tabMessagePort.postMessage({updateCache: true, url, i:thumbIndex});
+                    });
                 }
             }
             hideModal();
@@ -475,38 +504,7 @@ function saveSettings() {
         });
 }
 
-function init() {
-    getSpeedDial()
-        .then(speedDialId => {
-            if (speedDialId) {
-                getBookmarks(speedDialId)
-                    .then(bookmarks => {
-                        if (bookmarks.length) {
-                            printBookmarks(bookmarks)
-                        } else {
-                            noBookmarks.style.display = 'flex';
-                        }
-                    })
-            } else {
-                noBookmarks.style.display = 'flex';
-                createSpeedDial()
-                    .then(speedDialId => getBookmarks(speedDialId))
-                    .then(bookmarks => printBookmarks(bookmarks))
-            }
-        });
 
-    sortable = new Sortable(bookmarksContainer, {
-        animation: 160,
-        ghostClass: 'selected',
-        dragClass: 'dragging',
-        store: {
-            set: function(sortable) {
-                let order = sortable.toArray();
-                browser.storage.local.set({"sort":order});
-            }
-        }
-    });
-}
 
 function handleMessage(message) {
     if (message.bookmarkUpdated || message.bookmarkRemoved) {
@@ -620,4 +618,35 @@ wallPaperEnabled.onchange = function() {
     }
 };
 
-initSettings().then(() => applySettings()).then(() => init());
+function init() {
+
+    initSettings().then(() => applySettings());
+
+    tabMessagePort.onMessage.addListener(function(m) {
+        if (m.ready) {
+            cache = m.cache;
+            speedDialId = m.speedDialId;
+            getBookmarks(speedDialId)
+        } else if (m.refresh) {
+            cache = m.cache;
+            bookmarksContainer.innerHTML = "";
+            getBookmarks(speedDialId)
+        }
+    });
+
+    tabMessagePort.postMessage({getCache: true});
+
+    sortable = new Sortable(bookmarksContainer, {
+        animation: 160,
+        ghostClass: 'selected',
+        dragClass: 'dragging',
+        store: {
+            set: function(sortable) {
+                let order = sortable.toArray();
+                browser.storage.local.set({"sort":order});
+            }
+        }
+    });
+}
+
+init();

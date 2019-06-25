@@ -4,32 +4,61 @@
 
 'use strict';
 
+let messagePort = null;
 let speedDialId = null;
+let cache = {};
+let ready = false;
+let firstRun = true;
+
+function getSpeedDialId() {
+    browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
+        if (result.length && result[0]) {
+            speedDialId = result[0].id;
+        } else {
+            browser.bookmarks.create({title: 'Speed Dial', type: 'folder'}).then(result => {
+                speedDialId = result.id;
+            });
+        }
+        ready = true;
+        if (messagePort && firstRun) {
+            firstRun = false;
+            messagePort.postMessage({ready, cache, speedDialId});
+        }
+    });
+}
 
 function onClickHandler(info, tab) {
     if (info.menuItemId === 'addToSpeedDial') {
-        browser.bookmarks.create({
-            parentId: speedDialId,
-            title: tab.title,
-            url: tab.url
-        }).then(response => {
-            getThumbnails(tab.url).then(response => {
-                // update any open speed dial tabs
-                let speedDialOpen = false;
-                browser.tabs.query({currentWindow: true}).then(tabs => {
-                    for (let tab of tabs) {
-                        if (tab.title === "Speed Dial") {
-                            speedDialOpen = true;
-                            break;
-                        }
-                    }
-                    if (speedDialOpen) {
-                        browser.runtime.sendMessage({"bookmarkUpdated": true});
-                    }
+        // avoid duplicates
+        browser.bookmarks.search({url: tab.url}).then(result => {
+            if (!result.length) {
+                browser.bookmarks.create({
+                    parentId: speedDialId,
+                    title: tab.title,
+                    url: tab.url
+                }).then(response => {
+                    getThumbnails(tab.url).then(() => {
+                        pushToCache(tab.url).then(() => refreshOpen())
+                    });
                 });
-            });
+            }
         });
     }
+}
+
+function refreshOpen() {
+    let speedDialOpen = false;
+    browser.tabs.query({currentWindow: true}).then(tabs => {
+        for (let tab of tabs) {
+            if (tab.title === "Speed Dial") {
+                speedDialOpen = true;
+                break;
+            }
+        }
+        if (speedDialOpen) {
+            messagePort.postMessage({refresh:true, cache});
+        }
+    });
 }
 
 // convert relative url paths
@@ -164,20 +193,17 @@ function getScreenshot(url) {
     });
 }
 
-async function getSpeedDialId() {
-    let speedDial = await browser.bookmarks.search({title: 'Speed Dial'});
-    if (speedDial.length && speedDial[0]) {
-        speedDialId = speedDial[0].id
-    } else {
-        speedDial = await browser.bookmarks.create({title: 'Speed Dial', type: 'folder'});
-        speedDialId = speedDial.id;
-    }
-}
+
 
 function updateBookmark(id, bookmarkInfo) {
+    console.log("bookmark updated");
     if (bookmarkInfo.parentId === speedDialId) {
         browser.bookmarks.get(id).then(bookmark => {
-            getThumbnails(bookmark[0].url)
+            getThumbnails(bookmark[0].url).then(() => {
+                pushToCache(bookmark[0].url).then(() => {
+                    refreshOpen()
+                })
+            })
         })
     }
 }
@@ -188,11 +214,56 @@ function removeBookmark(id, bookmarkInfo) {
     }
 }
 
+function pushToCache(url, i=0) {
+    return new Promise(function(resolve, reject) {
+        browser.storage.local.get(url).then(result => {
+            if (result[url]) {
+                cache[url] = result[url].thumbnails[i];
+            }
+            resolve();
+        });
+    });
+}
+
+function connected(p) {
+    messagePort = p;
+    messagePort.onMessage.addListener(function(m) {
+        if (m.getCache) {
+            if (ready && speedDialId) {
+                messagePort.postMessage({ready, cache, speedDialId});
+            } else {
+                messagePort.postMessage({ready:false});
+            }
+        }
+        if (m.updateCache) {
+            pushToCache(m.url, m.i);
+        }
+
+    });
+}
+
+
 function init() {
+    browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
+
+    // build a thumbnail cache of url:thumbUrl pairs
+    browser.storage.local.get().then(result => {
+        if (result) {
+            const entries = Object.entries(result);
+            for (let e of entries) {
+                if (e[0] !== "settings" && e[0] !== "sort") {
+                    let index = e[1].thumbIndex;
+                    cache[e[0]] = e[1].thumbnails[index];
+                }
+            }
+        }
+        getSpeedDialId();
+    });
+
 
     // context menu -> "add to speed dial"
     browser.contextMenus.create({
@@ -201,8 +272,6 @@ function init() {
         "documentUrlPatterns":['<all_urls>'],
         "id": "addToSpeedDial"
     });
-
-    getSpeedDialId();
 }
 
 init();
