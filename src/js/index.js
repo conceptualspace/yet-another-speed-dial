@@ -130,8 +130,16 @@ function printBookmarks(bookmarks) {
 }
 
 function showContextMenu(top, left) {
-    menu.style.left = left + 'px';
-    menu.style.top = top + 'px';
+    if ((document.body.clientWidth - left) < (menu.clientWidth + 30)) {
+        menu.style.left = (left - menu.clientWidth) + 'px';
+    } else {
+        menu.style.left = left + 'px';
+    }
+    if ((document.body.clientHeight - top) < (menu.clientHeight + 30)) {
+        menu.style.top = (top - menu.clientHeight) + 'px';
+    } else {
+        menu.style.top = top + 'px';
+    }
     menu.style.visibility = "visible";
     menu.style.opacity = "1";
 }
