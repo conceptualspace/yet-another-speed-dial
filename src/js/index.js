@@ -124,9 +124,8 @@ function printBookmarks(bookmarks) {
 
     bookmarksContainer.appendChild(fragment);
     sort();
-    animate();
-
     bookmarksContainer.style.opacity = "1";
+    animate();
 }
 
 function showContextMenu(top, left) {
