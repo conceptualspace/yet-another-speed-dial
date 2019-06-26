@@ -136,8 +136,16 @@ function showContextMenu(top, left) {
 }
 
 function showSettingsMenu(top, left) {
-    settingsMenu.style.left = left + 'px';
-    settingsMenu.style.top = top + 'px';
+    if ((document.body.clientWidth - left) < (settingsMenu.clientWidth + 30)) {
+        settingsMenu.style.left = (left - settingsMenu.clientWidth) + 'px';
+    } else {
+        settingsMenu.style.left = left + 'px';
+    }
+    if ((document.body.clientHeight - top) < (settingsMenu.clientHeight + 30)) {
+        settingsMenu.style.top = (top - settingsMenu.clientHeight) + 'px';
+    } else {
+        settingsMenu.style.top = top + 'px';
+    }
     settingsMenu.style.visibility = "visible";
     settingsMenu.style.opacity = "1";
 }
