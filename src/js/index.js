@@ -353,6 +353,7 @@ function contrast(rgb) {
 
 function getAverageRGB(imgPath) {
     return new Promise(function(resolve, reject) {
+        // todo: performance: use the bg preview image from the settings nav rather than using a constructor
         let img = new Image();
         img.onload = function () {
             let blockSize = 5; // only visit every 5 pixels
