@@ -32,7 +32,8 @@ const verticalAlignInput = document.getElementById("verticalAlign");
 const saveBtn = document.getElementById("saveBtn");
 const toast = document.getElementById("toast");
 
-const tabMessagePort = browser.runtime.connect({name:"tabMessagePort"});
+const port = "p-" + new Date().getTime();
+const tabMessagePort = browser.runtime.connect({name:port});
 
 let cache = null;
 let settings = null;

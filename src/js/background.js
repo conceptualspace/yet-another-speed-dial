@@ -4,7 +4,7 @@
 
 'use strict';
 
-let messagePort = null;
+let messagePorts = [];
 let speedDialId = null;
 let settings = null;
 let defaults = {
@@ -13,14 +13,14 @@ let defaults = {
     backgroundColor: '#111111',
     largeTiles: true,
     showTitles: true,
-    verticalAlign: false
+    verticalAlign: true
 };
 let cache = {};
 let ready = false;
 let firstRun = true;
 
 function getSpeedDialId() {
-    browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
+    browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
         if (result.length && result[0]) {
             speedDialId = result[0].id;
         } else {
@@ -29,9 +29,9 @@ function getSpeedDialId() {
             });
         }
         ready = true;
-        if (messagePort && firstRun) {
+        if (messagePorts.length && firstRun) {
             firstRun = false;
-            messagePort.postMessage({ready, cache, settings, speedDialId});
+            messagePorts[0].postMessage({ready, cache, settings, speedDialId});
         }
     });
 }
@@ -56,18 +56,9 @@ function onClickHandler(info, tab) {
 }
 
 function refreshOpen() {
-    let speedDialOpen = false;
-    browser.tabs.query({currentWindow: true}).then(tabs => {
-        for (let tab of tabs) {
-            if (tab.title === "Speed Dial") {
-                speedDialOpen = true;
-                break;
-            }
-        }
-        if (speedDialOpen) {
-            messagePort.postMessage({refresh:true, cache});
-        }
-    });
+    for (let port of messagePorts) {
+        port.postMessage({refresh:true, cache});
+    }
 }
 
 // convert relative url paths
@@ -239,13 +230,13 @@ function updateSettings() {
 }
 
 function connected(p) {
-    messagePort = p;
-    messagePort.onMessage.addListener(function(m) {
+    messagePorts.push(p);
+    p.onMessage.addListener(function(m) {
         if (m.getCache) {
             if (ready && speedDialId) {
-                messagePort.postMessage({ready, cache, settings, speedDialId});
+                p.postMessage({ready, cache, settings, speedDialId});
             } else {
-                messagePort.postMessage({ready:false});
+                p.postMessage({ready:false});
             }
         }
         else if (m.updateCache) {
@@ -254,7 +245,10 @@ function connected(p) {
         else if (m.updateSettings) {
             updateSettings();
         }
-
+    });
+    p.onDisconnect.addListener(function(p) {
+        let i = messagePorts.indexOf(p);
+        messagePorts.splice(i, 1);
     });
 }
 
