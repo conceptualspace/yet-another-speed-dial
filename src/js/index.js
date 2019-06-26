@@ -391,27 +391,13 @@ function getAverageRGB(imgPath) {
 
 function applySettings() {
     return new Promise(function(resolve, reject) {
-        // populate settings nav
-        wallPaperEnabled.checked = settings.wallpaper;
-        color_picker.value = settings.backgroundColor;
-        color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
-        showTitlesInput.checked = settings.showTitles;
-        largeTilesInput.checked = settings.largeTiles;
-        verticalAlignInput.checked = settings.verticalAlign;
-
-        if (settings.wallpaperSrc) {
-            imgPreview.setAttribute('src', settings.wallpaperSrc);
-            imgPreview.style.display = 'block';
-        }
-        if (settings.wallpaper) {
-            previewContainer.style.display = 'flex';
-        }
-
         // apply settings to speed dial
-        if (!settings.showTitles) {
-            document.documentElement.style.setProperty('--title-opacity', '0');
+        if (settings.verticalAlign) {
+            document.documentElement.style.setProperty('--vertical-align', 'center');
+            document.documentElement.style.setProperty('--top-padding', '0');
         } else {
-            document.documentElement.style.setProperty('--title-opacity', '1');
+            document.documentElement.style.setProperty('--vertical-align', 'start');
+            document.documentElement.style.setProperty('--top-padding', '50px');
         }
 
         if (settings.wallpaper && settings.wallpaperSrc) {
@@ -429,15 +415,30 @@ function applySettings() {
             document.documentElement.style.setProperty('--color', textColor);
         }
 
-        if (settings.verticalAlign) {
-            document.documentElement.style.setProperty('--vertical-align', 'center');
-            document.documentElement.style.setProperty('--top-padding', '0');
+        if (!settings.showTitles) {
+            document.documentElement.style.setProperty('--title-opacity', '0');
         } else {
-            document.documentElement.style.setProperty('--vertical-align', 'start');
-            document.documentElement.style.setProperty('--top-padding', '50px');
+            document.documentElement.style.setProperty('--title-opacity', '1');
         }
 
         resolve();
+
+        // populate settings nav
+        wallPaperEnabled.checked = settings.wallpaper;
+        color_picker.value = settings.backgroundColor;
+        color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
+        showTitlesInput.checked = settings.showTitles;
+        largeTilesInput.checked = settings.largeTiles;
+        verticalAlignInput.checked = settings.verticalAlign;
+
+        if (settings.wallpaperSrc) {
+            imgPreview.setAttribute('src', settings.wallpaperSrc);
+            imgPreview.style.display = 'block';
+        }
+        if (settings.wallpaper) {
+            previewContainer.style.display = 'flex';
+        }
+
     });
 }
 
