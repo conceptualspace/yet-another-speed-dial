@@ -48,7 +48,7 @@ function getBookmarks(folderId) {
         if (result.length) {
             printBookmarks(result)
         } else {
-            noBookmarks.style.display = 'flex';
+            noBookmarks.style.display = 'block';
         }
     });
 }
@@ -451,17 +451,6 @@ function saveSettings() {
         });
 }
 
-function handleMessage(message) {
-    if (message.bookmarkUpdated || message.bookmarkRemoved) {
-        bookmarksContainer.innerHTML = "";
-        //todo nobookmarks is clunky
-        noBookmarks.style.display = 'none';
-        init();
-    }
-}
-
-browser.runtime.onMessage.addListener(handleMessage);
-
 // override context menu
 document.addEventListener( "contextmenu", function(e) {
     e.preventDefault();
@@ -573,6 +562,7 @@ function init() {
             applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
             cache = m.cache;
+            noBookmarks.style.display = 'none';
             bookmarksContainer.innerHTML = "";
             getBookmarks(speedDialId)
         }
