@@ -544,6 +544,13 @@ closeModal.onclick = function(e) {
     hideModal();
 };
 
+modalTitle.addEventListener('keydown', e => {
+    if (e.code === "Enter") {
+        e.preventDefault();
+        saveBookmarkSettings();
+    }
+});
+
 color_picker.onchange = function() {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
 };
