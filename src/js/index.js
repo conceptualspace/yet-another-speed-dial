@@ -478,7 +478,7 @@ document.addEventListener( "contextmenu", function(e) {
 });
 
 // listen for menu item
-window.addEventListener("click", e => {
+window.addEventListener("mousedown", e => {
     hideMenus();
     switch (e.target.className) {
         case 'tile-content':
