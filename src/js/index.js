@@ -477,9 +477,20 @@ document.addEventListener( "contextmenu", function(e) {
     }
 });
 
+// todo: tidy this up
+window.addEventListener("click", e => {
+    if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
+        return;
+    }
+    e.preventDefault();
+});
+
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
+    if (e.target.type === 'text') {
+        return
+    }
     switch (e.target.className) {
         case 'tile-content':
         case 'tile-title':
@@ -515,12 +526,8 @@ window.addEventListener("mousedown", e => {
             }
             break;
         default:
-            if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
-                return;
-            }
             e.preventDefault();
     }
-
 });
 
 window.addEventListener("keydown", event => {
