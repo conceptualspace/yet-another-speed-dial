@@ -481,6 +481,8 @@ document.addEventListener( "contextmenu", function(e) {
 window.addEventListener("click", e => {
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
+    } if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
+        return;
     }
     e.preventDefault();
 });
