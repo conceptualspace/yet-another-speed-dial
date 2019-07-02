@@ -393,11 +393,9 @@ function applySettings() {
     return new Promise(function(resolve, reject) {
         // apply settings to speed dial
         if (settings.verticalAlign) {
-            document.documentElement.style.setProperty('--vertical-align', 'center');
-            document.documentElement.style.setProperty('--top-padding', '0');
+            document.documentElement.style.setProperty('--vertical-align', 'safe center');
         } else {
             document.documentElement.style.setProperty('--vertical-align', 'start');
-            document.documentElement.style.setProperty('--top-padding', '50px');
         }
 
         if (settings.wallpaper && settings.wallpaperSrc) {
