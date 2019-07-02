@@ -86,6 +86,7 @@ function getOgImage(url) {
     return new Promise(function(resolve, reject) {
         // tracking protection hack. use local resource instead
         let whitelist = [
+            "mail.google.com",
             "www.facebook.com",
             "www.reddit.com",
             "twitter.com"
