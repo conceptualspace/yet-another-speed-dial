@@ -183,7 +183,7 @@ function getScreenshot(url) {
             .then(tabs => browser.tabs.get(tabs[0].id))
             .then(tab => {
                 if (tab.url === url) {
-                    browser.tabs.captureVisibleTab({format:'jpeg',quality:30})
+                    browser.tabs.captureVisibleTab({format:'jpeg', quality:40})
                         .then(imageUri => {
                             resolve(imageUri);
                         });
@@ -195,21 +195,22 @@ function getScreenshot(url) {
 }
 
 // todo: thumbs can be resized smaller for additional performance; need to balance quality
-function resizeThumb(dataURI, targetWidth){
-    return new Promise(async function(resolve, reject) {
+// scale image to half size and compress
+function resizeThumb(dataURI){
+    return new Promise(function(resolve, reject) {
         let img = new Image();
         img.onload = function() {
-            const ratio = this.width / targetWidth;
-            const width = Math.floor(this.width / ratio);
-            const height = Math.floor(this.height / ratio);
+            const width = Math.round(this.width / 2);
+            const height = Math.round(this.height / 2);
             let canvas = document.createElement('canvas');
             let ctx = canvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
 
             canvas.width = width;
             canvas.height = height;
             ctx.drawImage(this, 0, 0, width, height);
 
-            const dataURI = canvas.toDataURL('image/jpeg', 0.9);
+            const dataURI = canvas.toDataURL('image/jpeg', 0.86);
             resolve(dataURI);
         };
         img.src = dataURI;
