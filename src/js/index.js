@@ -88,38 +88,40 @@ function sort() {
 function printBookmarks(bookmarks) {
     let fragment = document.createDocumentFragment();
     for (let bookmark of bookmarks) {
-        let thumbUrl = null;
+        // todo: support folders
+        if (bookmark.url) {
+            let thumbUrl = null;
+            if (cache[bookmark.url]) {
+                // if the image is a blob:
+                //iconURL = URL.createObjectURL(result.icon);
+                //iconURL = result.icon;
+                thumbUrl = cache[bookmark.url];
+            } else {
+                thumbUrl = "../img/default.png";
+            }
+            let a = document.createElement('a');
+            a.classList.add('tile');
+            a.href = bookmark.url;
 
-        if (cache[bookmark.url]) {
-            // if the image is a blob:
-            //iconURL = URL.createObjectURL(result.icon);
-            //iconURL = result.icon;
-            thumbUrl = cache[bookmark.url];
-        } else {
-            thumbUrl = "../img/default.png";
+            let main = document.createElement('div');
+            main.classList.add('tile-main');
+
+            let content = document.createElement('div');
+            content.classList.add('tile-content');
+            content.style.backgroundImage = "url(" + thumbUrl + ")";
+
+            let title = document.createElement('div');
+            title.classList.add('tile-title');
+            if (!settings.showTitles) {
+                title.classList.add('hide');
+            }
+            title.textContent = bookmark.title;
+
+            main.appendChild(content);
+            main.appendChild(title);
+            a.appendChild(main);
+            fragment.appendChild(a);
         }
-        let a = document.createElement('a');
-        a.classList.add('tile');
-        a.href = bookmark.url;
-
-        let main = document.createElement('div');
-        main.classList.add('tile-main');
-
-        let content = document.createElement('div');
-        content.classList.add('tile-content');
-        content.style.backgroundImage = "url("+thumbUrl+")";
-
-        let title = document.createElement('div');
-        title.classList.add('tile-title');
-        if (!settings.showTitles) {
-            title.classList.add('hide');
-        }
-        title.textContent = bookmark.title;
-
-        main.appendChild(content);
-        main.appendChild(title);
-        a.appendChild(main);
-        fragment.appendChild(a);
     }
 
     bookmarksContainer.appendChild(fragment);
