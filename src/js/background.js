@@ -138,6 +138,9 @@ function getOgImage(url) {
             fetch(new Request(favicon)).then(response => {
                 if (response.status === 200) {
                     let icon = new Image();
+                    icon.onerror = function() {
+                        resolve(images);
+                    };
                     icon.onload = function() {
                         if (this.height >= 96) {
                             images.push(favicon);
