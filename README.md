@@ -9,3 +9,6 @@ A clean and modern speed dial for Firefox and Chrome, inspired by Opera
 - Fast and stable
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
+
+
+<a href='https://addons.mozilla.org/en-US/firefox/addon/yet-another-speed-dial/'><img alt='Get it for Firefox' src='https://github.com/conceptualspace/nightlight/raw/master/assets/ff-badge.png'/></a>
