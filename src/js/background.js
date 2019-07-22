@@ -312,6 +312,12 @@ function init() {
         "documentUrlPatterns":['<all_urls>'],
         "id": "addToSpeedDial"
     });
+
+    browser.runtime.onInstalled.addListener(function(details) {
+        if (details.reason === "install") {
+            browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
+        }
+    });
 }
 
 init();
