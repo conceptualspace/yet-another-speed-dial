@@ -284,7 +284,6 @@ function connected(p) {
 }
 
 function init() {
-    browser.runtime.onInstalled.addListener(setUninstallLink);
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
@@ -318,5 +317,7 @@ function init() {
         "id": "addToSpeedDial"
     });
 }
+
+browser.runtime.onInstalled.addListener(setUninstallLink);
 
 init();
