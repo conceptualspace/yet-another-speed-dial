@@ -256,10 +256,6 @@ function updateSettings() {
     });
 }
 
-function setUninstallLink() {
-    browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
-}
-
 function connected(p) {
     messagePorts.push(p);
     p.onMessage.addListener(function(m) {
@@ -316,8 +312,9 @@ function init() {
         "documentUrlPatterns":['<all_urls>'],
         "id": "addToSpeedDial"
     });
-}
 
-browser.runtime.onInstalled.addListener(setUninstallLink);
+    // todo: runtime.oninstalled
+    browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
+}
 
 init();
