@@ -170,6 +170,11 @@ a {
 .modalImg-item {
     height: 180px;
 }
+
+#modalImgContainer {
+    padding-bottom: 2em;
+}
+
 /* The Close Button */
 .closeBtn {
     color: #aaaaaa;
