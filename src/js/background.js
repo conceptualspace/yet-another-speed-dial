@@ -256,6 +256,10 @@ function updateSettings() {
     });
 }
 
+function setUninstallLink() {
+    browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
+}
+
 function connected(p) {
     messagePorts.push(p);
     p.onMessage.addListener(function(m) {
@@ -280,6 +284,7 @@ function connected(p) {
 }
 
 function init() {
+    browser.runtime.onInstalled.addListener(setUninstallLink);
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
@@ -311,12 +316,6 @@ function init() {
         "contexts":['page'],
         "documentUrlPatterns":['<all_urls>'],
         "id": "addToSpeedDial"
-    });
-
-    browser.runtime.onInstalled.addListener(function(details) {
-        if (details.reason === "install") {
-            browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
-        }
     });
 }
 
