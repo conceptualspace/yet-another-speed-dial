@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "yet another speed dial",
   "description": "a modern speed dial for firefox and chrome",
-  "version": "1.3.13",
+  "version": "1.3.14",
   "author": "dev@conceptualspace.net",
   "icons": {
     "16": "icons/icon16.png",
