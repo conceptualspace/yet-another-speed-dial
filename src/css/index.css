@@ -137,7 +137,9 @@ a {
 }
 
 .modal {
-    display: none;
+    transform: translateX(100%);
+    opacity: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
     position: fixed;
@@ -148,10 +150,13 @@ a {
     height: 100%;
     overflow: hidden;
     background-color: rgba(0,0,0,0.6);
+    transition: opacity 150ms;
 }
 
 /* Modal Content */
 .modal-content {
+    transform: scale(0.8);
+    opacity: 0;
     background-color: #111111;
     color: #ffffff;
     border: 1px solid #000000;
@@ -159,6 +164,7 @@ a {
     padding: 5px;
     width: 420px;
     box-shadow: 0 18px 18px rgba(0, 0, 0, 0.2);
+    transition: 160ms;
 }
 
 .modalImg-item {

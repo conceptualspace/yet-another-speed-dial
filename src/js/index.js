@@ -9,6 +9,7 @@ const bookmarksContainer = document.getElementById('wrap');
 const menu = document.getElementById('contextMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
+const modalContent = document.getElementById('tileModalContent');
 const closeModal = document.getElementsByClassName("close")[0];
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
@@ -178,7 +179,15 @@ function hideSettings() {
 }
 
 function hideModal() {
-    modal.style.display = "none";
+
+    modalContent.style.transform = "scale(0.8)";
+    modalContent.style.opacity = "0";
+    modal.style.opacity = "0";
+    setTimeout(function() {
+        modal.style.transform = "translateX(100%)";
+    }, 160);
+
+    //modalContent.style.transform = "scale(0.8)";
 }
 
 async function buildModal(url, title) {
@@ -520,7 +529,10 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'edit':
                     buildModal(targetTileHref, targetTileTitle);
-                    modal.style.display = "flex";
+                    modal.style.transform = "translateX(0%)";
+                    modal.style.opacity = "1";
+                    modalContent.style.transform = "scale(1)";
+                    modalContent.style.opacity = "1";
                     break;
                 case 'delete':
                     removeBookmark(targetTileHref);
