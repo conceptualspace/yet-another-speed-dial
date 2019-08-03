@@ -74,6 +74,7 @@ body {
     height: 122px;
     border-color: transparent;
     border-radius: inherit;
+    background-image: url("../img/default.png");
     background-origin: content-box;
     background-position: 50%;
     background-repeat: no-repeat;
@@ -163,7 +164,7 @@ a {
     border-radius: 6px;
     padding: 5px;
     width: 420px;
-    box-shadow: 0 18px 18px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 48px 48px rgba(0, 0, 0, 0.18);
     transition: 160ms;
 }
 
