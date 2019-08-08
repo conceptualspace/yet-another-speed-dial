@@ -202,7 +202,7 @@ function getScreenshot(url) {
 function getLogo(url) {
     return new Promise(function(resolve, reject) {
         // todo: setting to enable/disable this?
-        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname;
+        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=192';
         fetch(new Request(logoUrl)).then(response => {
             if (response.status === 200) {
                 resolve(logoUrl);
