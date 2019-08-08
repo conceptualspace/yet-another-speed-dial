@@ -78,6 +78,8 @@ function getThumbnails(url) {
             .then(result => saveThumbnails(url, result))
             .then(() => getScreenshot(url))
             .then(result => saveThumbnails(url, result))
+            .then(() => getLogo(url))
+            .then(result => saveThumbnails(url, result))
             .then(() => resolve());
     });
 }
@@ -107,7 +109,7 @@ function getOgImage(url) {
             // get open graph images
             let metas = xhr.responseXML.getElementsByTagName("meta");
             for (let meta of metas) {
-                if (meta.getAttribute("property") === "og:image") {
+                if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
                     let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
                     images.push(imageUrl)
                 }
@@ -194,6 +196,20 @@ function getScreenshot(url) {
                     resolve([]);
                 }
             });
+    });
+}
+
+function getLogo(url) {
+    return new Promise(function(resolve, reject) {
+        // todo: setting to enable/disable this?
+        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname;
+        fetch(new Request(logoUrl)).then(response => {
+            if (response.status === 200) {
+                resolve(logoUrl);
+            } else {
+                resolve([]);
+            }
+        });
     });
 }
 
