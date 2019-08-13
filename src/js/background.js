@@ -24,7 +24,7 @@ function getSpeedDialId() {
         if (result.length && result[0]) {
             speedDialId = result[0].id;
         } else {
-            browser.bookmarks.create({title: 'Speed Dial', type: 'folder'}).then(result => {
+            browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
                 speedDialId = result.id;
             });
         }
