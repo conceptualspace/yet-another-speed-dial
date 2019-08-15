@@ -12,3 +12,5 @@ A clean and modern speed dial for Firefox and Chrome, inspired by Opera
 
 
 <a href='https://addons.mozilla.org/en-US/firefox/addon/yet-another-speed-dial/'><img alt='Get it for Firefox' src='https://github.com/conceptualspace/nightlight/raw/master/assets/ff-badge.png'/></a>
+
+<a href='https://chrome.google.com/webstore/detail/yet-another-speed-dial/imohnlganmafcmidafklgkgfgaagiohn'><img alt='Get it for Chrome' src='https://github.com/conceptualspace/nightlight/raw/master/assets/chrome-badge.png'/></a>
