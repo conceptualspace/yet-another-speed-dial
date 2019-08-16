@@ -410,14 +410,20 @@ function applySettings() {
         }
 
         if (settings.wallpaper && settings.wallpaperSrc) {
-            document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
-            document.body.style.backgroundSize = 'cover';
-            // dynamically set text color based on background
-            // todo: confirm this is performant
-            getAverageRGB(settings.wallpaperSrc).then(rgb => {
-                let textColor = contrast(rgb);
-                document.documentElement.style.setProperty('--color', textColor);
-            });
+            // perf hack for default gradient bg image. user selected images are data URIs
+            if (settings.wallpaperSrc.length < 65) {
+                document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
+                document.documentElement.style.setProperty('--color', '#ffffff');
+            } else {
+                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+                document.body.style.backgroundSize = 'cover';
+                // dynamically set text color based on background
+                // todo: confirm this is performant
+                getAverageRGB(settings.wallpaperSrc).then(rgb => {
+                    let textColor = contrast(rgb);
+                    document.documentElement.style.setProperty('--color', textColor);
+                });
+            }
         } else {
             document.body.style.background = settings.backgroundColor;
             let textColor = contrast(hexToRgb(settings.backgroundColor));
