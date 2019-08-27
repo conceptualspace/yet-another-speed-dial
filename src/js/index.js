@@ -544,6 +544,10 @@ function saveSettings() {
 // override context menu
 document.addEventListener( "contextmenu", function(e) {
     e.preventDefault();
+    // prevent settings from being opened and immediately hidden when right-clicking the gear icon
+    if (e.target.id === 'settingsDiv') {
+        return;
+    }
     hideSettings();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
@@ -551,7 +555,7 @@ document.addEventListener( "contextmenu", function(e) {
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'container') {
+    } else if (e.target.className === 'container' || e.target.className === 'default-content') {
         showSettingsMenu(e.pageY, e.pageX);
         return false;
     }
@@ -573,11 +577,14 @@ window.addEventListener("mousedown", e => {
     if (e.target.type === 'text') {
         return
     }
+    if (e.target.className.baseVal === 'gear') {
+        openSettings();
+        return;
+    }
     switch (e.target.className) {
+        case 'default-content':
         case 'tile-content':
         case 'tile-title':
-            hideSettings();
-            break;
         case 'container':
             hideSettings();
             break;

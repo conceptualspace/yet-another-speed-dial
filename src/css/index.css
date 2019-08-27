@@ -292,3 +292,18 @@ input:focus {
     display: flex;
     justify-content: center;
 }
+
+.settingsIcon svg {
+    height: 1.5em;
+    width: 1.5em;
+    position: absolute;
+    right: 30px;
+    top: 30px;
+    fill: var(--color);
+    filter: opacity(0.4);
+    transition: 160ms ease;
+}
+
+.settingsIcon svg:hover {
+    filter: opacity(0.8);
+}
