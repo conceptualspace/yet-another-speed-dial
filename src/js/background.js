@@ -13,6 +13,7 @@ let defaults = {
     backgroundColor: '#111111',
     largeTiles: true,
     showTitles: true,
+    showAddSite: true,
     verticalAlign: true
 };
 let cache = {};
@@ -89,6 +90,7 @@ function getOgImage(url) {
         // tracking protection hack. use local resource instead
         let whitelist = [
             "mail.google.com",
+            "gmail.com",
             "www.facebook.com",
             "www.reddit.com",
             "twitter.com"
@@ -202,7 +204,7 @@ function getScreenshot(url) {
 function getLogo(url) {
     return new Promise(function(resolve, reject) {
         // todo: setting to enable/disable this?
-        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=192';
+        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=200';
         fetch(new Request(logoUrl)).then(response => {
             if (response.status === 200) {
                 resolve(logoUrl);
@@ -272,6 +274,23 @@ function updateSettings() {
     });
 }
 
+// should only fire when bookmark created via bookmarks manager directly in the speed dial folder
+// todo: allow editing URLs from speed dial page
+function changeBookmark(id, info) {
+    if (info.url) {
+        browser.bookmarks.get(id).then(bookmark => {
+            if (bookmark[0].parentId === speedDialId) {
+                // todo: skip if already in the cache
+                getThumbnails(bookmark[0].url).then(() => {
+                    pushToCache(bookmark[0].url).then(() => {
+                        refreshOpen()
+                    })
+                })
+            }
+        });
+    }
+}
+
 function connected(p) {
     messagePorts.push(p);
     p.onMessage.addListener(function(m) {
@@ -299,6 +318,7 @@ function init() {
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
+    browser.bookmarks.onChanged.addListener(changeBookmark);
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
 

@@ -1,0 +1,14 @@
+<svg width="172" height="172" xmlns="http://www.w3.org/2000/svg">
+ <title>newtab.first-dial-small</title>
+
+ <g>
+  <title>background</title>
+  <rect fill="none" id="canvas_background" height="402" width="582" y="-1" x="-1"/>
+ </g>
+ <g>
+  <title>Layer 1</title>
+  <g id="svg_1" opacity="0.309" fill-rule="evenodd" fill="none">
+   <path id="svg_3" fill="#ffffff" d="m107.947018,82.5l-18.197,0l0,-18.197c0,-2.376 -2.01,-4.303 -4.5,-4.303s-4.5,1.927 -4.5,4.303l0,18.197l-18.197,0c-2.376,0 -4.303,2.01 -4.303,4.5s1.927,4.5 4.303,4.5l18.197,0l0,18.197c0,2.376 2.01,4.303 4.5,4.303s4.5,-1.927 4.5,-4.303l0,-18.197l18.197,0c2.376,0 4.303,-2.01 4.303,-4.5s-1.927,-4.5 -4.303,-4.5z"/>
+  </g>
+ </g>
+</svg>

@@ -10,7 +10,13 @@ const menu = document.getElementById('contextMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
 const modalContent = document.getElementById('tileModalContent');
-const closeModal = document.getElementsByClassName("close")[0];
+
+const createDialModal = document.getElementById('createDialModal');
+const createDialModalContent = document.getElementById('createDialModalContent');
+const createDialModalURL = document.getElementById('createDialModalURL');
+const createDialModalSave = document.getElementById('createDialModalSave');
+
+const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
 const modalTitle = document.getElementById("modalTitle");
@@ -29,6 +35,7 @@ const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const largeTilesInput = document.getElementById("largeTiles");
 const showTitlesInput = document.getElementById("showTitles");
+const showCreateDialInput = document.getElementById("showCreateDial");
 const verticalAlignInput = document.getElementById("verticalAlign");
 const saveBtn = document.getElementById("saveBtn");
 const toast = document.getElementById("toast");
@@ -47,11 +54,10 @@ let targetNode = null;
 
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
-        if (result.length) {
-            printBookmarks(result)
-        } else {
+        if (!result.length && settings.verticalAlign) {
             noBookmarks.style.display = 'block';
         }
+        printBookmarks(result)
     });
 }
 
@@ -60,9 +66,10 @@ function removeBookmark(url) {
         .then(bookmarks => {
             for (let bookmark of bookmarks) {
                 if (bookmark.parentId === speedDialId) {
-                    targetNode.style.display = 'none';
-                    browser.storage.local.remove(url);
+                    targetNode.remove();
                     browser.bookmarks.remove(bookmark.id);
+                    browser.storage.local.remove(url);
+                    sortable.save();
                 }
             }
         })
@@ -88,42 +95,62 @@ function sort() {
 
 function printBookmarks(bookmarks) {
     let fragment = document.createDocumentFragment();
-    for (let bookmark of bookmarks) {
-        // todo: support folders
-        if (bookmark.url) {
-            let thumbUrl = null;
-            if (cache[bookmark.url]) {
-                // if the image is a blob:
-                //iconURL = URL.createObjectURL(result.icon);
-                //iconURL = result.icon;
-                thumbUrl = cache[bookmark.url];
-            } else {
-                thumbUrl = "../img/default.png";
+    if (bookmarks) {
+        for (let bookmark of bookmarks) {
+            // todo: support folders
+            if (bookmark.url) {
+                let thumbUrl = null;
+                if (cache[bookmark.url]) {
+                    // if the image is a blob:
+                    //iconURL = URL.createObjectURL(result.icon);
+                    //iconURL = result.icon;
+                    thumbUrl = cache[bookmark.url];
+                } else {
+                    thumbUrl = "../img/default.png";
+                }
+                let a = document.createElement('a');
+                a.classList.add('tile');
+                a.href = bookmark.url;
+
+                let main = document.createElement('div');
+                main.classList.add('tile-main');
+
+                let content = document.createElement('div');
+                content.classList.add('tile-content');
+                content.style.backgroundImage = "url(" + thumbUrl + ")";
+
+                let title = document.createElement('div');
+                title.classList.add('tile-title');
+                if (!settings.showTitles) {
+                    title.classList.add('hide');
+                }
+                title.textContent = bookmark.title;
+
+                main.appendChild(content);
+                main.appendChild(title);
+                a.appendChild(main);
+                fragment.appendChild(a);
             }
-            let a = document.createElement('a');
-            a.classList.add('tile');
-            a.href = bookmark.url;
-
-            let main = document.createElement('div');
-            main.classList.add('tile-main');
-
-            let content = document.createElement('div');
-            content.classList.add('tile-content');
-            content.style.backgroundImage = "url(" + thumbUrl + ")";
-
-            let title = document.createElement('div');
-            title.classList.add('tile-title');
-            if (!settings.showTitles) {
-                title.classList.add('hide');
-            }
-            title.textContent = bookmark.title;
-
-            main.appendChild(content);
-            main.appendChild(title);
-            a.appendChild(main);
-            fragment.appendChild(a);
         }
     }
+
+    // new dial button
+    let a = document.createElement('a');
+    a.classList.add('tile', 'createDial');
+    a.onclick = function() {
+        buildCreateDialModal();
+        createDialModal.style.transform = "translateX(0%)";
+        createDialModal.style.opacity = "1";
+        createDialModalContent.style.transform = "scale(1)";
+        createDialModalContent.style.opacity = "1";
+    };
+    let main = document.createElement('div');
+    main.classList.add('tile-main');
+    let content = document.createElement('div');
+    content.classList.add('tile-content', 'createDial-content');
+    main.appendChild(content);
+    a.appendChild(main);
+    fragment.appendChild(a);
 
     bookmarksContainer.appendChild(fragment);
     sort();
@@ -179,15 +206,25 @@ function hideSettings() {
 }
 
 function hideModal() {
-
     modalContent.style.transform = "scale(0.8)";
     modalContent.style.opacity = "0";
     modal.style.opacity = "0";
+
+    createDialModalContent.style.transform = "scale(0.8)";
+    createDialModalContent.style.opacity = "0";
+    createDialModal.style.opacity = "0";
+
     setTimeout(function() {
         modal.style.transform = "translateX(100%)";
+        createDialModal.style.transform = "translateX(100%)";
     }, 160);
 
     //modalContent.style.transform = "scale(0.8)";
+}
+
+function buildCreateDialModal() {
+    createDialModalURL.value = '';
+    createDialModalURL.focus();
 }
 
 async function buildModal(url, title) {
@@ -225,6 +262,25 @@ async function buildModal(url, title) {
         }
         $('#carousel').flexCarousel({height: '180px'});
     }
+}
+
+function createDial() {
+    let url = createDialModalURL.value.trim().toLowerCase();
+
+    if ( !url.startsWith('https://') && !url.startsWith('http://') ) {
+        url = 'https://' + url;
+    }
+
+    browser.bookmarks.create({
+        title: url,
+        url: url
+    }).then(node => {
+        browser.bookmarks.move(node.id, {parentId: speedDialId}).then(() => {
+            hideModal()
+        }, reason => {
+            console.error(reason);
+        });
+    });
 }
 
 function saveBookmarkSettings() {
@@ -436,6 +492,13 @@ function applySettings() {
             document.documentElement.style.setProperty('--title-opacity', '1');
         }
 
+        if (!settings.showAddSite) {
+            document.documentElement.style.setProperty('--create-dial-display', 'none');
+        } else {
+            document.documentElement.style.setProperty('--create-dial-display', 'block');
+        }
+
+
         resolve();
 
         // populate settings nav
@@ -443,6 +506,7 @@ function applySettings() {
         color_picker.value = settings.backgroundColor;
         color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
         showTitlesInput.checked = settings.showTitles;
+        showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
         verticalAlignInput.checked = settings.verticalAlign;
 
@@ -462,6 +526,7 @@ function saveSettings() {
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
     settings.showTitles = showTitlesInput.checked;
+    settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
     settings.verticalAlign = verticalAlignInput.checked;
 
@@ -558,16 +623,26 @@ window.addEventListener("keydown", event => {
 });
 
 modalSave.addEventListener("click", saveBookmarkSettings);
+createDialModalSave.addEventListener("click", createDial);
 
-closeModal.onclick = function(e) {
-    e.preventDefault();
-    hideModal();
-};
+for(let button of closeModal) {
+    button.onclick = function(e) {
+        e.preventDefault();
+        hideModal();
+    };
+}
 
 modalTitle.addEventListener('keydown', e => {
     if (e.code === "Enter") {
         e.preventDefault();
         saveBookmarkSettings();
+    }
+});
+
+createDialModalURL.addEventListener('keydown', e => {
+    if (e.code === "Enter") {
+        e.preventDefault();
+        createDial();
     }
 });
 
@@ -618,6 +693,12 @@ function init() {
         animation: 160,
         ghostClass: 'selected',
         dragClass: 'dragging',
+        filter: ".createDial",
+        onMove:function (evt) {
+            if (evt.related) {
+                return !evt.related.classList.contains('createDial');
+            }
+        },
         store: {
             set: function(sortable) {
                 let order = sortable.toArray();

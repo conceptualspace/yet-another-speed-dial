@@ -11,7 +11,11 @@
 
 <body>
 <!-- new install -->
-<div id="noBookmarks"><p>Add bookmarks to your Other Bookmarks > Speed Dial folder to see them here</p><p>Or just right-click on any page and select "Add to Speed Dial"</p></div>
+<div id="noBookmarks"><h1>3 ways to add speed dials:</h1>
+    <p>1. Right-click on any page and select "Add to Speed Dial"<p>
+    <p>2. Bookmark a site and choose the <strong>Other Bookmarks</strong> > <strong>Speed Dial</strong> folder</p>
+    <p>3. Use the button below (it can be toggled on or off in the settings).</p>
+</div>
 
 <!-- speed dial content injected here -->
     <div class="container" id="wrap"></div>
@@ -40,9 +44,9 @@
             <form class="tileForm" action="">
                 <div class="formItem"><label for="modalTitle">Title</label></div>
                 <div class="formItem"><input id="modalTitle" type="text"></div>
-                <div class="formItem"><label for="modalURL" class="last-name">Address</label></div>
+                <div class="formItem"><label for="modalURL">Address</label></div>
                 <div class="formItem"><input id="modalURL" type="text" disabled></div>
-                <div class="formItem"><label class="last-name">Image</label><br></div>
+                <div class="formItem"><label>Image</label><br></div>
                 <!--
                <input id="modalImgInput" type="file">
                -->
@@ -52,6 +56,18 @@
             </form>
         </div>
     </div>
+
+<!-- create dial modal window -->
+<div id="createDialModal" class="modal">
+    <div id="createDialModalContent" class="modal-content">
+        <form class="tileForm" action="">
+            <div class="formItem"><label for="createDialModalURL">Address</label></div>
+            <div class="formItem"><input id="createDialModalURL" type="text"></div>
+            <div class="formItem"><button id="createDialModalSave" class="save">Add to Speed Dial</button></div>
+            <div class="formItem"><button class="close">Cancel</button></div>
+        </form>
+    </div>
+</div>
 
 <!-- settings nav -->
     <div id="sidenav" class="sidenav">
@@ -89,7 +105,7 @@
                     </div>
                 </div>
             </div>
-            <div class='row'>
+            <div class='row' style="display:none">
                 <div class='column'>
                     <label>Large Tiles</label>
                 </div>
@@ -107,6 +123,17 @@
                 <div class='column controls'>
                     <label class="switch">
                         <input type="checkbox" id="showTitles" class="settingsCtl" checked>
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label>Add Site Button</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input type="checkbox" id="showCreateDial" class="settingsCtl" checked>
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>

@@ -3,6 +3,7 @@
     --title-opacity: 1;
     --vertical-align: safe center;
     --top-padding: 50px;
+    --create-dial-display: block;
 }
 
 html, body {
@@ -19,6 +20,11 @@ body {
     -webkit-user-select: none;
     -moz-user-select: none;
     user-select: none;
+}
+
+h1 {
+    font-weight: lighter;
+    font-size: xx-large;
 }
 
 .container {
@@ -41,7 +47,7 @@ body {
     display: none;
     justify-content: center;
     align-items: center;
-    text-align: center;
+    text-align: left;
     padding: 100px;
     color: #ffffff;
     position: fixed;
@@ -87,6 +93,26 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 5px 10px 0 10px;
+}
+
+.createDial {
+    width: 188px;
+    height: 140px;
+    border-radius: 12px;
+    margin: 12px;
+    display: var(--create-dial-display);
+}
+
+.createDial-content {
+    background-image: url('../img/createDial.svg');
+    background-size: contain;
+    border: 1px dotted white;
+    opacity: 0.6;
+    transition: 160ms ease;
+}
+
+.createDial-content:hover {
+    opacity: 1;
 }
 
 a {
