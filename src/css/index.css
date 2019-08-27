@@ -106,7 +106,7 @@ h1 {
 .createDial-content {
     background-image: url('../img/createDial.svg');
     background-size: contain;
-    border: 1px dotted white;
+    border: 1px dotted var(--color);
     opacity: 0.6;
     transition: 160ms ease;
 }
