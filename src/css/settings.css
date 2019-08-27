@@ -79,7 +79,7 @@
 }
 
 .sidenav .controls {
-    align-items: end;
+    align-items: flex-end;
 }
 
 
