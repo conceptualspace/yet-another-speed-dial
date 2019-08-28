@@ -22,7 +22,7 @@ const sidenav = document.getElementById("sidenav");
 const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
-const modalImgInput = document.getElementById("modalImgInput");
+const modalImgInput = document.getElementById("modalImgFile");
 const noBookmarks = document.getElementById('noBookmarks');
 
 // settings sidebar
@@ -234,6 +234,11 @@ async function buildModal(url, title) {
         modalImgContainer.removeChild(carousel);
     }
 
+    let customCarousel = document.getElementById("customCarousel");
+    if (customCarousel) {
+        modalImgContainer.removeChild(customCarousel);
+    }
+
     let newCarousel = document.createElement('div');
     newCarousel.setAttribute('id', 'carousel');
     modalImgContainer.appendChild(newCarousel);
@@ -289,20 +294,52 @@ function saveBookmarkSettings() {
     let selectedImageSrc = null;
     let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
-    for (let node of imageNodes) {
-        // div with order "2" is the one being displayed by the carousel
-        if (node.style.order === '2') {
-            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
-            if (node.children[0].className === "fc-image") {
-                selectedImageSrc = node.children[0].children[0].src;
-            } else {
-                selectedImageSrc = node.children[0].src;
+
+    let customCarousel = document.getElementById('customCarousel');
+    if (customCarousel) {
+        selectedImageSrc = customCarousel.children[0].src;
+        targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
+        browser.storage.local.get(url)
+            .then(result => {
+                if (result[url]) {
+                    let thumbnails = result[url].thumbnails;
+                    thumbnails.push(selectedImageSrc);
+                    thumbIndex = thumbnails.indexOf(selectedImageSrc);
+                    browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
+                        tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
+                    });
+                }
+            });
+    } else {
+        for (let node of imageNodes) {
+            // div with order "2" is the one being displayed by the carousel
+            if (node.style.order === '2') {
+                // sometimes the carousel puts images inside a <figure class="fc-image"> elem
+                if (node.children[0].className === "fc-image") {
+                    selectedImageSrc = node.children[0].children[0].src;
+                } else {
+                    selectedImageSrc = node.children[0].src;
+                }
+                // update tile
+                targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
+                break;
             }
-            // update tile
-            targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
-            break;
         }
+
+        browser.storage.local.get(url)
+            .then(result => {
+                if (result[url]) {
+                    let thumbnails = result[url].thumbnails;
+                    thumbIndex = thumbnails.indexOf(selectedImageSrc);
+                    if (thumbIndex >= 0) {
+                        browser.storage.local.set({[url]:{thumbnails, thumbIndex}}).then(result => {
+                            tabMessagePort.postMessage({updateCache: true, url, i:thumbIndex});
+                        });
+                    }
+                }
+            });
     }
+
     // find image index
     if (title !== targetTileTitle) {
         targetNode.children[0].children[1].textContent = title;
@@ -317,19 +354,7 @@ function saveBookmarkSettings() {
         })
     }
 
-    browser.storage.local.get(url)
-        .then(result => {
-            if (result[url]) {
-                let thumbnails = result[url].thumbnails;
-                thumbIndex = thumbnails.indexOf(selectedImageSrc);
-                if (thumbIndex >= 0) {
-                    browser.storage.local.set({[url]:{thumbnails, thumbIndex}}).then(result => {
-                        tabMessagePort.postMessage({updateCache: true, url, i:thumbIndex});
-                    });
-                }
-            }
-            hideModal();
-        });
+    hideModal();
 }
 
 function animate() {
@@ -389,6 +414,71 @@ function animate() {
 function readURL(input) {
     if (input.files && input.files[0]) {
         reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function resizeThumb(dataURI){
+    return new Promise(function(resolve, reject) {
+        let img = new Image();
+        img.onload = function() {
+            if (this.height > 256 && this.width > 256) {
+                // when im less lazy check use optimal w/h based on image
+                // set height to 256 and scale
+                let height = 256;
+                let ratio = height / this.height;
+                let width = Math.round(this.width * ratio);
+
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(this, 0, 0, width, height);
+
+                const newDataURI = canvas.toDataURL('image/jpeg', 0.86);
+                resolve(newDataURI);
+            } else {
+                resolve(dataURI);
+            }
+        };
+        img.src = dataURI;
+    })
+}
+
+function readImage(input) {
+    return new Promise(function(resolve, reject) {
+        let filereader = new FileReader();
+        filereader.onload = function(e) {
+            resolve(e.target.result);
+        };
+        if (input.files && input.files[0]) {
+            filereader.readAsDataURL(input.files[0]);
+        }
+    });
+}
+
+//todo: deletability yo
+function addImage(image) {
+    let carousel = document.getElementById('carousel');
+    if (carousel) {
+        carousel.style.display = "none";
+        let customCarousel = document.getElementById('customCarousel');
+        if (customCarousel) {
+            customCarousel.remove();
+        }
+        customCarousel = document.createElement('div');
+        customCarousel.setAttribute('id', 'customCarousel');
+        customCarousel.style.height = "180px";
+
+        let preview = document.createElement('img');
+        preview.style.height = '100%';
+        preview.style.width = '100%';
+        preview.style.objectFit = 'contain';
+        preview.setAttribute('src', image);
+
+        customCarousel.appendChild(preview);
+        modalImgContainer.appendChild(customCarousel);
     }
 }
 
@@ -652,6 +742,14 @@ createDialModalURL.addEventListener('keydown', e => {
         createDial();
     }
 });
+
+modalImgInput.onchange = function() {
+    readImage(this).then(image => {
+        resizeThumb(image).then(resizedImage => {
+            addImage(resizedImage);
+        })
+    });
+};
 
 color_picker.onchange = function() {
     color_picker_wrapper.style.backgroundColor = color_picker.value;

@@ -30,6 +30,7 @@
             <li id="newPrivate" class="menu-option">Open in new private window</li>
             <li class="menu-separator"></li>
             <li id="edit" class="menu-option">Edit</li>
+            <li class="menu-separator"></li>
             <li id="delete" class="menu-option">Delete</li>
         </ul>
     </div>
@@ -48,11 +49,11 @@
                 <div class="formItem"><input id="modalTitle" type="text"></div>
                 <div class="formItem"><label for="modalURL">Address</label></div>
                 <div class="formItem"><input id="modalURL" type="text" disabled></div>
-                <div class="formItem"><label>Image</label><br></div>
-                <!--
-               <input id="modalImgInput" type="file">
-               -->
+
+                <input type="file" id="modalImgFile" class="settingsCtl" accept="image/*">
+
                 <div id="modalImgContainer" class="formItem"></div>
+                <div class="imageUploadContainer"><label for="modalImgFile" class="settingsCtl modalImgBtn">Upload Image ...</label></div>
                 <div class="formItem"><button id="modalSave" class="save">Save</button></div>
                 <div class="formItem"><button class="close">Cancel</button></div>
             </form>

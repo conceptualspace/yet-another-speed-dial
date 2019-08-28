@@ -198,7 +198,26 @@ a {
 }
 
 #modalImgContainer {
-    padding-bottom: 2em;
+    padding-bottom: 1em;
+}
+
+.modal [type="file"] {
+    height: 0;
+    overflow: hidden;
+    width: 0;
+}
+
+.modal [type="file"]:focus {
+    outline: none;
+}
+
+.modal .imageUploadContainer {
+    padding: .4em .4em 1em .4em;
+}
+
+.modal .modalImgBtn:hover {
+    transition: 200ms ease;
+    color: gold;
 }
 
 /* The Close Button */
