@@ -314,8 +314,26 @@ function connected(p) {
     });
 }
 
+// migration from v1.3.x -> v1.4.x
+// pushes the 'add site' button to the end of any existing dials
+function handleInstalled(details) {
+    if (details.reason === 'update') {
+        let parts = details.previousVersion.split('.');
+        if (parts[0] === "1" && parts[1] === "3") {
+            browser.storage.local.get('sort').then(result => {
+                if (result.sort) {
+                    let sort = result.sort;
+                    sort.push(sort.splice(sort.indexOf("1wv"), 1)[0]);
+                    browser.storage.local.set({sort})
+                }
+            });
+        }
+    }
+}
+
 function init() {
     browser.runtime.onConnect.addListener(connected);
+    browser.runtime.onInstalled.addListener(handleInstalled);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
     browser.bookmarks.onChanged.addListener(changeBookmark);
