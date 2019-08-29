@@ -334,6 +334,7 @@ function connected(p) {
 // migration from v1.3.x -> v1.4.x
 // pushes the 'add site' button to the end of any existing dials
 function handleInstalled(details) {
+    console.log("im alive!");
     if (details.reason === 'update') {
         let parts = details.previousVersion.split('.');
         if (parts[0] === "1" && parts[1] === "3") {
@@ -350,7 +351,6 @@ function handleInstalled(details) {
 
 function init() {
     browser.runtime.onConnect.addListener(connected);
-    browser.runtime.onInstalled.addListener(handleInstalled);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
     browser.bookmarks.onChanged.addListener(changeBookmark);
@@ -387,5 +387,7 @@ function init() {
     // todo: runtime.oninstalled
     browser.runtime.setUninstallURL("https://forms.gle/UPvfa1xKZtoHJDeN7");
 }
+
+browser.runtime.onInstalled.addListener(handleInstalled);
 
 init();
