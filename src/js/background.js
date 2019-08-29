@@ -78,6 +78,7 @@ function getThumbnails(url) {
         getOgImage(url)
             .then(result => saveThumbnails(url, result))
             .then(() => getScreenshot(url))
+            .then(result => resizeThumb(result))
             .then(result => saveThumbnails(url, result))
             .then(() => getLogo(url))
             .then(result => saveThumbnails(url, result))
@@ -215,27 +216,43 @@ function getLogo(url) {
     });
 }
 
-// todo: thumbs can be resized smaller for additional performance; need to balance quality
-// scale image to half size and compress
-function resizeThumb(dataURI){
+function resizeThumb(dataURI) {
     return new Promise(function(resolve, reject) {
         let img = new Image();
         img.onload = function() {
-            const width = Math.round(this.width / 2);
-            const height = Math.round(this.height / 2);
-            let canvas = document.createElement('canvas');
-            let ctx = canvas.getContext('2d');
-            ctx.imageSmoothingEnabled = true;
+            if (this.height > 512 && this.width > 512) {
 
-            canvas.width = width;
-            canvas.height = height;
-            ctx.drawImage(this, 0, 0, width, height);
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                let canvas2 = document.createElement('canvas');
+                let ctx2 = canvas2.getContext('2d');
+                ctx2.imageSmoothingEnabled = true;
+                ctx2.imageSmoothingQuality = "high";
 
-            const dataURI = canvas.toDataURL('image/jpeg', 0.86);
-            resolve(dataURI);
+                // first pass: crop scrollbars, blur filter as an approximation for resampling
+                canvas.width = this.width-20;
+                canvas.height = this.height-20;
+                ctx.filter = `blur(1px)`;
+                ctx.drawImage(this, 0, 0, this.width-20, this.height-20, 0, 0, canvas.width, canvas.height);
+
+                // second pass: downscale to target size
+                let height = 256;
+                let ratio = height / this.height;
+                let width = Math.round(this.width * ratio);
+
+                canvas2.width = width;
+                canvas2.height = height;
+
+                ctx2.drawImage(canvas,0, 0, width, height);
+
+                const newDataURI = canvas2.toDataURL('image/jpeg', 0.86);
+                resolve(newDataURI);
+            } else {
+                resolve(dataURI);
+            }
         };
         img.src = dataURI;
-    })
+    });
 }
 
 function updateBookmark(id, bookmarkInfo) {
