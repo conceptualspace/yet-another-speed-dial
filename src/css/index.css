@@ -326,3 +326,18 @@ input:focus {
 .settingsIcon svg:hover {
     filter: opacity(0.8);
 }
+
+#toast {
+    position: fixed;
+    right: 0;
+    bottom: 30px;
+    max-width: 50%;
+    padding: 20px;
+    text-overflow: ellipsis;
+    line-height: 2;
+    background-color: black;
+    color: white;
+    opacity: 0.8;
+    transform: translateX(100%);
+    transition: 200ms ease;
+}

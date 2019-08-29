@@ -185,18 +185,33 @@ function saveThumbnails(url, images) {
 // requires <all_urls> permission to capture image without a user gesture
 function getScreenshot(url) {
     return new Promise(function(resolve, reject) {
-        // make sure we are capturing the right thing
-        // in firefox we could get the tab by url and then capture it, but doesnt work in chrome: browser.tabs.query({url})
+        // capture from an existing tab if its open
         browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
             .then(tabs => browser.tabs.get(tabs[0].id))
             .then(tab => {
                 if (tab.url === url) {
-                    browser.tabs.captureVisibleTab({format:'jpeg', quality:40})
+                    browser.tabs.captureVisibleTab()
                         .then(imageUri => {
                             resolve(imageUri);
                         });
                 } else {
-                    resolve([]);
+                    // open tab, capture screenshot, and close
+                    let tabID = null;
+                    function handleUpdatedTab(tabId, changeInfo, tabInfo) {
+                        if (tabId === tabID && changeInfo.status === "complete") {
+                            browser.tabs.captureTab(tabID).then(imageUri => {
+                                browser.tabs.remove(tabID);
+                                resolve(imageUri);
+                            });
+                        }
+                    }
+                    browser.tabs.onUpdated.addListener(handleUpdatedTab);
+
+                    browser.tabs.create({url, active:false}).then(tab => {
+                        tabID = tab.id;
+                        // todo: tab can be hidden in ff. not currently supported in chrome
+                        //browser.tabs.hide(tabID);
+                    });
                 }
             });
     });
@@ -237,7 +252,7 @@ function resizeThumb(dataURI) {
                 canvas.width = this.width-20;
                 canvas.height = this.height-20;
                 ctx.filter = `blur(1px)`;
-                ctx.drawImage(this, 0, 0, this.width-20, this.height-20, 0, 0, canvas.width, canvas.height);
+                ctx.drawImage(this, 0, 0, this.width-18, this.height-18, 0, 0, canvas.width, canvas.height);
 
                 // second pass: downscale to target size
                 let height = 256;

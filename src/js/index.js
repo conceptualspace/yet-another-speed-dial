@@ -15,6 +15,7 @@ const createDialModal = document.getElementById('createDialModal');
 const createDialModalContent = document.getElementById('createDialModalContent');
 const createDialModalURL = document.getElementById('createDialModalURL');
 const createDialModalSave = document.getElementById('createDialModalSave');
+const toast = document.getElementById('toast');
 
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
@@ -38,7 +39,7 @@ const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const verticalAlignInput = document.getElementById("verticalAlign");
 const saveBtn = document.getElementById("saveBtn");
-const toast = document.getElementById("toast");
+const settingsToast = document.getElementById("settingsToast");
 
 const port = "p-" + new Date().getTime();
 const tabMessagePort = browser.runtime.connect({name:port});
@@ -222,6 +223,11 @@ function hideModal() {
     //modalContent.style.transform = "scale(0.8)";
 }
 
+function hideToast() {
+    toast.style.transform = "translateX(100%)";
+    toast.innerText = '';
+}
+
 function buildCreateDialModal() {
     createDialModalURL.value = '';
     createDialModalURL.focus();
@@ -281,7 +287,9 @@ function createDial() {
         url: url
     }).then(node => {
         browser.bookmarks.move(node.id, {parentId: speedDialId}).then(() => {
-            hideModal()
+            hideModal();
+            toast.innerText = `Capturing images for ${url}...`;
+            toast.style.transform = "translateX(0%)";
         }, reason => {
             console.error(reason);
         });
@@ -622,9 +630,9 @@ function saveSettings() {
 
     browser.storage.local.set({settings})
         .then(()=> {
-            toast.style.opacity = "1";
+            settingsToast.style.opacity = "1";
             setTimeout(function() {
-                toast.style.opacity = "0";
+                settingsToast.style.opacity = "0";
             }, 3500);
             applySettings();
             tabMessagePort.postMessage({updateSettings: true});
@@ -786,6 +794,7 @@ function init() {
             applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
             cache = m.cache;
+            hideToast();
             noBookmarks.style.display = 'none';
             bookmarksContainer.innerHTML = "";
             getBookmarks(speedDialId)

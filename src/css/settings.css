@@ -190,7 +190,7 @@
     background-color: #cccccc;
 }
 
-.sidenav #toast {
+.sidenav #settingsToast {
     display: flex;
     justify-content: center;
     opacity: 0;
