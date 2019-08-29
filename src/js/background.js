@@ -218,6 +218,10 @@ function getLogo(url) {
 
 function resizeThumb(dataURI) {
     return new Promise(function(resolve, reject) {
+        if (!dataURI.length) {
+            resolve([]);
+            return;
+        }
         let img = new Image();
         img.onload = function() {
             if (this.height > 512 && this.width > 512) {
@@ -334,7 +338,6 @@ function connected(p) {
 // migration from v1.3.x -> v1.4.x
 // pushes the 'add site' button to the end of any existing dials
 function handleInstalled(details) {
-    console.log("im alive!");
     if (details.reason === 'update') {
         let parts = details.previousVersion.split('.');
         if (parts[0] === "1" && parts[1] === "3") {
