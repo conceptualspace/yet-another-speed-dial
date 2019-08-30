@@ -69,7 +69,11 @@ function convertUrlToAbsolute(origin, path) {
     } else if (path.indexOf('//') === 0) {
         return 'https:' + path;
     } else {
-        return new URL(origin).origin + path;
+        let url = new URL(origin);
+        if (url.pathname.slice(-1) !== "/") {
+            url.pathname = url.pathname + "/";
+        }
+        return url.origin + url.pathname + path;
     }
 }
 
@@ -199,11 +203,14 @@ function getScreenshot(url) {
                     let tabID = null;
                     function handleUpdatedTab(tabId, changeInfo, tabInfo) {
                         if (tabId === tabID && changeInfo.status === "complete") {
-                            browser.tabs.captureTab(tabID).then(imageUri => {
-                                browser.tabs.remove(tabID);
-                                browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                resolve(imageUri);
-                            });
+                            // todo: complete loaded status sometimes !== actually loaded
+                            setTimeout(function() {
+                                browser.tabs.captureTab(tabID).then(imageUri => {
+                                    browser.tabs.onUpdated.removeListener(handleUpdatedTab);
+                                    browser.tabs.remove(tabID);
+                                    resolve(imageUri);
+                                });
+                            }, 1000);
                         }
                     }
                     browser.tabs.onUpdated.addListener(handleUpdatedTab);
