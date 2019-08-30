@@ -378,7 +378,7 @@ function connected(p) {
 function handleInstalled(details) {
     if (details.reason === 'update') {
         let parts = details.previousVersion.split('.');
-        if (parts[0] === "1" && parts[1] === "3") {
+        if (parts[0] === "1" && (parts[1] === "3" || parts[1] === "4")) {
             browser.storage.local.get('sort').then(result => {
                 if (result.sort) {
                     let sort = result.sort;
