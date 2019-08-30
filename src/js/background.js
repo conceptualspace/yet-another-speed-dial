@@ -201,6 +201,7 @@ function getScreenshot(url) {
                         if (tabId === tabID && changeInfo.status === "complete") {
                             browser.tabs.captureTab(tabID).then(imageUri => {
                                 browser.tabs.remove(tabID);
+                                browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                 resolve(imageUri);
                             });
                         }
