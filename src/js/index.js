@@ -16,6 +16,7 @@ const createDialModalContent = document.getElementById('createDialModalContent')
 const createDialModalURL = document.getElementById('createDialModalURL');
 const createDialModalSave = document.getElementById('createDialModalSave');
 const toast = document.getElementById('toast');
+const toastContent = document.getElementById('toastContent');
 
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
@@ -225,7 +226,7 @@ function hideModal() {
 
 function hideToast() {
     toast.style.transform = "translateX(100%)";
-    toast.innerText = '';
+    toastContent.innerText = '';
 }
 
 function buildCreateDialModal() {
@@ -288,7 +289,7 @@ function createDial() {
     }).then(node => {
         browser.bookmarks.move(node.id, {parentId: speedDialId}).then(() => {
             hideModal();
-            toast.innerText = `Capturing images for ${url}...`;
+            toastContent.innerText = ` Capturing images for ${url}...`;
             toast.style.transform = "translateX(0%)";
         }, reason => {
             console.error(reason);
