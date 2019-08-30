@@ -4,6 +4,7 @@
     --vertical-align: safe center;
     --top-padding: 50px;
     --create-dial-display: block;
+    --chrome-display: none;
 }
 
 html, body {
@@ -353,4 +354,8 @@ input:focus {
 #toastContent {
     vertical-align: middle;
     padding-left: 10px;
+}
+
+.chromeOnly {
+    display: var(--chrome-display);
 }

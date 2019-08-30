@@ -597,6 +597,12 @@ function applySettings() {
             document.documentElement.style.setProperty('--create-dial-display', 'block');
         }
 
+        if (browser.runtime.getBrowserInfo) {
+            document.documentElement.style.setProperty('--chrome-display', 'none');
+        } else {
+            document.documentElement.style.setProperty('--chrome-display', 'block');
+        }
+
 
         resolve();
 

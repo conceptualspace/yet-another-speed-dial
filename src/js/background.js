@@ -200,17 +200,32 @@ function getScreenshot(url) {
                         });
                 } else {
                     // open tab, capture screenshot, and close
+                    // todo: complete loaded status sometimes !== actually loaded
                     let tabID = null;
                     function handleUpdatedTab(tabId, changeInfo, tabInfo) {
                         if (tabId === tabID && changeInfo.status === "complete") {
-                            // todo: complete loaded status sometimes !== actually loaded
-                            setTimeout(function() {
-                                browser.tabs.captureTab(tabID).then(imageUri => {
-                                    browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                    browser.tabs.remove(tabID);
-                                    resolve(imageUri);
-                                });
-                            }, 1000);
+                            // workaround for chrome, which can only capture the active tab
+                            if (!browser.runtime.getBrowserInfo) {
+                                browser.tabs.update(tabID, {active:true}).then(tab => {
+                                    setTimeout(function() {
+                                        browser.tabs.captureVisibleTab().then(imageUri => {
+                                            browser.tabs.onUpdated.removeListener(handleUpdatedTab);
+                                            browser.tabs.remove(tabID);
+                                            resolve(imageUri);
+                                        }, (error) => {
+                                            console.log(error);
+                                        });
+                                    }, 1000);
+                                })
+                            } else {
+                                setTimeout(function() {
+                                    browser.tabs.captureTab(tabID).then(imageUri => {
+                                        browser.tabs.onUpdated.removeListener(handleUpdatedTab);
+                                        browser.tabs.remove(tabID);
+                                        resolve(imageUri);
+                                    });
+                                }, 1000);
+                            }
                         }
                     }
                     browser.tabs.onUpdated.addListener(handleUpdatedTab);
