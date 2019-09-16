@@ -16,6 +16,7 @@
     "bookmarks",
     "contextMenus",
     "storage",
+    "unlimitedStorage",
     "activeTab",
     "tabs",
     "<all_urls>"
