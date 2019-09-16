@@ -277,7 +277,7 @@ async function buildModal(url, title) {
 }
 
 function createDial() {
-    let url = createDialModalURL.value.trim().toLowerCase();
+    let url = createDialModalURL.value.trim();
 
     if ( !url.startsWith('https://') && !url.startsWith('http://') ) {
         url = 'https://' + url;
