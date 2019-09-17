@@ -387,8 +387,8 @@ function animate() {
     }
 
     window.addEventListener("resize", () => { dirty = true; });
-    const observer = new MutationObserver(() => { dirty = true; });
-    observer.observe(bookmarksContainer, observerConfig);
+    //const observer = new MutationObserver(() => { dirty = true; });
+    //observer.observe(bookmarksContainer, observerConfig);
 
     TweenLite.ticker.addEventListener("tick", () => dirty && layout());
 
