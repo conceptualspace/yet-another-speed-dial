@@ -91,6 +91,7 @@ function sort() {
         .then(result => {
             if (result.sort) {
                 sortable.sort(result.sort);
+                animate();
             }
         });
 }
@@ -157,7 +158,6 @@ function printBookmarks(bookmarks) {
     bookmarksContainer.appendChild(fragment);
     sort();
     bookmarksContainer.style.opacity = "1";
-    animate();
 }
 
 function showContextMenu(top, left) {
