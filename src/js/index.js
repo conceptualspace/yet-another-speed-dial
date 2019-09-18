@@ -369,7 +369,7 @@ function saveBookmarkSettings() {
 function animate() {
     //var inputs = document.querySelectorAll("input");
     const nodes  = document.querySelectorAll(".tile");
-    const observerConfig = { attributes: false, childList: true, subtree: false };
+    //const observerConfig = { attributes: false, childList: true, subtree: false };
     const total  = nodes.length;
     const time   = 0.9;
     const omega  = 12;
