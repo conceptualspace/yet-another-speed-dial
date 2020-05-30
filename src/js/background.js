@@ -46,11 +46,7 @@ function onClickHandler(info, tab) {
                     parentId: speedDialId,
                     title: tab.title,
                     url: tab.url
-                }).then(response => {
-                    getThumbnails(tab.url).then(() => {
-                        pushToCache(tab.url).then(() => refreshOpen())
-                    });
-                });
+                })
             }
         });
     }
@@ -70,10 +66,14 @@ function convertUrlToAbsolute(origin, path) {
         return 'https:' + path;
     } else {
         let url = new URL(origin);
-        if (url.pathname.slice(-1) !== "/") {
-            url.pathname = url.pathname + "/";
+        if (path.slice(0,1) === "/") {
+            return url.origin + path;
+        } else {
+            if (url.pathname.slice(-1) !== "/") {
+                url.pathname = url.pathname + "/";
+            }
+            return url.origin + url.pathname + path;
         }
-        return url.origin + url.pathname + path;
     }
 }
 
@@ -339,12 +339,19 @@ function changeBookmark(id, info) {
     if (info.url) {
         browser.bookmarks.get(id).then(bookmark => {
             if (bookmark[0].parentId === speedDialId) {
-                // todo: skip if already in the cache
-                getThumbnails(bookmark[0].url).then(() => {
-                    pushToCache(bookmark[0].url).then(() => {
-                        refreshOpen()
-                    })
-                })
+                browser.storage.local.get(bookmark[0].url).then(result => {
+                    if (result[bookmark[0].url]) {
+                        // a pre-existing bookmark is being modified; dont fetch new thumbnails
+                        // todo: there might be a race condition here for bookmarks created via context menu
+                        return
+                    } else {
+                        getThumbnails(bookmark[0].url).then(() => {
+                            pushToCache(bookmark[0].url).then(() => {
+                                refreshOpen()
+                            })
+                        })
+                    }
+                });
             }
         });
     }
@@ -394,7 +401,10 @@ function init() {
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(updateBookmark);
+    // ff triggers 'changed' for bookmarks created manually? todo: confirm
     browser.bookmarks.onChanged.addListener(changeBookmark);
+    // chrome triggers oncreated for bookmarks created manually in bookmark mgr. todo: make sure this doesnt hurt ff
+    browser.bookmarks.onCreated.addListener(changeBookmark);
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
 
