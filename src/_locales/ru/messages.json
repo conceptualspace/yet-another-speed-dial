@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "еще один быстрый набор",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "современный скоростной набор для Firefox и Chrome",
+    "description":"description of the app, displayed in store"
+  }
+}

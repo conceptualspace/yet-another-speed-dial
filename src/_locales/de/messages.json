@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "noch ein speed dial",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "eine moderne Kurzwahl für Firefox und Chrom",
+    "description":"description of the app, displayed in store"
+  }
+}

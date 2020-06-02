@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "yet another speed dial",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "a modern speed dial for firefox and chrome",
+    "description":"description of the app, displayed in store"
+  }
+}

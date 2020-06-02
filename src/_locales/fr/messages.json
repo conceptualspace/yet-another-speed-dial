@@ -1,0 +1,10 @@
+{
+  "extensionName": {
+    "message": "encore un autre speed dial",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "un cadran de vitesse moderne pour firefox et chrome",
+    "description":"description of the app, displayed in store"
+  }
+}
