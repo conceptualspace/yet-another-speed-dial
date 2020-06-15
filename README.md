@@ -17,5 +17,5 @@ A clean and modern speed dial for Firefox and Chrome, inspired by Opera
 
 ### building for chrome vs firefox
 
-chrome: remove `chrome_settings_overrides` and `browser_specific_settings` manifest keys
+chrome: remove `chrome_settings_overrides` and `browser_specific_settings` manifest keys 
 firefox: no changes are required
