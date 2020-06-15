@@ -29,7 +29,10 @@
     "homepage": "index.html"
   },
   "background": {
-    "scripts": ["js/background.js"]
+    "scripts": [
+      "js/browser-polyfill.min.js",
+      "js/background.js"
+    ]
   },
   "browser_specific_settings": {
     "gecko": {
