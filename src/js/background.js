@@ -6,6 +6,7 @@
 
 let messagePorts = [];
 let speedDialId = null;
+let folderIds = [];
 let settings = null;
 let defaults = {
     wallpaper: true,
@@ -24,6 +25,15 @@ function getSpeedDialId() {
     browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
         if (result.length && result[0]) {
             speedDialId = result[0].id;
+            // get subfolder ids
+            browser.bookmarks.getChildren(speedDialId).then(results => {
+                for (let result of results) {
+                    if (!result.url && result.dateGroupModified) {
+                        folderIds.push(result.id);
+                    }
+                }
+            })
+
         } else {
             browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
                 speedDialId = result.id;
@@ -86,7 +96,8 @@ function getThumbnails(url) {
             .then(result => saveThumbnails(url, result))
             .then(() => getLogo(url))
             .then(result => saveThumbnails(url, result))
-            .then(() => resolve());
+            .then(() => resolve())
+            .catch(error => console.log(error));
     });
 }
 
@@ -160,6 +171,8 @@ function getOgImage(url) {
                 } else {
                     resolve(images);
                 }
+            }, reason => {
+                console.log(reason);
             });
         };
         xhr.open("GET", url);
@@ -298,9 +311,11 @@ function resizeThumb(dataURI) {
 }
 
 function updateBookmark(id, bookmarkInfo) {
-    console.log("bookmark updated");
-    if (bookmarkInfo.parentId === speedDialId) {
+    console.log('updateBookmark');
+    // only runs for speed dial
+    if (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1 ) {
         browser.bookmarks.get(id).then(bookmark => {
+            console.log(bookmark);
             getThumbnails(bookmark[0].url).then(() => {
                 pushToCache(bookmark[0].url).then(() => {
                     refreshOpen()
@@ -311,7 +326,7 @@ function updateBookmark(id, bookmarkInfo) {
 }
 
 function removeBookmark(id, bookmarkInfo) {
-    if (bookmarkInfo.parentId === speedDialId) {
+    if (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1) {
         browser.storage.local.remove(bookmarkInfo.node.url)
     }
 }
@@ -336,14 +351,17 @@ function updateSettings() {
 // should only fire when bookmark created via bookmarks manager directly in the speed dial folder
 // todo: allow editing URLs from speed dial page
 function changeBookmark(id, info) {
+    console.log("changeBookmark");
     if (info.url) {
         browser.bookmarks.get(id).then(bookmark => {
-            if (bookmark[0].parentId === speedDialId) {
+            // confirm we are only mucking with speed dial bookmarks
+            if (bookmark[0].parentId === speedDialId || folderIds.indexOf(bookmark[0].parentId) !== -1) {
                 browser.storage.local.get(bookmark[0].url).then(result => {
                     if (result[bookmark[0].url]) {
                         // a pre-existing bookmark is being modified; dont fetch new thumbnails
+                        // todo: broken with folders -- doesnt allow same site in 2 folders..
                         // todo: there might be a race condition here for bookmarks created via context menu
-                        return
+                        refreshOpen();
                     } else {
                         getThumbnails(bookmark[0].url).then(() => {
                             pushToCache(bookmark[0].url).then(() => {
@@ -418,7 +436,8 @@ function init() {
             }
             const entries = Object.entries(result);
             for (let e of entries) {
-                if (e[0] !== "settings" && e[0] !== "sort") {
+                // todo: filter folder ids
+                if (e[0] !== "settings" && e[1].thumbnails) {
                     let index = e[1].thumbIndex;
                     cache[e[0]] = e[1].thumbnails[index];
                 }

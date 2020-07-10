@@ -6,6 +6,7 @@
 
 // speed dial
 const bookmarksContainer = document.getElementById('wrap');
+const foldersContainer = document.getElementById('folders')
 const menu = document.getElementById('contextMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
@@ -52,14 +53,15 @@ let sortable = null;
 let targetTileHref = null;
 let targetTileTitle = null;
 let targetNode = null;
+let folders = [];
 
 
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
-        if (!result.length && settings.verticalAlign) {
+        if (folderId === speedDialId && !result.length && settings.verticalAlign) {
             noBookmarks.style.display = 'block';
         }
-        printBookmarks(result)
+        printBookmarks(result, folderId)
     });
 }
 
@@ -67,14 +69,26 @@ function removeBookmark(url) {
     browser.bookmarks.search({url})
         .then(bookmarks => {
             for (let bookmark of bookmarks) {
-                if (bookmark.parentId === speedDialId) {
+                if (bookmark.parentId === speedDialId || folders.indexOf(bookmark.parentId) !== -1 ) {
                     targetNode.remove();
                     browser.bookmarks.remove(bookmark.id);
                     browser.storage.local.remove(url);
+                    // todo -- this only working for root folder?
                     sortable.save();
                 }
             }
         })
+}
+
+function showFolder(id) {
+    let folders = document.getElementsByClassName('container');
+    for (let folder of folders) {
+        if (folder.id === id || (folder.id === 'wrap' && id === speedDialId)) {
+            folder.style.display = "flex"
+        } else {
+            folder.style.display = "none";
+        }
+    }
 }
 
 function getThumbs(bookmarkUrl) {
@@ -87,21 +101,57 @@ function getThumbs(bookmarkUrl) {
 }
 
 function sort() {
-    browser.storage.local.get('sort')
+    browser.storage.local.get(speedDialId)
         .then(result => {
-            if (result.sort) {
-                sortable.sort(result.sort);
+            if (result[speedDialId]) {
+                sortable.sort(result[speedDialId]);
                 animate();
             }
         });
 }
 
-function printBookmarks(bookmarks) {
+function printFolderBookmarks() {
+    for (let folder of folders) {
+        getBookmarks(folder)
+    }
+}
+
+function folderLink(title, id) {
+    let a = document.createElement('a');
+    a.classList.add('tile');
+    a.classList.add('folderTitle');
+    let linkText = document.createTextNode(title);
+    a.appendChild(linkText);
+    //a.href = "#"+bookmark.id;
+    a.onclick = function() {
+        showFolder(id);
+    };
+    foldersContainer.appendChild(a);
+}
+
+// assumes 'bookmarks' param is content of a folder (from getBookmarks)
+function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
+
+    //let folderContainer = document.createElement('div');
+    //folderContainer.id = parentId;
+    //document.body.append(div)
+
     if (bookmarks) {
         for (let bookmark of bookmarks) {
             // todo: support folders
-            if (bookmark.url) {
+            // WIP...
+            if (!bookmark.url && bookmark.dateGroupModified) {
+                // setup "tabs" folder header links
+                if (!folders.length) {
+                    folderLink('Home', speedDialId)
+                }
+                if (folders.indexOf(bookmark.id) === -1) {
+                    folders.push(bookmark.id);
+                    folderLink(bookmark.title, bookmark.id)
+                }
+
+            } else if (bookmark.url) {
                 let thumbUrl = null;
                 if (cache[bookmark.url]) {
                     // if the image is a blob:
@@ -114,6 +164,7 @@ function printBookmarks(bookmarks) {
                 let a = document.createElement('a');
                 a.classList.add('tile');
                 a.href = bookmark.url;
+                a.setAttribute('data-id', bookmark.id);
 
                 let main = document.createElement('div');
                 main.classList.add('tile-main');
@@ -141,7 +192,7 @@ function printBookmarks(bookmarks) {
     let a = document.createElement('a');
     a.classList.add('tile', 'createDial');
     a.onclick = function() {
-        buildCreateDialModal();
+        buildCreateDialModal(parentId);
         createDialModal.style.transform = "translateX(0%)";
         createDialModal.style.opacity = "1";
         createDialModalContent.style.transform = "scale(1)";
@@ -155,9 +206,63 @@ function printBookmarks(bookmarks) {
     a.appendChild(main);
     fragment.appendChild(a);
 
-    bookmarksContainer.appendChild(fragment);
-    sort();
-    bookmarksContainer.style.opacity = "1";
+    // root speed dial dir
+    if (parentId === speedDialId) {
+        // populate folders divs
+        if (folders.length) {
+            printFolderBookmarks();
+        }
+
+        bookmarksContainer.appendChild(fragment);
+        sort();
+        bookmarksContainer.style.opacity = "1";
+
+    } else {
+        // build a folder "tab"
+        if (!document.getElementById(parentId)) {
+            let folderContainer = document.createElement('div');
+            folderContainer.id = parentId;
+            folderContainer.classList.add('container');
+            folderContainer.style.display = 'none';
+            folderContainer.style.opacity = "1";
+            document.body.append(folderContainer);
+        }
+
+        let folderContainerEl = document.getElementById(parentId);
+
+        // folder sorting..
+        // todo: this is fubar
+        let sortable = new Sortable(folderContainerEl, {
+            animation: 160,
+            ghostClass: 'selected',
+            dragClass: 'dragging',
+            filter: ".createDial",
+            onMove:function (evt) {
+                if (evt.related) {
+                    return !evt.related.classList.contains('createDial');
+                }
+            },
+            store: {
+                set: function(sortable) {
+                    let order = sortable.toArray();
+                    browser.storage.local.set({[parentId]:order});
+                }
+            }
+        });
+
+        // append bookmarks to container
+        folderContainerEl.appendChild(fragment);
+
+        // sort
+        browser.storage.local.get(parentId)
+            .then(result => {
+                if (result[parentId]) {
+                    sortable.sort(result[parentId]);
+                    animate();
+                }
+            });
+        //
+    }
 }
 
 function showContextMenu(top, left) {
@@ -229,8 +334,9 @@ function hideToast() {
     toastContent.innerText = '';
 }
 
-function buildCreateDialModal() {
+function buildCreateDialModal(parentId) {
     createDialModalURL.value = '';
+    createDialModalURL.parentId = parentId;
     createDialModalURL.focus();
 }
 
@@ -285,15 +391,12 @@ function createDial() {
 
     browser.bookmarks.create({
         title: url,
-        url: url
+        url: url,
+        parentId: createDialModalURL.parentId
     }).then(node => {
-        browser.bookmarks.move(node.id, {parentId: speedDialId}).then(() => {
-            hideModal();
-            toastContent.innerText = ` Capturing images for ${url}...`;
-            toast.style.transform = "translateX(0%)";
-        }, reason => {
-            console.error(reason);
-        });
+        hideModal();
+        toastContent.innerText = ` Capturing images for ${url}...`;
+        toast.style.transform = "translateX(0%)";
     });
 }
 
@@ -353,8 +456,8 @@ function saveBookmarkSettings() {
     if (title !== targetTileTitle) {
         targetNode.children[0].children[1].textContent = title;
         // sortable ids changed so rewrite to storage
-        let order = sortable.toArray();
-        browser.storage.local.set({"sort":order});
+        //let order = sortable.toArray();
+        //browser.storage.local.set({"sort":order});
         browser.bookmarks.search({url})
         .then(bookmark => {
             browser.bookmarks.update(bookmark[0].id, {
@@ -652,6 +755,9 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener( "contextmenu", function(e) {
+    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'createDialModalURL')) {
+        return;
+    }
     e.preventDefault();
     // prevent settings from being opened and immediately hidden when right-clicking the gear icon
     if (e.target.id === 'settingsDiv') {
@@ -808,6 +914,9 @@ function init() {
             hideToast();
             noBookmarks.style.display = 'none';
             bookmarksContainer.innerHTML = "";
+            for (let folder of folders) {
+                document.getElementById(folder).innerHTML = "";
+            }
             getBookmarks(speedDialId)
         }
     });
@@ -827,7 +936,7 @@ function init() {
         store: {
             set: function(sortable) {
                 let order = sortable.toArray();
-                browser.storage.local.set({"sort":order});
+                browser.storage.local.set({[speedDialId]:order});
             }
         }
     });

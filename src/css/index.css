@@ -53,10 +53,19 @@ h1 {
     color: #ffffff;
     position: fixed;
     width: 100%;
+    z-index: 0;
 }
 
 .hide {
     opacity: 0;
+}
+
+.folderTitle {
+    opacity: 0.85;
+}
+
+.folderTitle:hover {
+    opacity: 1;
 }
 
 .tile {
@@ -102,6 +111,7 @@ h1 {
     border-radius: 12px;
     margin: 12px;
     display: var(--create-dial-display);
+    z-index: 1;
 }
 
 .createDial-content {
@@ -301,7 +311,7 @@ input:focus {
     width: 320px; /* 0 width - change this with JavaScript */
     position: fixed; /* Stay in place */
     transform: translateX(100%);
-    z-index: 1; /* Stay on top */
+    z-index: 2; /* Stay on top */
     top: 0; /* Stay at the top */
     right: 0;
     background: rgba(0,0,0,1);
@@ -311,6 +321,10 @@ input:focus {
     color: white;
     display: flex;
     justify-content: center;
+}
+
+#folders {
+    padding: 30px;
 }
 
 .settingsIcon svg {
