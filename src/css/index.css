@@ -133,7 +133,7 @@ a {
 }
 
 .selected {
-    opacity: 0;
+    visibility: hidden;
 }
 
 .dragging {
