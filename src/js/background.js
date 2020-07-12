@@ -15,7 +15,9 @@ let defaults = {
     largeTiles: true,
     showTitles: true,
     showAddSite: true,
-    showFolders: true
+    showFolders: true,
+    showSettingsBtn: true,
+    showClock: true,
 };
 let cache = {};
 let ready = false;
@@ -350,6 +352,7 @@ function updateSettings() {
 
 // should only fire when bookmark created via bookmarks manager directly in the speed dial folder
 // todo: allow editing URLs from speed dial page
+// todo: something f'd up with getthumbnails
 function changeBookmark(id, info) {
     if (info.url && info.url !== "data:") {
         browser.bookmarks.get(id).then(bookmark => {
@@ -371,9 +374,12 @@ function changeBookmark(id, info) {
                 });
             }
         });
-    } else if (info.parentId === speedDialId && !info.url) {
-        // folder
-        refreshOpen()
+    } else if (!info.url) {
+        browser.bookmarks.get(id).then(bookmark => {
+            if (bookmark[0].parentId === speedDialId) {
+                refreshOpen()
+            }
+        });
     }
 }
 

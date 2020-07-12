@@ -59,8 +59,13 @@ const largeTilesInput = document.getElementById("largeTiles");
 const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
+const showClockInput = document.getElementById("showClock");
+const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const saveBtn = document.getElementById("saveBtn");
 const settingsToast = document.getElementById("settingsToast");
+
+// clock
+const clock = document.getElementById('clock');
 
 const port = "p-" + new Date().getTime();
 const tabMessagePort = browser.runtime.connect({name:port});
@@ -77,6 +82,12 @@ let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
 
+function displayClock(){
+    clock.innerHTML = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+    setTimeout(displayClock, 1000);
+}
+
+displayClock();
 
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
@@ -182,7 +193,6 @@ function saveFolder() {
 }
 
 function editFolder() {
-    console.log("saving edit...");
     browser.bookmarks.update(targetFolder, {
         title: editFolderModalName.value.trim()
     }).then(node => {
@@ -224,6 +234,10 @@ function printBookmarks(bookmarks, parentId) {
                 if (folders.indexOf(bookmark.id) === -1) {
                     folders.push(bookmark.id);
                     folderLink(bookmark.title, bookmark.id)
+                } else {
+                    if (bookmark.id === targetFolder && targetFolderName !== bookmark.title) {
+                        targetFolderLink.textContent = bookmark.title;
+                    }
                 }
 
             } else if (bookmark.url && bookmark.url !== "data:") {
@@ -779,6 +793,18 @@ function applySettings() {
             document.documentElement.style.setProperty('--show-folders', 'none');
         }
 
+        if (settings.showClock) {
+            clock.style.setProperty('--clock', 'block');
+        } else {
+            clock.style.setProperty('--clock', 'none');
+        }
+
+        if (settings.showSettingsBtn) {
+            settingsBtn.style.setProperty('--settings', 'block');
+        } else {
+            settingsBtn.style.setProperty('--settings', 'none');
+        }
+
         if (settings.wallpaper && settings.wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (settings.wallpaperSrc.length < 65) {
@@ -829,6 +855,8 @@ function applySettings() {
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
         showFoldersInput.checked = settings.showFolders;
+        showClockInput.checked = settings.showClock;
+        showSettingsBtnInput.checked = settings.showSettingsBtn;
 
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
@@ -849,6 +877,8 @@ function saveSettings() {
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
     settings.showFolders = showFoldersInput.checked;
+    settings.showClock = showClock.checked;
+    settings.showSettingsBtn = showSettingsBtn.checked;
 
     browser.storage.local.set({settings})
         .then(()=> {
@@ -879,7 +909,6 @@ document.addEventListener( "contextmenu", function(e) {
         showContextMenu(e.pageY, e.pageX);
         return false;
     } else if (e.target.className === 'tile folderTitle' && e.target.id !== "homeFolderLink") {
-        //console.log(e.target);
         targetFolderLink = e.target;
         targetFolder = e.target.attributes.folderId.nodeValue;
         targetFolderName = e.target.textContent;
@@ -946,7 +975,6 @@ window.addEventListener("mousedown", e => {
                     removeBookmark(targetTileHref);
                     break;
                 case 'editFolder':
-                    console.log("edit folder");
                     //buildFolderModal(targetFolder, targetFolderName);
                     editFolderModalName.value = targetFolderName;
                     editFolderModal.style.transform = "translateX(0%)";

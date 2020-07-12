@@ -5,6 +5,8 @@
     --top-padding: 50px;
     --create-dial-display: block;
     --chrome-display: none;
+    --clock: block;
+    --settings: block;
 }
 
 html, body {
@@ -333,6 +335,7 @@ input:focus {
     top:0;
     left:0;
     padding: 30px;
+    margin-right: 110px;
 }
 
 #addFolderIcon {
@@ -347,9 +350,13 @@ input:focus {
     opacity: 0.8;
 }
 
+#settingsBtn {
+    display: var(--settings);
+}
+
 .settingsIcon svg {
-    height: 1.5em;
-    width: 1.5em;
+    height: 21px;
+    width: 21px;
     position: absolute;
     right: 30px;
     top: 30px;
@@ -360,6 +367,18 @@ input:focus {
 
 .settingsIcon svg:hover {
     filter: opacity(0.8);
+}
+
+#clock {
+    position: absolute;
+    display: var(--clock);
+    right: 60px;
+    top: 30px;
+    color: var(--color);
+    opacity: 0.6;
+    font-size: large;
+    font-weight: lighter;
+    transition: 160ms ease;
 }
 
 #toast {
