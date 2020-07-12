@@ -81,6 +81,7 @@ let targetFolder = null;
 let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
+let currentFolder = null;
 
 function displayClock(){
     clock.innerHTML = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
@@ -168,6 +169,7 @@ function folderLink(title, id) {
     //a.href = "#"+bookmark.id;
     a.onclick = function() {
         showFolder(id);
+        currentFolder = id;
     };
     foldersContainer.appendChild(a);
 }
@@ -458,7 +460,7 @@ function hideToast() {
 
 function buildCreateDialModal(parentId) {
     createDialModalURL.value = '';
-    createDialModalURL.parentId = parentId;
+    createDialModalURL.parentId = parentId ? parentId : speedDialId;
     createDialModalURL.focus();
 }
 
@@ -988,11 +990,19 @@ window.addEventListener("mousedown", e => {
                     deleteFolderModal.style.opacity = "1";
                     deleteFolderModalContent.style.transform = "scale(1)";
                     deleteFolderModalContent.style.opacity = "1";
-
-                    //targetFolderNode = e.target;
-
-
-                    //removeFolder(targetFolder, e.target);
+                    break;
+                case 'newDial':
+                    // prevent default required to stop focus from leaving the modal input
+                    e.preventDefault();
+                    buildCreateDialModal(currentFolder);
+                    createDialModal.style.transform = "translateX(0%)";
+                    createDialModal.style.opacity = "1";
+                    createDialModalContent.style.transform = "scale(1)";
+                    createDialModalContent.style.opacity = "1";
+                    break;
+                case 'newFolder':
+                    e.preventDefault();
+                    createFolder();
                     break;
             }
             break;

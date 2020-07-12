@@ -49,6 +49,9 @@
 
     <div class="menu" id="settingsMenu">
         <ul class="menu-options">
+            <li id="newDial" class="menu-option">New Speed Dial...</li>
+            <li id="newFolder" class="menu-option">New Folder...</li>
+            <li class="menu-separator"></li>
             <li id="openSettings" class="menu-option">Settings...</li>
         </ul>
     </div>
@@ -186,7 +189,18 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Show Labels</label>
+                    <label>Clock</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input type="checkbox" id="showClock" class="settingsCtl">
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label>Labels</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -219,22 +233,11 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Show Settings Button</label>
+                    <label>Settings Button</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
                         <input type="checkbox" id="showSettingsBtn" class="settingsCtl">
-                        <span class="slider round settingsCtl"></span>
-                    </label>
-                </div>
-            </div>
-            <div class='row'>
-                <div class='column'>
-                    <label>Show Clock</label>
-                </div>
-                <div class='column controls'>
-                    <label class="switch">
-                        <input type="checkbox" id="showClock" class="settingsCtl">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
