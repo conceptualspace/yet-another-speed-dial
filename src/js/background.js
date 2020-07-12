@@ -318,6 +318,7 @@ function updateBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1 ) {
         browser.bookmarks.get(id).then(bookmark => {
             console.log(bookmark);
+            // todo make this like "change bookmark" -- ie dont get thumbs if folder... this redundant?
             getThumbnails(bookmark[0].url).then(() => {
                 pushToCache(bookmark[0].url).then(() => {
                     refreshOpen()
@@ -377,6 +378,8 @@ function changeBookmark(id, info) {
     } else if (!info.url) {
         browser.bookmarks.get(id).then(bookmark => {
             if (bookmark[0].parentId === speedDialId) {
+                // new folder
+                folderIds.push(id);
                 refreshOpen()
             }
         });
