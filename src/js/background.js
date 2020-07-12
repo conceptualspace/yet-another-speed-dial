@@ -15,7 +15,7 @@ let defaults = {
     largeTiles: true,
     showTitles: true,
     showAddSite: true,
-    verticalAlign: true
+    showFolders: true
 };
 let cache = {};
 let ready = false;
@@ -326,7 +326,7 @@ function updateBookmark(id, bookmarkInfo) {
 }
 
 function removeBookmark(id, bookmarkInfo) {
-    if (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1) {
+    if (bookmarkInfo.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
         browser.storage.local.remove(bookmarkInfo.node.url)
     }
 }
@@ -351,8 +351,7 @@ function updateSettings() {
 // should only fire when bookmark created via bookmarks manager directly in the speed dial folder
 // todo: allow editing URLs from speed dial page
 function changeBookmark(id, info) {
-    console.log("changeBookmark");
-    if (info.url) {
+    if (info.url && info.url !== "data:") {
         browser.bookmarks.get(id).then(bookmark => {
             // confirm we are only mucking with speed dial bookmarks
             if (bookmark[0].parentId === speedDialId || folderIds.indexOf(bookmark[0].parentId) !== -1) {
@@ -372,6 +371,9 @@ function changeBookmark(id, info) {
                 });
             }
         });
+    } else if (info.parentId === speedDialId && !info.url) {
+        // folder
+        refreshOpen()
     }
 }
 

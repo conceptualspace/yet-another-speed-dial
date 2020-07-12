@@ -1,7 +1,7 @@
 :root {
     --color: #ffffff;
     --title-opacity: 1;
-    --vertical-align: safe center;
+    --show-folders: inline;
     --top-padding: 50px;
     --create-dial-display: block;
     --chrome-display: none;
@@ -32,7 +32,7 @@ h1 {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    align-content: var(--vertical-align);
+    align-content: safe center;
     justify-content: center;
     padding: 60px;
     height: 100%;
@@ -270,6 +270,11 @@ a {
 .formItem > .save {
     background-color: #1681d9;
 }
+
+.formItem > .delete {
+    background-color: #dc3545;
+}
+
 .formItem > .close {
     background-color: dimgrey;
 }
@@ -323,8 +328,23 @@ input:focus {
     justify-content: center;
 }
 
-#folders {
+#foldersContainer {
+    position:absolute;
+    top:0;
+    left:0;
     padding: 30px;
+}
+
+#addFolderIcon {
+    display: var(--show-folders);
+    height: 18px;
+    vertical-align: middle;
+    opacity: 0.5;
+    padding-left: 12px;
+    transition: 360ms ease;
+}
+#addFolderIcon:hover {
+    opacity: 0.8;
 }
 
 .settingsIcon svg {

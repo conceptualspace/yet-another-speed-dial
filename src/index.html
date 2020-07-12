@@ -17,7 +17,10 @@
     <p class="default-content">3. Use the button below (it can be toggled on or off in the settings)</p>
 </div>
 
-<div id="folders" style="position:absolute; top:0; left:0"></div>
+<!--
+<div id="foldersContainer" style="position:absolute; top:0; left:0"><span id="folders"></span><a title="Add Folder" class="tile folderTitle" style="padding-left: 12px; font-size: large; transform: matrix(1, 0, 0, 1, 0, 0);">+</a></div>
+-->
+<div id="foldersContainer"><span id="folders"></span><a title="Add Folder" id="addFolderButton"><img id="addFolderIcon" src="img/addfolder.svg"></a></div>
 
 <!-- speed dial content injected here -->
     <div class="container" id="wrap"></div>
@@ -36,6 +39,13 @@
             <li id="delete" class="menu-option">Delete</li>
         </ul>
     </div>
+
+<div class="menu" id="folderMenu">
+    <ul class="menu-options">
+        <li id="editFolder" class="menu-option">Edit Folder...</li>
+        <li id="deleteFolder" class="menu-option">Remove</li>
+    </ul>
+</div>
 
     <div class="menu" id="settingsMenu">
         <ul class="menu-options">
@@ -70,6 +80,43 @@
             <div class="formItem"><input id="createDialModalURL" type="text"></div>
             <div class="formItem chromeOnly"><p style="color:grey;"><em>This will temporarily open the site in a new tab to capture the image</em></p></div>
             <div class="formItem"><button id="createDialModalSave" class="save">Add to Speed Dial</button></div>
+            <div class="formItem"><button class="close">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- create folder modal window -->
+<div id="createFolderModal" class="modal">
+    <div id="createFolderModalContent" class="modal-content">
+        <form class="tileForm" action="">
+            <div class="formItem"><label for="createFolderModalName">Name</label></div>
+            <div class="formItem"><input id="createFolderModalName" type="text"></div>
+            <div class="formItem"><button id="createFolderModalSave" class="save">Create Folder</button></div>
+            <div class="formItem"><button class="close">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- edit folder modal window -->
+<div id="editFolderModal" class="modal">
+    <div id="editFolderModalContent" class="modal-content">
+        <form class="tileForm" action="">
+            <div class="formItem"><label for="editFolderModalName">Name</label></div>
+            <div class="formItem"><input id="editFolderModalName" type="text"></div>
+            <div class="formItem"><button id="editFolderModalSave" class="save">Save</button></div>
+            <div class="formItem"><button class="close">Cancel</button></div>
+        </form>
+    </div>
+</div>
+
+<!-- delete folder modal confirmation window -->
+<div id="deleteFolderModal" class="modal">
+    <div id="deleteFolderModalContent" class="modal-content">
+        <form class="tileForm" action="">
+            <div id="deleteFolderModalName"></div>
+
+            <div class="formItem"><br /><label>Are you sure you want to permanently remove this folder?</label><br /><br /></div>
+            <div class="formItem"><button id="deleteFolderModalSave" class="delete">Delete</button></div>
             <div class="formItem"><button class="close">Cancel</button></div>
         </form>
     </div>
@@ -159,11 +206,11 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Vertical Align</label>
+                    <label>Add Folder Button</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="verticalAlign" class="settingsCtl">
+                        <input type="checkbox" id="showFolders" class="settingsCtl">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
