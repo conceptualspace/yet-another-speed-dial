@@ -379,6 +379,8 @@ function changeBookmark(id, info) {
                 }
             } else {
                 // folder
+                // todo: support manual import of other folder: other folder wont have thumbs for individual sites
+                //  but only triggers the change listener for the folder
                 if (bookmark[0].title === "New Folder") {
                     // firefox creates a placeholder for the folder when created via bookmark manager
                     return

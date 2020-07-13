@@ -85,7 +85,7 @@ let currentFolder = null;
 
 function displayClock(){
     clock.innerHTML = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
-    setTimeout(displayClock, 1000);
+    setTimeout(displayClock, 10000);
 }
 
 displayClock();
@@ -94,7 +94,7 @@ function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
         if (folderId === speedDialId && !result.length && settings.showFolders) {
             noBookmarks.style.display = 'block';
-            foldersDiv.style.display = 'none';
+            addFolderButton.style.display = 'none';
         }
         printBookmarks(result, folderId)
     });
@@ -116,6 +116,7 @@ function removeBookmark(url) {
 }
 
 function showFolder(id) {
+    hideSettings();
     let folders = document.getElementsByClassName('container');
     for (let folder of folders) {
         if (folder.id === id || (folder.id === 'wrap' && id === speedDialId)) {
@@ -175,6 +176,7 @@ function folderLink(title, id) {
 }
 
 function createFolder() {
+    hideSettings();
     createFolderModalName.value = '';
     createFolderModalName.focus();
     createFolderModal.style.transform = "translateX(0%)";
@@ -284,6 +286,7 @@ function printBookmarks(bookmarks, parentId) {
     let a = document.createElement('a');
     a.classList.add('tile', 'createDial');
     a.onclick = function() {
+        hideSettings();
         buildCreateDialModal(parentId);
         createDialModal.style.transform = "translateX(0%)";
         createDialModal.style.opacity = "1";
@@ -947,6 +950,7 @@ window.addEventListener("mousedown", e => {
         case 'tile-content':
         case 'tile-title':
         case 'container':
+        case 'folders':
             hideSettings();
             break;
         case 'modal':
@@ -1094,9 +1098,10 @@ function init() {
             cache = m.cache;
             hideToast();
             noBookmarks.style.display = 'none';
-            foldersDiv.style.display = 'block';
+            addFolderButton.style.display = 'inline';
             bookmarksContainer.innerHTML = "";
             for (let folder of folders) {
+                console.log(folder);
                 document.getElementById(folder).innerHTML = "";
             }
             getBookmarks(speedDialId)
