@@ -309,7 +309,12 @@ function printBookmarks(bookmarks, parentId) {
         }
 
         bookmarksContainer.appendChild(fragment);
-        sort();
+
+        // todo: clean this up, restore sort when we remove migration
+        // preserve sorting from 1.5 versions
+        migrate();
+
+        //sort();
         bookmarksContainer.style.opacity = "1";
 
     } else {
@@ -1085,6 +1090,49 @@ wallPaperEnabled.onchange = function() {
         previewContainer.style.display = "none";
     }
 };
+
+// v1.x -> 1.6
+// 1.6 uses bookmark id to sort, 1.5 used default SortableJS algorithm
+function migrate() {
+    browser.storage.local.get("sort").then(result => {
+        if (result && result.sort) {
+
+            console.log("upgrading to v1.6...");
+
+            let idsMapped = {};
+            let idsSorted = [];
+            let tiles = document.getElementsByClassName("tile");
+            for (let tile of tiles) {
+                if (tile.href) {
+                    let str = tile.tagName + tile.className + tile.src + tile.href + tile.textContent,
+                        i = str.length,
+                        sum = 0;
+                    while (i--) {
+                        sum += str.charCodeAt(i);
+                    }
+                    let oldSortId = sum.toString(36);
+                    idsMapped[oldSortId] = tile.getAttribute("data-id");
+                }
+            }
+
+            idsMapped["1wv"] = "1wv";
+
+            for (let item of result.sort) {
+                if (idsMapped[item]) {
+                    idsSorted.push(idsMapped[item]);
+                }
+            }
+            sortable.sort([idsSorted]);
+            browser.storage.local.set({[speedDialId]:idsSorted}).then(setItem => {
+                browser.storage.local.remove("sort");
+                sort();
+                // upgrade complete;
+            });
+        } else {
+            sort();
+        }
+    });
+}
 
 function init() {
 
