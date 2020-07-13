@@ -312,21 +312,6 @@ function resizeThumb(dataURI) {
     });
 }
 
-function updateBookmark(id, bookmarkInfo) {
-    console.log('updateBookmark');
-    // only runs for speed dial
-    if (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1 ) {
-        browser.bookmarks.get(id).then(bookmark => {
-            console.log(bookmark);
-            // todo make this like "change bookmark" -- ie dont get thumbs if folder... this redundant?
-            getThumbnails(bookmark[0].url).then(() => {
-                pushToCache(bookmark[0].url).then(() => {
-                    refreshOpen()
-                })
-            })
-        })
-    }
-}
 
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
@@ -351,39 +336,59 @@ function updateSettings() {
     });
 }
 
-// should only fire when bookmark created via bookmarks manager directly in the speed dial folder
+// todo: test behavior on chrome
+function moved(id, info) {
+    console.log("onMoved");
+    changeBookmark(id, info);
+}
+
+function changed(id, info) {
+    console.log("onChanged");
+    changeBookmark(id, info);
+}
+
+function created(id, info) {
+    console.log("onCreated");
+    changeBookmark(id, info);
+}
+
 // todo: allow editing URLs from speed dial page
 // todo: something f'd up with getthumbnails
 function changeBookmark(id, info) {
-    if (info.url && info.url !== "data:") {
-        browser.bookmarks.get(id).then(bookmark => {
-            // confirm we are only mucking with speed dial bookmarks
-            if (bookmark[0].parentId === speedDialId || folderIds.indexOf(bookmark[0].parentId) !== -1) {
-                browser.storage.local.get(bookmark[0].url).then(result => {
-                    if (result[bookmark[0].url]) {
-                        // a pre-existing bookmark is being modified; dont fetch new thumbnails
-                        // todo: broken with folders -- doesnt allow same site in 2 folders..
-                        // todo: there might be a race condition here for bookmarks created via context menu
-                        refreshOpen();
-                    } else {
-                        getThumbnails(bookmark[0].url).then(() => {
-                            pushToCache(bookmark[0].url).then(() => {
-                                refreshOpen()
+    // info may only contain "changed" info -- ex. it may not contain url for moves, just old and new folder ids
+    // so we always "get" the bookmark to access all its info
+    browser.bookmarks.get(id).then(bookmark => {
+        // only interested in speed dial and its subfolders
+        if (bookmark[0].parentId === speedDialId || folderIds.indexOf(bookmark[0].parentId) !== -1) {
+            if (bookmark[0].url) {
+                if (bookmark[0].url !== "data:" && bookmark[0].url !== "about:blank") {
+                    browser.storage.local.get(bookmark[0].url).then(result => {
+                        if (result[bookmark[0].url]) {
+                            // a pre-existing bookmark is being modified; dont fetch new thumbnails
+                            // todo: broken with folders -- doesnt allow same site to have separate images in 2 folders..
+                            // todo: there might be a race condition here for bookmarks created via context menu
+                            refreshOpen();
+                        } else {
+                            getThumbnails(bookmark[0].url).then(() => {
+                                pushToCache(bookmark[0].url).then(() => {
+                                    refreshOpen()
+                                })
                             })
-                        })
-                    }
-                });
-            }
-        });
-    } else if (!info.url) {
-        browser.bookmarks.get(id).then(bookmark => {
-            if (bookmark[0].parentId === speedDialId) {
+                        }
+                    });
+                }
+            } else {
+                // folder
+                if (bookmark[0].title === "New Folder") {
+                    // firefox creates a placeholder for the folder when created via bookmark manager
+                    return
+                }
                 // new folder
                 folderIds.push(id);
                 refreshOpen()
             }
-        });
-    }
+        }
+    });
 }
 
 function connected(p) {
@@ -429,11 +434,11 @@ function handleInstalled(details) {
 function init() {
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
-    browser.bookmarks.onMoved.addListener(updateBookmark);
+    browser.bookmarks.onMoved.addListener(moved);
     // ff triggers 'changed' for bookmarks created manually? todo: confirm
-    browser.bookmarks.onChanged.addListener(changeBookmark);
+    browser.bookmarks.onChanged.addListener(changed);
     // chrome triggers oncreated for bookmarks created manually in bookmark mgr. todo: make sure this doesnt hurt ff
-    browser.bookmarks.onCreated.addListener(changeBookmark);
+    browser.bookmarks.onCreated.addListener(created);
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
 
