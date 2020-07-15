@@ -1,6 +1,6 @@
 # yet-another-speed-dial
 
-A clean and modern speed dial for Firefox and Chrome, inspired by Opera
+A modern speed dial for Firefox and Chrome, inspired by Opera
 
 - Respects your privacy. Unlike other speed dial addons, there is no tracking.
 - Automatically generates thumbnails and screenshots, or select your own.
@@ -8,8 +8,6 @@ A clean and modern speed dial for Firefox and Chrome, inspired by Opera
 - Sortable with drag and drop
 - Folder support
 - Simple and fast UI
-
-Inspired by the great speed dial in Opera.
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
