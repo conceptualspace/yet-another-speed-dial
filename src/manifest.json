@@ -30,7 +30,7 @@
   },
   "background": {
     "scripts": [
-      "js/browser-polyfill.min.js",
+      "js/lib/browser-polyfill.min.js",
       "js/background.js"
     ]
   },
