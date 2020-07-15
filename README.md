@@ -2,11 +2,14 @@
 
 A clean and modern speed dial for Firefox and Chrome, inspired by Opera
 
-- Respects your privacy. Unlike other speed dial addons, there is no tracking
-- Automatically generates thumbnails and screenshots, or select your own
-- Uses the browser's native bookmarks library so speed dials can be synced
+- Respects your privacy. Unlike other speed dial addons, there is no tracking.
+- Automatically generates thumbnails and screenshots, or select your own.
+- Uses the browser's native bookmarks library so speed dials can be synced.
 - Sortable with drag and drop
-- Fast and stable
+- Folder support
+- Simple and fast UI
+
+Inspired by the great speed dial in Opera.
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
