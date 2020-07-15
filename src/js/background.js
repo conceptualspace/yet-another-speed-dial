@@ -49,6 +49,19 @@ function getSpeedDialId() {
     });
 }
 
+function handleBrowserAction(tab) {
+    browser.bookmarks.search({url: tab.url}).then(result => {
+        if (!result.length) {
+            browser.bookmarks.create({
+                parentId: speedDialId,
+                title: tab.title,
+                url: tab.url
+            })
+        }
+        browser.browserAction.disable(tab.id);
+    });
+}
+
 function onClickHandler(info, tab) {
     if (info.menuItemId === 'addToSpeedDial') {
         // avoid duplicates
@@ -414,6 +427,8 @@ function connected(p) {
         let i = messagePorts.indexOf(p);
         messagePorts.splice(i, 1);
     });
+
+    browser.browserAction.disable(p.sender.tab.id);
 }
 
 // migration from v1.3.x -> v1.4.x
@@ -443,6 +458,8 @@ function init() {
     browser.bookmarks.onCreated.addListener(created);
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
+
+    browser.browserAction.onClicked.addListener(handleBrowserAction);
 
     // build a thumbnail cache of url:thumbUrl pairs
     browser.storage.local.get().then(result => {
