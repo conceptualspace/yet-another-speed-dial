@@ -925,7 +925,7 @@ document.addEventListener( "contextmenu", function(e) {
         targetFolderName = e.target.textContent;
         showFolderMenu(e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content') {
+    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content') {
         showSettingsMenu(e.pageY, e.pageX);
         return false;
     }
