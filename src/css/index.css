@@ -28,7 +28,7 @@ h1 {
     font-size: xx-large;
 }
 
-.container {
+#tileContainer {
     padding: 0 60px;
     height: calc(100vh - 79px);
     transition: opacity 150ms ease-in;
