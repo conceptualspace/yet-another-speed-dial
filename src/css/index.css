@@ -29,19 +29,23 @@ h1 {
 }
 
 .container {
+    padding: 0 60px;
+    height: calc(100vh - 79px);
+    transition: opacity 150ms ease-in;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
+    scrollbar-width: thin;
+}
+
+#wrap {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     align-content: safe center;
     justify-content: center;
-    padding: 60px;
-    height: calc(100vh - 79px);
-    transition: opacity 150ms ease-in;
+    min-height: 100%;
     opacity: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
-    scrollbar-width: thin;
 }
 
 #noBookmarks {
