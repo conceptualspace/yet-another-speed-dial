@@ -59,6 +59,8 @@ function handleBrowserAction(tab) {
             })
         }
         browser.browserAction.disable(tab.id);
+        browser.browserAction.setBadgeText({text:"✔️", tabId:tab.id})
+        browser.browserAction.setBadgeBackgroundColor({color: "#222222"});
     });
 }
 
