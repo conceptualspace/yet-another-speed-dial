@@ -38,7 +38,7 @@ h1 {
     scrollbar-width: thin;
 }
 
-#wrap {
+.container {
     display: flex;
     flex-wrap: wrap;
     align-items: center;

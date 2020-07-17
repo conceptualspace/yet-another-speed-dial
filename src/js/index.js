@@ -5,9 +5,9 @@
 'use strict';
 
 // speed dial
+const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = document.getElementById('wrap');
 const foldersContainer = document.getElementById('folders');
-const foldersDiv = document.getElementById('foldersContainer');
 const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
 const folderMenu = document.getElementById('folderMenu');
@@ -325,7 +325,8 @@ function printBookmarks(bookmarks, parentId) {
             folderContainer.classList.add('container');
             folderContainer.style.display = 'none';
             folderContainer.style.opacity = "1";
-            document.body.append(folderContainer);
+            //document.body.append(folderContainer);
+            bookmarksContainerParent.append(folderContainer);
         }
 
         let folderContainerEl = document.getElementById(parentId);
@@ -924,7 +925,7 @@ document.addEventListener( "contextmenu", function(e) {
         targetFolderName = e.target.textContent;
         showFolderMenu(e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'container' || e.target.className === 'default-content') {
+    } else if (e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content') {
         showSettingsMenu(e.pageY, e.pageX);
         return false;
     }
@@ -955,6 +956,7 @@ window.addEventListener("mousedown", e => {
         case 'tile-content':
         case 'tile-title':
         case 'container':
+        case 'tileContainer':
         case 'folders':
             hideSettings();
             break;
