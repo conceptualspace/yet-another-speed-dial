@@ -68,7 +68,7 @@ const settingsToast = document.getElementById("settingsToast");
 const clock = document.getElementById('clock');
 
 const port = "p-" + new Date().getTime();
-const tabMessagePort = browser.runtime.connect({name:port});
+const tabMessagePort = browser.runtime.connect({name: port});
 
 let cache = null;
 let settings = null;
@@ -83,8 +83,8 @@ let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
 
-function displayClock(){
-    clock.textContent = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true });
+function displayClock() {
+    clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true});
     setTimeout(displayClock, 10000);
 }
 
@@ -104,7 +104,7 @@ function removeBookmark(url) {
     browser.bookmarks.search({url})
         .then(bookmarks => {
             for (let bookmark of bookmarks) {
-                if (bookmark.parentId === speedDialId || folders.indexOf(bookmark.parentId) !== -1 ) {
+                if (bookmark.parentId === speedDialId || folders.indexOf(bookmark.parentId) !== -1) {
                     targetNode.remove();
                     browser.bookmarks.remove(bookmark.id);
                     browser.storage.local.remove(url);
@@ -123,7 +123,7 @@ function showFolder(id) {
             folder.style.display = "flex"
             folder.style.opacity = "0";
             // transition between folders. todo more elegant solution
-            setTimeout(function() {
+            setTimeout(function () {
                 folder.style.opacity = "1";
             }, 16);
         } else {
@@ -168,7 +168,7 @@ function folderLink(title, id) {
     let linkText = document.createTextNode(title);
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
-    a.onclick = function() {
+    a.onclick = function () {
         showFolder(id);
         currentFolder = id;
     };
@@ -208,7 +208,7 @@ function removeFolder() {
     browser.bookmarks.removeTree(targetFolder).then(() => {
         hideModal();
         targetFolderLink.remove();
-        folders.splice(folders.indexOf(targetFolder), 1 );
+        folders.splice(folders.indexOf(targetFolder), 1);
         if (!folders.length) {
             document.getElementById('homeFolderLink').remove();
         }
@@ -285,7 +285,7 @@ function printBookmarks(bookmarks, parentId) {
     // new dial button
     let a = document.createElement('a');
     a.classList.add('tile', 'createDial');
-    a.onclick = function() {
+    a.onclick = function () {
         hideSettings();
         buildCreateDialModal(parentId);
         modalShowEffect(createDialModalContent, createDialModal);
@@ -335,15 +335,15 @@ function printBookmarks(bookmarks, parentId) {
             ghostClass: 'selected',
             dragClass: 'dragging',
             filter: ".createDial",
-            onMove:function (evt) {
+            onMove: function (evt) {
                 if (evt.related) {
                     return !evt.related.classList.contains('createDial');
                 }
             },
             store: {
-                set: function(sortable) {
+                set: function (sortable) {
                     let order = sortable.toArray();
-                    browser.storage.local.set({[parentId]:order});
+                    browser.storage.local.set({[parentId]: order});
                 }
             }
         });
@@ -388,7 +388,7 @@ function hideMenus() {
 }
 
 function openSettings() {
-    sidenav.style.boxShadow ="0px 2px 8px 0px rgba(0,0,0,0.5)";
+    sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
     sidenav.style.transform = "translateX(0%)";
 }
 
@@ -402,7 +402,7 @@ function modalHideEffect(contentEl, modalEl) {
     contentEl.style.opacity = "0";
     modalEl.style.opacity = "0";
 
-    setTimeout(function() {
+    setTimeout(function () {
         modalEl.style.transform = "translateX(100%)";
     }, 160);
 }
@@ -478,7 +478,7 @@ async function buildModal(url, title) {
 function createDial() {
     let url = createDialModalURL.value.trim();
 
-    if ( !url.startsWith('https://') && !url.startsWith('http://') ) {
+    if (!url.startsWith('https://') && !url.startsWith('http://')) {
         url = 'https://' + url;
     }
 
@@ -537,8 +537,8 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({[url]:{thumbnails, thumbIndex}}).then(result => {
-                            tabMessagePort.postMessage({updateCache: true, url, i:thumbIndex});
+                        browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
+                            tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
                         });
                     }
                 }
@@ -552,11 +552,11 @@ function saveBookmarkSettings() {
         //let order = sortable.toArray();
         //browser.storage.local.set({"sort":order});
         browser.bookmarks.search({url})
-        .then(bookmark => {
-            browser.bookmarks.update(bookmark[0].id, {
-                title
-            });
-        })
+            .then(bookmark => {
+                browser.bookmarks.update(bookmark[0].id, {
+                    title
+                });
+            })
     }
 
     hideModal();
@@ -564,25 +564,27 @@ function saveBookmarkSettings() {
 
 function animate() {
     //var inputs = document.querySelectorAll("input");
-    const nodes  = document.querySelectorAll(".tile");
+    const nodes = document.querySelectorAll(".tile");
     //const observerConfig = { attributes: false, childList: true, subtree: false };
-    const total  = nodes.length;
-    const time   = 0.9;
-    const omega  = 12;
-    const zeta   = 0.9;
-    let dirty  = true;
-    let boxes  = [];
+    const total = nodes.length;
+    const time = 0.9;
+    const omega = 12;
+    const zeta = 0.9;
+    let dirty = true;
+    let boxes = [];
 
     for (let i = 0; i < total; i++) {
-        let node   = nodes[i];
-        TweenLite.set(node, { x: "+=0" });
+        let node = nodes[i];
+        TweenLite.set(node, {x: "+=0"});
         const transform = node._gsTransform;
         const x = node.offsetLeft;
         const y = node.offsetTop;
-        boxes[i] = { node, transform, x, y };
+        boxes[i] = {node, transform, x, y};
     }
 
-    window.addEventListener("resize", () => { dirty = true; });
+    window.addEventListener("resize", () => {
+        dirty = true;
+    });
     //const observer = new MutationObserver(() => { dirty = true; });
     //observer.observe(bookmarksContainer, observerConfig);
 
@@ -603,18 +605,18 @@ function animate() {
                 const x = box.transform.x + lastX - box.x;
                 const y = box.transform.y + lastY - box.y;
                 // Tween to 0 to remove the transforms
-                TweenLite.set(box.node, { x, y });
-                TweenLite.to(box.node, time, { x: 0, y: 0, ease });
+                TweenLite.set(box.node, {x, y});
+                TweenLite.to(box.node, time, {x: 0, y: 0, ease});
             }
         }
     }
 
     function ease(progress) {
-        const beta  = Math.sqrt(1.0 - zeta * zeta);
+        const beta = Math.sqrt(1.0 - zeta * zeta);
         progress = 1 - Math.cos(progress * Math.PI / 2);
         progress = 1 / beta *
             Math.exp(-zeta * omega * progress) *
-            Math.sin( beta * omega * progress + Math.atan(beta / zeta));
+            Math.sin(beta * omega * progress + Math.atan(beta / zeta));
         return 1 - progress;
     }
 
@@ -626,10 +628,10 @@ function readURL(input) {
     }
 }
 
-function resizeThumb(dataURI){
-    return new Promise(function(resolve, reject) {
+function resizeThumb(dataURI) {
+    return new Promise(function (resolve, reject) {
         let img = new Image();
-        img.onload = function() {
+        img.onload = function () {
             if (this.height > 256 && this.width > 256) {
                 // when im less lazy check use optimal w/h based on image
                 // set height to 256 and scale
@@ -656,9 +658,9 @@ function resizeThumb(dataURI){
 }
 
 function readImage(input) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         let filereader = new FileReader();
-        filereader.onload = function(e) {
+        filereader.onload = function (e) {
             resolve(e.target.result);
         };
         if (input.files && input.files[0]) {
@@ -693,17 +695,17 @@ function addImage(image) {
 
 function hexToRgb(color) {
     let colors = color.replace("#", "").match(/.{2}/g);
-    return colors.map(c => parseInt("0x"+c));
+    return colors.map(c => parseInt("0x" + c));
 }
 
 // given a color, return whether white or black has the most contrast
 // approximates w3c accessibility algorithm
 function contrast(rgb) {
     let srgb = [];
-    rgb.forEach(function(c, i) {
+    rgb.forEach(function (c, i) {
         c = c / 255;
         if (c <= 0.03928) {
-            c = c/12.92
+            c = c / 12.92
         } else {
             c = Math.pow((c + 0.055) / 1.055, 2.4);
         }
@@ -718,7 +720,7 @@ function contrast(rgb) {
 }
 
 function getAverageRGB(imgPath) {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         // todo: performance: use the bg preview image from the settings nav rather than using a constructor
         let img = new Image();
         img.onload = function () {
@@ -728,7 +730,7 @@ function getAverageRGB(imgPath) {
             let data, width, height;
             let i = -4;
             let length;
-            let rgb = [0,0,0];
+            let rgb = [0, 0, 0];
             let count = 0;
 
             height = canvas.height = img.naturalHeight || img.offsetHeight || img.height;
@@ -756,7 +758,7 @@ function getAverageRGB(imgPath) {
 }
 
 function applySettings() {
-    return new Promise(function(resolve, reject) {
+    return new Promise(function (resolve, reject) {
         // apply settings to speed dial
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
@@ -852,9 +854,9 @@ function saveSettings() {
     settings.showSettingsBtn = showSettingsBtn.checked;
 
     browser.storage.local.set({settings})
-        .then(()=> {
+        .then(() => {
             settingsToast.style.opacity = "1";
-            setTimeout(function() {
+            setTimeout(function () {
                 settingsToast.style.opacity = "0";
             }, 3500);
             applySettings();
@@ -863,7 +865,7 @@ function saveSettings() {
 }
 
 // override context menu
-document.addEventListener( "contextmenu", function(e) {
+document.addEventListener("contextmenu", function (e) {
     if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'createDialModalURL')) {
         return;
     }
@@ -895,7 +897,8 @@ document.addEventListener( "contextmenu", function(e) {
 window.addEventListener("click", e => {
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
-    } if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
+    }
+    if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
         return;
     }
     e.preventDefault();
@@ -929,7 +932,7 @@ window.addEventListener("mousedown", e => {
                     openSettings();
                     break;
                 case 'newTab':
-                    browser.tabs.create({url:targetTileHref});
+                    browser.tabs.create({url: targetTileHref});
                     break;
                 case 'newWin':
                     browser.windows.create({"url": targetTileHref});
@@ -985,8 +988,8 @@ createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
 
-for(let button of closeModal) {
-    button.onclick = function(e) {
+for (let button of closeModal) {
+    button.onclick = function (e) {
         e.preventDefault();
         hideModal();
     };
@@ -1006,7 +1009,7 @@ createDialModalURL.addEventListener('keydown', e => {
     }
 });
 
-modalImgInput.onchange = function() {
+modalImgInput.onchange = function () {
     readImage(this).then(image => {
         resizeThumb(image).then(resizedImage => {
             addImage(resizedImage);
@@ -1014,7 +1017,7 @@ modalImgInput.onchange = function() {
     });
 };
 
-color_picker.onchange = function() {
+color_picker.onchange = function () {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
 };
 
@@ -1023,15 +1026,15 @@ reader.onload = function (e) {
     imgPreview.style.display = 'block';
 };
 
-imgInput.onchange = function() {
+imgInput.onchange = function () {
     readURL(this);
 };
 
-saveBtn.onclick = function() {
+saveBtn.onclick = function () {
     saveSettings();
 };
 
-wallPaperEnabled.onchange = function() {
+wallPaperEnabled.onchange = function () {
     if (this.checked) {
         previewContainer.style.display = "flex";
     } else {
@@ -1071,7 +1074,7 @@ function migrate() {
                 }
             }
             sortable.sort([idsSorted]);
-            browser.storage.local.set({[speedDialId]:idsSorted}).then(setItem => {
+            browser.storage.local.set({[speedDialId]: idsSorted}).then(setItem => {
                 browser.storage.local.remove("sort");
                 sort();
                 // upgrade complete;
@@ -1083,7 +1086,7 @@ function migrate() {
 }
 
 function init() {
-    tabMessagePort.onMessage.addListener(function(m) {
+    tabMessagePort.onMessage.addListener(function (m) {
         if (m.ready) {
             cache = m.cache;
             settings = m.settings;
@@ -1110,15 +1113,15 @@ function init() {
         ghostClass: 'selected',
         dragClass: 'dragging',
         filter: ".createDial",
-        onMove:function (evt) {
+        onMove: function (evt) {
             if (evt.related) {
                 return !evt.related.classList.contains('createDial');
             }
         },
         store: {
-            set: function(sortable) {
+            set: function (sortable) {
                 let order = sortable.toArray();
-                browser.storage.local.set({[speedDialId]:order});
+                browser.storage.local.set({[speedDialId]: order});
             }
         }
     });
