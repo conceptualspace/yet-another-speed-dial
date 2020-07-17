@@ -288,10 +288,7 @@ function printBookmarks(bookmarks, parentId) {
     a.onclick = function() {
         hideSettings();
         buildCreateDialModal(parentId);
-        createDialModal.style.transform = "translateX(0%)";
-        createDialModal.style.opacity = "1";
-        createDialModalContent.style.transform = "scale(1)";
-        createDialModalContent.style.opacity = "1";
+        modalShowEffect(createDialModalContent, createDialModal);
     };
     let main = document.createElement('div');
     main.classList.add('tile-main');
@@ -366,49 +363,19 @@ function printBookmarks(bookmarks, parentId) {
     }
 }
 
-function showContextMenu(top, left) {
-    if ((document.body.clientWidth - left) < (menu.clientWidth + 30)) {
-        menu.style.left = (left - menu.clientWidth) + 'px';
+function showContextMenu(el, top, left) {
+    if ((document.body.clientWidth - left) < (el.clientWidth + 30)) {
+        el.style.left = (left - el.clientWidth) + 'px';
     } else {
-        menu.style.left = left + 'px';
+        el.style.left = left + 'px';
     }
-    if ((document.body.clientHeight - top) < (menu.clientHeight + 30)) {
-        menu.style.top = (top - menu.clientHeight) + 'px';
+    if ((document.body.clientHeight - top) < (el.clientHeight + 30)) {
+        el.style.top = (top - el.clientHeight) + 'px';
     } else {
-        menu.style.top = top + 'px';
+        el.style.top = top + 'px';
     }
-    menu.style.visibility = "visible";
-    menu.style.opacity = "1";
-}
-
-function showFolderMenu(top, left) {
-    if ((document.body.clientWidth - left) < (folderMenu.clientWidth + 30)) {
-        folderMenu.style.left = (left - folderMenu.clientWidth) + 'px';
-    } else {
-        folderMenu.style.left = left + 'px';
-    }
-    if ((document.body.clientHeight - top) < (folderMenu.clientHeight + 30)) {
-        folderMenu.style.top = (top - folderMenu.clientHeight) + 'px';
-    } else {
-        folderMenu.style.top = top + 'px';
-    }
-    folderMenu.style.visibility = "visible";
-    folderMenu.style.opacity = "1";
-}
-
-function showSettingsMenu(top, left) {
-    if ((document.body.clientWidth - left) < (settingsMenu.clientWidth + 30)) {
-        settingsMenu.style.left = (left - settingsMenu.clientWidth) + 'px';
-    } else {
-        settingsMenu.style.left = left + 'px';
-    }
-    if ((document.body.clientHeight - top) < (settingsMenu.clientHeight + 30)) {
-        settingsMenu.style.top = (top - settingsMenu.clientHeight) + 'px';
-    } else {
-        settingsMenu.style.top = top + 'px';
-    }
-    settingsMenu.style.visibility = "visible";
-    settingsMenu.style.opacity = "1";
+    el.style.visibility = "visible";
+    el.style.opacity = "1";
 }
 
 function hideMenus() {
@@ -430,36 +397,29 @@ function hideSettings() {
     sidenav.style.boxShadow = "none";
 }
 
-function hideModal() {
-    modalContent.style.transform = "scale(0.8)";
-    modalContent.style.opacity = "0";
-    modal.style.opacity = "0";
-
-    createDialModalContent.style.transform = "scale(0.8)";
-    createDialModalContent.style.opacity = "0";
-    createDialModal.style.opacity = "0";
-
-    createFolderModalContent.style.transform = "scale(0.8)";
-    createFolderModalContent.style.opacity = "0";
-    createFolderModal.style.opacity = "0";
-
-    editFolderModalContent.style.transform = "scale(0.8)";
-    editFolderModalContent.style.opacity = "0";
-    editFolderModal.style.opacity = "0";
-
-    deleteFolderModalContent.style.transform = "scale(0.8)";
-    deleteFolderModalContent.style.opacity = "0";
-    deleteFolderModal.style.opacity = "0";
+function modalHideEffect(contentEl, modalEl) {
+    contentEl.style.transform = "scale(0.8)";
+    contentEl.style.opacity = "0";
+    modalEl.style.opacity = "0";
 
     setTimeout(function() {
-        modal.style.transform = "translateX(100%)";
-        createDialModal.style.transform = "translateX(100%)";
-        createFolderModal.style.transform = "translateX(100%)";
-        editFolderModal.style.transform = "translateX(100%)";
-        deleteFolderModal.style.transform = "translateX(100%)";
+        modalEl.style.transform = "translateX(100%)";
     }, 160);
+}
 
-    //modalContent.style.transform = "scale(0.8)";
+function hideModal() {
+    modalHideEffect(modalContent, modal)
+    modalHideEffect(createDialModalContent, createDialModal)
+    modalHideEffect(createFolderModalContent, createFolderModal)
+    modalHideEffect(editFolderModalContent, editFolderModal)
+    modalHideEffect(deleteFolderModalContent, deleteFolderModal)
+}
+
+function modalShowEffect(contentEl, modalEl) {
+    modalEl.style.transform = "translateX(0%)";
+    modalEl.style.opacity = "1";
+    contentEl.style.transform = "scale(1)";
+    contentEl.style.opacity = "1";
 }
 
 function hideToast() {
@@ -917,16 +877,16 @@ document.addEventListener( "contextmenu", function(e) {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
         targetTileTitle = e.target.nextElementSibling.innerText;
-        showContextMenu(e.pageY, e.pageX);
+        showContextMenu(menu, e.pageY, e.pageX);
         return false;
     } else if (e.target.className === 'tile folderTitle' && e.target.id !== "homeFolderLink") {
         targetFolderLink = e.target;
         targetFolder = e.target.attributes.folderId.nodeValue;
         targetFolderName = e.target.textContent;
-        showFolderMenu(e.pageY, e.pageX);
+        showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
     } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content') {
-        showSettingsMenu(e.pageY, e.pageX);
+        showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
 });
@@ -978,11 +938,9 @@ window.addEventListener("mousedown", e => {
                     browser.windows.create({"url": targetTileHref, "incognito": true});
                     break;
                 case 'edit':
-                    buildModal(targetTileHref, targetTileTitle);
-                    modal.style.transform = "translateX(0%)";
-                    modal.style.opacity = "1";
-                    modalContent.style.transform = "scale(1)";
-                    modalContent.style.opacity = "1";
+                    buildModal(targetTileHref, targetTileTitle).then(() => {
+                        modalShowEffect(modalContent, modal);
+                    });
                     break;
                 case 'delete':
                     removeBookmark(targetTileHref);
@@ -990,26 +948,17 @@ window.addEventListener("mousedown", e => {
                 case 'editFolder':
                     //buildFolderModal(targetFolder, targetFolderName);
                     editFolderModalName.value = targetFolderName;
-                    editFolderModal.style.transform = "translateX(0%)";
-                    editFolderModal.style.opacity = "1";
-                    editFolderModalContent.style.transform = "scale(1)";
-                    editFolderModalContent.style.opacity = "1";
+                    modalShowEffect(editFolderModalContent, editFolderModal);
                     break;
                 case 'deleteFolder':
                     deleteFolderModalName.textContent = targetFolderName;
-                    deleteFolderModal.style.transform = "translateX(0%)";
-                    deleteFolderModal.style.opacity = "1";
-                    deleteFolderModalContent.style.transform = "scale(1)";
-                    deleteFolderModalContent.style.opacity = "1";
+                    modalShowEffect(deleteFolderModalContent, deleteFolderModal);
                     break;
                 case 'newDial':
                     // prevent default required to stop focus from leaving the modal input
                     e.preventDefault();
                     buildCreateDialModal(currentFolder);
-                    createDialModal.style.transform = "translateX(0%)";
-                    createDialModal.style.opacity = "1";
-                    createDialModalContent.style.transform = "scale(1)";
-                    createDialModalContent.style.opacity = "1";
+                    modalShowEffect(createDialModalContent, createDialModal);
                     break;
                 case 'newFolder':
                     e.preventDefault();
@@ -1031,12 +980,9 @@ window.addEventListener("keydown", event => {
 
 modalSave.addEventListener("click", saveBookmarkSettings);
 createDialModalSave.addEventListener("click", createDial);
-
 addFolderButton.addEventListener("click", createFolder);
 createFolderModalSave.addEventListener("click", saveFolder)
-
 editFolderModalSave.addEventListener("click", editFolder)
-
 deleteFolderModalSave.addEventListener("click", removeFolder);
 
 for(let button of closeModal) {
@@ -1137,7 +1083,6 @@ function migrate() {
 }
 
 function init() {
-
     tabMessagePort.onMessage.addListener(function(m) {
         if (m.ready) {
             cache = m.cache;
