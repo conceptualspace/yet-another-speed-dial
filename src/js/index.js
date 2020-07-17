@@ -192,7 +192,7 @@ function saveFolder() {
         title: name,
         parentId: speedDialId
     }).then(node => {
-        hideModal();
+        hideModals();
     });
 }
 
@@ -200,13 +200,13 @@ function editFolder() {
     browser.bookmarks.update(targetFolder, {
         title: editFolderModalName.value.trim()
     }).then(node => {
-        hideModal();
+        hideModals();
     });
 }
 
 function removeFolder() {
     browser.bookmarks.removeTree(targetFolder).then(() => {
-        hideModal();
+        hideModals();
         targetFolderLink.remove();
         folders.splice(folders.indexOf(targetFolder), 1);
         if (!folders.length) {
@@ -379,12 +379,11 @@ function showContextMenu(el, top, left) {
 }
 
 function hideMenus() {
-    menu.style.visibility = "hidden";
-    menu.style.opacity = "0";
-    settingsMenu.style.visibility = "hidden";
-    settingsMenu.style.opacity = "0";
-    folderMenu.style.visibility = "hidden";
-    folderMenu.style.opacity = "0";
+    let menus = [menu, settingsMenu, folderMenu]
+    for (let el of menus) {
+        el.style.visibility = "hidden";
+        el.style.opacity = "0";
+    }
 }
 
 function openSettings() {
@@ -397,22 +396,21 @@ function hideSettings() {
     sidenav.style.boxShadow = "none";
 }
 
-function modalHideEffect(contentEl, modalEl) {
-    contentEl.style.transform = "scale(0.8)";
-    contentEl.style.opacity = "0";
-    modalEl.style.opacity = "0";
+function hideModals() {
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent]
 
-    setTimeout(function () {
-        modalEl.style.transform = "translateX(100%)";
-    }, 160);
-}
+    for (let el of modalContents) {
+        el.style.transform = "scale(0.8)";
+        el.style.opacity = "0";
+    }
 
-function hideModal() {
-    modalHideEffect(modalContent, modal)
-    modalHideEffect(createDialModalContent, createDialModal)
-    modalHideEffect(createFolderModalContent, createFolderModal)
-    modalHideEffect(editFolderModalContent, editFolderModal)
-    modalHideEffect(deleteFolderModalContent, deleteFolderModal)
+    for (let el of modals) {
+        el.style.opacity = "0";
+        setTimeout(function () {
+            el.style.transform = "translateX(100%)";
+        }, 160);
+    }
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -487,7 +485,7 @@ function createDial() {
         url: url,
         parentId: createDialModalURL.parentId
     }).then(node => {
-        hideModal();
+        hideModals();
         toastContent.innerText = ` Capturing images for ${url}...`;
         toast.style.transform = "translateX(0%)";
     });
@@ -559,7 +557,7 @@ function saveBookmarkSettings() {
             })
     }
 
-    hideModal();
+    hideModals();
 }
 
 function animate() {
@@ -924,7 +922,7 @@ window.addEventListener("mousedown", e => {
             hideSettings();
             break;
         case 'modal':
-            hideModal();
+            hideModals();
             break;
         case 'menu-option':
             switch (e.target.id) {
@@ -977,7 +975,7 @@ window.addEventListener("mousedown", e => {
 window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
         hideMenus();
-        hideModal();
+        hideModals();
     }
 });
 
@@ -991,7 +989,7 @@ deleteFolderModalSave.addEventListener("click", removeFolder);
 for (let button of closeModal) {
     button.onclick = function (e) {
         e.preventDefault();
-        hideModal();
+        hideModals();
     };
 }
 
