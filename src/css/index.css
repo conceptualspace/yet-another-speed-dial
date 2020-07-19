@@ -66,6 +66,7 @@ h1 {
 
 .folderTitle {
     opacity: 0.85;
+    font-weight: bold;
 }
 
 .folderTitle:hover {
@@ -342,12 +343,12 @@ input:focus {
     display: var(--show-folders);
     height: 18px;
     vertical-align: middle;
-    opacity: 0.5;
+    opacity: 0.65;
     padding-left: 12px;
     transition: 360ms ease;
 }
 #addFolderIcon:hover {
-    opacity: 0.8;
+    opacity: 1;
 }
 
 #settingsBtn {
