@@ -375,7 +375,7 @@ input:focus {
     right: 60px;
     top: 30px;
     color: var(--color);
-    opacity: 0.6;
+    opacity: 0.85;
     font-size: large;
     font-weight: lighter;
     transition: 160ms ease;
