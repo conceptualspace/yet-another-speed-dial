@@ -309,9 +309,9 @@ function printBookmarks(bookmarks, parentId) {
 
         // todo: clean this up, restore sort when we remove migration
         // preserve sorting from 1.5 versions
-        migrate();
+        //migrate();
 
-        //sort();
+        sort();
         bookmarksContainer.style.opacity = "1";
 
     } else {
@@ -1042,6 +1042,7 @@ wallPaperEnabled.onchange = function () {
 
 // v1.x -> 1.6
 // 1.6 uses bookmark id to sort, 1.5 used default SortableJS algorithm
+// todo replace with index from bookmark objects
 function migrate() {
     browser.storage.local.get("sort").then(result => {
         if (result && result.sort) {
