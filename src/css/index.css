@@ -361,12 +361,12 @@ input:focus {
     right: 30px;
     top: 30px;
     fill: var(--color);
-    filter: opacity(0.4);
+    filter: opacity(0.8);
     transition: 160ms ease;
 }
 
 .settingsIcon svg:hover {
-    filter: opacity(0.8);
+    filter: opacity(1);
 }
 
 #clock {
