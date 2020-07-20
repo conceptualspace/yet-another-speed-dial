@@ -335,17 +335,20 @@ input:focus {
 
 #foldersContainer {
     min-height: 78px;
-    padding: 30px;
-    margin-right: 110px;
+    margin-right: 140px;
+    margin-left: 30px;
+    display: flex;
+    align-items: center;
 }
 
 #addFolderIcon {
     display: var(--show-folders);
-    height: 18px;
+    height: 1.2rem;
     vertical-align: middle;
-    opacity: 0.65;
-    padding-left: 12px;
+    opacity: 0.7;
+    margin-left: 12px;
     transition: 360ms ease;
+    fill: var(--color);
 }
 #addFolderIcon:hover {
     opacity: 1;
@@ -362,7 +365,7 @@ input:focus {
     right: 30px;
     top: 30px;
     fill: var(--color);
-    filter: opacity(0.8);
+    filter: opacity(0.7);
     transition: 160ms ease;
 }
 
@@ -374,11 +377,11 @@ input:focus {
     position: absolute;
     display: var(--clock);
     right: 60px;
-    top: 30px;
+    top: 26px;
     color: var(--color);
     opacity: 0.85;
-    font-size: large;
-    font-weight: lighter;
+    font-size: x-large;
+    font-weight: 200;
     transition: 160ms ease;
 }
 
