@@ -28,6 +28,28 @@ h1 {
     font-size: xx-large;
 }
 
+/* total width */
+#tileContainer::-webkit-scrollbar {
+    background-color: rgba(0,0,0,0.2);
+    width: 7px;
+}
+
+/* background of the scrollbar except button or resizer */
+#tileContainer::-webkit-scrollbar-track {
+    background-color: transparent;
+}
+
+/* scrollbar itself */
+#tileContainer::-webkit-scrollbar-thumb {
+    background-color: rgba(255,255,255,0.4);
+    border: 10px solid transparent;
+}
+
+/* set button(top and bottom of the scrollbar) */
+#tileContainer::-webkit-scrollbar-button {
+    display:none;
+}
+
 #tileContainer {
     padding: 0 60px;
     height: calc(100vh - 79px);
