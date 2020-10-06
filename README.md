@@ -35,7 +35,7 @@ Unfortunately, this is a bug in Firefox. You can nag Mozilla to fix it here: htt
 
 ---
 
-### building for chrome vs firefox
+## building for chrome vs firefox
 
 chrome: remove `chrome_settings_overrides` and `browser_specific_settings` manifest keys  
 firefox: no changes are required
