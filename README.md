@@ -16,6 +16,25 @@ A modern speed dial for Firefox and Chrome, inspired by Opera
 
 ---
 
+## FAQ:
+
+### Can I use different images for the speed dials?
+Yes! Just right-click the speed dial and select Edit.
+
+### One of my site thumbnails disappeared?
+YASD includes a thumbnail linked using the Open Graph standard when available. This keeps those thumbnails up to date automatically, but if the website removes the image it may no longer load in YASD. Simply remove and re-add the site, or select a different thubmnail.
+
+### Why does YASD require the "access your data for all websites" permission?
+This is required for YASD to capture an image of the website for the thumbnail. No data is collected or used for any other reason whatsoever. These two features (visual thumbnails and user privacy) were the primary motivation for creating YASD. Note YASD will still work if you deny this permission, simply without captured thumbnails. You can find the YASD privacy policy here: https://conceptualspace.net/privacy.md
+
+### Why is YASD showing CPU usage in the Chrome task manager?
+YASD uses a high performance rendering engine (GSAP) to keep user ineractions and animations smooth. The *actual* CPU usage is very low (confirm using your OS task manager) but some cycles are used to elimate jankiness. Note the usage is 0 when YASD is not in the foreground.
+
+### Why isn't the address bar focused (active) by default on the new tab / home page?
+Unfortunately, this is a bug in Firefox. You can nag Mozilla to fix it here: https://bugzilla.mozilla.org/show_bug.cgi?id=1411209
+
+---
+
 ### building for chrome vs firefox
 
 chrome: remove `chrome_settings_overrides` and `browser_specific_settings` manifest keys  
