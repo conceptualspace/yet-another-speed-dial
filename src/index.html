@@ -11,10 +11,10 @@
 
 <body>
 <!-- new install -->
-<div id="noBookmarks" class="default-content"><h1 class="default-content">3 ways to add speed dials:</h1>
-    <p class="default-content">1. Use the toolbar button, or right-click on a page and select "Add to Speed Dial"<p>
-    <p class="default-content">2. Bookmark a site and choose the <strong class="default-content">Other Bookmarks</strong> > <strong class="default-content">Speed Dial</strong> folder</p>
-    <p class="default-content">3. Use the button below (it can be toggled on or off in the settings)</p>
+<div id="noBookmarks" class="default-content"><h1 class="default-content" data-locale="newInstall1">3 ways to add speed dials:</h1>
+    <p class="default-content" data-locale="newInstall2">1. Use the toolbar button, or right-click on a page and select "Add to Speed Dial"<p>
+    <p class="default-content"><span data-locale="newInstall3">2. Bookmark a site and choose the</span> <strong data-locale="newInstall4">Other Bookmarks</strong> > <strong data-locale="title">Speed Dial</strong> <span data-locale="newInstall5">folder</span></p>
+    <p class="default-content" data-locale="newInstall6">3. Use the button below (it can be toggled on or off in the settings)</p>
 </div>
 
 <!--
@@ -32,29 +32,29 @@
 <!-- context menus -->
     <div class="menu" id="contextMenu">
         <ul class="menu-options">
-            <li id="newTab" class="menu-option">Open in new tab</li>
-            <li id="newWin" class="menu-option">Open in new window</li>
-            <li id="newPrivate" class="menu-option">Open in new private window</li>
+            <li id="newTab" class="menu-option" data-locale="newTab">Open in new tab</li>
+            <li id="newWin" class="menu-option" data-locale="newWin">Open in new window</li>
+            <li id="newPrivate" class="menu-option" data-locale="newPrivate">Open in new private window</li>
             <li class="menu-separator"></li>
-            <li id="edit" class="menu-option">Edit</li>
+            <li id="edit" class="menu-option" data-locale="edit">Edit</li>
             <li class="menu-separator"></li>
-            <li id="delete" class="menu-option">Delete</li>
+            <li id="delete" class="menu-option" data-locale="delete">Delete</li>
         </ul>
     </div>
 
 <div class="menu" id="folderMenu">
     <ul class="menu-options">
-        <li id="editFolder" class="menu-option">Edit Folder...</li>
-        <li id="deleteFolder" class="menu-option">Remove</li>
+        <li id="editFolder" class="menu-option" data-locale="editFolder">Edit Folder...</li>
+        <li id="deleteFolder" class="menu-option" data-locale="remove">Remove</li>
     </ul>
 </div>
 
     <div class="menu" id="settingsMenu">
         <ul class="menu-options">
-            <li id="newDial" class="menu-option">New Speed Dial...</li>
-            <li id="newFolder" class="menu-option">New Folder...</li>
+            <li id="newDial" class="menu-option" data-locale="newDial">New Speed Dial...</li>
+            <li id="newFolder" class="menu-option" data-locale="newFolder">New Folder...</li>
             <li class="menu-separator"></li>
-            <li id="openSettings" class="menu-option">Settings...</li>
+            <li id="openSettings" class="menu-option" data-locale="settings">Settings...</li>
         </ul>
     </div>
 
@@ -62,17 +62,17 @@
     <div id="tileModal" class="modal">
         <div id="tileModalContent" class="modal-content">
             <form class="tileForm" action="">
-                <div class="formItem"><label for="modalTitle">Title</label></div>
+                <div class="formItem"><label for="modalTitle" data-locale="tileTitle">Title</label></div>
                 <div class="formItem"><input id="modalTitle" type="text"></div>
-                <div class="formItem"><label for="modalURL">Address</label></div>
+                <div class="formItem"><label for="modalURL" data-locale="address">Address</label></div>
                 <div class="formItem"><input id="modalURL" type="text" disabled></div>
 
                 <input type="file" id="modalImgFile" class="settingsCtl" accept="image/*">
 
                 <div id="modalImgContainer" class="formItem"></div>
-                <div class="imageUploadContainer"><label for="modalImgFile" class="settingsCtl modalImgBtn">Upload Image ...</label></div>
-                <div class="formItem"><button id="modalSave" class="save">Save</button></div>
-                <div class="formItem"><button class="close">Cancel</button></div>
+                <div class="imageUploadContainer"><label for="modalImgFile" class="settingsCtl modalImgBtn" data-locale="uploadImage">Upload Image ...</label></div>
+                <div class="formItem"><button id="modalSave" class="save" data-locale="save">Save</button></div>
+                <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
             </form>
         </div>
     </div>
@@ -81,11 +81,11 @@
 <div id="createDialModal" class="modal">
     <div id="createDialModalContent" class="modal-content">
         <form class="tileForm" action="">
-            <div class="formItem"><label for="createDialModalURL">Address</label></div>
+            <div class="formItem"><label for="createDialModalURL" data-locale="address">Address</label></div>
             <div class="formItem"><input id="createDialModalURL" type="text"></div>
-            <div class="formItem chromeOnly"><p style="color:grey;"><em>This will temporarily open the site in a new tab to capture the image</em></p></div>
-            <div class="formItem"><button id="createDialModalSave" class="save">Add to Speed Dial</button></div>
-            <div class="formItem"><button class="close">Cancel</button></div>
+            <div class="formItem chromeOnly"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the site in a new tab to capture the image</em></p></div>
+            <div class="formItem"><button id="createDialModalSave" class="save" data-locale="addTo">Add to Speed Dial</button></div>
+            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
         </form>
     </div>
 </div>
@@ -94,10 +94,10 @@
 <div id="createFolderModal" class="modal">
     <div id="createFolderModalContent" class="modal-content">
         <form class="tileForm" action="">
-            <div class="formItem"><label for="createFolderModalName">Name</label></div>
+            <div class="formItem"><label for="createFolderModalName" data-locale="name">Name</label></div>
             <div class="formItem"><input id="createFolderModalName" type="text"></div>
-            <div class="formItem"><button id="createFolderModalSave" class="save">Create Folder</button></div>
-            <div class="formItem"><button class="close">Cancel</button></div>
+            <div class="formItem"><button id="createFolderModalSave" class="save" data-locale="createFolder">Create Folder</button></div>
+            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
         </form>
     </div>
 </div>
@@ -106,10 +106,10 @@
 <div id="editFolderModal" class="modal">
     <div id="editFolderModalContent" class="modal-content">
         <form class="tileForm" action="">
-            <div class="formItem"><label for="editFolderModalName">Name</label></div>
+            <div class="formItem"><label for="editFolderModalName" data-locale="name">Name</label></div>
             <div class="formItem"><input id="editFolderModalName" type="text"></div>
-            <div class="formItem"><button id="editFolderModalSave" class="save">Save</button></div>
-            <div class="formItem"><button class="close">Cancel</button></div>
+            <div class="formItem"><button id="editFolderModalSave" class="save" data-locale="save">Save</button></div>
+            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
         </form>
     </div>
 </div>
@@ -120,9 +120,9 @@
         <form class="tileForm" action="">
             <div id="deleteFolderModalName"></div>
 
-            <div class="formItem"><br /><label>Are you sure you want to permanently remove this folder?</label><br /><br /></div>
-            <div class="formItem"><button id="deleteFolderModalSave" class="delete">Delete</button></div>
-            <div class="formItem"><button class="close">Cancel</button></div>
+            <div class="formItem"><br /><label data-locale="confirmDelete">Are you sure you want to permanently remove this folder?</label><br /><br /></div>
+            <div class="formItem"><button id="deleteFolderModalSave" class="delete" data-locale="delete">Delete</button></div>
+            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
         </form>
     </div>
 </div>
@@ -145,11 +145,11 @@
 <!-- settings nav -->
     <div id="sidenav" class="sidenav">
         <div class="settings" id="settingsDiv">
-            <h1>Speed Dial Settings</h1>
+            <h1 data-locale="settingsTitle">Speed Dial Settings</h1>
             <hr>
             <div class='row'>
                 <div class='column'>
-                    <label>Wallpaper</label>
+                    <label data-locale="wallpaper">Wallpaper</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -164,13 +164,13 @@
                 <div class='column controls'>
                     <img id="preview" src="#">
                     <input type="file" id="file" class="settingsCtl" accept="image/*">
-                    <label for="file" class="settingsCtl">Browse...</label>
+                    <label for="file" class="settingsCtl" data-locale="browse">Browse...</label>
                     <!--<a id="resetWallpaper" href="#">Reset</a>-->
                 </div>
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Background Color</label>
+                    <label data-locale="backgroundColor">Background Color</label>
                 </div>
                 <div class='column controls'>
                     <div id="color-picker-wrapper">
@@ -180,7 +180,7 @@
             </div>
             <div class='row' style="display:none">
                 <div class='column'>
-                    <label>Large Tiles</label>
+                    <label data-locale="largeTiles">Large Tiles</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -191,7 +191,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Clock</label>
+                    <label data-locale="clock">Clock</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -202,7 +202,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Labels</label>
+                    <label data-locale="labels">Labels</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -213,7 +213,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Add Site Button</label>
+                    <label data-locale="addSiteButton">Add Site Button</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -224,7 +224,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Add Folder Button</label>
+                    <label data-locale="addFolderButton">Add Folder Button</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -235,7 +235,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label>Settings Button</label>
+                    <label data-locale="settingsButton">Settings Button</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -246,10 +246,10 @@
             </div>
             <hr>
             <div>
-                <button id="saveBtn" class="settingsCtl">Save</button>
+                <button id="saveBtn" class="settingsCtl" data-locale="save">Save</button>
             </div>
             <hr>
-            <div id="settingsToast">Settings saved!</div>
+            <div id="settingsToast" data-locale="saveToast">Settings saved!</div>
         </div>
     </div>
 

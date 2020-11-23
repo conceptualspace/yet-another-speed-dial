@@ -6,5 +6,119 @@
   "extensionDescription": {
     "message": "современный скоростной набор для Firefox и Chrome",
     "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Speed Dial"
+  },
+  "save": {
+    "message": "Сохраните"
+  },
+  "cancel": {
+    "message": "Отмените"
+  },
+  "newInstall1": {
+    "message": "3 способа добавить номера быстрого набора:"
+  },
+  "newInstall2": {
+    "message": "1. Используйте кнопку на панели инструментов или щелкните страницу правой кнопкой мыши и выберите \"Добавить в Speed Dial\""
+  },
+  "newInstall3": {
+    "message": "2. Добавьте сайт в закладки и выберите"
+  },
+  "newInstall4": {
+    "message": "Другие закладки"
+  },
+  "newInstall5": {
+    "message": "папка"
+  },
+  "newInstall6": {
+    "message": "3. Используйте кнопку ниже (ее можно включить или выключить в настройках)"
+  },
+  "newTab": {
+    "message": "Открыть в новой вкладке"
+  },
+  "newWin": {
+    "message": "Открыть в новом окне"
+  },
+  "newPrivate": {
+    "message": "Открыть в новом приватном окне"
+  },
+  "edit": {
+    "message": "редактировать"
+  },
+  "delete": {
+    "message": "Удалите"
+  },
+  "editFolder": {
+    "message": "редактировать папку..."
+  },
+  "remove": {
+    "message": "удалять"
+  },
+  "newDial": {
+    "message": "новый Speed Dial..."
+  },
+  "newFolder": {
+    "message": "новая папка..."
+  },
+  "settings": {
+    "message": "Настройки..."
+  },
+  "tileTitle": {
+    "message": "заглавие"
+  },
+  "address": {
+    "message": "адрес"
+  },
+  "uploadImage": {
+    "message": "Передайте образ ..."
+  },
+  "captureMessage": {
+    "message": "Это временно откроет сайт в новой вкладке для захвата изображения."
+  },
+  "addTo": {
+    "message": "добавить к Speed Dial"
+  },
+  "name": {
+    "message": "название"
+  },
+  "createFolder": {
+    "message": "Создайте папку"
+  },
+  "confirmDelete": {
+    "message": "Вы действительно хотите удалить эту папку навсегда?"
+  },
+  "settingsTitle": {
+    "message": "Speed Dial Настройки"
+  },
+  "wallpaper": {
+    "message": "Обои на стену\n"
+  },
+  "browse": {
+    "message": "Передайте..."
+  },
+  "backgroundColor": {
+    "message": "фоновый цвет"
+  },
+  "largeTiles": {
+    "message": "большая плитка"
+  },
+  "clock": {
+    "message": "Часы"
+  },
+  "Labels": {
+    "message": "этикетки"
+  },
+  "addSiteButton": {
+    "message": "добавления сайта кнопка"
+  },
+  "addFolderButton": {
+    "message": "добавления папки кнопка"
+  },
+  "settingsButton": {
+    "message": "Настройки кнопка"
+  },
+  "saveToast": {
+    "message": "Настройки сохранены!"
   }
 }

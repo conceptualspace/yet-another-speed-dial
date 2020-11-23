@@ -6,5 +6,119 @@
   "extensionDescription": {
     "message": "un cadran de vitesse moderne pour firefox et chrome",
     "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Speed Dial"
+  },
+  "save": {
+    "message": "Enregistrer"
+  },
+  "cancel": {
+    "message": "Annulez"
+  },
+  "newInstall1": {
+    "message": "3 façons d'ajouter des numéros abrégés:"
+  },
+  "newInstall2": {
+    "message": "1. \nUtilisez le bouton de la barre d'outils ou cliquez avec le bouton droit sur une page et sélectionnez \"Ajouter à la Speed Dial\""
+  },
+  "newInstall3": {
+    "message": "2. \nAjoutez un site à vos favoris et choisissez le"
+  },
+  "newInstall4": {
+    "message": "Autres favorits"
+  },
+  "newInstall5": {
+    "message": "dossier"
+  },
+  "newInstall6": {
+    "message": "3. Utilisez le bouton ci-dessous (il peut être activé ou désactivé dans les paramètres)"
+  },
+  "newTab": {
+    "message": "Ouvrir dans un nouvel onglet"
+  },
+  "newWin": {
+    "message": "Ouvrir dans une nouvelle fenêtre"
+  },
+  "newPrivate": {
+    "message": "\nOuvrir dans une nouvelle fenêtre privée"
+  },
+  "edit": {
+    "message": "Éditer"
+  },
+  "delete": {
+    "message": "Supprimer"
+  },
+  "editFolder": {
+    "message": "Modifier le dossier..."
+  },
+  "remove": {
+    "message": "Retirer"
+  },
+  "newDial": {
+    "message": "Nouveau Speed Dial..."
+  },
+  "newFolder": {
+    "message": "Nouveau Dossier..."
+  },
+  "settings": {
+    "message": "Paramètres..."
+  },
+  "tileTitle": {
+    "message": "Titre"
+  },
+  "address": {
+    "message": "Adresse"
+  },
+  "uploadImage": {
+    "message": "Télécharger l'image ..."
+  },
+  "captureMessage": {
+    "message": "Cela ouvrira temporairement le site dans un nouvel onglet pour capturer l'image"
+  },
+  "addTo": {
+    "message": "Ajouter à la Speed Dial"
+  },
+  "name": {
+    "message": "Nom"
+  },
+  "createFolder": {
+    "message": "Créer le dossier"
+  },
+  "confirmDelete": {
+    "message": "Êtes-vous sûr de vouloir supprimer définitivement ce dossier?"
+  },
+  "settingsTitle": {
+    "message": "Paramètres Speed Dial"
+  },
+  "wallpaper": {
+    "message": "Contexte Image"
+  },
+  "browse": {
+    "message": "Feuilleter..."
+  },
+  "backgroundColor": {
+    "message": "Contexte Couleur"
+  },
+  "largeTiles": {
+    "message": "Grands Carreaux"
+  },
+  "clock": {
+    "message": "L'horloge"
+  },
+  "Labels": {
+    "message": "Étiquettes"
+  },
+  "addSiteButton": {
+    "message": "Bouton Ajouter de site"
+  },
+  "addFolderButton": {
+    "message": "Bouton Ajouter un dossier"
+  },
+  "settingsButton": {
+    "message": "Bouton Paramètres"
+  },
+  "saveToast": {
+    "message": "Paramètres sauvegardés!"
   }
 }

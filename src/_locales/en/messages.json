@@ -6,5 +6,119 @@
   "extensionDescription": {
     "message": "a modern speed dial for firefox and chrome",
     "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Speed Dial"
+  },
+  "save": {
+    "message": "Save"
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "newInstall1": {
+    "message": "3 ways to add speed dials:"
+  },
+  "newInstall2": {
+    "message": "1. Use the toolbar button, or right-click on a page and select \"Add to Speed Dial\""
+  },
+  "newInstall3": {
+    "message": "2. Bookmark a site and choose the"
+  },
+  "newInstall4": {
+    "message": "Other Bookmarks"
+  },
+  "newInstall5": {
+    "message": "folder"
+  },
+  "newInstall6": {
+    "message": "3. Use the button below (it can be toggled on or off in the settings)"
+  },
+  "newTab": {
+    "message": "Open in new tab"
+  },
+  "newWin": {
+    "message": "Open in new window"
+  },
+  "newPrivate": {
+    "message": "Open in new private window"
+  },
+  "edit": {
+    "message": "Edit"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "editFolder": {
+    "message": "Edit Folder..."
+  },
+  "remove": {
+    "message": "Remove"
+  },
+  "newDial": {
+    "message": "New Speed Dial..."
+  },
+  "newFolder": {
+    "message": "New Folder..."
+  },
+  "settings": {
+    "message": "Settings..."
+  },
+  "tileTitle": {
+    "message": "Title"
+  },
+  "address": {
+    "message": "Address"
+  },
+  "uploadImage": {
+    "message": "Upload Image ..."
+  },
+  "captureMessage": {
+    "message": "This will temporarily open the site in a new tab to capture the image"
+  },
+  "addTo": {
+    "message": "Add to Speed Dial"
+  },
+  "name": {
+    "message": "Name"
+  },
+  "createFolder": {
+    "message": "Create Folder"
+  },
+  "confirmDelete": {
+    "message": "Are you sure you want to permanently remove this folder?"
+  },
+  "settingsTitle": {
+    "message": "Speed Dial Settings"
+  },
+  "wallpaper": {
+    "message": "Wallpaper"
+  },
+  "browse": {
+    "message": "Browse..."
+  },
+  "backgroundColor": {
+    "message": "Background Color"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "clock": {
+    "message": "Clock"
+  },
+  "Labels": {
+    "message": "Labels"
+  },
+  "addSiteButton": {
+    "message": "Add Site Button"
+  },
+  "addFolderButton": {
+    "message": "Add Folder Button"
+  },
+  "settingsButton": {
+    "message": "Settings Button"
+  },
+  "saveToast": {
+    "message": "Settings saved!"
   }
 }
