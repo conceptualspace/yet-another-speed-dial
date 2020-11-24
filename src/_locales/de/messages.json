@@ -1,10 +1,124 @@
 {
   "extensionName": {
-    "message": "noch ein speed dial",
+    "message": "noch ein Kurzwahl (Speed Dial)",
     "description": "title of the app, displayed in store"
   },
   "extensionDescription": {
     "message": "eine moderne Kurzwahl für Firefox und Chrom",
     "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Kurzwahl"
+  },
+  "save": {
+    "message": "Speichern"
+  },
+  "cancel": {
+    "message": "Abbrechen"
+  },
+  "newInstall1": {
+    "message": "3 möglichkeiten zum Hinzufügen von Kurzwahlnummern:"
+  },
+  "newInstall2": {
+    "message": "1. Verwenden Sie die Symbolleistenschaltfläche oder klicken Sie mit der rechten Maustaste auf eine Seite und wählen Sie \"hinzufügen Kurzwahl\""
+  },
+  "newInstall3": {
+    "message": "2. Setzen Sie ein Lesezeichen für eine Site und wählen Sie die"
+  },
+  "newInstall4": {
+    "message": "Andere Lesezeichen"
+  },
+  "newInstall5": {
+    "message": "ordner"
+  },
+  "newInstall6": {
+    "message": "3. Verwenden Sie die Schaltfläche unten (sie kann in den Einstellungen ein- oder ausgeschaltet werden)"
+  },
+  "newTab": {
+    "message": "in neuem Tab öffnen"
+  },
+  "newWin": {
+    "message": "in neuem Fenster öffnen"
+  },
+  "newPrivate": {
+    "message": "In neuem privaten Fenster öffnen"
+  },
+  "edit": {
+    "message": "Bearbeiten"
+  },
+  "delete": {
+    "message": "Unterdrücken"
+  },
+  "editFolder": {
+    "message": "Ordner bearbeiten..."
+  },
+  "remove": {
+    "message": "Entfernen"
+  },
+  "newDial": {
+    "message": "Neue Kurzwahl..."
+  },
+  "newFolder": {
+    "message": "Neuer Ordner..."
+  },
+  "settings": {
+    "message": "Einstellungen..."
+  },
+  "tileTitle": {
+    "message": "Titel"
+  },
+  "address": {
+    "message": "Adresse"
+  },
+  "uploadImage": {
+    "message": "Bild hochladen ..."
+  },
+  "captureMessage": {
+    "message": "Dadurch wird die Site vorübergehend in einer neuen Registerkarte geöffnet, um das Bild aufzunehmen"
+  },
+  "addTo": {
+    "message": "Add to Kurzwahl"
+  },
+  "name": {
+    "message": "Name"
+  },
+  "createFolder": {
+    "message": "Ordner erstellen"
+  },
+  "confirmDelete": {
+    "message": "Möchten Sie diesen Ordner wirklich dauerhaft entfernen?"
+  },
+  "settingsTitle": {
+    "message": "Kurzwahl Einstellungen"
+  },
+  "wallpaper": {
+    "message": "Hintergrund"
+  },
+  "browse": {
+    "message": "Durchsuche..."
+  },
+  "backgroundColor": {
+    "message": "Hintergrundfarbe"
+  },
+  "largeTiles": {
+    "message": "Große Fliesen"
+  },
+  "clock": {
+    "message": "Uhr"
+  },
+  "Labels": {
+    "message": "Etiketten"
+  },
+  "addSiteButton": {
+    "message": "Site-Schaltfläche hinzufügen"
+  },
+  "addFolderButton": {
+    "message": "Ordner-Schaltfläche hinzufügen"
+  },
+  "settingsButton": {
+    "message": "Einstellungsschaltfläche"
+  },
+  "saveToast": {
+    "message": "Einstellungen gerettet!"
   }
 }
