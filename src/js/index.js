@@ -645,7 +645,8 @@ function resizeThumb(dataURI) {
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                const newDataURI = canvas.toDataURL('image/jpeg', 0.86);
+                // working in ff and chrome; todo: fallback for safari
+                const newDataURI = canvas.toDataURL('image/webp');
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
