@@ -317,7 +317,7 @@ function resizeThumb(dataURI) {
 
                 ctx2.drawImage(canvas,0, 0, width, height);
 
-                const newDataURI = canvas2.toDataURL('image/jpeg', 0.86);
+                const newDataURI = canvas2.toDataURL('image/webp');
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
