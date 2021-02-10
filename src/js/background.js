@@ -22,6 +22,7 @@ let defaults = {
 let cache = {};
 let ready = false;
 let firstRun = true;
+let tempTitle = '';
 
 function getSpeedDialId() {
     browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
@@ -236,6 +237,7 @@ function getScreenshot(url) {
                     let tabID = null;
                     function handleUpdatedTab(tabId, changeInfo, tabInfo) {
                         if (tabId === tabID && changeInfo.status === "complete") {
+                            tempTitle = tabInfo.title ? tabInfo.title : '';
                             // workaround for chrome, which can only capture the active tab
                             if (!browser.runtime.getBrowserInfo) {
                                 browser.tabs.update(tabID, {active:true}).then(tab => {
@@ -388,7 +390,14 @@ function changeBookmark(id, info) {
                         } else {
                             getThumbnails(bookmark[0].url).then(() => {
                                 pushToCache(bookmark[0].url).then(() => {
-                                    refreshOpen()
+                                    if (tempTitle !== '') {
+                                        browser.bookmarks.update(id, {
+                                            title: tempTitle
+                                        });
+                                        // updating the bookmark title will trigger changebookmark to rerun and refresh above
+                                    } else {
+                                        refreshOpen()
+                                    }
                                 })
                             })
                         }
