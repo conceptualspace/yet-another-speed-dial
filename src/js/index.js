@@ -510,6 +510,9 @@ function saveBookmarkSettings() {
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
                         tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
+                        if (title !== targetTileTitle) {
+                            updateTitle()
+                        }
                     });
                 }
             });
@@ -537,6 +540,9 @@ function saveBookmarkSettings() {
                     if (thumbIndex >= 0) {
                         browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
                             tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
+                            if (title !== targetTileTitle) {
+                                updateTitle()
+                            }
                         });
                     }
                 }
@@ -544,9 +550,9 @@ function saveBookmarkSettings() {
     }
 
     // find image index
-    if (title !== targetTileTitle) {
+    function updateTitle() {
         // allow ui to respond immediately while bookmark updated
-        targetNode.children[0].children[1].textContent = title;
+        //targetNode.children[0].children[1].textContent = title;
         // sortable ids changed so rewrite to storage
         //let order = sortable.toArray();
         //browser.storage.local.set({"sort":order});
