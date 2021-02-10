@@ -545,15 +545,19 @@ function saveBookmarkSettings() {
 
     // find image index
     if (title !== targetTileTitle) {
+        // allow ui to respond immediately while bookmark updated
         targetNode.children[0].children[1].textContent = title;
         // sortable ids changed so rewrite to storage
         //let order = sortable.toArray();
         //browser.storage.local.set({"sort":order});
+        // todo: temp hack to match all until we start using bookmark ids
         browser.bookmarks.search({url})
-            .then(bookmark => {
-                browser.bookmarks.update(bookmark[0].id, {
-                    title
-                });
+            .then(bookmarks => {
+                for (let bookmark of bookmarks) {
+                    browser.bookmarks.update(bookmark.id, {
+                        title
+                    });
+                }
             })
     }
 
