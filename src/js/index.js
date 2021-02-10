@@ -1114,7 +1114,7 @@ function init() {
             addFolderButton.style.display = 'inline';
             bookmarksContainer.innerHTML = "";
             for (let folder of folders) {
-                console.log(folder);
+                //console.log(folder);
                 document.getElementById(folder).innerHTML = "";
             }
             getBookmarks(speedDialId)
