@@ -194,6 +194,8 @@ function getOgImage(url) {
         };
         xhr.open("GET", url);
         xhr.responseType = "document";
+        // fix for shitty websites, like imdb
+        xhr.overrideMimeType("text/html");
         xhr.send();
     });
 }
