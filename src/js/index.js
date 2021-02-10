@@ -101,13 +101,18 @@ function getBookmarks(folderId) {
 }
 
 function removeBookmark(url) {
+    let currentParent = currentFolder ? currentFolder : speedDialId
     browser.bookmarks.search({url})
         .then(bookmarks => {
+            let cleanup = bookmarks.length < 2;
             for (let bookmark of bookmarks) {
-                if (bookmark.parentId === speedDialId || folders.indexOf(bookmark.parentId) !== -1) {
+                if (bookmark.parentId === currentParent) {
                     targetNode.remove();
                     browser.bookmarks.remove(bookmark.id);
-                    browser.storage.local.remove(url);
+                    // if we have duplicates (ex in other folders), keep the image cache, otherwise purge it
+                    if (cleanup) {
+                        browser.storage.local.remove(url);
+                    }
                     // todo -- this only working for root folder?
                     sortable.save();
                 }
