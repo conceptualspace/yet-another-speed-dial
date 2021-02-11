@@ -46,6 +46,9 @@
   "edit": {
     "message": "Bearbeiten"
   },
+  "refresh": {
+    "message": "Miniaturansichten Aktualisieren"
+  },
   "delete": {
     "message": "Unterdrücken"
   },

@@ -20,10 +20,10 @@
     "message": "3 façons d'ajouter des numéros abrégés:"
   },
   "newInstall2": {
-    "message": "1. \nUtilisez le bouton de la barre d'outils ou cliquez avec le bouton droit sur une page et sélectionnez \"Ajouter à la Speed Dial\""
+    "message": "1. Utilisez le bouton de la barre d'outils ou cliquez avec le bouton droit sur une page et sélectionnez 'Ajouter à la Speed Dial'"
   },
   "newInstall3": {
-    "message": "2. \nAjoutez un site à vos favoris et choisissez le"
+    "message": "2. Ajoutez un site à vos favoris et choisissez le"
   },
   "newInstall4": {
     "message": "Autres favorits"
@@ -41,10 +41,13 @@
     "message": "Ouvrir dans une nouvelle fenêtre"
   },
   "newPrivate": {
-    "message": "\nOuvrir dans une nouvelle fenêtre privée"
+    "message": "Ouvrir dans une nouvelle fenêtre privée"
   },
   "edit": {
     "message": "Éditer"
+  },
+  "refresh": {
+    "message": "Actualiser les miniatures"
   },
   "delete": {
     "message": "Supprimer"

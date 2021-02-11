@@ -46,6 +46,9 @@
   "edit": {
     "message": "редактировать"
   },
+  "refresh": {
+    "message": "обновить миниатюры"
+  },
   "delete": {
     "message": "Удалите"
   },
