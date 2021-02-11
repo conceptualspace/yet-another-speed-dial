@@ -46,6 +46,9 @@
   "edit": {
     "message": "Edit"
   },
+  "refresh": {
+    "message": "Refresh Thumbnails"
+  },
   "delete": {
     "message": "Delete"
   },

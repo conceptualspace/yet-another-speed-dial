@@ -371,6 +371,14 @@ function created(id, info) {
     changeBookmark(id, info);
 }
 
+function manualRefresh(url) {
+    getThumbnails(url).then(() => {
+        pushToCache(url).then(() => {
+            refreshOpen()
+        })
+    })
+}
+
 // todo: allow editing URLs from speed dial page
 // todo: something f'd up with getthumbnails
 function changeBookmark(id, info) {
@@ -428,6 +436,9 @@ function connected(p) {
             } else {
                 p.postMessage({ready:false});
             }
+        }
+        else if (m.refreshThumbs) {
+            manualRefresh(m.url)
         }
         else if (m.updateCache) {
             pushToCache(m.url, m.i);

@@ -209,6 +209,12 @@ function editFolder() {
     });
 }
 
+function refreshThumbnails(url) {
+    tabMessagePort.postMessage({refreshThumbs: true, url});
+    toastContent.innerText = ` Capturing images...`;
+    toast.style.transform = "translateX(0%)";
+}
+
 function removeFolder() {
     browser.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
@@ -958,6 +964,9 @@ window.addEventListener("mousedown", e => {
                     buildModal(targetTileHref, targetTileTitle).then(() => {
                         modalShowEffect(modalContent, modal);
                     });
+                    break;
+                case 'refresh':
+                    refreshThumbnails(targetTileHref);
                     break;
                 case 'delete':
                     removeBookmark(targetTileHref);
