@@ -372,9 +372,11 @@ function created(id, info) {
 }
 
 function manualRefresh(url) {
-    getThumbnails(url).then(() => {
-        pushToCache(url).then(() => {
-            refreshOpen()
+    browser.storage.local.remove(url).then(() => {
+        getThumbnails(url).then(() => {
+            pushToCache(url).then(() => {
+                refreshOpen()
+            })
         })
     })
 }
