@@ -581,10 +581,13 @@ function saveBookmarkSettings() {
                     browser.storage.local.remove(url)
                 }
                 for (let bookmark of bookmarks) {
-                    browser.bookmarks.update(bookmark.id, {
-                        title,
-                        url: newUrl
-                    });
+                    let currentParent = currentFolder ? currentFolder : speedDialId
+                    if (bookmark.parentId === currentParent) {
+                        browser.bookmarks.update(bookmark.id, {
+                            title,
+                            url: newUrl
+                        });
+                    }
                 }
             })
     }
