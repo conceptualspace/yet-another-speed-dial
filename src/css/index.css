@@ -70,6 +70,10 @@ h1 {
     opacity: 0;
 }
 
+#wrap {
+    transition: opacity 240ms;
+}
+
 #noBookmarks {
     display: none;
     justify-content: center;

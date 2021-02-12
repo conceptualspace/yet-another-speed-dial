@@ -82,6 +82,7 @@ let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
+let scrollPos = 0;
 
 function displayClock() {
     clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true});
@@ -151,7 +152,9 @@ function sort() {
         .then(result => {
             if (result[speedDialId]) {
                 sortable.sort(result[speedDialId]);
-                animate();
+                //animate();
+                bookmarksContainerParent.scrollTop = scrollPos;
+                bookmarksContainer.style.opacity = "1";
             }
         });
 }
@@ -323,7 +326,8 @@ function printBookmarks(bookmarks, parentId) {
         //migrate();
 
         sort();
-        bookmarksContainer.style.opacity = "1";
+        // we take care of this as part of "sort" fn now..
+        //bookmarksContainer.style.opacity = "1";
 
     } else {
         // build a folder "tab"
@@ -368,6 +372,7 @@ function printBookmarks(bookmarks, parentId) {
                 if (result[parentId]) {
                     sortable.sort(result[parentId]);
                     animate();
+                    bookmarksContainerParent.scrollTop = scrollPos;
                 }
             });
         //
@@ -1119,6 +1124,10 @@ function init() {
         } else if (m.refresh) {
             cache = m.cache;
             hideToast();
+            // prevent page scroll on refresh
+            // react where are you...
+            scrollPos = bookmarksContainerParent.scrollTop;
+            bookmarksContainer.style.opacity = "0";
             noBookmarks.style.display = 'none';
             addFolderButton.style.display = 'inline';
             bookmarksContainer.innerHTML = "";
