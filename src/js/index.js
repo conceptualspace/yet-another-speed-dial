@@ -154,8 +154,8 @@ function sort() {
                 sortable.sort(result[speedDialId]);
                 //animate();
                 bookmarksContainerParent.scrollTop = scrollPos;
-                bookmarksContainer.style.opacity = "1";
             }
+            bookmarksContainer.style.opacity = "1";
         });
 }
 
