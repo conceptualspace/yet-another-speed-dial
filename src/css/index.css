@@ -424,6 +424,7 @@ input:focus {
     opacity: 0.8;
     transform: translateX(100%);
     transition: 200ms ease;
+    z-index: 2;
 }
 
 #toast svg {
