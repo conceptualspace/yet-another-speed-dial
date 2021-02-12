@@ -22,7 +22,7 @@ A modern speed dial for Firefox and Chrome, inspired by Opera
 Yes! Just right-click the speed dial and select Edit.
 
 ### One of my site thumbnails disappeared?
-YASD includes a thumbnail linked using the Open Graph standard when available. This keeps those thumbnails up to date automatically, but if the website removes the image it may no longer load in YASD. To refretch images, simply right-click the dial and select "Refresh thumbnails".
+YASD includes a thumbnail linked using the Open Graph standard when available. This keeps those thumbnails up to date automatically, but if the website removes the image it may no longer load in YASD. To fetch new images, simply right-click the dial and select "Refresh thumbnails".
 
 ### Why does YASD require the "access your data for all websites" permission?
 This is required for YASD to capture an image of the website for the thumbnail. **Absolutely no data is collected for any other reason whatsoever**. These two features (visual thumbnails and user privacy) were the primary motivation for creating YASD. Note YASD will still work if you deny this permission, but without capturing thumbnails. You can find the YASD privacy policy here: https://conceptualspace.net/privacy.md
