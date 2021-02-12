@@ -509,7 +509,8 @@ function createDial() {
 
 function saveBookmarkSettings() {
     let title = modalTitle.value;
-    let url = modalURL.value;
+    let url = targetTileHref;
+    let newUrl = modalURL.value;
     let selectedImageSrc = null;
     let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
@@ -524,8 +525,8 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
-                    browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
-                        tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
+                    browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
+                        tabMessagePort.postMessage({updateCache: true, newUrl, i: thumbIndex});
                         if (title !== targetTileTitle) {
                             updateTitle()
                         }
@@ -554,9 +555,9 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({[url]: {thumbnails, thumbIndex}}).then(result => {
-                            tabMessagePort.postMessage({updateCache: true, url, i: thumbIndex});
-                            if (title !== targetTileTitle) {
+                        browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
+                            tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                            if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
                             }
                         });
@@ -575,9 +576,14 @@ function saveBookmarkSettings() {
         // todo: temp hack to match all until we start using bookmark ids
         browser.bookmarks.search({url})
             .then(bookmarks => {
+                if (bookmarks.length <= 1 && ( url !== newUrl) ) {
+                    // cleanup unused thumbnails
+                    browser.storage.local.remove(url)
+                }
                 for (let bookmark of bookmarks) {
                     browser.bookmarks.update(bookmark.id, {
-                        title
+                        title,
+                        url: newUrl
                     });
                 }
             })
@@ -891,7 +897,7 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
-    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'createDialModalURL')) {
+    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'createDialModalURL')) {
         return;
     }
     e.preventDefault();
@@ -1024,6 +1030,13 @@ for (let button of closeModal) {
 }
 
 modalTitle.addEventListener('keydown', e => {
+    if (e.code === "Enter") {
+        e.preventDefault();
+        saveBookmarkSettings();
+    }
+});
+
+modalURL.addEventListener('keydown', e => {
     if (e.code === "Enter") {
         e.preventDefault();
         saveBookmarkSettings();

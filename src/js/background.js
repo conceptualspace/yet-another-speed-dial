@@ -394,7 +394,7 @@ function changeBookmark(id, info) {
                     browser.storage.local.get(bookmark[0].url).then(result => {
                         if (result[bookmark[0].url]) {
                             // a pre-existing bookmark is being modified; dont fetch new thumbnails
-                            // todo: broken with folders -- doesnt allow same site to have separate images in 2 folders..
+                            // todo: broken with folders -- doesnt allow same site to have separate images in 2 folders.. who cares
                             // todo: there might be a race condition here for bookmarks created via context menu
                             refreshOpen();
                         } else {
