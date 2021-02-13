@@ -50,33 +50,36 @@ function getSpeedDialId() {
     });
 }
 
-function handleBrowserAction(tab) {
-    browser.bookmarks.search({url: tab.url}).then(result => {
-        if (!result.length) {
+function createBookmarkFromBrowser(tab) {
+    // check for doopz
+    let match = false;
+    browser.bookmarks.getSubTree(speedDialId).then(node => {
+        for (const bookmark of node[0].children) {
+            if (tab.url === bookmark.url) {
+                match = true;
+                break;
+            }
+        }
+        if (!match) {
             browser.bookmarks.create({
                 parentId: speedDialId,
                 title: tab.title,
                 url: tab.url
             })
         }
-        browser.browserAction.disable(tab.id);
-        browser.browserAction.setBadgeText({text:"✅️", tabId:tab.id})
-        browser.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 0]});
     });
+}
+
+function handleBrowserAction(tab) {
+    createBookmarkFromBrowser(tab)
+    browser.browserAction.disable(tab.id);
+    browser.browserAction.setBadgeText({text:"✅️", tabId:tab.id})
+    browser.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 0]});
 }
 
 function onClickHandler(info, tab) {
     if (info.menuItemId === 'addToSpeedDial') {
-        // avoid duplicates
-        browser.bookmarks.search({url: tab.url}).then(result => {
-            if (!result.length) {
-                browser.bookmarks.create({
-                    parentId: speedDialId,
-                    title: tab.title,
-                    url: tab.url
-                })
-            }
-        });
+        createBookmarkFromBrowser(tab)
     }
 }
 
