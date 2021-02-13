@@ -508,6 +508,7 @@ function createDial() {
 }
 
 function saveBookmarkSettings() {
+    // todo: cleanup this abomination when im not on drugs
     let title = modalTitle.value;
     let url = targetTileHref;
     let newUrl = modalURL.value;
@@ -561,6 +562,14 @@ function saveBookmarkSettings() {
                                 updateTitle()
                             }
                         });
+                    } else {
+                        if (title !== targetTileTitle || url !== newUrl) {
+                            updateTitle()
+                        }
+                    }
+                } else {
+                    if (title !== targetTileTitle || url !== newUrl) {
+                        updateTitle()
                     }
                 }
             });
