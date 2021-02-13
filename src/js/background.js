@@ -232,6 +232,7 @@ function getScreenshot(url) {
             .then(tabs => browser.tabs.get(tabs[0].id))
             .then(tab => {
                 if (tab.url === url) {
+                    tempTitle = tab.title ? tab.title : '';
                     browser.tabs.captureVisibleTab()
                         .then(imageUri => {
                             resolve(imageUri);
@@ -380,17 +381,17 @@ function updateSettings() {
 
 // todo: test behavior on chrome
 function moved(id, info) {
-    //console.log("onMoved");
+    console.log("onMoved", info);
     changeBookmark(id, info);
 }
 
 function changed(id, info) {
-    //console.log("onChanged");
+    console.log("onChanged", info);
     changeBookmark(id, info);
 }
 
 function created(id, info) {
-    //console.log("onCreated");
+    console.log("onCreated", info);
     changeBookmark(id, info);
 }
 
@@ -423,7 +424,7 @@ function changeBookmark(id, info) {
                         } else {
                             getThumbnails(bookmark[0].url).then(() => {
                                 pushToCache(bookmark[0].url).then(() => {
-                                    if (tempTitle !== '') {
+                                    if (tempTitle !== '' && tempTitle !== bookmark[0].title) {
                                         browser.bookmarks.update(id, {
                                             title: tempTitle
                                         });
