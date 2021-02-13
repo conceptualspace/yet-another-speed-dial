@@ -333,8 +333,10 @@ function resizeThumb(dataURI) {
 
 
 function removeBookmark(id, bookmarkInfo) {
-    if (bookmarkInfo.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
-        browser.storage.local.remove(bookmarkInfo.node.url)
+    if (bookmarkInfo.node.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
+        browser.storage.local.remove(bookmarkInfo.node.url).catch((err) => {
+            console.log(err)
+        });
     }
 }
 
