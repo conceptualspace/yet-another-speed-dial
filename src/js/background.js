@@ -384,17 +384,17 @@ function updateSettings() {
 
 // todo: test behavior on chrome
 function moved(id, info) {
-    console.log("onMoved", info);
+    //console.log("onMoved", info);
     changeBookmark(id, info);
 }
 
 function changed(id, info) {
-    console.log("onChanged", info);
+    //console.log("onChanged", info);
     changeBookmark(id, info);
 }
 
 function created(id, info) {
-    console.log("onCreated", info);
+    //console.log("onCreated", info);
     changeBookmark(id, info);
 }
 
