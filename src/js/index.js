@@ -153,8 +153,8 @@ function sort() {
             if (result[speedDialId]) {
                 sortable.sort(result[speedDialId]);
                 //animate();
-                bookmarksContainerParent.scrollTop = scrollPos;
             }
+            bookmarksContainerParent.scrollTop = scrollPos;
             bookmarksContainer.style.opacity = "1";
         });
 }
