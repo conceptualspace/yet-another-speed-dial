@@ -137,12 +137,16 @@ function getOgImage(url) {
 
         let xhr = new XMLHttpRequest();
         xhr.onerror = function(e) {
-            console.log(e);
-            resolve();
+            //console.log(e);
+            resolve([]);
         };
         xhr.onload = function () {
             let images = [];
             // get open graph images
+            if (!xhr.responseXML) {
+                resolve([]);
+                return
+            }
             let metas = xhr.responseXML.getElementsByTagName("meta");
             for (let meta of metas) {
                 if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
@@ -189,8 +193,9 @@ function getOgImage(url) {
                 } else {
                     resolve(images);
                 }
-            }, reason => {
-                console.log(reason);
+            }, err => {
+                console.log(err);
+                resolve([]);
             });
         };
         xhr.open("GET", url);
@@ -209,7 +214,7 @@ function saveThumbnails(url, images) {
                 if (result[url] && result[url].thumbnails) {
                     thumbnails = result[url].thumbnails;
                 }
-                if (images) {
+                if (images && images.length) {
                     thumbnails.push(images);
                 }
                 thumbnails = thumbnails.flat();
@@ -246,10 +251,12 @@ function getScreenshot(url) {
                                             browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                             browser.tabs.remove(tabID);
                                             resolve(imageUri);
-                                        }, (error) => {
-                                            console.log(error);
+                                        }, (err) => {
+                                            console.log(err)
+                                            // carry on like it aint no tang
+                                            resolve([]);
                                         });
-                                    }, 1000);
+                                    }, 1240);
                                 })
                             } else {
                                 setTimeout(function() {
@@ -257,8 +264,11 @@ function getScreenshot(url) {
                                         browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                         browser.tabs.remove(tabID);
                                         resolve(imageUri);
+                                    }, (err) => {
+                                        console.log(err);
+                                        resolve([]);
                                     });
-                                }, 1000);
+                                }, 1240);
                             }
                         }
                     }
@@ -266,10 +276,21 @@ function getScreenshot(url) {
 
                     browser.tabs.create({url, active:false}).then(tab => {
                         tabID = tab.id;
-                        // todo: tab can be hidden in ff. not currently supported in chrome
-                        //browser.tabs.hide(tabID);
+                        // timeout for site to load
+                        // todo: add a cancel button to UI
+                        setTimeout(function() {
+                            browser.tabs.get(tabID).then(tab => {
+                                browser.tabs.onUpdated.removeListener(handleUpdatedTab);
+                                browser.tabs.remove(tabID);
+                                resolve([])
+                            }, (err) => {
+                                // tab was already closed, we all good
+                            });
+                        }, 15000)
                     });
                 }
+            }, (err) => {
+                console.log(err);
             });
     });
 }
@@ -290,44 +311,44 @@ function getLogo(url) {
 
 function resizeThumb(dataURI) {
     return new Promise(function(resolve, reject) {
-        if (!dataURI.length) {
+        if (dataURI && dataURI.length) {
+            let img = new Image();
+            img.onload = function () {
+                if (this.height > 512 && this.width > 512) {
+
+                    let canvas = document.createElement('canvas');
+                    let ctx = canvas.getContext('2d');
+                    let canvas2 = document.createElement('canvas');
+                    let ctx2 = canvas2.getContext('2d');
+                    ctx2.imageSmoothingEnabled = true;
+                    ctx2.imageSmoothingQuality = "high";
+
+                    // first pass: crop scrollbars, blur filter as an approximation for resampling
+                    canvas.width = this.width - 20;
+                    canvas.height = this.height - 20;
+                    ctx.filter = `blur(1px)`;
+                    ctx.drawImage(this, 0, 0, this.width - 18, this.height - 18, 0, 0, canvas.width, canvas.height);
+
+                    // second pass: downscale to target size
+                    let height = 256;
+                    let ratio = height / this.height;
+                    let width = Math.round(this.width * ratio);
+
+                    canvas2.width = width;
+                    canvas2.height = height;
+
+                    ctx2.drawImage(canvas, 0, 0, width, height);
+
+                    const newDataURI = canvas2.toDataURL('image/webp');
+                    resolve(newDataURI);
+                } else {
+                    resolve(dataURI);
+                }
+            };
+            img.src = dataURI;
+        } else {
             resolve([]);
-            return;
         }
-        let img = new Image();
-        img.onload = function() {
-            if (this.height > 512 && this.width > 512) {
-
-                let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d');
-                let canvas2 = document.createElement('canvas');
-                let ctx2 = canvas2.getContext('2d');
-                ctx2.imageSmoothingEnabled = true;
-                ctx2.imageSmoothingQuality = "high";
-
-                // first pass: crop scrollbars, blur filter as an approximation for resampling
-                canvas.width = this.width-20;
-                canvas.height = this.height-20;
-                ctx.filter = `blur(1px)`;
-                ctx.drawImage(this, 0, 0, this.width-18, this.height-18, 0, 0, canvas.width, canvas.height);
-
-                // second pass: downscale to target size
-                let height = 256;
-                let ratio = height / this.height;
-                let width = Math.round(this.width * ratio);
-
-                canvas2.width = width;
-                canvas2.height = height;
-
-                ctx2.drawImage(canvas,0, 0, width, height);
-
-                const newDataURI = canvas2.toDataURL('image/webp');
-                resolve(newDataURI);
-            } else {
-                resolve(dataURI);
-            }
-        };
-        img.src = dataURI;
     });
 }
 
@@ -359,17 +380,17 @@ function updateSettings() {
 
 // todo: test behavior on chrome
 function moved(id, info) {
-    console.log("onMoved");
+    //console.log("onMoved");
     changeBookmark(id, info);
 }
 
 function changed(id, info) {
-    console.log("onChanged");
+    //console.log("onChanged");
     changeBookmark(id, info);
 }
 
 function created(id, info) {
-    console.log("onCreated");
+    //console.log("onCreated");
     changeBookmark(id, info);
 }
 
