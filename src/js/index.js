@@ -83,6 +83,7 @@ let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
+let homeFolderTitle = browser.i18n.getMessage('home');
 
 function displayClock() {
     clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true});
@@ -247,7 +248,7 @@ function printBookmarks(bookmarks, parentId) {
             if (!bookmark.url && bookmark.dateGroupModified) {
                 // setup "tabs" folder header links
                 if (!folders.length) {
-                    folderLink('Home', speedDialId)
+                    folderLink(homeFolderTitle, speedDialId)
                 }
                 if (folders.indexOf(bookmark.id) === -1) {
                     folders.push(bookmark.id);

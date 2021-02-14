@@ -10,6 +10,9 @@
   "title": {
     "message": "Speed Dial"
   },
+  "home": {
+    "message": "Accueil"
+  },
   "save": {
     "message": "Enregistrer"
   },
