@@ -282,12 +282,13 @@ function getScreenshot(url) {
                         tabID = tab.id;
                         // timeout for site to load
                         // todo: add a cancel button to UI
-                        setTimeout(function() {
+                        let timer = setTimeout(function() {
                             browser.tabs.get(tabID).then(tab => {
                                 browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                 browser.tabs.remove(tabID);
                                 resolve([])
                             }, (err) => {
+                                if (timer) clearTimeout(timer);
                                 // tab was already closed, we all good
                             });
                         }, 15000)

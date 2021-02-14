@@ -153,7 +153,7 @@ function sort() {
         .then(result => {
             if (result[speedDialId]) {
                 sortable.sort(result[speedDialId]);
-                //animate();
+                animate();
             }
             bookmarksContainerParent.scrollTop = scrollPos;
             bookmarksContainer.style.opacity = "1";
@@ -615,6 +615,7 @@ function animate() {
     const zeta = 0.9;
     let dirty = true;
     let boxes = [];
+    let windowSize = window.innerWidth;
 
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
@@ -625,18 +626,15 @@ function animate() {
         boxes[i] = {node, transform, x, y};
     }
 
-    window.addEventListener("resize", () => {
-        dirty = true;
-    });
     //const observer = new MutationObserver(() => { dirty = true; });
     //observer.observe(bookmarksContainer, observerConfig);
 
-    TweenLite.ticker.addEventListener("tick", () => dirty && layout());
+    TweenLite.ticker.addEventListener("tick", () => (windowSize !== window.innerWidth) && layout());
 
     layout();
 
     function layout() {
-        dirty = false;
+        windowSize = window.innerWidth;
 
         for (let i = 0; i < total; i++) {
             let box = boxes[i];
