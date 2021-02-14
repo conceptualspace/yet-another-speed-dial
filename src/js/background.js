@@ -488,6 +488,8 @@ function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         browser.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
+
+        //todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
         // details.previousVersion
