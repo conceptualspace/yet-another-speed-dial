@@ -389,7 +389,7 @@ input:focus {
     top: 30px;
     fill: var(--color);
     filter: opacity(0.7);
-    transition: 160ms ease;
+    transition: opacity 160ms ease;
 }
 
 .settingsIcon svg:hover {
