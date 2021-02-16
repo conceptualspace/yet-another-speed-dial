@@ -4,23 +4,23 @@
     "description": "title of the app, displayed in store"
   },
   "extensionDescription": {
-    "message": "современный скоростной набор для Firefox и Chrome",
+    "message": "современный быстрый набор для Firefox и Chrome",
     "description":"description of the app, displayed in store"
   },
   "title": {
     "message": "Speed Dial"
   },
   "home": {
-    "message": "дома"
+    "message": "Домой"
   },
   "save": {
-    "message": "Сохраните"
+    "message": "Сохранить"
   },
   "cancel": {
-    "message": "Отмените"
+    "message": "Отменить"
   },
   "newInstall1": {
-    "message": "3 способа добавить номера быстрого набора:"
+    "message": "3 способа добавить закладки в быстрый набор:"
   },
   "newInstall2": {
     "message": "1. Используйте кнопку на панели инструментов или щелкните страницу правой кнопкой мыши и выберите \"Добавить в Speed Dial\""
@@ -35,7 +35,7 @@
     "message": "папка"
   },
   "newInstall6": {
-    "message": "3. Используйте кнопку ниже (ее можно включить или выключить в настройках)"
+    "message": "3. Используйте кнопку ниже (её можно включить или выключить в настройках)"
   },
   "newTab": {
     "message": "Открыть в новой вкладке"
@@ -47,82 +47,82 @@
     "message": "Открыть в новом приватном окне"
   },
   "edit": {
-    "message": "редактировать"
+    "message": "Редактировать"
   },
   "refresh": {
-    "message": "обновить миниатюры"
+    "message": "Обновить миниатюры"
   },
   "delete": {
-    "message": "Удалите"
+    "message": "Удалить"
   },
   "editFolder": {
-    "message": "редактировать папку..."
+    "message": "Редактировать папку..."
   },
   "remove": {
-    "message": "удалять"
+    "message": "Удалить"
   },
   "newDial": {
-    "message": "новый Speed Dial..."
+    "message": "Новый Speed Dial..."
   },
   "newFolder": {
-    "message": "новая папка..."
+    "message": "Новая папка..."
   },
   "settings": {
     "message": "Настройки..."
   },
   "tileTitle": {
-    "message": "заглавие"
+    "message": "Заголовок"
   },
   "address": {
-    "message": "адрес"
+    "message": "Адрес"
   },
   "uploadImage": {
-    "message": "Передайте образ ..."
+    "message": "Загрузить изображение..."
   },
   "captureMessage": {
     "message": "Это временно откроет сайт в новой вкладке для захвата изображения."
   },
   "addTo": {
-    "message": "добавить к Speed Dial"
+    "message": "Добавить в Speed Dial"
   },
   "name": {
-    "message": "название"
+    "message": "Название"
   },
   "createFolder": {
-    "message": "Создайте папку"
+    "message": "Создать папку"
   },
   "confirmDelete": {
     "message": "Вы действительно хотите удалить эту папку навсегда?"
   },
   "settingsTitle": {
-    "message": "Speed Dial Настройки"
+    "message": "Настройки\nSpeed Dial"
   },
   "wallpaper": {
-    "message": "Обои на стену\n"
+    "message": "Фоновое изображение\n"
   },
   "browse": {
-    "message": "Передайте..."
+    "message": "Обзор..."
   },
   "backgroundColor": {
-    "message": "фоновый цвет"
+    "message": "Цвет фона"
   },
   "largeTiles": {
-    "message": "большая плитка"
+    "message": "Большие плитки"
   },
   "clock": {
     "message": "Часы"
   },
   "Labels": {
-    "message": "этикетки"
+    "message": "Названия сайтов"
   },
   "addSiteButton": {
-    "message": "добавления сайта кнопка"
+    "message": "Кнопка добавления сайта"
   },
   "addFolderButton": {
-    "message": "добавления папки кнопка"
+    "message": "Кнопка добавления папки"
   },
   "settingsButton": {
-    "message": "Настройки кнопка"
+    "message": "Кнопка настроек"
   },
   "saveToast": {
     "message": "Настройки сохранены!"
