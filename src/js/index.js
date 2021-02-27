@@ -528,7 +528,7 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
-                        tabMessagePort.postMessage({updateCache: true, newUrl, i: thumbIndex});
+                        tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                         if (title !== targetTileTitle) {
                             updateTitle()
                         }
