@@ -607,7 +607,7 @@ function saveBookmarkSettings() {
                         });
                     }
 
-                    if (toastContent.innerText === '') {
+                    if (url !== newUrl && toastContent.innerText === '') {
                         toastContent.innerText = ` Capturing images for ${newUrl}...`;
                         toast.style.transform = "translateX(0%)";
                     }
