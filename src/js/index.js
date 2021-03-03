@@ -490,8 +490,16 @@ async function buildModal(url, title) {
     }
 }
 
+function rectifyUrl(url) {
+    if (url && !url.startsWith('https://') && !url.startsWith('http://')) {
+        return 'https://' + url;
+    } else {
+        return url;
+    }
+}
+
 function createDial() {
-    let url = createDialModalURL.value.trim();
+    let url = rectifyUrl(createDialModalURL.value.trim());
 
     if (!url.startsWith('https://') && !url.startsWith('http://')) {
         url = 'https://' + url;
@@ -512,7 +520,7 @@ function saveBookmarkSettings() {
     // todo: cleanup this abomination when im not on drugs
     let title = modalTitle.value;
     let url = targetTileHref;
-    let newUrl = modalURL.value;
+    let newUrl = rectifyUrl(modalURL.value.trim());
     let selectedImageSrc = null;
     let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
