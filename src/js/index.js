@@ -606,6 +606,11 @@ function saveBookmarkSettings() {
                             url: newUrl
                         });
                     }
+
+                    if (toastContent.innerText === '') {
+                        toastContent.innerText = ` Capturing images for ${newUrl}...`;
+                        toast.style.transform = "translateX(0%)";
+                    }
                 }
             })
     }
