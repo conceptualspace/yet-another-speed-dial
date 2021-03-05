@@ -153,10 +153,11 @@ function sort() {
         .then(result => {
             if (result[speedDialId]) {
                 sortable.sort(result[speedDialId]);
-                animate();
             }
+            animate();
             bookmarksContainerParent.scrollTop = scrollPos;
             bookmarksContainer.style.opacity = "1";
+            sortable.save();
         });
 }
 
