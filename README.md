@@ -7,7 +7,7 @@ Yet Another Speed Dial
 
 <h1>
 <a href='https://addons.mozilla.org/en-US/firefox/addon/yet-another-speed-dial/'><img alt='Get it for Firefox' src='https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/badges/ff-badge.png'/></a> <a href='https://chrome.google.com/webstore/detail/yet-another-speed-dial/imohnlganmafcmidafklgkgfgaagiohn'><img alt='Get it for Chrome' src='https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/badges/chrome-badge.png'/></a> <a href='//www.microsoft.com/store/apps/0RDCKB416QRD?cid=storebadge&ocid=badge'><img src='https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/badges/microsoft-badge.png' alt='English badge' style='width: 166px; height: 60px;'/></a>
-<h1>
+</h1>
 
 A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 
