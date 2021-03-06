@@ -11,12 +11,12 @@ Yet Another Speed Dial
 
 A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 
-- Respects your privacy. Unlike other speed dial addons, there is no tracking.
-- Automatically generates thumbnails and screenshots, or select your own.
-- Uses the browser's native bookmarks library so speed dials can be synced.
+- Automatically generates thumbnails and screenshots, or add your own.
+- Uses the native bookmarks library so speed dials can be synced by the browser.
 - Sortable with drag and drop
-- Folder support
+- Supports folders
 - Simple and fast UI
+- No ads, trackers, or bullshit.
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
