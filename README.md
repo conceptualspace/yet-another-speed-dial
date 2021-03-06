@@ -18,6 +18,8 @@ A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 - Simple and fast UI
 - No ads, trackers, or bullshit.
 
+---
+
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
 
