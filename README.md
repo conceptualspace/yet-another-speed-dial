@@ -16,7 +16,7 @@ A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 - Sortable with drag and drop
 - Supports folders
 - Simple and fast UI
-- No ads, trackers, or bullshit.
+- No ads, trackers, or BS :)
 
 ---
 
@@ -33,16 +33,19 @@ A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 Yes! Just right-click the speed dial and select Edit.
 
 ### One of my site thumbnails disappeared?
-YASD includes a thumbnail linked using the Open Graph standard when available. This keeps those thumbnails up to date automatically, but if the website removes the image it may no longer load in YASD. To fetch new images, simply right-click the dial and select "Refresh thumbnails".
+YASD loads thumbnails using the Open Graph standard. This keeps those thumbnails up to date automatically, but if a website removes the image it may no longer load in YASD. To fetch new images, simply right-click the dial and select "Refresh thumbnails".
 
 ### Why does YASD require the "access your data for all websites" permission?
-This is required for YASD to capture an image of the website for the thumbnail. **Absolutely no data is collected for any reason whatsoever**. These two features (visual thumbnails and user privacy) were the primary motivation for creating YASD. Note YASD will still work if you deny this permission, but without capturing thumbnails. You can find the YASD privacy policy here: https://conceptualspace.net/privacy.md
+This is required for YASD to capture an image of the website for the thumbnail. **YASD accesses absolutely no other data for any reason whatsoever**. These two features (visual thumbnails and user privacy) were the primary motivation for creating YASD. Note, YASD still works if you deny this permission, just without capturing thumbnails. You can find the YASD privacy policy here: https://conceptualspace.net/privacy.md
 
 ### Why is YASD showing CPU usage in the Chrome task manager?
-The *actual* CPU usage is very low (confirm using your OS task manager) but some cycles are used to elimate jankiness. YASD uses a high performance rendering engine (GSAP) to keep user ineractions and animations smooth. The usage will be 0 when YASD is not in the foreground.
+While the actual CPU usage is very low (confirm using your OS task manager), some cycles are used to elimate jankiness. YASD uses a high performance rendering engine (GSAP) to keep user ineractions and animations smooth. The usage is 0 when YASD is not in focus.
+
+### Can I open speed dial links in Firefox Containers?
+Yes, just use <kbd>Shift</kbd> + <kbd>Right-click</kbd> on the speed dial to access the default context menu.
 
 ### Why isn't the address bar focused (active) by default on the new tab / home page?
-Unfortunately, this is a bug in Firefox. You can nag Mozilla to fix it here: https://bugzilla.mozilla.org/show_bug.cgi?id=1411209
+This is a bug in Firefox. You can nag Mozilla to fix it here: https://bugzilla.mozilla.org/show_bug.cgi?id=1411209
 
 ---
 
