@@ -40,20 +40,6 @@
       "24": "icons/action-icon24.png",
       "32": "icons/action-icon32.png"
     },
-    "theme_icons": [{
-      "light": "icons/action-icon16-light.png",
-      "dark": "icons/action-icon16.png",
-      "size": 16
-    }, {
-      "light": "icons/action-icon24-light.png",
-      "dark": "icons/action-icon24.png",
-      "size": 24
-    },
-      {
-        "light": "icons/action-icon32-light.png",
-        "dark": "icons/action-icon32.png",
-        "size": 32
-      }],
     "default_title": "Add to Speed Dial"
   },
   "browser_specific_settings": {
