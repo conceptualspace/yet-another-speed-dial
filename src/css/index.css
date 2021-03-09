@@ -67,6 +67,8 @@ h1 {
     align-content: safe center;
     justify-content: center;
     min-height: 100%;
+    max-width: 160em;
+    margin: auto;
     opacity: 0;
     transition: opacity 240ms;
 }
