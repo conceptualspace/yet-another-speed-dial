@@ -85,6 +85,16 @@ let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = browser.i18n.getMessage('home');
 
+const debounce = (func, delay) => {
+    let inDebounce
+    return function() {
+        const context = this
+        const args = arguments
+        clearTimeout(inDebounce)
+        inDebounce = setTimeout(() => func.apply(context, args), delay)
+    }
+}
+
 function displayClock() {
     clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true});
     setTimeout(displayClock, 10000);
@@ -619,7 +629,7 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-function animate() {
+const animate = debounce(() => {
     //var inputs = document.querySelectorAll("input");
     const nodes = document.querySelectorAll(".tile");
     //const observerConfig = { attributes: false, childList: true, subtree: false };
@@ -643,6 +653,7 @@ function animate() {
     //const observer = new MutationObserver(() => { dirty = true; });
     //observer.observe(bookmarksContainer, observerConfig);
 
+    // todo: move this
     TweenLite.ticker.addEventListener("tick", () => (windowSize !== window.innerWidth) && layout());
 
     layout();
@@ -675,7 +686,7 @@ function animate() {
         return 1 - progress;
     }
 
-}
+}, 500);
 
 function readURL(input) {
     if (input.files && input.files[0]) {
