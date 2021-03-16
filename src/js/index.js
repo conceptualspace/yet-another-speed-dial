@@ -166,8 +166,8 @@ function sort() {
                 sortable.sort(result[speedDialId]);
             }
             animate();
-            bookmarksContainerParent.scrollTop = scrollPos;
             bookmarksContainer.style.opacity = "1";
+            bookmarksContainerParent.scrollTop = scrollPos;
             sortable.save();
         });
 }
@@ -929,6 +929,8 @@ function saveSettings() {
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
 
+    applySettings();
+
     browser.storage.local.set({settings})
         .then(() => {
             /*
@@ -937,7 +939,7 @@ function saveSettings() {
                 settingsToast.style.opacity = "0";
             }, 3500);
              */
-            applySettings();
+
             tabMessagePort.postMessage({updateSettings: true});
         });
 }
