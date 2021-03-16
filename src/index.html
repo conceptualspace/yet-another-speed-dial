@@ -147,7 +147,7 @@
 <!-- settings nav -->
     <div id="sidenav" class="sidenav">
         <div class="settings" id="settingsDiv">
-            <h1 data-locale="settingsTitle">Speed Dial Settings</h1>
+            <h1 data-locale="settingsTitle">Settings</h1>
             <hr>
             <div class='row'>
                 <div class='column'>
@@ -170,6 +170,7 @@
                     <!--<a id="resetWallpaper" href="#">Reset</a>-->
                 </div>
             </div>
+
             <div class='row'>
                 <div class='column'>
                     <label data-locale="backgroundColor">Background Color</label>
@@ -178,6 +179,24 @@
                     <div id="color-picker-wrapper">
                         <input type="color" id="color-picker" class="settingsCtl">
                     </div>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label data-locale="maxColumns">Max Columns</label>
+                </div>
+                <div class='column controls'>
+                    <select name="maxcols" id="maxcols" class="settingsCtl">
+                        <option value="100">Unlimited</option>
+                        <option value="10">10</option>
+                        <option value="9">9</option>
+                        <option value="8">8</option>
+                        <option value="7">7</option>
+                        <option value="6">6</option>
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                    </select>
                 </div>
             </div>
             <div class='row' style="display:none">
@@ -246,12 +265,15 @@
                     </label>
                 </div>
             </div>
+
+            <!--
             <hr>
             <div>
                 <button id="saveBtn" class="settingsCtl" data-locale="save">Save</button>
             </div>
             <hr>
             <div id="settingsToast" data-locale="saveToast">Settings saved!</div>
+            -->
         </div>
     </div>
 

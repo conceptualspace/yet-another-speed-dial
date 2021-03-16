@@ -95,7 +95,7 @@
     "message": "Are you sure you want to permanently remove this folder?"
   },
   "settingsTitle": {
-    "message": "Speed Dial Settings"
+    "message": "Settings"
   },
   "wallpaper": {
     "message": "Wallpaper"
@@ -108,6 +108,9 @@
   },
   "largeTiles": {
     "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Max Columns"
   },
   "clock": {
     "message": "Clock"

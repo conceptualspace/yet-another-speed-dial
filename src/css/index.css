@@ -7,6 +7,7 @@
     --chrome-display: none;
     --clock: block;
     --settings: block;
+    --columns: 100%;
 }
 
 html, body {
@@ -67,7 +68,7 @@ h1 {
     align-content: safe center;
     justify-content: center;
     min-height: 100%;
-    max-width: 160em;
+    max-width: var(--columns);
     margin: auto;
     opacity: 0;
     transition: opacity 240ms;
@@ -330,11 +331,13 @@ input:focus {
 }
 
 .fc-slide img {
-    height: 180px;
+    max-height: 180px;
+    max-width: 100%;
 }
 
 .fc-image img, .fc-image picture {
-    height: 180px;
+    max-height: 180px;
+    max-width: 100%;
 }
 
 .fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {

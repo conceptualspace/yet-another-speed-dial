@@ -5,7 +5,8 @@
  }
 
 .sidenav h1 {
-    font-weight: lighter;
+    font-weight: bold;
+    font-size: large;
     /*
     background-image: url('../icons/icon48-white.png');
     background-repeat: no-repeat;
@@ -15,7 +16,6 @@
 
 .sidenav hr {
     border: 1px solid rgba(255,255,255,0.1);
-    margin: 2em 0 2em 0;
 }
 
 .sidenav div {

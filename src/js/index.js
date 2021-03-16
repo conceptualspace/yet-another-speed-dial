@@ -61,8 +61,9 @@ const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
-const saveBtn = document.getElementById("saveBtn");
-const settingsToast = document.getElementById("settingsToast");
+const maxColsInput = document.getElementById("maxcols");
+//const saveBtn = document.getElementById("saveBtn");
+//const settingsToast = document.getElementById("settingsToast");
 
 // clock
 const clock = document.getElementById('clock');
@@ -636,7 +637,7 @@ const animate = debounce(() => {
     const total = nodes.length;
     const time = 0.9;
     const omega = 12;
-    const zeta = 0.9;
+    const zeta = 0.8;
     let dirty = true;
     let boxes = [];
     let windowSize = window.innerWidth;
@@ -654,7 +655,7 @@ const animate = debounce(() => {
     //observer.observe(bookmarksContainer, observerConfig);
 
     // todo: move this
-    TweenLite.ticker.addEventListener("tick", () => (windowSize !== window.innerWidth) && layout());
+    TweenLite.ticker.addEventListener("tick", () => (document.body.style.maxWidth !== '100%') && layout());
 
     layout();
 
@@ -662,6 +663,7 @@ const animate = debounce(() => {
         windowSize = window.innerWidth;
 
         for (let i = 0; i < total; i++) {
+            let randTime = ((i / (total*2)) + 0.6).toFixed(1);
             let box = boxes[i];
             const lastX = box.x;
             const lastY = box.y;
@@ -672,7 +674,7 @@ const animate = debounce(() => {
                 const y = box.transform.y + lastY - box.y;
                 // Tween to 0 to remove the transforms
                 TweenLite.set(box.node, {x, y});
-                TweenLite.to(box.node, time, {x: 0, y: 0, ease});
+                TweenLite.to(box.node, randTime, {x: 0, y: 0, ease});
             }
         }
     }
@@ -827,6 +829,13 @@ function getAverageRGB(imgPath) {
 function applySettings() {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
+
+        if (settings.maxCols && settings.maxCols !== "100") {
+            document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
+        } else {
+            document.documentElement.style.setProperty('--columns', '100%')
+        }
+
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
         } else {
@@ -897,6 +906,7 @@ function applySettings() {
         showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
+        maxColsInput.value = settings.maxCols;
 
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
@@ -919,13 +929,16 @@ function saveSettings() {
     settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
+    settings.maxCols = maxColsInput.value;
 
     browser.storage.local.set({settings})
         .then(() => {
+            /*
             settingsToast.style.opacity = "1";
             setTimeout(function () {
                 settingsToast.style.opacity = "0";
             }, 3500);
+             */
             applySettings();
             tabMessagePort.postMessage({updateSettings: true});
         });
@@ -974,7 +987,7 @@ window.addEventListener("click", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -1094,22 +1107,49 @@ modalImgInput.onchange = function () {
     });
 };
 
+maxColsInput.oninput = function(e) {
+    saveSettings()
+}
+
+wallPaperEnabled.oninput = function(e) {
+    saveSettings()
+}
+
 color_picker.onchange = function () {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
+    saveSettings()
 };
+
+showTitlesInput.oninput = function(e) {
+    saveSettings()
+}
+
+showCreateDialInput.oninput = function(e) {
+    saveSettings()
+}
+
+showFoldersInput.oninput = function(e) {
+    saveSettings()
+}
+
+showClockInput.oninput = function(e) {
+    saveSettings()
+}
+
+showSettingsBtnInput.oninput = function(e) {
+    saveSettings()
+}
 
 reader.onload = function (e) {
     imgPreview.setAttribute('src', e.target.result);
     imgPreview.style.display = 'block';
+    saveSettings()
 };
 
 imgInput.onchange = function () {
     readURL(this);
 };
 
-saveBtn.onclick = function () {
-    saveSettings();
-};
 
 wallPaperEnabled.onchange = function () {
     if (this.checked) {
