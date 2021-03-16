@@ -830,6 +830,31 @@ function applySettings() {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
+        if (settings.wallpaper && settings.wallpaperSrc) {
+            // perf hack for default gradient bg image. user selected images are data URIs
+            if (settings.wallpaperSrc.length < 65) {
+                document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
+                document.documentElement.style.setProperty('--color', '#ffffff');
+            } else {
+                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+                document.body.style.backgroundSize = 'cover';
+                // dynamically set text color based on background
+                // todo: confirm this is performant (edit: was too slow)
+                // todo: replace with manual color selection
+                /*
+                getAverageRGB(settings.wallpaperSrc).then(rgb => {
+                    let textColor = contrast(rgb);
+                    document.documentElement.style.setProperty('--color', textColor);
+                });
+
+                 */
+            }
+        } else {
+            document.body.style.background = settings.backgroundColor;
+            let textColor = contrast(hexToRgb(settings.backgroundColor));
+            document.documentElement.style.setProperty('--color', textColor);
+        }
+
         if (settings.maxCols && settings.maxCols !== "100") {
             document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
         } else {
@@ -854,26 +879,7 @@ function applySettings() {
             settingsBtn.style.setProperty('--settings', 'none');
         }
 
-        if (settings.wallpaper && settings.wallpaperSrc) {
-            // perf hack for default gradient bg image. user selected images are data URIs
-            if (settings.wallpaperSrc.length < 65) {
-                document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
-                document.documentElement.style.setProperty('--color', '#ffffff');
-            } else {
-                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
-                document.body.style.backgroundSize = 'cover';
-                // dynamically set text color based on background
-                // todo: confirm this is performant
-                getAverageRGB(settings.wallpaperSrc).then(rgb => {
-                    let textColor = contrast(rgb);
-                    document.documentElement.style.setProperty('--color', textColor);
-                });
-            }
-        } else {
-            document.body.style.background = settings.backgroundColor;
-            let textColor = contrast(hexToRgb(settings.backgroundColor));
-            document.documentElement.style.setProperty('--color', textColor);
-        }
+
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
@@ -1204,6 +1210,11 @@ function migrate() {
 }
 
 function init() {
+
+    document.querySelectorAll('[data-locale]').forEach(elem => {
+        elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
+    })
+
     tabMessagePort.onMessage.addListener(function (m) {
         if (m.ready) {
             cache = m.cache;
@@ -1248,9 +1259,7 @@ function init() {
         }
     });
 
-    document.querySelectorAll('[data-locale]').forEach(elem => {
-        elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
-    })
+
 }
 
 init();
