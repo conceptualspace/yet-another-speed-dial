@@ -879,8 +879,6 @@ function applySettings() {
             settingsBtn.style.setProperty('--settings', 'none');
         }
 
-
-
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
         } else {
@@ -891,12 +889,6 @@ function applySettings() {
             document.documentElement.style.setProperty('--create-dial-display', 'none');
         } else {
             document.documentElement.style.setProperty('--create-dial-display', 'block');
-        }
-
-        if (browser.runtime.getBrowserInfo) {
-            document.documentElement.style.setProperty('--chrome-display', 'none');
-        } else {
-            document.documentElement.style.setProperty('--chrome-display', 'block');
         }
 
 

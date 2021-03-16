@@ -2,9 +2,7 @@
     --color: #ffffff;
     --title-opacity: 1;
     --show-folders: inline;
-    --top-padding: 50px;
     --create-dial-display: block;
-    --chrome-display: none;
     --clock: block;
     --settings: block;
     --columns: 100%;
@@ -442,6 +440,3 @@ input:focus {
     padding-left: 10px;
 }
 
-.chromeOnly {
-    display: var(--chrome-display);
-}
