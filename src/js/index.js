@@ -85,7 +85,9 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = browser.i18n.getMessage('home');
-let busy = false;
+let windowSize = null;
+let containerSize = null;
+let layoutFolder = false;
 
 const debounce = (func, delay) => {
     let inDebounce
@@ -141,12 +143,12 @@ function showFolder(id) {
         if (folder.id === id || (folder.id === 'wrap' && id === speedDialId)) {
             folder.style.display = "flex"
             folder.style.opacity = "0";
+            layoutFolder = true;
             // transition between folders. todo more elegant solution
-            busy = true;
             setTimeout(function () {
+                //layoutFolder = id;
                 folder.style.opacity = "1";
-                busy = false;
-            }, 16);
+            }, 20);
         } else {
             folder.style.display = "none";
         }
@@ -658,29 +660,38 @@ const animate = debounce(() => {
     //observer.observe(bookmarksContainer, observerConfig);
 
     // todo: move this
-    TweenLite.ticker.addEventListener("tick", () => (document.body.style.maxWidth !== '100%') && layout());
+    TweenLite.ticker.addEventListener("tick", layout);
 
     layout();
 
     function layout() {
-        //windowSize = window.innerWidth;
+        if (layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
+            windowSize = window.innerWidth;
+            containerSize = getComputedStyle(bookmarksContainer).maxWidth;
 
-        for (let i = 0; i < total; i++) {
-            let randTime = ((i / (total*2)) + 0.6).toFixed(1);
-            let box = boxes[i];
-            const lastX = box.x;
-            const lastY = box.y;
-            box.x = box.node.offsetLeft;
-            box.y = box.node.offsetTop;
-            if (lastX !== box.x || lastY !== box.y) {
-                const x = box.transform.x + lastX - box.x;
-                const y = box.transform.y + lastY - box.y;
-                // Tween to 0 to remove the transforms
-                if (!busy) {
+            for (let i = 0; i < total; i++) {
+                let box = boxes[i];
+                let randTime;
+                const lastX = box.x;
+                const lastY = box.y;
+                box.x = box.node.offsetLeft;
+                box.y = box.node.offsetTop;
+                if (lastX !== box.x || lastY !== box.y) {
+                    const x = box.transform.x + lastX - box.x;
+                    const y = box.transform.y + lastY - box.y;
+                    if (layoutFolder) {
+                        // folder opened -- zero duration because we are just setting the positions of the dials, so whenever
+                        // a resize occurs the animation will start from the right position
+                        randTime = 0;
+                    } else {
+                        randTime = ((i / (total * 2)) + 0.6).toFixed(1);
+                    }
+                    // Tween to 0 to remove the transforms
                     TweenLite.set(box.node, {x, y});
                     TweenLite.to(box.node, randTime, {x: 0, y: 0, ease});
                 }
             }
+            layoutFolder = false;
         }
     }
 
