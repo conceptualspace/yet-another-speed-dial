@@ -640,7 +640,7 @@ const animate = debounce(() => {
     const zeta = 0.8;
     let dirty = true;
     let boxes = [];
-    let windowSize = window.innerWidth;
+    //let windowSize = window.innerWidth;
 
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
@@ -660,7 +660,7 @@ const animate = debounce(() => {
     layout();
 
     function layout() {
-        windowSize = window.innerWidth;
+        //windowSize = window.innerWidth;
 
         for (let i = 0; i < total; i++) {
             let randTime = ((i / (total*2)) + 0.6).toFixed(1);
@@ -694,6 +694,33 @@ function readURL(input) {
     if (input.files && input.files[0]) {
         reader.readAsDataURL(input.files[0]);
     }
+}
+
+function resizeBackground(dataURI) {
+    return new Promise(function (resolve, reject) {
+        let img = new Image();
+        img.onload = function () {
+            if (this.height > screen.height) {
+                let height = screen.height;
+                let ratio = height / this.height;
+                let width = Math.round(this.width * ratio);
+
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(this, 0, 0, width, height);
+
+                const newDataURI = canvas.toDataURL('image/webp');
+                resolve(newDataURI);
+            } else {
+                resolve(dataURI);
+            }
+        };
+        img.src = dataURI;
+    })
 }
 
 function resizeThumb(dataURI) {
@@ -1141,9 +1168,11 @@ showSettingsBtnInput.oninput = function(e) {
 }
 
 reader.onload = function (e) {
-    imgPreview.setAttribute('src', e.target.result);
-    imgPreview.style.display = 'block';
-    saveSettings()
+    resizeBackground(e.target.result).then(imagedata => {
+        imgPreview.setAttribute('src', imagedata);
+        imgPreview.style.display = 'block';
+        saveSettings()
+    })
 };
 
 imgInput.onchange = function () {
