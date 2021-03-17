@@ -85,6 +85,7 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = browser.i18n.getMessage('home');
+let busy = false;
 
 const debounce = (func, delay) => {
     let inDebounce
@@ -141,8 +142,10 @@ function showFolder(id) {
             folder.style.display = "flex"
             folder.style.opacity = "0";
             // transition between folders. todo more elegant solution
+            busy = true;
             setTimeout(function () {
                 folder.style.opacity = "1";
+                busy = false;
             }, 16);
         } else {
             folder.style.display = "none";
@@ -673,8 +676,10 @@ const animate = debounce(() => {
                 const x = box.transform.x + lastX - box.x;
                 const y = box.transform.y + lastY - box.y;
                 // Tween to 0 to remove the transforms
-                TweenLite.set(box.node, {x, y});
-                TweenLite.to(box.node, randTime, {x: 0, y: 0, ease});
+                if (!busy) {
+                    TweenLite.set(box.node, {x, y});
+                    TweenLite.to(box.node, randTime, {x: 0, y: 0, ease});
+                }
             }
         }
     }
