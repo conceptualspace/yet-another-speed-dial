@@ -733,7 +733,7 @@ function resizeBackground(dataURI) {
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                const newDataURI = canvas.toDataURL('image/webp', 80);
+                const newDataURI = canvas.toDataURL('image/webp', 0.75);
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
@@ -762,8 +762,8 @@ function resizeThumb(dataURI) {
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                // working in ff and chrome; todo: fallback for safari
-                const newDataURI = canvas.toDataURL('image/webp');
+                // webp encoding falls back to png on firefox
+                const newDataURI = canvas.toDataURL('image/webp', 0.7);
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
