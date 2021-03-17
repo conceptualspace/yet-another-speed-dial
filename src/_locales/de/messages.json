@@ -106,8 +106,14 @@
   "backgroundColor": {
     "message": "Hintergrundfarbe"
   },
+  "textColor": {
+    "message": "Textfarbe"
+  },
   "largeTiles": {
     "message": "Große Fliesen"
+  },
+  "maxColumns": {
+    "message": "Max Spalten"
   },
   "clock": {
     "message": "Uhr"

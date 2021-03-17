@@ -106,8 +106,14 @@
   "backgroundColor": {
     "message": "Цвет фона"
   },
+  "textColor": {
+    "message": "Цвет текста"
+  },
   "largeTiles": {
     "message": "Большие плитки"
+  },
+  "maxColumns": {
+    "message": "Предел столбца"
   },
   "clock": {
     "message": "Часы"

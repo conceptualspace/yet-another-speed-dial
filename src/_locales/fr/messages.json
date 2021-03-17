@@ -106,8 +106,14 @@
   "backgroundColor": {
     "message": "Contexte Couleur"
   },
+  "textColor": {
+    "message": "Couleur du texte"
+  },
   "largeTiles": {
     "message": "Grands Carreaux"
+  },
+  "maxColumns": {
+    "message": "Colonnes max"
   },
   "clock": {
     "message": "L'horloge"
