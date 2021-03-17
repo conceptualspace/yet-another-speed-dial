@@ -393,6 +393,7 @@ function printBookmarks(bookmarks, parentId) {
                     sortable.sort(result[parentId]);
                     animate();
                     bookmarksContainerParent.scrollTop = scrollPos;
+                    sortable.save();
                 }
             });
         //
