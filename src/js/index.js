@@ -548,17 +548,21 @@ function saveBookmarkSettings() {
         targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
         browser.storage.local.get(url)
             .then(result => {
+                let thumbnails = [];
                 if (result[url]) {
-                    let thumbnails = result[url].thumbnails;
+                    thumbnails = result[url].thumbnails;
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
+                } else {
+                    thumbnails.push(selectedImageSrc);
+                    thumbIndex = 0;
+                }
                     browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
                         tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                         if (title !== targetTileTitle) {
                             updateTitle()
                         }
                     });
-                }
             });
     } else {
         for (let node of imageNodes) {
@@ -729,7 +733,7 @@ function resizeBackground(dataURI) {
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                const newDataURI = canvas.toDataURL('image/webp');
+                const newDataURI = canvas.toDataURL('image/webp', 80);
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
