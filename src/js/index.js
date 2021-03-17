@@ -733,8 +733,14 @@ function resizeBackground(dataURI) {
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                const newDataURI = canvas.toDataURL('image/webp', 0.75);
-                resolve(newDataURI);
+                // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
+                if (browser.runtime.getBrowserInfo) {
+                    const newDataURI = canvas.toDataURL('image/jpeg', 0.8);
+                    resolve(newDataURI);
+                } else {
+                    const newDataURI = canvas.toDataURL('image/webp', 0.87);
+                    resolve(newDataURI);
+                }
             } else {
                 resolve(dataURI);
             }
