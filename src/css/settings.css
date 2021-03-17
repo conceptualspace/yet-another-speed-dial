@@ -165,6 +165,14 @@
     /*float: left;*/
 }
 
+.sidenav #textColor-picker-wrapper {
+    width: 50px;
+    padding: 0;
+    border-radius: 34px;
+    border: 1px solid rgba(255,255,255,0.2);
+    /*float: left;*/
+}
+
 .sidenav [type="file"] {
     height: 0;
     overflow: hidden;

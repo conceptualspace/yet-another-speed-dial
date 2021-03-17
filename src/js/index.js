@@ -51,6 +51,8 @@ const noBookmarks = document.getElementById('noBookmarks');
 const reader = new FileReader();
 const color_picker = document.getElementById("color-picker");
 const color_picker_wrapper = document.getElementById("color-picker-wrapper");
+const textColor_picker = document.getElementById("textColor-picker");
+const textColor_picker_wrapper = document.getElementById("textColor-picker-wrapper");
 const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const wallPaperEnabled = document.getElementById("wallpaper");
@@ -887,25 +889,16 @@ function applySettings() {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (settings.wallpaperSrc.length < 65) {
                 document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
-                document.documentElement.style.setProperty('--color', '#ffffff');
             } else {
                 document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
                 document.body.style.backgroundSize = 'cover';
-                // dynamically set text color based on background
-                // todo: confirm this is performant (edit: was too slow)
-                // todo: replace with manual color selection
-                /*
-                getAverageRGB(settings.wallpaperSrc).then(rgb => {
-                    let textColor = contrast(rgb);
-                    document.documentElement.style.setProperty('--color', textColor);
-                });
-
-                 */
             }
         } else {
             document.body.style.background = settings.backgroundColor;
-            let textColor = contrast(hexToRgb(settings.backgroundColor));
-            document.documentElement.style.setProperty('--color', textColor);
+        }
+
+        if (settings.textColor) {
+            document.documentElement.style.setProperty('--color', settings.textColor);
         }
 
         if (settings.maxCols && settings.maxCols !== "100") {
@@ -951,6 +944,8 @@ function applySettings() {
         wallPaperEnabled.checked = settings.wallpaper;
         color_picker.value = settings.backgroundColor;
         color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
+        textColor_picker.value = settings.textColor;
+        textColor_picker_wrapper.style.backgroundColor = settings.textColor;
         showTitlesInput.checked = settings.showTitles;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
@@ -974,6 +969,7 @@ function saveSettings() {
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
+    settings.textColor = textColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
@@ -1173,6 +1169,13 @@ color_picker.onchange = function () {
     saveSettings()
 };
 
+textColor_picker.onchange = function () {
+    textColor_picker_wrapper.style.backgroundColor = textColor_picker.value;
+    if (settings.textColor !== textColor_picker.value) {
+        saveSettings()
+    }
+};
+
 showTitlesInput.oninput = function(e) {
     saveSettings()
 }
@@ -1197,6 +1200,14 @@ reader.onload = function (e) {
     resizeBackground(e.target.result).then(imagedata => {
         imgPreview.setAttribute('src', imagedata);
         imgPreview.style.display = 'block';
+        // dynamically set text color based on background
+        /*
+        getAverageRGB(imagedata).then(rgb => {
+            let textColor = contrast(rgb);
+            settings.textColor = textColor
+            document.documentElement.style.setProperty('--color', textColor);
+        });
+         */
         saveSettings()
     })
 };

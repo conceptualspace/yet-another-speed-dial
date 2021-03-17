@@ -106,6 +106,9 @@
   "backgroundColor": {
     "message": "Background Color"
   },
+  "textColor": {
+    "message": "Text Color"
+  },
   "largeTiles": {
     "message": "Large Tiles"
   },

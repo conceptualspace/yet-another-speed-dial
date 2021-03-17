@@ -1,10 +1,10 @@
 :root {
     --color: #ffffff;
     --title-opacity: 1;
-    --show-folders: inline;
+    --show-folders: none;
     --create-dial-display: block;
-    --clock: block;
-    --settings: block;
+    --clock: none;
+    --settings: none;
     --columns: 100%;
 }
 

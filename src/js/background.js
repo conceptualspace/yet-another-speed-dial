@@ -18,7 +18,8 @@ let defaults = {
     showFolders: true,
     showSettingsBtn: true,
     showClock: true,
-    maxCols: '100'
+    maxCols: '100',
+    textColor: '#ffffff'
 };
 let cache = {};
 let ready = false;
