@@ -1,0 +1,136 @@
+{
+  "extensionName": {
+    "message": "un'altra chiamata rapida",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "una moderna selezione rapida per firefox e chrome",
+    "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Selezione Rapida"
+  },
+  "home": {
+    "message": "Home"
+  },
+  "save": {
+    "message": "Salva"
+  },
+  "cancel": {
+    "message": "Annulla"
+  },
+  "newInstall1": {
+    "message": "3 modi per aggiungere le chiamate rapide:"
+  },
+  "newInstall2": {
+    "message": "1. Usa il pulsante della barra degli strumenti, o fai clic destro su una pagina e seleziona \"Aggiungi alla Selezione Rapida\""
+  },
+  "newInstall3": {
+    "message": "2. Aggiungi un sito ai preferiti e scegli il"
+  },
+  "newInstall4": {
+    "message": "Altri segnalibri"
+  },
+  "newInstall5": {
+    "message": "cartella"
+  },
+  "newInstall6": {
+    "message": "3. Usa il pulsante qui sotto (può essere attivato o disattivato nelle impostazioni)"
+  },
+  "newTab": {
+    "message": "Aprire in una nuova scheda"
+  },
+  "newWin": {
+    "message": "Aprire in una nuova finestra"
+  },
+  "newPrivate": {
+    "message": "Aprire in una nuova finestra privata"
+  },
+  "edit": {
+    "message": "Modificare"
+  },
+  "refresh": {
+    "message": "Aggiorna miniature"
+  },
+  "delete": {
+    "message": "Elimina"
+  },
+  "editFolder": {
+    "message": "Modifica Cartella..."
+  },
+  "remove": {
+    "message": "Rimuovi"
+  },
+  "newDial": {
+    "message": "Nuova Selezione Rapida..."
+  },
+  "newFolder": {
+    "message": "Nuovo Cartella..."
+  },
+  "settings": {
+    "message": "Impostazioni..."
+  },
+  "tileTitle": {
+    "message": "Titolo"
+  },
+  "address": {
+    "message": "URL"
+  },
+  "uploadImage": {
+    "message": "Carica immagine ..."
+  },
+  "captureMessage": {
+    "message": "Questo aprirà temporaneamente il sito in una nuova scheda per catturare l'immagine"
+  },
+  "addTo": {
+    "message": "Aggiungi alla Selezione Rapida"
+  },
+  "name": {
+    "message": "Nome"
+  },
+  "createFolder": {
+    "message": "Crea cartella"
+  },
+  "confirmDelete": {
+    "message": "Sei sicuro di voler rimuovere definitivamente questa cartella?"
+  },
+  "settingsTitle": {
+    "message": "Impostazioni"
+  },
+  "wallpaper": {
+    "message": "Background"
+  },
+  "browse": {
+    "message": "Sfoglia..."
+  },
+  "backgroundColor": {
+    "message": "Colore di sfondo"
+  },
+  "textColor": {
+    "message": "Colore del testo"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Colonne massime"
+  },
+  "clock": {
+    "message": "Orologio"
+  },
+  "Labels": {
+    "message": "Etichette"
+  },
+  "addSiteButton": {
+    "message": "Aggiungi sito Button"
+  },
+  "addFolderButton": {
+    "message": "Aggiungi cartella Button"
+  },
+  "settingsButton": {
+    "message": "Impostazioni Button"
+  },
+  "saveToast": {
+    "message": "Settings saved!"
+  }
+}

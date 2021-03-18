@@ -1,0 +1,136 @@
+{
+  "extensionName": {
+    "message": "otra marcación rápida",
+    "description": "title of the app, displayed in store"
+  },
+  "extensionDescription": {
+    "message": "una moderna marcación rápida para firefox y chrome",
+    "description":"description of the app, displayed in store"
+  },
+  "title": {
+    "message": "Marcación Rápida"
+  },
+  "home": {
+    "message": "Inicio"
+  },
+  "save": {
+    "message": "Guarde"
+  },
+  "cancel": {
+    "message": "Cancele"
+  },
+  "newInstall1": {
+    "message": "3 formas de añadir marcaciones rápidas:"
+  },
+  "newInstall2": {
+    "message": "1. Utilice el botón de la barra de herramientas o haga clic con el botón derecho en una página y seleccione \"Agregar a marcación rápida\""
+  },
+  "newInstall3": {
+    "message": "2. Marcar un sitio y elegir el"
+  },
+  "newInstall4": {
+    "message": "Otros marcadores"
+  },
+  "newInstall5": {
+    "message": "carpeta"
+  },
+  "newInstall6": {
+    "message": "3. Utilice el botón de abajo (se puede activar o desactivar en la configuración)"
+  },
+  "newTab": {
+    "message": "Abrir en nueva pestaña"
+  },
+  "newWin": {
+    "message": "Abrir en nueva ventana"
+  },
+  "newPrivate": {
+    "message": "Abrir en nueva ventana privada"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "refresh": {
+    "message": "Actualizar Miniaturas"
+  },
+  "delete": {
+    "message": "Elimine"
+  },
+  "editFolder": {
+    "message": "Editar Carpeta..."
+  },
+  "remove": {
+    "message": "Eliminar"
+  },
+  "newDial": {
+    "message": "Nueva Marcación Rápida..."
+  },
+  "newFolder": {
+    "message": "Nueva Carpeta..."
+  },
+  "settings": {
+    "message": "Ajustes..."
+  },
+  "tileTitle": {
+    "message": "Título"
+  },
+  "address": {
+    "message": "URL"
+  },
+  "uploadImage": {
+    "message": "Cargar imagen ..."
+  },
+  "captureMessage": {
+    "message": "Esto abrirá temporalmente el sitio en una nueva pestaña para capturar la imagen"
+  },
+  "addTo": {
+    "message": "Añadir a Marcación Rápida"
+  },
+  "name": {
+    "message": "Nombre"
+  },
+  "createFolder": {
+    "message": "Crear carpeta"
+  },
+  "confirmDelete": {
+    "message": "¿Está seguro de que quiere eliminar permanentemente esta carpeta?"
+  },
+  "settingsTitle": {
+    "message": "Ajustes"
+  },
+  "wallpaper": {
+    "message": "Fondo"
+  },
+  "browse": {
+    "message": "Navegar..."
+  },
+  "backgroundColor": {
+    "message": "Color de fondo"
+  },
+  "textColor": {
+    "message": "Color del texto"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Columnas máx."
+  },
+  "clock": {
+    "message": "Reloj"
+  },
+  "Labels": {
+    "message": "Etiquetas"
+  },
+  "addSiteButton": {
+    "message": "Añadir sitio botón"
+  },
+  "addFolderButton": {
+    "message": "Añadir carpeta botón"
+  },
+  "settingsButton": {
+    "message": "Ajustes botón"
+  },
+  "saveToast": {
+    "message": "Settings saved!"
+  }
+}
