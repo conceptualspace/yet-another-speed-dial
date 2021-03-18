@@ -90,6 +90,7 @@ let homeFolderTitle = browser.i18n.getMessage('home');
 let windowSize = null;
 let containerSize = null;
 let layoutFolder = false;
+let boxes = [];
 
 const debounce = (func, delay) => {
     let inDebounce
@@ -642,16 +643,16 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
+// todo: maybe refactor this in gsap 3
 const animate = debounce(() => {
     //var inputs = document.querySelectorAll("input");
     const nodes = document.querySelectorAll(".tile");
     //const observerConfig = { attributes: false, childList: true, subtree: false };
     const total = nodes.length;
-    const time = 0.9;
+    //const time = 0.9;
     const omega = 12;
     const zeta = 0.8;
-    let dirty = true;
-    let boxes = [];
+    //let boxes = [];
     //let windowSize = window.innerWidth;
 
     for (let i = 0; i < total; i++) {
