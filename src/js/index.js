@@ -522,10 +522,6 @@ function rectifyUrl(url) {
 function createDial() {
     let url = rectifyUrl(createDialModalURL.value.trim());
 
-    if (!url.startsWith('https://') && !url.startsWith('http://')) {
-        url = 'https://' + url;
-    }
-
     browser.bookmarks.create({
         title: url,
         url: url,
