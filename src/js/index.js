@@ -279,8 +279,9 @@ function printBookmarks(bookmarks, parentId) {
                     }
                 }
 
-            } else if (bookmark.url && bookmark.url !== "data:") {
-                // in ff bookmark "separators" can be created that have "data:" as the url
+            } else if (bookmark.url && bookmark.url.startsWith("http")) {
+                // restricted to valid url schemes for security reasons -- http and https. see #26
+                // in ff bookmark "separators" can be created that have "data:" as the url.
                 let thumbUrl = null;
                 if (cache[bookmark.url]) {
                     // if the image is a blob:
