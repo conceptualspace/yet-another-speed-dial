@@ -171,7 +171,19 @@ function sort() {
     browser.storage.local.get(speedDialId)
         .then(result => {
             if (result[speedDialId]) {
-                sortable.sort(result[speedDialId]);
+                // if we have a new dial move it to the last position (if they appear at start, they disrupt the order on the page)
+                let savedOrder = result[speedDialId];
+                let currentOrder = sortable.toArray();
+                if (currentOrder.length > savedOrder.length) {
+                    let newDials = currentOrder.filter(x => !savedOrder.includes(x));
+                    if (newDials.length > 0) {
+                        for (let dial of newDials) {
+                            savedOrder.splice(-1, 0, dial)
+                        }
+                    }
+                }
+
+                sortable.sort(savedOrder);
             }
             animate();
             bookmarksContainer.style.opacity = "1";
