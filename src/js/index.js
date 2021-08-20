@@ -139,6 +139,24 @@ function removeBookmark(url) {
         })
 }
 
+function moveBookmark(url, idFrom, idTo) {
+    // the id of the main speed dial page is "wrap"; todo: clean this up
+    if (idTo === "wrap") {
+        idTo = speedDialId;
+    }
+    if (idFrom === "wrap") {
+        idFrom = speedDialId;
+    }
+    browser.bookmarks.search({url})
+        .then(bookmarks => {
+            for (let bookmark of bookmarks) {
+                if (bookmark.parentId === idFrom) {
+                    browser.bookmarks.move(bookmark.id, {parentId: idTo})
+                }
+            }
+        });
+}
+
 function showFolder(id) {
     hideSettings();
     let folders = document.getElementsByClassName('container');
@@ -213,6 +231,10 @@ function folderLink(title, id) {
         showFolder(id);
         currentFolder = id;
     };
+
+    a.ondrop = dropHandler;
+    a.ondragover = dragoverHandler;
+
     foldersContainer.appendChild(a);
 }
 
@@ -380,6 +402,7 @@ function printBookmarks(bookmarks, parentId) {
         // folder sorting..
         // todo: this is fubar
         let sortable = new Sortable(folderContainerEl, {
+            group: 'shared',
             animation: 160,
             ghostClass: 'selected',
             dragClass: 'dragging',
@@ -387,6 +410,12 @@ function printBookmarks(bookmarks, parentId) {
             onMove: function (evt) {
                 if (evt.related) {
                     return !evt.related.classList.contains('createDial');
+                }
+            },
+            onEnd: function(evt) {
+                // catch dials moving between folders
+                if (evt.clone.href && (evt.from.id !== evt.to.id)) {
+                    moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
                 }
             },
             store: {
@@ -1236,6 +1265,18 @@ wallPaperEnabled.onchange = function () {
     }
 };
 
+function dragoverHandler(ev) {
+    // todo: debounce
+    showFolder(ev.target.attributes.folderid.value);
+    ev.preventDefault();
+}
+
+function dropHandler(ev) {
+    ev.preventDefault();
+    // todo: if dropped right onto a folder name, execute moveBookmark
+    // todo: test this UX against the current method, which shows the folder page and allows sorting, but is kind of janky
+}
+
 // v1.x -> 1.6
 // 1.6 uses bookmark id to sort, 1.5 used default SortableJS algorithm
 // todo replace with index from bookmark objects
@@ -1313,6 +1354,7 @@ function init() {
     tabMessagePort.postMessage({getCache: true});
 
     sortable = new Sortable(bookmarksContainer, {
+        group: 'shared',
         animation: 160,
         ghostClass: 'selected',
         dragClass: 'dragging',
@@ -1320,6 +1362,14 @@ function init() {
         onMove: function (evt) {
             if (evt.related) {
                 return !evt.related.classList.contains('createDial');
+            }
+        },
+        onEnd: function(evt) {
+            // todo: make a generic onEnd function since we need this on folder's sortable above too
+            // catch dials moving between folders
+            if (evt.clone.href && (evt.from.id !== evt.to.id)) {
+                // todo: root folder "id" is going to be "wrap", use speeddialid..
+                moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
             }
         },
         store: {
