@@ -190,6 +190,10 @@ function sort() {
         .then(result => {
             if (result[speedDialId]) {
                 // if we have a new dial move it to the last position (if they appear at start, they disrupt the order on the page)
+                // todo: make this a setting
+                // originally i liked newest last when the speed dial was generally static (easier to find tiles i use every day)
+                // BUT ive come to prefer newest first, since i now use YASD for ALL bookmarks; in that use case keeping most recent
+                // at the top makes more sense
                 let savedOrder = result[speedDialId];
                 let currentOrder = sortable.toArray();
                 if (currentOrder.length > savedOrder.length) {
