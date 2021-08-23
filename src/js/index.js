@@ -235,7 +235,7 @@ function folderLink(title, id) {
         showFolder(id);
         currentFolder = id;
     };
-    
+
     a.ondragover = dragoverHandler;
 
     foldersContainer.appendChild(a);
@@ -1276,7 +1276,7 @@ wallPaperEnabled.onchange = function () {
 };
 
 function dragoverHandler(ev) {
-    // todo: debounce
+    // todo: fix compat with sortable / debounce
     showFolder(ev.target.attributes.folderid.value);
     ev.preventDefault();
 }
