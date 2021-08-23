@@ -413,7 +413,14 @@ function printBookmarks(bookmarks, parentId) {
             filter: ".createDial",
             onMove: function (evt) {
                 if (evt.related) {
-                    return !evt.related.classList.contains('createDial');
+                    if (evt.to.children.length > 1) {
+                        // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
+                        return !evt.related.classList.contains('createDial');
+                    } else {
+                        // force new dial to drop before add dial button
+                        evt.to.prepend(evt.dragged);
+                        return false;
+                    }
                 }
             },
             onEnd: function(evt) {
