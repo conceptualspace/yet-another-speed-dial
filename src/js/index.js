@@ -235,8 +235,7 @@ function folderLink(title, id) {
         showFolder(id);
         currentFolder = id;
     };
-
-    a.ondrop = dropHandler;
+    
     a.ondragover = dragoverHandler;
 
     foldersContainer.appendChild(a);
@@ -1280,12 +1279,6 @@ function dragoverHandler(ev) {
     // todo: debounce
     showFolder(ev.target.attributes.folderid.value);
     ev.preventDefault();
-}
-
-function dropHandler(ev) {
-    ev.preventDefault();
-    // todo: if dropped right onto a folder name, execute moveBookmark
-    // todo: test this UX against the current method, which shows the folder page and allows sorting, but is kind of janky
 }
 
 // v1.x -> 1.6
