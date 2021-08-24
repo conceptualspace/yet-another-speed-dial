@@ -422,10 +422,25 @@ function printBookmarks(bookmarks, parentId) {
                     }
                 }
             },
+            // catch dials moving between folders
             onEnd: function(evt) {
-                // catch dials moving between folders
-                if (evt.clone.href && (evt.from.id !== evt.to.id)) {
-                    moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+                if (evt.clone.href) {
+                    if (evt.from.id !== evt.to.id) {
+                        // sortable's position state matches our actual drop area in the dom
+                        if (evt.to.id === evt.originalEvent.toElement.id) {
+                            moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+                        } else {
+                            // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
+                            // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
+                            // originalEvent.toElement for this
+                            moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.toElement.id)
+                        }
+                    } else if (evt.from.id !== evt.originalEvent.toElement.id) {
+                        // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
+                        // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
+                        // this only applies with the new dial button, otherwise the sortable drop area is big
+                        moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.toElement.id)
+                    }
                 }
             },
             store: {
