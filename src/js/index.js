@@ -423,6 +423,7 @@ function printBookmarks(bookmarks, parentId) {
                 }
             },
             // catch dials moving between folders
+            // todo: filter only for events on page body, catch errors from bogus bookmark ids
             onEnd: function(evt) {
                 if (evt.clone.href) {
                     if (evt.from.id !== evt.to.id) {
@@ -1373,11 +1374,13 @@ function init() {
     tabMessagePort.postMessage({getCache: true});
 
     sortable = new Sortable(bookmarksContainer, {
+        //todo: forceFallback:true seems to work way better on chrome on linux, but means reworking folder dnd -- test other OS
         group: 'shared',
         animation: 160,
         ghostClass: 'selected',
         dragClass: 'dragging',
         filter: ".createDial",
+        // todo: copy same onmove logic from folders
         onMove: function (evt) {
             if (evt.related) {
                 return !evt.related.classList.contains('createDial');
