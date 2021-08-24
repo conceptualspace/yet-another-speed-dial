@@ -1094,7 +1094,7 @@ document.addEventListener("contextmenu", function (e) {
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'tile folderTitle' && e.target.id !== "homeFolderLink") {
+    } else if (e.target.classList.contains('folderTitle') && e.target.id !== "homeFolderLink") {
         targetFolderLink = e.target;
         targetFolder = e.target.attributes.folderId.nodeValue;
         targetFolderName = e.target.textContent;
