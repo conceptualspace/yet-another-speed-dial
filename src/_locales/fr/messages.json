@@ -115,6 +115,9 @@
   "maxColumns": {
     "message": "Colonnes max"
   },
+  "defaultSort": {
+    "message": "Tri par défaut"
+  },
   "clock": {
     "message": "L'horloge"
   },

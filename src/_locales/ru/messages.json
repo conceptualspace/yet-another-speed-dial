@@ -115,6 +115,9 @@
   "maxColumns": {
     "message": "Количество столбцов"
   },
+  "defaultSort": {
+    "message": "Сортировать"
+  },
   "clock": {
     "message": "Часы"
   },

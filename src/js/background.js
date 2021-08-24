@@ -19,6 +19,7 @@ let defaults = {
     showSettingsBtn: true,
     showClock: true,
     maxCols: '100',
+    defaultSort: 'last',
     textColor: '#ffffff'
 };
 let cache = {};

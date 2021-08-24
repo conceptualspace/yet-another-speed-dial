@@ -115,6 +115,9 @@
   "maxColumns": {
     "message": "Colonne massime"
   },
+  "defaultSort": {
+    "message": "Ordinare"
+  },
   "clock": {
     "message": "Orologio"
   },

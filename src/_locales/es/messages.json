@@ -113,7 +113,10 @@
     "message": "Large Tiles"
   },
   "maxColumns": {
-    "message": "Columnas máx."
+    "message": "Columnas máx"
+  },
+  "defaultSort": {
+    "message": "Clasificar"
   },
   "clock": {
     "message": "Reloj"

@@ -64,6 +64,7 @@ const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const maxColsInput = document.getElementById("maxcols");
+const defaultSortInput = document.getElementById("defaultSort");
 //const saveBtn = document.getElementById("saveBtn");
 //const settingsToast = document.getElementById("settingsToast");
 
@@ -207,23 +208,26 @@ function sort() {
     browser.storage.local.get(speedDialId)
         .then(result => {
             if (result[speedDialId]) {
-                // if we have a new dial move it to the last position (if they appear at start, they disrupt the order on the page)
-                // todo: make this a setting
-                // originally i liked newest last when the speed dial was generally static (easier to find tiles i use every day)
-                // BUT ive come to prefer newest first, since i now use YASD for ALL bookmarks; in that use case keeping most recent
-                // at the top makes more sense
-                let savedOrder = result[speedDialId];
-                let currentOrder = sortable.toArray();
-                if (currentOrder.length > savedOrder.length) {
-                    let newDials = currentOrder.filter(x => !savedOrder.includes(x));
-                    if (newDials.length > 0) {
-                        for (let dial of newDials) {
-                            savedOrder.splice(-1, 0, dial)
+                // default setting is now to place new dials in the last position so they dont disrupt the order of dials on the page
+                // if the defaultSort setting is set to "first" this behavior is reversed.
+                // background: newest last is preferable when speed dial is generally static (easier to find tiles with unchanging position)
+                // but ive come to prefer newest first when using YASD for ALL bookmarks (since recently bookmarked sites will now be at the top)
+                // TODO: make this a per folder setting
+                if (settings.defaultSort && settings.defaultSort === "last") {
+                    let savedOrder = result[speedDialId];
+                    let currentOrder = sortable.toArray();
+                    if (currentOrder.length > savedOrder.length) {
+                        let newDials = currentOrder.filter(x => !savedOrder.includes(x));
+                        if (newDials.length > 0) {
+                            for (let dial of newDials) {
+                                savedOrder.splice(-1, 0, dial)
+                            }
                         }
                     }
+                    sortable.sort(savedOrder);
+                } else {
+                    sortable.sort(result[speedDialId]);
                 }
-
-                sortable.sort(savedOrder);
             }
             animate();
             bookmarksContainer.style.opacity = "1";
@@ -1037,6 +1041,7 @@ function applySettings() {
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
+        defaultSortInput.value = settings.defaultSort;
 
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
@@ -1061,6 +1066,7 @@ function saveSettings() {
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
+    settings.defaultSort = defaultSortInput.value;
 
     applySettings();
 
@@ -1120,7 +1126,7 @@ window.addEventListener("click", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -1241,6 +1247,10 @@ modalImgInput.onchange = function () {
 };
 
 maxColsInput.oninput = function(e) {
+    saveSettings()
+}
+
+defaultSortInput.oninput = function(e) {
     saveSettings()
 }
 

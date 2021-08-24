@@ -115,6 +115,9 @@
   "maxColumns": {
     "message": "Max Spalten"
   },
+  "defaultSort": {
+    "message": "Standardsortierung"
+  },
   "clock": {
     "message": "Uhr"
   },
