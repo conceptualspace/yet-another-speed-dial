@@ -140,21 +140,23 @@ function removeBookmark(url) {
 }
 
 function moveBookmark(url, idFrom, idTo) {
-    // the id of the main speed dial page is "wrap"; todo: clean this up
-    if (idTo === "wrap") {
-        idTo = speedDialId;
-    }
-    if (idFrom === "wrap") {
-        idFrom = speedDialId;
-    }
-    browser.bookmarks.search({url})
-        .then(bookmarks => {
-            for (let bookmark of bookmarks) {
-                if (bookmark.parentId === idFrom) {
-                    browser.bookmarks.move(bookmark.id, {parentId: idTo})
+    if (url && idFrom && idTo) {
+        // the id of the main speed dial page is "wrap"; todo: clean this up
+        if (idTo === "wrap") {
+            idTo = speedDialId;
+        }
+        if (idFrom === "wrap") {
+            idFrom = speedDialId;
+        }
+        browser.bookmarks.search({url})
+            .then(bookmarks => {
+                for (let bookmark of bookmarks) {
+                    if (bookmark.parentId === idFrom) {
+                        browser.bookmarks.move(bookmark.id, {parentId: idTo})
+                    }
                 }
-            }
-        });
+            });
+    }
 }
 
 function showFolder(id) {
@@ -1374,7 +1376,7 @@ function init() {
     tabMessagePort.postMessage({getCache: true});
 
     sortable = new Sortable(bookmarksContainer, {
-        //todo: forceFallback:true seems to work way better on chrome on linux, but means reworking folder dnd -- test other OS
+        //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
         group: 'shared',
         animation: 160,
         ghostClass: 'selected',
@@ -1389,9 +1391,23 @@ function init() {
         onEnd: function(evt) {
             // todo: make a generic onEnd function since we need this on folder's sortable above too
             // catch dials moving between folders
-            if (evt.clone.href && (evt.from.id !== evt.to.id)) {
-                // todo: root folder "id" is going to be "wrap", use speeddialid..
-                moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+            if (evt.clone.href) {
+                if (evt.from.id !== evt.to.id) {
+                    // sortable's position state matches our actual drop area in the dom
+                    if (evt.to.id === evt.originalEvent.toElement.id) {
+                        moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+                    } else {
+                        // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
+                        // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
+                        // originalEvent.toElement for this
+                        moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.toElement.id)
+                    }
+                } else if (evt.from.id !== evt.originalEvent.toElement.id) {
+                    // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
+                    // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
+                    // this only applies with the new dial button, otherwise the sortable drop area is big
+                    moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.toElement.id)
+                }
             }
         },
         store: {
