@@ -176,6 +176,15 @@ function showFolder(id) {
             folder.style.display = "none";
         }
     }
+    // style the active tab
+    let folderTitles = document.getElementsByClassName('folderTitle');
+    for (let title of folderTitles) {
+        if (title.attributes.folderid.value === id) {
+            title.classList.add('activeFolder');
+        } else {
+            title.classList.remove('activeFolder');
+        }
+    }
 }
 
 function getThumbs(bookmarkUrl) {
