@@ -198,6 +198,18 @@
     background-color: #cccccc;
 }
 
+.sidenav select {
+    position: relative;
+    outline: none;
+    padding: 0.3em 1em;
+    border: none;
+    border-radius: 2px;
+    color: #333;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .sidenav #settingsToast {
     display: flex;
     justify-content: center;
