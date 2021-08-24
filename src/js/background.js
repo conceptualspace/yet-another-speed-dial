@@ -496,6 +496,8 @@ function handleInstalled(details) {
     } else if (details.reason === 'update') {
         // perform any migrations here...
         // details.previousVersion
+        const url = chrome.runtime.getURL("updated.html");
+        chrome.tabs.create({ url });
     }
 }
 

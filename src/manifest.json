@@ -3,7 +3,7 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "1.14.2",
+  "version": "1.14.3",
   "author": "dev@conceptualspace.net",
   "icons": {
     "16": "icons/icon16.png",
@@ -42,6 +42,7 @@
     },
     "default_title": "Add to Speed Dial"
   },
+  "web_accessible_resources": ["icons/icon128.png"],
   "browser_specific_settings": {
     "gecko": {
       "id": "yet_another_speed_dial@conceptualspace.net",
