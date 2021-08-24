@@ -91,6 +91,8 @@ let windowSize = null;
 let containerSize = null;
 let layoutFolder = false;
 let boxes = [];
+let hourCycle = 'h12';
+const locale = navigator.language;
 
 const debounce = (func, delay) => {
     let inDebounce
@@ -102,8 +104,13 @@ const debounce = (func, delay) => {
     }
 }
 
+// detect clock settings
+if (!locale.startsWith("en")) {
+    hourCycle = Intl.DateTimeFormat(locale, {hour: 'numeric'}).resolvedOptions().hourCycle;
+}
+
 function displayClock() {
-    clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true});
+    clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hourCycle: hourCycle});
     setTimeout(displayClock, 10000);
 }
 
