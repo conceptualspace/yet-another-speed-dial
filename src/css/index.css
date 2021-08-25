@@ -91,6 +91,7 @@ h1 {
 .folderTitle {
     opacity: 0.85;
     font-weight: bold;
+    transition: padding 160ms ease, outline 160ms ease;
 }
 
 .folderTitle:hover {

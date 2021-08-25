@@ -258,7 +258,9 @@ function folderLink(title, id) {
         currentFolder = id;
     };
 
-    a.ondragover = dragoverHandler;
+    // todo: allow dropping directly on folder title?
+    a.ondragenter = dragenterHandler;
+    a.ondragleave = dragleaveHandler;
 
     foldersContainer.appendChild(a);
 }
@@ -1319,10 +1321,23 @@ wallPaperEnabled.onchange = function () {
     }
 };
 
-function dragoverHandler(ev) {
-    // todo: fix compat with sortable / debounce
-    showFolder(ev.target.attributes.folderid.value);
-    ev.preventDefault();
+function dragenterHandler(ev) {
+    if (ev.target.classList.contains("folderTitle")) {
+        // avoid repaints
+        if (currentFolder !== ev.target.attributes.folderid.value) {
+            ev.target.style.padding = "20px";
+            ev.target.style.outline = "2px dashed white";
+            currentFolder = ev.target.attributes.folderid.value;
+            showFolder(currentFolder)
+        }
+    }
+}
+
+function dragleaveHandler(ev) {
+    if (ev.target.classList.contains("folderTitle")) {
+        ev.target.style.padding = "0";
+        ev.target.style.outline = "none";
+    }
 }
 
 // v1.x -> 1.6
