@@ -161,6 +161,9 @@ function moveBookmark(url, idFrom, idTo) {
                 for (let bookmark of bookmarks) {
                     if (bookmark.parentId === idFrom) {
                         browser.bookmarks.move(bookmark.id, {parentId: idTo})
+                        // avoid chaos if there are duplicate bookmarks inside the folder; we're only dragging one so just move one
+                        // todo: tiles need to store ids in addition to url..
+                        break;
                     }
                 }
             });
