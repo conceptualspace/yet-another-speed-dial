@@ -1421,7 +1421,7 @@ function init() {
         group: 'shared',
         animation: 160,
         ghostClass: 'selected',
-        dragClass: 'dragging',
+        dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
         filter: ".createDial",
         // todo: copy same onmove logic from folders
         onMove: function (evt) {
