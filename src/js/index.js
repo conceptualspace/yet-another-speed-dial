@@ -437,40 +437,8 @@ function printBookmarks(bookmarks, parentId) {
             ghostClass: 'selected',
             dragClass: 'dragging',
             filter: ".createDial",
-            onMove: function (evt) {
-                if (evt.related) {
-                    if (evt.to.children.length > 1) {
-                        // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
-                        return !evt.related.classList.contains('createDial');
-                    } else {
-                        // force new dial to drop before add dial button
-                        evt.to.prepend(evt.dragged);
-                        return false;
-                    }
-                }
-            },
-            // catch dials moving between folders
-            // todo: filter only for events on page body, catch errors from bogus bookmark ids
-            onEnd: function(evt) {
-                if (evt.clone.href) {
-                    if (evt.from.id !== evt.to.id) {
-                        // sortable's position state matches our actual drop area in the dom
-                        if (evt.to.id === evt.originalEvent.target.id) {
-                            moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
-                        } else {
-                            // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
-                            // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
-                            // originalEvent.target for this
-                            moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.target.id)
-                        }
-                    } else if (evt.from.id !== currentFolder) {
-                        // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
-                        // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
-                        // this only applies with the new dial button, otherwise the sortable drop area is big
-                        moveBookmark(evt.clone.href, evt.from.id, currentFolder)
-                    }
-                }
-            },
+            onMove: onMoveHandler,
+            onEnd: dragEndHandler,
             store: {
                 set: function (sortable) {
                     let order = sortable.toArray();
@@ -1324,6 +1292,7 @@ wallPaperEnabled.onchange = function () {
     }
 };
 
+// native handlers for folder tab target
 function dragenterHandler(ev) {
     if (ev.target.classList.contains("folderTitle")) {
         // avoid repaints
@@ -1340,6 +1309,43 @@ function dragleaveHandler(ev) {
     if (ev.target.classList.contains("folderTitle")) {
         ev.target.style.padding = "0";
         ev.target.style.outline = "none";
+    }
+}
+
+//Sortable helper fns
+function onMoveHandler(evt) {
+    if (evt.related) {
+        if (evt.to.children.length > 1) {
+            // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
+            return !evt.related.classList.contains('createDial');
+        } else {
+            // force new dial to drop before add dial button
+            evt.to.prepend(evt.dragged);
+            return false;
+        }
+    }
+}
+
+function dragEndHandler(evt) {
+    // todo: make a generic onEnd function since we need this on folder's sortable above too
+    // catch dials moving between folders
+    if (evt.clone.href) {
+        if (evt.from.id !== evt.to.id) {
+            // sortable's position state matches our actual drop area in the dom
+            if (evt.to.id === evt.originalEvent.target.id) {
+                moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+            } else {
+                // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
+                // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
+                // originalEvent.target for this
+                moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.target.id)
+            }
+        } else if (evt.from.id !== currentFolder) {
+            // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
+            // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
+            // this only applies with the new dial button, otherwise the sortable drop area is big
+            moveBookmark(evt.clone.href, evt.from.id, currentFolder)
+        }
     }
 }
 
@@ -1427,40 +1433,8 @@ function init() {
         dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
         filter: ".createDial",
         // todo: copy same onmove logic from folders
-        onMove: function (evt) {
-            if (evt.related) {
-                if (evt.to.children.length > 1) {
-                    // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
-                    return !evt.related.classList.contains('createDial');
-                } else {
-                    // force new dial to drop before add dial button
-                    evt.to.prepend(evt.dragged);
-                    return false;
-                }
-            }
-        },
-        onEnd: function(evt) {
-            // todo: make a generic onEnd function since we need this on folder's sortable above too
-            // catch dials moving between folders
-            if (evt.clone.href) {
-                if (evt.from.id !== evt.to.id) {
-                    // sortable's position state matches our actual drop area in the dom
-                    if (evt.to.id === evt.originalEvent.target.id) {
-                        moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
-                    } else {
-                        // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
-                        // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
-                        // originalEvent.target for this
-                        moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.target.id)
-                    }
-                } else if (evt.from.id !== currentFolder) {
-                    // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
-                    // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
-                    // this only applies with the new dial button, otherwise the sortable drop area is big
-                    moveBookmark(evt.clone.href, evt.from.id, currentFolder)
-                }
-            }
-        },
+        onMove: onMoveHandler,
+        onEnd: dragEndHandler,
         store: {
             set: function (sortable) {
                 let order = sortable.toArray();
