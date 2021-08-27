@@ -438,7 +438,7 @@ function printBookmarks(bookmarks, parentId) {
             dragClass: 'dragging',
             filter: ".createDial",
             onMove: onMoveHandler,
-            onEnd: dragEndHandler,
+            onEnd: onEndHandler,
             store: {
                 set: function (sortable) {
                     let order = sortable.toArray();
@@ -1326,7 +1326,7 @@ function onMoveHandler(evt) {
     }
 }
 
-function dragEndHandler(evt) {
+function onEndHandler(evt) {
     // todo: make a generic onEnd function since we need this on folder's sortable above too
     // catch dials moving between folders
     if (evt.clone.href) {
@@ -1434,7 +1434,7 @@ function init() {
         filter: ".createDial",
         // todo: copy same onmove logic from folders
         onMove: onMoveHandler,
-        onEnd: dragEndHandler,
+        onEnd: onEndHandler,
         store: {
             set: function (sortable) {
                 let order = sortable.toArray();
