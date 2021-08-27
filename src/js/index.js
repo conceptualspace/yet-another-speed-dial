@@ -1312,7 +1312,7 @@ function dragleaveHandler(ev) {
     }
 }
 
-//Sortable helper fns
+// Sortable helper fns
 function onMoveHandler(evt) {
     if (evt.related) {
         if (evt.to.children.length > 1) {
@@ -1327,23 +1327,21 @@ function onMoveHandler(evt) {
 }
 
 function onEndHandler(evt) {
-    // todo: make a generic onEnd function since we need this on folder's sortable above too
     // catch dials moving between folders
     if (evt.clone.href) {
         if (evt.from.id !== evt.to.id) {
-            // sortable's position state matches our actual drop area in the dom
+            // sortable's drop position matches the dom's drop target
             if (evt.to.id === evt.originalEvent.target.id) {
                 moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
             } else {
-                // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
-                // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
-                // originalEvent.target for this
+                // sortable's position doesn't match the dom's drop target
+                // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
+                // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
                 moveBookmark(evt.clone.href, evt.from.id, currentFolder)
             }
         } else if (evt.from.id !== currentFolder) {
-            // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
-            // (only right beside the new dial button). so we'll catch drop events where the dom.to has changed even if sortable's hasnt
-            // this only applies with the new dial button, otherwise the sortable drop area is big
+            // occurs when there is no sortable target -- for example dropping the dial onto the folder name
+            // or some space of the page outside the sortable container element
             moveBookmark(evt.clone.href, evt.from.id, currentFolder)
         }
     }
