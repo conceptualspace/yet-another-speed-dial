@@ -1294,7 +1294,18 @@ wallPaperEnabled.onchange = function () {
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {
-    if (ev.target.classList.contains("folderTitle")) {
+    // temporary fix for firefox < v92
+    // firefox returns a text node instead of an element
+    if (ev.target.nodeType === 3) {
+        if (ev.target.parentElement.classList.contains("folderTitle")) {
+            // avoid repaints
+            if (currentFolder !== ev.target.parentElement.attributes.folderid.value) {
+                currentFolder = ev.target.parentElement.attributes.folderid.value;
+                showFolder(currentFolder)
+            }
+        }
+    }
+    else if (ev.target.classList.contains("folderTitle")) {
         // avoid repaints
         if (currentFolder !== ev.target.attributes.folderid.value) {
             ev.target.style.padding = "20px";
@@ -1306,7 +1317,11 @@ function dragenterHandler(ev) {
 }
 
 function dragleaveHandler(ev) {
-    if (ev.target.classList.contains("folderTitle")) {
+    // temporary fix for firefox < v92
+    if (ev.target.nodeType === 3) {
+        return
+    }
+     else if (ev.target.classList.contains("folderTitle")) {
         ev.target.style.padding = "0";
         ev.target.style.outline = "none";
     }
