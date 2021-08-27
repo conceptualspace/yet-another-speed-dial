@@ -1338,7 +1338,7 @@ function dragEndHandler(evt) {
                 // sortable has the tile in a position somewhere but user has dragged into no mans land out of bounds. we don't want to
                 // move the bookmark to the sortable position, we want it to drop on whatever page the user dropped it on -- so we use
                 // originalEvent.target for this
-                moveBookmark(evt.clone.href, evt.from.id, evt.originalEvent.target.id)
+                moveBookmark(evt.clone.href, evt.from.id, currentFolder)
             }
         } else if (evt.from.id !== currentFolder) {
             // if user drops tile on a new folder page with a new dial button enabled, there isnt a very large drop target by default
