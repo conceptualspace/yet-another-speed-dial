@@ -14,6 +14,7 @@ let defaults = {
     backgroundColor: '#111111',
     largeTiles: true,
     showTitles: true,
+    labelFontSize: 14,
     showAddSite: true,
     showFolders: true,
     showSettingsBtn: true,

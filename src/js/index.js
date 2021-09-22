@@ -59,6 +59,8 @@ const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const largeTilesInput = document.getElementById("largeTiles");
 const showTitlesInput = document.getElementById("showTitles");
+const labelContainer = document.getElementById("labelContainer");
+const labelFontSizeInput = document.getElementById("labelFontSize");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
@@ -116,6 +118,14 @@ function displayClock() {
 }
 
 displayClock();
+
+// detect label settings
+function changeLabelFontSize(){
+    var input = document.getElementById("labelFontSize").value;
+    document.getElementById("tileContainer").style.fontSize = input + "pt";
+}
+
+changeLabelFontSize();
 
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
@@ -1008,6 +1018,7 @@ function applySettings() {
         textColor_picker.value = settings.textColor;
         textColor_picker_wrapper.style.backgroundColor = settings.textColor;
         showTitlesInput.checked = settings.showTitles;
+        labelFontSizeInput.checked = settings.labelFontSize;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
         showFoldersInput.checked = settings.showFolders;
@@ -1023,6 +1034,9 @@ function applySettings() {
         if (settings.wallpaper) {
             previewContainer.style.display = 'flex';
         }
+        if (settings.showTitles) {
+            labelContainer.style.display = 'flex';
+        }
 
     });
 }
@@ -1033,6 +1047,7 @@ function saveSettings() {
     settings.backgroundColor = color_picker.value;
     settings.textColor = textColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
+    settings.labelFontSize = labelFontSizeInput.checked;
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
     settings.showFolders = showFoldersInput.checked;
@@ -1289,6 +1304,14 @@ wallPaperEnabled.onchange = function () {
         previewContainer.style.display = "flex";
     } else {
         previewContainer.style.display = "none";
+    }
+};
+
+showTitlesInput.onchange = function () {
+    if (this.checked) {
+        labelContainer.style.display = "flex";
+    } else {
+        labelContainer.style.display = "none";
     }
 };
 

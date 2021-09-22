@@ -124,6 +124,9 @@
   "Labels": {
     "message": "Labels"
   },
+  "labelFontSize": {
+    "message": "Label Font Size"
+  },
   "addSiteButton": {
     "message": "Add Site Button"
   },
