@@ -235,7 +235,13 @@ function getScreenshot(url) {
     return new Promise(function(resolve, reject) {
         // capture from an existing tab if its open
         browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
-            .then(tabs => browser.tabs.get(tabs[0].id))
+            .then(tabs => {
+                if (tabs && tabs[0]) {
+                    return browser.tabs.get(tabs[0].id)
+                } else {
+                    resolve([])
+                }
+            })
             .then(tab => {
                 if (tab.url === url) {
                     tempTitle = tab.title ? tab.title : '';
