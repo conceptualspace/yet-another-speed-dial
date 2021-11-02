@@ -412,6 +412,7 @@ function manualRefresh(url) {
     browser.storage.local.remove(url).then(() => {
         getThumbnails(url).then(() => {
             pushToCache(url).then(() => {
+                tempTitle = '';
                 refreshOpen()
             })
         })
@@ -445,6 +446,7 @@ function changeBookmark(id, info) {
                                     } else {
                                         refreshOpen()
                                     }
+                                    tempTitle = '';
                                 })
                             })
                         }
