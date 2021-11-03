@@ -492,8 +492,17 @@ function changeBookmark(id, info) {
                 }
                 // new folder
                 folderIds.push(id);
-                refreshOpen()
-                tripwire--;
+                // recurse through the folder and get thumbnails
+                browser.bookmarks.getChildren(id).then(children => {
+                    if (children.length) {
+                        for (let child of children) {
+                            changeBookmark(child.id)
+                        }
+                    } else {
+                        refreshOpen()
+                    }
+                    tripwire--;
+                })
             }
         }
     });
