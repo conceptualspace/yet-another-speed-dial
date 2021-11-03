@@ -436,7 +436,7 @@ function created(id, info) {
 
 function manualRefresh(url) {
     browser.storage.local.remove(url).then(() => {
-        getThumbnails(url, true).then(() => {
+        getThumbnails(url).then(() => {
             pushToCache(url).then(() => {
                 refreshOpen()
             })
