@@ -95,11 +95,14 @@ let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
 
-const debounce = (func, delay) => {
+const debounce = (func, delay= 500, immediate=false) => {
     let inDebounce
     return function() {
         const context = this
         const args = arguments
+        if (immediate && !inDebounce) {
+            func.apply(context, args);
+        }
         clearTimeout(inDebounce)
         inDebounce = setTimeout(() => func.apply(context, args), delay)
     }
@@ -1363,6 +1366,20 @@ function onEndHandler(evt) {
     }
 }
 
+const processRefresh = debounce(() => {
+    // prevent page scroll on refresh
+    // react where are you...
+    scrollPos = bookmarksContainerParent.scrollTop;
+    bookmarksContainer.style.opacity = "0";
+    noBookmarks.style.display = 'none';
+    addFolderButton.style.display = 'inline';
+    bookmarksContainer.innerHTML = "";
+    for (let folder of folders) {
+        document.getElementById(folder).innerHTML = "";
+    }
+    getBookmarks(speedDialId)
+}, 650, true);
+
 // v1.x -> 1.6
 // 1.6 uses bookmark id to sort, 1.5 used default SortableJS algorithm
 // todo replace with index from bookmark objects
@@ -1422,18 +1439,7 @@ function init() {
         } else if (m.refresh) {
             cache = m.cache;
             hideToast();
-            // prevent page scroll on refresh
-            // react where are you...
-            scrollPos = bookmarksContainerParent.scrollTop;
-            bookmarksContainer.style.opacity = "0";
-            noBookmarks.style.display = 'none';
-            addFolderButton.style.display = 'inline';
-            bookmarksContainer.innerHTML = "";
-            for (let folder of folders) {
-                //console.log(folder);
-                document.getElementById(folder).innerHTML = "";
-            }
-            getBookmarks(speedDialId)
+            processRefresh();
         }
     });
 
