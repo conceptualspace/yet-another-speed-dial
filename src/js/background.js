@@ -25,6 +25,7 @@ let defaults = {
 let cache = {};
 let ready = false;
 let firstRun = true;
+let tripwire = 0;
 
 function getSpeedDialId() {
     browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
@@ -110,7 +111,7 @@ function convertUrlToAbsolute(origin, path) {
     }
 }
 
-function getThumbnails(url) {
+function getThumbnails(url, manualRefresh=false) {
     let thumbnails = [];
     let fetchedTitle = '';
     return new Promise(function(resolve, reject) {
@@ -121,7 +122,7 @@ function getThumbnails(url) {
                         thumbnails.push(image);
                     }
                 }
-                return getScreenshot(url)
+                return getScreenshot(url, manualRefresh)
             })
             .then(function(screenshot, title) {
                 if (title) {
@@ -255,7 +256,7 @@ function saveThumbnails(url, images) {
 }
 
 // requires <all_urls> permission to capture image without a user gesture
-function getScreenshot(url) {
+function getScreenshot(url, manualRefresh=false) {
     return new Promise(function(resolve, reject) {
         // capture from an existing tab if its open
         browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
@@ -273,7 +274,7 @@ function getScreenshot(url) {
                         .then(imageUri => {
                             resolve(imageUri, fetchedTitle);
                         });
-                } else {
+                } else if (tripwire < 2 || manualRefresh) {
                     // open tab, capture screenshot, and close
                     // todo: complete loaded status sometimes !== actually loaded
                     let tabID = null;
@@ -436,7 +437,7 @@ function created(id, info) {
 
 function manualRefresh(url) {
     browser.storage.local.remove(url).then(() => {
-        getThumbnails(url).then(() => {
+        getThumbnails(url, true).then(() => {
             pushToCache(url).then(() => {
                 refreshOpen()
             })
@@ -452,6 +453,9 @@ function changeBookmark(id, info) {
     browser.bookmarks.get(id).then(bookmark => {
         // only interested in speed dial and its subfolders
         if (bookmark[0].parentId === speedDialId || folderIds.indexOf(bookmark[0].parentId) !== -1) {
+            // catch a batch of edits (ex sync or import) where we dont want the browser to go haywire with open tabs..
+            tripwire++
+
             if (bookmark[0].url) {
                 if (bookmark[0].url !== "data:" && bookmark[0].url !== "about:blank") {
                     browser.storage.local.get(bookmark[0].url).then(result => {
@@ -460,6 +464,7 @@ function changeBookmark(id, info) {
                             // todo: broken with folders -- doesnt allow same site to have separate images in 2 folders.. who cares
                             // todo: there might be a race condition here for bookmarks created via context menu
                             refreshOpen();
+                            tripwire--;
                         } else {
                             getThumbnails(bookmark[0].url).then((fetchedTitle) => {
                                 pushToCache(bookmark[0].url).then(() => {
@@ -471,6 +476,7 @@ function changeBookmark(id, info) {
                                     } else {
                                         refreshOpen()
                                     }
+                                    tripwire--;
                                 })
                             })
                         }
@@ -487,6 +493,7 @@ function changeBookmark(id, info) {
                 // new folder
                 folderIds.push(id);
                 refreshOpen()
+                tripwire--;
             }
         }
     });
