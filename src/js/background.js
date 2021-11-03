@@ -25,7 +25,6 @@ let defaults = {
 let cache = {};
 let ready = false;
 let firstRun = true;
-let tempTitle = '';
 
 function getSpeedDialId() {
     browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
@@ -112,15 +111,40 @@ function convertUrlToAbsolute(origin, path) {
 }
 
 function getThumbnails(url) {
+    let thumbnails = [];
+    let fetchedTitle = '';
     return new Promise(function(resolve, reject) {
         getOgImage(url)
-            .then(result => saveThumbnails(url, result))
-            .then(() => getScreenshot(url))
-            .then(result => resizeThumb(result))
-            .then(result => saveThumbnails(url, result))
-            .then(() => getLogo(url))
-            .then(result => saveThumbnails(url, result))
-            .then(() => resolve())
+            .then(function(images) {
+                if (images) {
+                    for (let image of images) {
+                        thumbnails.push(image);
+                    }
+                }
+                return getScreenshot(url)
+            })
+            .then(function(screenshot, title) {
+                if (title) {
+                    fetchedTitle = title
+                }
+                if (screenshot) {
+                    return resizeThumb(screenshot)
+                }
+
+            })
+            .then(function(result) {
+                if (result) {
+                    thumbnails.push(result);
+                }
+                return getLogo(url)
+            })
+            .then(function(result) {
+                if (result) {
+                    thumbnails.push(result);
+                }
+                return saveThumbnails(url, thumbnails)
+            })
+            .then(() => resolve(fetchedTitle))
             .catch(error => console.log(error));
     });
 }
@@ -244,10 +268,10 @@ function getScreenshot(url) {
             })
             .then(tab => {
                 if (tab.url === url) {
-                    tempTitle = tab.title ? tab.title : '';
+                    let fetchedTitle = tab.title ? tab.title : '';
                     browser.tabs.captureVisibleTab()
                         .then(imageUri => {
-                            resolve(imageUri);
+                            resolve(imageUri, fetchedTitle);
                         });
                 } else {
                     // open tab, capture screenshot, and close
@@ -255,7 +279,7 @@ function getScreenshot(url) {
                     let tabID = null;
                     function handleUpdatedTab(tabId, changeInfo, tabInfo) {
                         if (tabId === tabID && changeInfo.status === "complete") {
-                            tempTitle = tabInfo.title ? tabInfo.title : '';
+                            let fetchedTitle = tabInfo.title ? tabInfo.title : '';
                             // workaround for chrome, which can only capture the active tab
                             if (!browser.runtime.getBrowserInfo) {
                                 browser.tabs.update(tabID, {active:true}).then(tab => {
@@ -263,11 +287,11 @@ function getScreenshot(url) {
                                         browser.tabs.captureVisibleTab().then(imageUri => {
                                             browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                             browser.tabs.remove(tabID);
-                                            resolve(imageUri);
+                                            resolve(imageUri, fetchedTitle);
                                         }, (err) => {
                                             console.log(err)
                                             // carry on like it aint no tang
-                                            resolve([]);
+                                            resolve(null);
                                         });
                                     }, 1240);
                                 })
@@ -276,10 +300,10 @@ function getScreenshot(url) {
                                     browser.tabs.captureTab(tabID).then(imageUri => {
                                         browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                         browser.tabs.remove(tabID);
-                                        resolve(imageUri);
+                                        resolve(imageUri, fetchedTitle);
                                     }, (err) => {
                                         console.log(err);
-                                        resolve([]);
+                                        resolve(null);
                                     });
                                 }, 1240);
                             }
@@ -302,6 +326,8 @@ function getScreenshot(url) {
                             });
                         }, 15000)
                     });
+                } else {
+                    resolve(null);
                 }
             }, (err) => {
                 console.log(err);
@@ -410,9 +436,8 @@ function created(id, info) {
 
 function manualRefresh(url) {
     browser.storage.local.remove(url).then(() => {
-        getThumbnails(url).then(() => {
+        getThumbnails(url, true).then(() => {
             pushToCache(url).then(() => {
-                tempTitle = '';
                 refreshOpen()
             })
         })
@@ -436,17 +461,16 @@ function changeBookmark(id, info) {
                             // todo: there might be a race condition here for bookmarks created via context menu
                             refreshOpen();
                         } else {
-                            getThumbnails(bookmark[0].url).then(() => {
+                            getThumbnails(bookmark[0].url).then((fetchedTitle) => {
                                 pushToCache(bookmark[0].url).then(() => {
-                                    if (tempTitle !== '' && tempTitle !== bookmark[0].title) {
+                                    if (fetchedTitle && fetchedTitle !== '' && fetchedTitle !== bookmark[0].title) {
                                         browser.bookmarks.update(id, {
-                                            title: tempTitle
+                                            title: fetchedTitle
                                         });
                                         // updating the bookmark title will trigger changebookmark to rerun and refresh above
                                     } else {
                                         refreshOpen()
                                     }
-                                    tempTitle = '';
                                 })
                             })
                         }
