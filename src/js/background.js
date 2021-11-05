@@ -119,7 +119,7 @@ function getThumbnails(url, manualRefresh=false) {
             .then(function(images) {
                 if (images) {
                     for (let image of images) {
-                        thumbnails.push(image);
+                        image && thumbnails.push(image);
                     }
                 }
                 return getScreenshot(url, manualRefresh)
@@ -344,7 +344,7 @@ function getLogo(url) {
             if (response.status === 200) {
                 resolve(logoUrl);
             } else {
-                resolve([]);
+                resolve(null);
             }
         });
     });
