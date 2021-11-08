@@ -551,9 +551,10 @@ function handleInstalled(details) {
         //todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
-        // details.previousVersion
-        const url = chrome.runtime.getURL("updated.html");
-        chrome.tabs.create({ url });
+        if (details.previousVersion && details.previousVersion === '1.14.8') {
+            const url = chrome.runtime.getURL("updated.html");
+            chrome.tabs.create({ url });
+        }
     }
 }
 
