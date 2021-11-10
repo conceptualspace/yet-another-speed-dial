@@ -731,7 +731,9 @@ const animate = debounce(() => {
     //observer.observe(bookmarksContainer, observerConfig);
 
     // todo: move this
-    TweenLite.ticker.addEventListener("tick", layout);
+    // todo: why did i debounce animate but not layout?
+    // TweenLite.ticker.addEventListener("tick", layout);
+    window.onresize = layout;
 
     layout();
 
