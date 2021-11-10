@@ -1311,6 +1311,7 @@ function dragenterHandler(ev) {
     }
     else if (ev.target.classList.contains("folderTitle")) {
         // avoid repaints
+        // todo replace style changes with class;
         if (currentFolder !== ev.target.attributes.folderid.value) {
             ev.target.style.padding = "20px";
             ev.target.style.outline = "2px dashed white";
