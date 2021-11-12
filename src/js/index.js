@@ -718,9 +718,10 @@ const animate = debounce(() => {
     //let boxes = [];
     //let windowSize = window.innerWidth;
 
+    TweenLite.set(nodes, {lazy: true, x: "+=0"});
+
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
-        TweenLite.set(node, {x: "+=0"});
         const transform = node._gsTransform;
         const x = node.offsetLeft;
         const y = node.offsetTop;
@@ -731,7 +732,7 @@ const animate = debounce(() => {
     //observer.observe(bookmarksContainer, observerConfig);
 
     // todo: move this
-    // todo: why did i debounce animate but not layout?
+    // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
     // TweenLite.ticker.addEventListener("tick", layout);
     window.onresize = layout;
 
