@@ -58,6 +58,7 @@ const imgPreview = document.getElementById("preview");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const largeTilesInput = document.getElementById("largeTiles");
+const scaleImagesInput = document.getElementById("scaleImages");
 const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
@@ -350,12 +351,13 @@ function printBookmarks(bookmarks, parentId) {
             } else if (bookmark.url && bookmark.url.startsWith("http")) {
                 // restricted to valid url schemes for security reasons -- http and https. see #26
                 // in ff bookmark "separators" can be created that have "data:" as the url.
-                let thumbUrl = null;
+                let thumbBg, thumbUrl = null;
                 if (cache[bookmark.url]) {
                     // if the image is a blob:
                     //iconURL = URL.createObjectURL(result.icon);
                     //iconURL = result.icon;
-                    thumbUrl = cache[bookmark.url];
+                    thumbUrl = cache[bookmark.url][0];
+                    thumbBg = cache[bookmark.url][1]
                 } else {
                     thumbUrl = "../img/default.png";
                 }
@@ -370,6 +372,9 @@ function printBookmarks(bookmarks, parentId) {
                 let content = document.createElement('div');
                 content.classList.add('tile-content');
                 content.style.backgroundImage = "url(" + thumbUrl + ")";
+                if (thumbBg) {
+                    content.style.backgroundColor = `rgba(${thumbBg[0]},${thumbBg[1]},${thumbBg[2]},${thumbBg[3]})`;
+                }
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title');
@@ -600,6 +605,30 @@ function createDial() {
     });
 }
 
+// calculate the bg color of a given image
+// todo: punt this to a worker
+function getBgColor(image) {
+
+    let rgba = [0, 0, 0, 0];
+
+    //let canvas = document.createElement('canvas');
+    // todo: not supported in ff
+    let canvas = new OffscreenCanvas(1, 1);
+    let context = canvas.getContext('2d');
+
+    context.drawImage(image, 0, 0);
+
+    // get the top left pixel, cheap and easy
+    // todo: if its equally performant, sample all corners and return the mode
+    let imageData = context.getImageData(0, 0, 1, 1);
+    rgba[0] = imageData.data[0];
+    rgba[1] = imageData.data[1];
+    rgba[2] = imageData.data[2];
+    rgba[3] = imageData.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+    return rgba;
+}
+
 function saveBookmarkSettings() {
     // todo: cleanup this abomination when im not on drugs
     let title = modalTitle.value;
@@ -608,11 +637,14 @@ function saveBookmarkSettings() {
     let selectedImageSrc = null;
     let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
+    let bgColor = null;
 
     let customCarousel = document.getElementById('customCarousel');
     if (customCarousel) {
         selectedImageSrc = customCarousel.children[0].src;
         targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
+        bgColor = getBgColor(customCarousel.children[0]);
+        targetNode.children[0].children[0].style.backgroundColor = `rgba(${bgColor[0]},${bgColor[1]},${bgColor[2]},${bgColor[3]})`;
         browser.storage.local.get(url)
             .then(result => {
                 let thumbnails = [];
@@ -624,7 +656,7 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = 0;
                 }
-                    browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
+                    browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
                         tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                         if (title !== targetTileTitle) {
                             updateTitle()
@@ -638,11 +670,14 @@ function saveBookmarkSettings() {
                 // sometimes the carousel puts images inside a <figure class="fc-image"> elem
                 if (node.children[0].className === "fc-image") {
                     selectedImageSrc = node.children[0].children[0].src;
+                    bgColor = getBgColor(node.children[0].children[0]);
                 } else {
                     selectedImageSrc = node.children[0].src;
+                    bgColor = getBgColor(node.children[0]);
                 }
                 // update tile
                 targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
+                targetNode.children[0].children[0].style.backgroundColor = `rgba(${bgColor[0]},${bgColor[1]},${bgColor[2]},${bgColor[3]})`;
                 break;
             }
         }
@@ -653,7 +688,7 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex}}).then(result => {
+                        browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
                             tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                             if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
@@ -969,6 +1004,14 @@ function applySettings() {
             document.documentElement.style.setProperty('--color', settings.textColor);
         }
 
+        if (settings.scaleImages) {
+            document.documentElement.style.setProperty('--image-scaling', 'contain');
+            //document.documentElement.style.setProperty('--image-width', '140px');
+        } else {
+            document.documentElement.style.setProperty('--image-scaling', 'cover');
+            //document.documentElement.style.setProperty('--image-width', '188px');
+        }
+
         if (settings.maxCols && settings.maxCols !== "100") {
             document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
         } else {
@@ -1017,6 +1060,7 @@ function applySettings() {
         showTitlesInput.checked = settings.showTitles;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
+        scaleImagesInput.checked = settings.scaleImages;
         showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
@@ -1042,6 +1086,7 @@ function saveSettings() {
     settings.showTitles = showTitlesInput.checked;
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
+    settings.scaleImages = scaleImagesInput.checked;
     settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
@@ -1251,6 +1296,10 @@ textColor_picker.onchange = function () {
 };
 
 showTitlesInput.oninput = function(e) {
+    saveSettings()
+}
+
+scaleImagesInput.oninput = function(e) {
     saveSettings()
 }
 

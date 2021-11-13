@@ -118,6 +118,9 @@
   "defaultSort": {
     "message": "Default Sort"
   },
+  "scaleImages": {
+    "message": "Scale Images"
+  },
   "clock": {
     "message": "Clock"
   },

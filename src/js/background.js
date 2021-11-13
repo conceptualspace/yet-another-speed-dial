@@ -13,6 +13,7 @@ let defaults = {
     wallpaperSrc: 'img/bg.jpg',
     backgroundColor: '#111111',
     largeTiles: true,
+    scaleImages: false,
     showTitles: true,
     showAddSite: true,
     showFolders: true,
@@ -115,6 +116,7 @@ function convertUrlToAbsolute(origin, path) {
 function getThumbnails(url, manualRefresh=false) {
     let thumbnails = [];
     let fetchedTitle = '';
+    let bgColor = null;
     return new Promise(function(resolve, reject) {
         getOgImage(url)
             .then(function(images) {
@@ -144,7 +146,13 @@ function getThumbnails(url, manualRefresh=false) {
                 if (result) {
                     thumbnails.push(result);
                 }
-                return saveThumbnails(url, thumbnails)
+                return getBgColor(thumbnails[0])
+            })
+            .then(function(result) {
+                if (result) {
+                    bgColor = result;
+                }
+                return saveThumbnails(url, thumbnails, bgColor)
             })
             .then(() => resolve(fetchedTitle))
             .catch(error => console.log(error));
@@ -238,7 +246,7 @@ function getOgImage(url) {
     });
 }
 
-function saveThumbnails(url, images) {
+function saveThumbnails(url, images, bgColor) {
     return new Promise(function(resolve, reject) {
         let thumbnails = [];
         browser.storage.local.get(url)
@@ -250,7 +258,7 @@ function saveThumbnails(url, images) {
                     thumbnails.push(images);
                 }
                 thumbnails = thumbnails.flat();
-                browser.storage.local.set({[url]:{thumbnails, thumbIndex: 0}})
+                browser.storage.local.set({[url]:{thumbnails, thumbIndex: 0, bgColor}})
                     .then(() => resolve());
             });
     });
@@ -394,6 +402,33 @@ function resizeThumb(dataURI) {
     });
 }
 
+// calculate the bg color of a given image
+// todo: punt this to a worker
+function getBgColor(image) {
+    return new Promise(function(resolve, reject) {
+        let rgba = [0, 0, 0, 0];
+        let img = new Image();
+        img.onload = function () {
+            //let canvas = document.createElement('canvas');
+            let canvas = new OffscreenCanvas(1, 1);
+            let context = canvas.getContext('2d');
+
+            context.drawImage(img, 0, 0);
+
+            // get the top left pixel, cheap and easy
+            // todo: if its equally performant, sample all corners and return the mode
+            let imageData = context.getImageData(0, 0, 1, 1);
+            rgba[0] = imageData.data[0];
+            rgba[1] = imageData.data[1];
+            rgba[2] = imageData.data[2];
+            rgba[3] = imageData.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+            resolve(rgba);
+        }
+        img.crossOrigin = "Anonymous";
+        img.src = image
+    });
+}
 
 function removeBookmark(id, bookmarkInfo) {
     if (bookmarkInfo.node.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
@@ -407,7 +442,7 @@ function pushToCache(url, i=0) {
     return new Promise(function(resolve, reject) {
         browser.storage.local.get(url).then(result => {
             if (result[url]) {
-                cache[url] = result[url].thumbnails[i];
+                cache[url] = [result[url].thumbnails[i], result[url].bgColor];
             }
             resolve();
         });
@@ -581,10 +616,11 @@ function init() {
             }
             const entries = Object.entries(result);
             for (let e of entries) {
+                //console.log(e);
                 // todo: filter folder ids
                 if (e[0] !== "settings" && e[1].thumbnails) {
                     let index = e[1].thumbIndex;
-                    cache[e[0]] = e[1].thumbnails[index];
+                    cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
                 }
             }
         }

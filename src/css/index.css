@@ -6,6 +6,7 @@
     --clock: none;
     --settings: none;
     --columns: 100%;
+    --image-scaling: cover;
 }
 
 html, body {
@@ -131,7 +132,7 @@ h1 {
     background-origin: content-box;
     background-position: 50%;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: var(--image-scaling);
 }
 
 .tile-title {
