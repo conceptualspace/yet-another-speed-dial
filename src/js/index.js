@@ -605,17 +605,22 @@ function createDial() {
     });
 }
 
+function offscreenCanvasShim() {
+    try {
+        return new OffscreenCanvas(1, 1);
+    } catch (err) {
+        // offscreencanvas not supported in ff
+        return document.createElement('canvas');
+    }
+}
+
 // calculate the bg color of a given image
 // todo: punt this to a worker
 function getBgColor(image) {
 
     let rgba = [0, 0, 0, 0];
-
-    //let canvas = document.createElement('canvas');
-    // todo: not supported in ff
-    let canvas = new OffscreenCanvas(1, 1);
+    let canvas = offscreenCanvasShim();
     let context = canvas.getContext('2d');
-
     context.drawImage(image, 0, 0);
 
     // get the top left pixel, cheap and easy

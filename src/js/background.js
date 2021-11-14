@@ -402,6 +402,15 @@ function resizeThumb(dataURI) {
     });
 }
 
+function offscreenCanvasShim() {
+    try {
+        return new OffscreenCanvas(1, 1);
+    } catch (err) {
+        // offscreencanvas not supported in ff
+        return document.createElement('canvas');
+    }
+}
+
 // calculate the bg color of a given image
 // todo: punt this to a worker
 function getBgColor(image) {
@@ -410,7 +419,7 @@ function getBgColor(image) {
         let img = new Image();
         img.onload = function () {
             //let canvas = document.createElement('canvas');
-            let canvas = new OffscreenCanvas(1, 1);
+            let canvas = offscreenCanvasShim();
             let context = canvas.getContext('2d');
 
             context.drawImage(img, 0, 0);
