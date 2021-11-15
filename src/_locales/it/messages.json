@@ -20,22 +20,16 @@
     "message": "Annulla"
   },
   "newInstall1": {
-    "message": "3 modi per aggiungere le chiamate rapide:"
+    "message": "Inizia con Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "1. Usa il pulsante della barra degli strumenti, o fai clic destro su una pagina e seleziona \"Aggiungi alla Selezione Rapida\""
+    "message": "⭐ Aggiungi siti facendo clic sul pulsante in basso o crea un segnalibro nella cartella Chiamata rapida"
   },
   "newInstall3": {
-    "message": "2. Aggiungi un sito ai preferiti e scegli il"
+    "message": "✨ I quadranti possono essere modificati facendo clic con il tasto destro su di essi"
   },
   "newInstall4": {
-    "message": "Altri segnalibri"
-  },
-  "newInstall5": {
-    "message": "cartella"
-  },
-  "newInstall6": {
-    "message": "3. Usa il pulsante qui sotto (può essere attivato o disattivato nelle impostazioni)"
+    "message": "\uD83D\uDC8E Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
   },
   "newTab": {
     "message": "Aprire in una nuova scheda"

@@ -20,22 +20,16 @@
     "message": "Abbrechen"
   },
   "newInstall1": {
-    "message": "3 möglichkeiten zum Hinzufügen von Kurzwahlnummern:"
+    "message": "Erste Schritte mit Yet Another Speed Dial"
   },
   "newInstall2": {
-    "message": "1. Verwenden Sie die Symbolleistenschaltfläche oder klicken Sie mit der rechten Maustaste auf eine Seite und wählen Sie \"hinzufügen Kurzwahl\""
+    "message": "⭐ Fügen Sie Websites hinzu, indem Sie auf die Schaltfläche unten klicken, oder erstellen Sie ein Lesezeichen im Speed Dial Ordner"
   },
   "newInstall3": {
-    "message": "2. Setzen Sie ein Lesezeichen für eine Site und wählen Sie die"
+    "message": "✨ Zifferblätter können durch Rechtsklick darauf geändert werden"
   },
   "newInstall4": {
-    "message": "Andere Lesezeichen"
-  },
-  "newInstall5": {
-    "message": "ordner"
-  },
-  "newInstall6": {
-    "message": "3. Verwenden Sie die Schaltfläche unten (sie kann in den Einstellungen ein- oder ausgeschaltet werden)"
+    "message": "\uD83D\uDC8E Weitere Einstellungen sehen Sie, indem Sie auf das Zahnrad in der oberen rechten Ecke klicken"
   },
   "newTab": {
     "message": "in neuem Tab öffnen"

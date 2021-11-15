@@ -28,6 +28,11 @@ h1 {
     font-size: xx-large;
 }
 
+.helpText {
+    font-size: 1.25rem;
+    font-weight: 300;
+}
+
 /* total width */
 #tileContainer::-webkit-scrollbar {
     background-color: rgba(0,0,0,0.2);

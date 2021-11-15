@@ -20,22 +20,16 @@
     "message": "Annulez"
   },
   "newInstall1": {
-    "message": "3 façons d'ajouter des numéros abrégés:"
+    "message": "Lancez-vous avec Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "1. Utilisez le bouton de la barre d'outils ou cliquez avec le bouton droit sur une page et sélectionnez 'Ajouter à la Speed Dial'"
+    "message": "⭐ Ajoutez des sites en cliquant sur le bouton ci-dessous, ou créez un signet dans le dossier Speed Dial"
   },
   "newInstall3": {
-    "message": "2. Ajoutez un site à vos favoris et choisissez le"
+    "message": "✨ Les cadrans peuvent être modifiés en faisant un clic droit dessus"
   },
   "newInstall4": {
-    "message": "Autres favorits"
-  },
-  "newInstall5": {
-    "message": "dossier"
-  },
-  "newInstall6": {
-    "message": "3. Utilisez le bouton ci-dessous (il peut être activé ou désactivé dans les paramètres)"
+    "message": "\uD83D\uDC8E Accédez à plus de paramètres en cliquant sur l'engrenage dans le coin supérieur droit"
   },
   "newTab": {
     "message": "Ouvrir dans un nouvel onglet"

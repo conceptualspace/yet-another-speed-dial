@@ -20,22 +20,16 @@
     "message": "Cancele"
   },
   "newInstall1": {
-    "message": "3 formas de añadir marcaciones rápidas:"
+    "message": "¡Empiece con Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "1. Utilice el botón de la barra de herramientas o haga clic con el botón derecho en una página y seleccione \"Agregar a marcación rápida\""
+    "message": "⭐ Agregue sitios haciendo clic en el botón de abajo, o cree un marcador en la carpeta Marcación rápida"
   },
   "newInstall3": {
-    "message": "2. Marcar un sitio y elegir el"
+    "message": "✨ Los diales se pueden modificar haciendo clic derecho sobre ellos"
   },
   "newInstall4": {
-    "message": "Otros marcadores"
-  },
-  "newInstall5": {
-    "message": "carpeta"
-  },
-  "newInstall6": {
-    "message": "3. Utilice el botón de abajo (se puede activar o desactivar en la configuración)"
+    "message": "\uD83D\uDC8E Acceda a más configuraciones haciendo clic en el engranaje en la esquina superior derecha"
   },
   "newTab": {
     "message": "Abrir en nueva pestaña"

@@ -20,22 +20,16 @@
     "message": "Cancel"
   },
   "newInstall1": {
-    "message": "3 ways to add speed dials:"
+    "message": "Get started with Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "1. Use the toolbar button, or right-click on a page and select \"Add to Speed Dial\""
+    "message": "⭐ Add sites by clicking the button below, or create a bookmark in the Speed Dial folder"
   },
   "newInstall3": {
-    "message": "2. Bookmark a site and choose the"
+    "message": "✨ Dials can be modified by right-clicking on them"
   },
   "newInstall4": {
-    "message": "Other Bookmarks"
-  },
-  "newInstall5": {
-    "message": "folder"
-  },
-  "newInstall6": {
-    "message": "3. Use the button below (it can be toggled on or off in the settings)"
+    "message": "\uD83D\uDC8E Access more settings by clicking the gear in the top-right corner"
   },
   "newTab": {
     "message": "Open in new tab"
