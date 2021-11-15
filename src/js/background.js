@@ -369,7 +369,7 @@ function resizeThumb(dataURI) {
                     let canvas = document.createElement('canvas');
                     let ctx = canvas.getContext('2d');
                     let canvas2 = document.createElement('canvas');
-                    let ctx2 = canvas2.getContext('2d');
+                    let ctx2 = canvas2.getContext('2d', {willReadFrequently:true});
                     ctx2.imageSmoothingEnabled = true;
                     ctx2.imageSmoothingQuality = "high";
 
@@ -420,7 +420,7 @@ function getBgColor(image) {
         img.onload = function () {
             //let canvas = document.createElement('canvas');
             let canvas = offscreenCanvasShim();
-            let context = canvas.getContext('2d');
+            let context = canvas.getContext('2d', {willReadFrequently:true});
 
             context.drawImage(img, 0, 0);
 
