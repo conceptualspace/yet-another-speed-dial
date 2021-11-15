@@ -128,7 +128,7 @@ function getThumbnails(url, manualRefresh=false) {
                 }
                 return getScreenshot(url, manualRefresh)
             })
-            .then(function(screenshot, title) {
+            .then(function([screenshot, title]) {
                 if (title) {
                     fetchedTitle = title
                 }
@@ -274,6 +274,7 @@ function getScreenshot(url, manualRefresh=false) {
                 if (tabs && tabs[0]) {
                     return browser.tabs.get(tabs[0].id)
                 } else {
+                    // todo: restructure this
                     resolve([])
                 }
             })
@@ -282,7 +283,7 @@ function getScreenshot(url, manualRefresh=false) {
                     let fetchedTitle = tab.title ? tab.title : '';
                     browser.tabs.captureVisibleTab()
                         .then(imageUri => {
-                            resolve(imageUri, fetchedTitle);
+                            resolve([imageUri, fetchedTitle]);
                         });
                 } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3000 ) || manualRefresh) {
                     // open tab, capture screenshot, and close
@@ -298,7 +299,7 @@ function getScreenshot(url, manualRefresh=false) {
                                         browser.tabs.captureVisibleTab().then(imageUri => {
                                             browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                             browser.tabs.remove(tabID);
-                                            resolve(imageUri, fetchedTitle);
+                                            resolve([imageUri, fetchedTitle]);
                                         }, (err) => {
                                             console.log(err)
                                             // carry on like it aint no tang
@@ -311,7 +312,7 @@ function getScreenshot(url, manualRefresh=false) {
                                     browser.tabs.captureTab(tabID).then(imageUri => {
                                         browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                         browser.tabs.remove(tabID);
-                                        resolve(imageUri, fetchedTitle);
+                                        resolve([imageUri, fetchedTitle]);
                                     }, (err) => {
                                         console.log(err);
                                         resolve(null);
