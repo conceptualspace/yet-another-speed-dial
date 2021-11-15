@@ -402,37 +402,67 @@ function resizeThumb(dataURI) {
     });
 }
 
-function offscreenCanvasShim() {
+function offscreenCanvasShim(w=1, h=1) {
     try {
-        return new OffscreenCanvas(1, 1);
+        return new OffscreenCanvas(w, h);
     } catch (err) {
         // offscreencanvas not supported in ff
-        return document.createElement('canvas');
+        let canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        return canvas;
     }
 }
 
 // calculate the bg color of a given image
 // todo: punt this to a worker
+// todo: export functions resused in index.js
 function getBgColor(image) {
     return new Promise(function(resolve, reject) {
-        let rgba = [0, 0, 0, 0];
         let img = new Image();
         img.onload = function () {
-            //let canvas = document.createElement('canvas');
-            let canvas = offscreenCanvasShim();
-            let context = canvas.getContext('2d', {willReadFrequently:true});
+            let imgWidth = img.naturalWidth;
+            let imgHeight = img.naturalHeight;
+            let sx, sy, direction;
 
+            if (imgWidth > imgHeight) {
+                // image is wide; sample top and bottom
+                sy = imgHeight - 1
+                sx = 0;
+                direction = 'bottom'
+
+            } else {
+                // sample left and right
+                sx = imgWidth - 1
+                sy = 0;
+                direction = 'right'
+            }
+
+            let rgba = [0, 0, 0, 0];
+            let rgbaa = [0, 0, 0, 0];
+            let canvas = offscreenCanvasShim(imgWidth, imgHeight);
+            // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
+            // todo add to other contexts
+            let context = canvas.getContext('2d', {willReadFrequently:true});
             context.drawImage(img, 0, 0);
 
             // get the top left pixel, cheap and easy
             // todo: if its equally performant, sample all corners and return the mode
-            let imageData = context.getImageData(0, 0, 1, 1);
-            rgba[0] = imageData.data[0];
-            rgba[1] = imageData.data[1];
-            rgba[2] = imageData.data[2];
-            rgba[3] = imageData.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+            let pixelA = context.getImageData(0, 0, 1, 1);
+            rgba[0] = pixelA.data[0];
+            rgba[1] = pixelA.data[1];
+            rgba[2] = pixelA.data[2];
+            rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
 
-            resolve(rgba);
+            let pixelB = context.getImageData(sx, sy, 1, 1);
+            rgbaa[0] = pixelB.data[0];
+            rgbaa[1] = pixelB.data[1];
+            rgbaa[2] = pixelB.data[2];
+            rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+            //return rgba;
+            //console.log(direction, rgba, rgbaa);
+            resolve(`linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`);
         }
         img.crossOrigin = "Anonymous";
         img.src = image
