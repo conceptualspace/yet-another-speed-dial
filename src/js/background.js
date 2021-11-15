@@ -465,6 +465,9 @@ function getBgColor(image) {
             //console.log(direction, rgba, rgbaa);
             resolve(`linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`);
         }
+        img.onerror = function() {
+            resolve();
+        };
         img.crossOrigin = "Anonymous";
         img.src = image
     });
