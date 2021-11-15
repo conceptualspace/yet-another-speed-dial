@@ -95,6 +95,7 @@ let layoutFolder = false;
 let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
+const imageRatio = 1.54;
 
 const debounce = (func, delay= 500, immediate=false) => {
     let inDebounce
@@ -627,7 +628,7 @@ function getBgColor(image) {
     let imgHeight = image.naturalHeight;
     let sx, sy, direction;
 
-    if (imgWidth > imgHeight) {
+    if ((imgWidth / imgHeight) > imageRatio) {
         // image is wide; sample top and bottom
         sy = imgHeight - 1
         sx = 0;

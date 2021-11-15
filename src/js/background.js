@@ -28,6 +28,7 @@ let ready = false;
 let firstRun = true;
 let tripwire = 0;
 let tripwireTimestamp = 0;
+const imageRatio = 1.54;
 
 function getSpeedDialId() {
     browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
@@ -425,7 +426,7 @@ function getBgColor(image) {
             let imgHeight = img.naturalHeight;
             let sx, sy, direction;
 
-            if (imgWidth > imgHeight) {
+            if ((imgWidth / imgHeight) > imageRatio) {
                 // image is wide; sample top and bottom
                 sy = imgHeight - 1
                 sx = 0;
