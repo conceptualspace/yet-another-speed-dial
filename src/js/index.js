@@ -371,9 +371,10 @@ function printBookmarks(bookmarks, parentId) {
 
                 let content = document.createElement('div');
                 content.classList.add('tile-content');
-                content.style.backgroundImage = "url(" + thumbUrl + ")";
                 if (thumbBg) {
-                    content.style.backgroundColor = `rgba(${thumbBg[0]},${thumbBg[1]},${thumbBg[2]},${thumbBg[3]})`;
+                    content.style.backgroundImage = `url('${thumbUrl}'), ${thumbBg}`;
+                } else {
+                    content.style.backgroundImage = `url('${thumbUrl}')`;
                 }
 
                 let title = document.createElement('div');
@@ -567,6 +568,7 @@ async function buildModal(url, title) {
         let index = images.thumbIndex;
         let imgDiv = document.createElement('div');
         let img = document.createElement('img');
+        img.crossOrigin = 'Anonymous';
         img.setAttribute('src', images.thumbnails[index]);
         imgDiv.appendChild(img);
         newCarousel.appendChild(imgDiv);
@@ -574,6 +576,7 @@ async function buildModal(url, title) {
             if (i !== index) {
                 let imgDiv = document.createElement('div');
                 let img = document.createElement('img');
+                img.crossOrigin = 'Anonymous';
                 img.setAttribute('src', image);
                 imgDiv.appendChild(img);
                 newCarousel.appendChild(imgDiv);
@@ -605,33 +608,62 @@ function createDial() {
     });
 }
 
-function offscreenCanvasShim() {
+function offscreenCanvasShim(w, h) {
     try {
-        return new OffscreenCanvas(1, 1);
+        return new OffscreenCanvas(w, h);
     } catch (err) {
         // offscreencanvas not supported in ff
-        return document.createElement('canvas');
+        let canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        return canvas;
     }
 }
 
 // calculate the bg color of a given image
 // todo: punt this to a worker
 function getBgColor(image) {
+    let imgWidth = image.naturalWidth;
+    let imgHeight = image.naturalHeight;
+    let sx, sy, direction;
+
+    if (imgWidth > imgHeight) {
+        // image is wide; sample top and bottom
+        sy = imgHeight - 1
+        sx = 0;
+        direction = 'bottom'
+
+    } else {
+        // sample left and right
+        sx = imgWidth - 1
+        sy = 0;
+        direction = 'right'
+    }
 
     let rgba = [0, 0, 0, 0];
-    let canvas = offscreenCanvasShim();
-    let context = canvas.getContext('2d');
+    let rgbaa = [0, 0, 0, 0];
+    let canvas = offscreenCanvasShim(imgWidth, imgHeight);
+    // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
+    // todo add to other contexts
+    let context = canvas.getContext('2d', {willReadFrequently:true});
     context.drawImage(image, 0, 0);
 
     // get the top left pixel, cheap and easy
     // todo: if its equally performant, sample all corners and return the mode
-    let imageData = context.getImageData(0, 0, 1, 1);
-    rgba[0] = imageData.data[0];
-    rgba[1] = imageData.data[1];
-    rgba[2] = imageData.data[2];
-    rgba[3] = imageData.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+    let pixelA = context.getImageData(0, 0, 1, 1);
+    rgba[0] = pixelA.data[0];
+    rgba[1] = pixelA.data[1];
+    rgba[2] = pixelA.data[2];
+    rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
 
-    return rgba;
+    let pixelB = context.getImageData(sx, sy, 1, 1);
+    rgbaa[0] = pixelB.data[0];
+    rgbaa[1] = pixelB.data[1];
+    rgbaa[2] = pixelB.data[2];
+    rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+    //return rgba;
+    return `linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`;
 }
 
 function saveBookmarkSettings() {
@@ -647,9 +679,9 @@ function saveBookmarkSettings() {
     let customCarousel = document.getElementById('customCarousel');
     if (customCarousel) {
         selectedImageSrc = customCarousel.children[0].src;
-        targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
         bgColor = getBgColor(customCarousel.children[0]);
-        targetNode.children[0].children[0].style.backgroundColor = `rgba(${bgColor[0]},${bgColor[1]},${bgColor[2]},${bgColor[3]})`;
+        targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
+        //targetNode.children[0].children[0].style.backgroundColor = bgColor;
         browser.storage.local.get(url)
             .then(result => {
                 let thumbnails = [];
@@ -681,8 +713,8 @@ function saveBookmarkSettings() {
                     bgColor = getBgColor(node.children[0]);
                 }
                 // update tile
-                targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}')`;
-                targetNode.children[0].children[0].style.backgroundColor = `rgba(${bgColor[0]},${bgColor[1]},${bgColor[2]},${bgColor[3]})`;
+                targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
+                //targetNode.children[0].children[0].style.backgroundColor = bgColor;
                 break;
             }
         }
@@ -836,7 +868,7 @@ function resizeBackground(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d');
+                let ctx = canvas.getContext('2d', {willReadFrequently:true});
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -871,7 +903,7 @@ function resizeThumb(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d');
+                let ctx = canvas.getContext('2d', {willReadFrequently:true});
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
