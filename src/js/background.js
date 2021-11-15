@@ -128,14 +128,15 @@ function getThumbnails(url, manualRefresh=false) {
                 }
                 return getScreenshot(url, manualRefresh)
             })
-            .then(function([screenshot, title]) {
-                if (title) {
-                    fetchedTitle = title
+            .then(function(result) {
+                if (result) {
+                    if (result.title) {
+                        fetchedTitle = result.title
+                    }
+                    if (result.screenshot) {
+                        return resizeThumb(result.screenshot)
+                    }
                 }
-                if (screenshot) {
-                    return resizeThumb(screenshot)
-                }
-
             })
             .then(function(result) {
                 if (result) {
@@ -283,7 +284,7 @@ function getScreenshot(url, manualRefresh=false) {
                     let fetchedTitle = tab.title ? tab.title : '';
                     browser.tabs.captureVisibleTab()
                         .then(imageUri => {
-                            resolve([imageUri, fetchedTitle]);
+                            resolve({screenshot: imageUri, title: fetchedTitle});
                         });
                 } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3000 ) || manualRefresh) {
                     // open tab, capture screenshot, and close
@@ -299,7 +300,7 @@ function getScreenshot(url, manualRefresh=false) {
                                         browser.tabs.captureVisibleTab().then(imageUri => {
                                             browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                             browser.tabs.remove(tabID);
-                                            resolve([imageUri, fetchedTitle]);
+                                            resolve({screenshot: imageUri, title: fetchedTitle});
                                         }, (err) => {
                                             console.log(err)
                                             // carry on like it aint no tang
@@ -312,7 +313,7 @@ function getScreenshot(url, manualRefresh=false) {
                                     browser.tabs.captureTab(tabID).then(imageUri => {
                                         browser.tabs.onUpdated.removeListener(handleUpdatedTab);
                                         browser.tabs.remove(tabID);
-                                        resolve([imageUri, fetchedTitle]);
+                                        resolve({screenshot: imageUri, title: fetchedTitle});
                                     }, (err) => {
                                         console.log(err);
                                         resolve(null);
