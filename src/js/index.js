@@ -448,6 +448,8 @@ function printBookmarks(bookmarks, parentId) {
             ghostClass: 'selected',
             dragClass: 'dragging',
             filter: ".createDial",
+            delay: 500, // fixes #40
+            delayOnTouchOnly: true,
             onMove: onMoveHandler,
             onEnd: onEndHandler,
             store: {
@@ -1543,6 +1545,8 @@ function init() {
         ghostClass: 'selected',
         dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
         filter: ".createDial",
+        delay: 500, // fixes #40
+        delayOnTouchOnly: true,
         // todo: copy same onmove logic from folders
         onMove: onMoveHandler,
         onEnd: onEndHandler,
