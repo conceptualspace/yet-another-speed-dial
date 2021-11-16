@@ -356,7 +356,12 @@ input:focus {
 }
 
 .fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    background-color: rgba(17, 17, 17, 0.9);
     color: #ccc;
+}
+
+.fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
+    color: gold;
 }
 
 .sidenav {
