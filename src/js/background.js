@@ -633,7 +633,7 @@ function handleInstalled(details) {
         // perform any migrations here...
         if (details.previousVersion && details.previousVersion === '1.14.8') {
             const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url });
+            chrome.tabs.create({ url, active: false });
         }
     }
 }
