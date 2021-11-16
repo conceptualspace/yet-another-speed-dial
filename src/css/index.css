@@ -361,7 +361,7 @@ input:focus {
 }
 
 .fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
-    color: gold;
+    color: #fff;
 }
 
 .sidenav {
