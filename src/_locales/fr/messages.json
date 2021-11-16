@@ -112,6 +112,9 @@
   "defaultSort": {
     "message": "Tri par défaut"
   },
+  "scaleImages": {
+    "message": "Ajuster les images"
+  },
   "clock": {
     "message": "L'horloge"
   },
