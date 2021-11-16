@@ -1171,7 +1171,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderName = e.target.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content') {
+    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
@@ -1199,7 +1199,9 @@ window.addEventListener("mousedown", e => {
         return;
     }
     switch (e.target.className) {
+        // todo: invert this
         case 'default-content':
+        case 'default-content helpText':
         case 'tile-content':
         case 'tile-title':
         case 'container':
