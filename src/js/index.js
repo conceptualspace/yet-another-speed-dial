@@ -514,6 +514,14 @@ function hideModals() {
     let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal];
     let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent]
 
+    for (let button of document.getElementsByTagName('button')) {
+        button.blur();
+    }
+
+    for (let input of document.getElementsByTagName('input')) {
+        input.blur();
+    }
+
     for (let el of modalContents) {
         el.style.transform = "scale(0.8)";
         el.style.opacity = "0";
