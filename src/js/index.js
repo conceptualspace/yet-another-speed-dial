@@ -57,6 +57,7 @@ const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
+const backgroundColorContainer = document.getElementById("backgroundColorContainer");
 const largeTilesInput = document.getElementById("largeTiles");
 const scaleImagesInput = document.getElementById("scaleImages");
 const showTitlesInput = document.getElementById("showTitles");
@@ -67,6 +68,7 @@ const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
 //const saveBtn = document.getElementById("saveBtn");
+//const importBtn = document.getElementById("importBtn");
 //const settingsToast = document.getElementById("settingsToast");
 
 // clock
@@ -704,12 +706,12 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = 0;
                 }
-                    browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
-                        tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
-                        if (title !== targetTileTitle) {
-                            updateTitle()
-                        }
-                    });
+                browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
+                    tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                    if (title !== targetTileTitle) {
+                        updateTitle()
+                    }
+                });
             });
     } else {
         for (let node of imageNodes) {
@@ -1057,6 +1059,7 @@ function applySettings() {
         }
         if (settings.wallpaper) {
             previewContainer.style.display = 'flex';
+            backgroundColorContainer.style.display = 'none';
         }
 
     });
@@ -1329,8 +1332,10 @@ imgInput.onchange = function () {
 wallPaperEnabled.onchange = function () {
     if (this.checked) {
         previewContainer.style.display = "flex";
+        backgroundColorContainer.style.display = "none";
     } else {
         previewContainer.style.display = "none";
+        backgroundColorContainer.style.display = "flex";
     }
 };
 
@@ -1364,7 +1369,7 @@ function dragleaveHandler(ev) {
     if (ev.target.nodeType === 3) {
         return
     }
-     else if (ev.target.classList.contains("folderTitle")) {
+    else if (ev.target.classList.contains("folderTitle")) {
         ev.target.style.padding = "0";
         ev.target.style.outline = "none";
     }
