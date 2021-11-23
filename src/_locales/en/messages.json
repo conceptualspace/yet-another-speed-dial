@@ -4,7 +4,7 @@
     "description": "title of the app, displayed in store"
   },
   "extensionDescription": {
-    "message": "a modern speed dial for firefox and chrome",
+    "message": "a modern speed dial for chrome, edge, and firefox",
     "description":"description of the app, displayed in store"
   },
   "title": {
