@@ -51,17 +51,37 @@
 }
 
 .sidenav #preview {
-    width: 160px;
+    width: 270px;
     max-height: 160px;
-    margin-bottom: 0.8em;
-    padding: 0.4em;
-    display: none;
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 8px;
 }
 
 .sidenav #previewContainer {
-    display: none;
+    opacity: 0;
+    transform-origin: 0 0;
+    transition: all 160ms ease;
+}
+
+.sidenav #previewOverlay {
+    position: absolute;
+    bottom: 0;
+    width: 270px;
+    height: 100%;
+    transition: all 160ms ease;
+    background: url('../img/upload.png') no-repeat center #000;
+    opacity: 0;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.sidenav #previewOverlay:hover {
+    opacity: 0.5;
+}
+
+.sidenav #switchesContainer {
+    transform: translateY(-180px);
+    transition: all 160ms ease;
 }
 
 .sidenav .row {
@@ -205,6 +225,7 @@
     border: none;
     border-radius: 2px;
     color: #333;
+    width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

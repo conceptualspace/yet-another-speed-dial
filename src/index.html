@@ -1,176 +1,213 @@
 <!DOCTYPE html>
 
 <head>
-	<title>Speed Dial</title>
-	<meta charset="utf-8">
-	<meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
-    <link rel="stylesheet" href="css/flexCarousel.min.css" type="text/css">
-	<link rel="stylesheet" href="css/index.css" type="text/css">
-    <link rel="stylesheet" href="css/settings.css" type="text/css">
+    <title>Speed Dial</title>
+    <meta charset="utf-8">
+    <meta content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width"
+          name="viewport">
+    <link href="css/flexCarousel.min.css" rel="stylesheet" type="text/css">
+    <link href="css/index.css" rel="stylesheet" type="text/css">
+    <link href="css/settings.css" rel="stylesheet" type="text/css">
 </head>
 
 <body>
 <!-- new install -->
-<div id="noBookmarks" class="default-content">
+<div class="default-content" id="noBookmarks">
     <h1 class="default-content" data-locale="newInstall1">Get started with Yet Another Speed Dial!</h1>
-    <p class="default-content helpText" data-locale="newInstall2">⭐ Add sites by clicking the button below, or add bookmarks to the Speed Dial folder</p>
+    <p class="default-content helpText" data-locale="newInstall2">⭐ Add sites by clicking the button below, or add
+        bookmarks to the Speed Dial folder</p>
     <p class="default-content helpText" data-locale="newInstall3">✨ Dials can be modified by right-clicking on them</p>
-    <p class="default-content helpText" data-locale="newInstall4">💎 Access more settings by clicking the gear in the top-right corner</p>
+    <p class="default-content helpText" data-locale="newInstall4">💎 Access more settings by clicking the gear in the
+        top-right corner</p>
 </div>
 
 <!--
 <div id="foldersContainer" style="position:absolute; top:0; left:0"><span id="folders"></span><a title="Add Folder" class="tile folderTitle" style="padding-left: 12px; font-size: large; transform: matrix(1, 0, 0, 1, 0, 0);">+</a></div>
 -->
-<div id="foldersContainer" class="folders"><span id="folders"></span><a title="Add Folder" id="addFolderButton"><svg id="addFolderIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
-    <path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h2v2h2v-2h2v-2h-2v-2h-2v2h-2z"></path>
-</svg></a></div>
+<div class="folders" id="foldersContainer"><span id="folders"></span><a id="addFolderButton" title="Add Folder">
+    <svg height="24" id="addFolderIcon" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h2v2h2v-2h2v-2h-2v-2h-2v2h-2z"></path>
+    </svg>
+</a></div>
 
 <!-- speed dial content injected here -->
-    <div id="tileContainer" class="tileContainer"><div id="wrap" class="container"></div></div>
+<div class="tileContainer" id="tileContainer">
+    <div class="container" id="wrap"></div>
+</div>
 
-<div id="settingsBtn" class="settingsIcon"><svg height="512px" id="Layer_1" class="gear" viewBox="0 0 512 512" width="512px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><path class="gear" d="M424.5,216.5h-15.2c-12.4,0-22.8-10.7-22.8-23.4c0-6.4,2.7-12.2,7.5-16.5l9.8-9.6c9.7-9.6,9.7-25.3,0-34.9l-22.3-22.1  c-4.4-4.4-10.9-7-17.5-7c-6.6,0-13,2.6-17.5,7l-9.4,9.4c-4.5,5-10.5,7.7-17,7.7c-12.8,0-23.5-10.4-23.5-22.7V89.1  c0-13.5-10.9-25.1-24.5-25.1h-30.4c-13.6,0-24.4,11.5-24.4,25.1v15.2c0,12.3-10.7,22.7-23.5,22.7c-6.4,0-12.3-2.7-16.6-7.4l-9.7-9.6  c-4.4-4.5-10.9-7-17.5-7s-13,2.6-17.5,7L110,132c-9.6,9.6-9.6,25.3,0,34.8l9.4,9.4c5,4.5,7.8,10.5,7.8,16.9  c0,12.8-10.4,23.4-22.8,23.4H89.2c-13.7,0-25.2,10.7-25.2,24.3V256v15.2c0,13.5,11.5,24.3,25.2,24.3h15.2  c12.4,0,22.8,10.7,22.8,23.4c0,6.4-2.8,12.4-7.8,16.9l-9.4,9.3c-9.6,9.6-9.6,25.3,0,34.8l22.3,22.2c4.4,4.5,10.9,7,17.5,7  c6.6,0,13-2.6,17.5-7l9.7-9.6c4.2-4.7,10.2-7.4,16.6-7.4c12.8,0,23.5,10.4,23.5,22.7v15.2c0,13.5,10.8,25.1,24.5,25.1h30.4  c13.6,0,24.4-11.5,24.4-25.1v-15.2c0-12.3,10.7-22.7,23.5-22.7c6.4,0,12.4,2.8,17,7.7l9.4,9.4c4.5,4.4,10.9,7,17.5,7  c6.6,0,13-2.6,17.5-7l22.3-22.2c9.6-9.6,9.6-25.3,0-34.9l-9.8-9.6c-4.8-4.3-7.5-10.2-7.5-16.5c0-12.8,10.4-23.4,22.8-23.4h15.2  c13.6,0,23.3-10.7,23.3-24.3V256v-15.2C447.8,227.2,438.1,216.5,424.5,216.5z M336.8,256L336.8,256c0,44.1-35.7,80-80,80  c-44.3,0-80-35.9-80-80l0,0l0,0c0-44.1,35.7-80,80-80C301.1,176,336.8,211.9,336.8,256L336.8,256z"/></svg></div>
+<div class="settingsIcon" id="settingsBtn">
+    <svg class="gear" height="512px" id="Layer_1" viewBox="0 0 512 512" width="512px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg"><path class="gear" d="M424.5,216.5h-15.2c-12.4,0-22.8-10.7-22.8-23.4c0-6.4,2.7-12.2,7.5-16.5l9.8-9.6c9.7-9.6,9.7-25.3,0-34.9l-22.3-22.1  c-4.4-4.4-10.9-7-17.5-7c-6.6,0-13,2.6-17.5,7l-9.4,9.4c-4.5,5-10.5,7.7-17,7.7c-12.8,0-23.5-10.4-23.5-22.7V89.1  c0-13.5-10.9-25.1-24.5-25.1h-30.4c-13.6,0-24.4,11.5-24.4,25.1v15.2c0,12.3-10.7,22.7-23.5,22.7c-6.4,0-12.3-2.7-16.6-7.4l-9.7-9.6  c-4.4-4.5-10.9-7-17.5-7s-13,2.6-17.5,7L110,132c-9.6,9.6-9.6,25.3,0,34.8l9.4,9.4c5,4.5,7.8,10.5,7.8,16.9  c0,12.8-10.4,23.4-22.8,23.4H89.2c-13.7,0-25.2,10.7-25.2,24.3V256v15.2c0,13.5,11.5,24.3,25.2,24.3h15.2  c12.4,0,22.8,10.7,22.8,23.4c0,6.4-2.8,12.4-7.8,16.9l-9.4,9.3c-9.6,9.6-9.6,25.3,0,34.8l22.3,22.2c4.4,4.5,10.9,7,17.5,7  c6.6,0,13-2.6,17.5-7l9.7-9.6c4.2-4.7,10.2-7.4,16.6-7.4c12.8,0,23.5,10.4,23.5,22.7v15.2c0,13.5,10.8,25.1,24.5,25.1h30.4  c13.6,0,24.4-11.5,24.4-25.1v-15.2c0-12.3,10.7-22.7,23.5-22.7c6.4,0,12.4,2.8,17,7.7l9.4,9.4c4.5,4.4,10.9,7,17.5,7  c6.6,0,13-2.6,17.5-7l22.3-22.2c9.6-9.6,9.6-25.3,0-34.9l-9.8-9.6c-4.8-4.3-7.5-10.2-7.5-16.5c0-12.8,10.4-23.4,22.8-23.4h15.2  c13.6,0,23.3-10.7,23.3-24.3V256v-15.2C447.8,227.2,438.1,216.5,424.5,216.5z M336.8,256L336.8,256c0,44.1-35.7,80-80,80  c-44.3,0-80-35.9-80-80l0,0l0,0c0-44.1,35.7-80,80-80C301.1,176,336.8,211.9,336.8,256L336.8,256z"/></svg>
+</div>
 
 <!-- context menus -->
-    <div class="menu" id="contextMenu">
-        <ul class="menu-options">
-            <li id="newTab" class="menu-option" data-locale="newTab">Open in new tab</li>
-            <li id="newWin" class="menu-option" data-locale="newWin">Open in new window</li>
-            <li id="newPrivate" class="menu-option" data-locale="newPrivate">Open in new private window</li>
-            <li class="menu-separator"></li>
-            <li id="edit" class="menu-option" data-locale="edit">Edit</li>
-            <li class="menu-separator"></li>
-            <li id="refresh" class="menu-option" data-locale="refresh">Refresh Thumbnails</li>
-            <li class="menu-separator"></li>
-            <li id="delete" class="menu-option" data-locale="delete">Delete</li>
-        </ul>
-    </div>
-
-<div class="menu" id="folderMenu">
+<div class="menu" id="contextMenu">
     <ul class="menu-options">
-        <li id="editFolder" class="menu-option" data-locale="editFolder">Edit Folder...</li>
-        <li id="deleteFolder" class="menu-option" data-locale="remove">Remove</li>
+        <li class="menu-option" data-locale="newTab" id="newTab">Open in new tab</li>
+        <li class="menu-option" data-locale="newWin" id="newWin">Open in new window</li>
+        <li class="menu-option" data-locale="newPrivate" id="newPrivate">Open in new private window</li>
+        <li class="menu-separator"></li>
+        <li class="menu-option" data-locale="edit" id="edit">Edit</li>
+        <li class="menu-separator"></li>
+        <li class="menu-option" data-locale="refresh" id="refresh">Refresh Thumbnails</li>
+        <li class="menu-separator"></li>
+        <li class="menu-option" data-locale="delete" id="delete">Delete</li>
     </ul>
 </div>
 
-    <div class="menu" id="settingsMenu">
-        <ul class="menu-options">
-            <li id="newDial" class="menu-option" data-locale="newDial">New Speed Dial...</li>
-            <li id="newFolder" class="menu-option" data-locale="newFolder">New Folder...</li>
-            <li class="menu-separator"></li>
-            <li id="openSettings" class="menu-option" data-locale="settings">Settings...</li>
-        </ul>
-    </div>
+<div class="menu" id="folderMenu">
+    <ul class="menu-options">
+        <li class="menu-option" data-locale="editFolder" id="editFolder">Edit Folder...</li>
+        <li class="menu-option" data-locale="remove" id="deleteFolder">Remove</li>
+    </ul>
+</div>
+
+<div class="menu" id="settingsMenu">
+    <ul class="menu-options">
+        <li class="menu-option" data-locale="newDial" id="newDial">New Speed Dial...</li>
+        <li class="menu-option" data-locale="newFolder" id="newFolder">New Folder...</li>
+        <li class="menu-separator"></li>
+        <li class="menu-option" data-locale="settings" id="openSettings">Settings...</li>
+    </ul>
+</div>
 
 <!-- tile modal window -->
-    <div id="tileModal" class="modal">
-        <div id="tileModalContent" class="modal-content">
-            <form class="tileForm" action="">
-                <div class="formItem"><label for="modalTitle" data-locale="tileTitle">Title</label></div>
-                <div class="formItem"><input id="modalTitle" type="text"></div>
-                <div class="formItem"><label for="modalURL" data-locale="address">Address</label></div>
-                <div class="formItem"><input id="modalURL" type="text" ></div>
+<div class="modal" id="tileModal">
+    <div class="modal-content" id="tileModalContent">
+        <form action="" class="tileForm">
+            <div class="formItem"><label data-locale="tileTitle" for="modalTitle">Title</label></div>
+            <div class="formItem"><input id="modalTitle" type="text"></div>
+            <div class="formItem"><label data-locale="address" for="modalURL">Address</label></div>
+            <div class="formItem"><input id="modalURL" type="text"></div>
 
-                <input type="file" id="modalImgFile" class="settingsCtl" accept="image/*">
+            <input accept="image/*" class="settingsCtl" id="modalImgFile" type="file">
 
-                <div id="modalImgContainer" class="formItem"></div>
-                <div class="imageUploadContainer"><label for="modalImgFile" class="settingsCtl modalImgBtn" data-locale="uploadImage">Upload Image ...</label></div>
-                <div class="formItem"><button id="modalSave" class="save" data-locale="save">Save</button></div>
-                <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
-            </form>
-        </div>
+            <div class="formItem" id="modalImgContainer"></div>
+            <div class="imageUploadContainer"><label class="settingsCtl modalImgBtn" data-locale="uploadImage"
+                                                     for="modalImgFile">Upload Image ...</label></div>
+            <div class="formItem">
+                <button class="save" data-locale="save" id="modalSave">Save</button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel">Cancel</button>
+            </div>
+        </form>
     </div>
+</div>
 
 <!-- create dial modal window -->
-<div id="createDialModal" class="modal">
-    <div id="createDialModalContent" class="modal-content">
-        <form class="tileForm" action="">
-            <div class="formItem"><label for="createDialModalURL" data-locale="address">Address</label></div>
+<div class="modal" id="createDialModal">
+    <div class="modal-content" id="createDialModalContent">
+        <form action="" class="tileForm">
+            <div class="formItem"><label data-locale="address" for="createDialModalURL">Address</label></div>
             <div class="formItem"><input id="createDialModalURL" type="text"></div>
-            <div class="formItem"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the site in a new tab to capture the image</em></p></div>
-            <div class="formItem"><button id="createDialModalSave" class="save" data-locale="addTo">Add to Speed Dial</button></div>
-            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
+            <div class="formItem"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the
+                site in a new tab to capture the image</em></p></div>
+            <div class="formItem">
+                <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
 <!-- create folder modal window -->
-<div id="createFolderModal" class="modal">
-    <div id="createFolderModalContent" class="modal-content">
-        <form class="tileForm" action="">
-            <div class="formItem"><label for="createFolderModalName" data-locale="name">Name</label></div>
+<div class="modal" id="createFolderModal">
+    <div class="modal-content" id="createFolderModalContent">
+        <form action="" class="tileForm">
+            <div class="formItem"><label data-locale="name" for="createFolderModalName">Name</label></div>
             <div class="formItem"><input id="createFolderModalName" type="text"></div>
-            <div class="formItem"><button id="createFolderModalSave" class="save" data-locale="createFolder">Create Folder</button></div>
-            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
+            <div class="formItem">
+                <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
 <!-- edit folder modal window -->
-<div id="editFolderModal" class="modal">
-    <div id="editFolderModalContent" class="modal-content">
-        <form class="tileForm" action="">
-            <div class="formItem"><label for="editFolderModalName" data-locale="name">Name</label></div>
+<div class="modal" id="editFolderModal">
+    <div class="modal-content" id="editFolderModalContent">
+        <form action="" class="tileForm">
+            <div class="formItem"><label data-locale="name" for="editFolderModalName">Name</label></div>
             <div class="formItem"><input id="editFolderModalName" type="text"></div>
-            <div class="formItem"><button id="editFolderModalSave" class="save" data-locale="save">Save</button></div>
-            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
+            <div class="formItem">
+                <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
 <!-- delete folder modal confirmation window -->
-<div id="deleteFolderModal" class="modal">
-    <div id="deleteFolderModalContent" class="modal-content">
-        <form class="tileForm" action="">
+<div class="modal" id="deleteFolderModal">
+    <div class="modal-content" id="deleteFolderModalContent">
+        <form action="" class="tileForm">
             <div id="deleteFolderModalName"></div>
 
-            <div class="formItem"><br /><label data-locale="confirmDelete">Are you sure you want to permanently remove this folder?</label><br /><br /></div>
-            <div class="formItem"><button id="deleteFolderModalSave" class="delete" data-locale="delete">Delete</button></div>
-            <div class="formItem"><button class="close" data-locale="cancel">Cancel</button></div>
+            <div class="formItem"><br/><label data-locale="confirmDelete">Are you sure you want to permanently remove
+                this folder?</label><br/><br/></div>
+            <div class="formItem">
+                <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel">Cancel</button>
+            </div>
         </form>
     </div>
 </div>
 
 <div id="clock"></div>
 
-<div id="toast"><svg id="loader-1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-     width="30px" height="30px" viewBox="0 0 50 50" xml:space="preserve">
-  <path fill="#000" d="M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z">
-    <animateTransform attributeType="xml"
-                      attributeName="transform"
-                      type="rotate"
-                      from="0 25 25"
-                      to="360 25 25"
+<div id="toast">
+    <svg height="30px" id="loader-1" viewBox="0 0 50 50" width="30px"
+         x="0px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" y="0px">
+  <path d="M25.251,6.461c-10.318,0-18.683,8.365-18.683,18.683h4.068c0-8.071,6.543-14.615,14.615-14.615V6.461z"
+        fill="#000">
+    <animateTransform attributeName="transform"
+                      attributeType="xml"
                       dur="0.8s"
-                      repeatCount="indefinite"/>
+                      from="0 25 25"
+                      repeatCount="indefinite"
+                      to="360 25 25"
+                      type="rotate"/>
     </path>
-  </svg><span id="toastContent"></span></div>
+  </svg>
+    <span id="toastContent"></span></div>
 
 <!-- settings nav -->
-    <div id="sidenav" class="sidenav">
-        <div class="settings" id="settingsDiv">
-            <h1 data-locale="settingsTitle">Settings</h1>
-            <hr>
-            <div class='row'>
-                <div class='column'>
-                    <label data-locale="wallpaper">Wallpaper</label>
-                </div>
-                <div class='column controls'>
-                    <label class="switch">
-                        <input type="checkbox" id="wallpaper" class="settingsCtl" checked>
-                        <span class="slider round settingsCtl"></span>
-                    </label>
-                </div>
+<div class="sidenav" id="sidenav">
+    <div class="settings" id="settingsDiv">
+        <h1 data-locale="settingsTitle">Settings</h1>
+
+        <div class='row'>
+            <div class='column'>
+                <label data-locale="wallpaper">Wallpaper</label>
             </div>
-            <div class='row' id="previewContainer">
-                <div class='column'>
-                </div>
-                <div class='column controls'>
-                    <img id="preview" src="#">
-                    <input type="file" id="file" class="settingsCtl" accept="image/*">
-                    <label for="file" class="settingsCtl" data-locale="browse">Browse...</label>
-                    <!--<a id="resetWallpaper" href="#">Reset</a>-->
-                </div>
+            <div class='column controls'>
+                <label class="switch">
+                    <input checked class="settingsCtl" id="wallpaper" type="checkbox">
+                    <span class="slider round settingsCtl"></span>
+                </label>
             </div>
+        </div>
+        <div class='row' id="previewContainer">
+            <div class='column'>
+            </div>
+            <div class='column controls' style="position: relative;">
+                <img id="preview" src="#">
+                <div id="previewOverlay"></div>
+                <input accept="image/*" class="settingsCtl" id="file" type="file">
+                <!--<label for="file" class="settingsCtl" data-locale="browse">Browse...</label>-->
+                <!--<a id="resetWallpaper" href="#">Reset</a>-->
+            </div>
+        </div>
+        <div id='switchesContainer'>
 
             <div class='row' id="backgroundColorContainer">
                 <div class='column'>
@@ -178,7 +215,7 @@
                 </div>
                 <div class='column controls'>
                     <div id="color-picker-wrapper">
-                        <input type="color" id="color-picker" class="settingsCtl">
+                        <input class="settingsCtl" id="color-picker" type="color">
                     </div>
                 </div>
             </div>
@@ -188,17 +225,17 @@
                 </div>
                 <div class='column controls'>
                     <div id="textColor-picker-wrapper">
-                        <input type="color" id="textColor-picker" class="settingsCtl">
+                        <input class="settingsCtl" id="textColor-picker" type="color">
                     </div>
                 </div>
             </div>
-            <hr>
+
             <div class='row'>
                 <div class='column'>
                     <label data-locale="maxColumns">Max Columns</label>
                 </div>
                 <div class='column controls'>
-                    <select name="maxcols" id="maxcols" class="settingsCtl">
+                    <select class="settingsCtl" id="maxcols" name="maxcols">
                         <option value="100">Unlimited</option>
                         <option value="10">10</option>
                         <option value="9">9</option>
@@ -216,7 +253,7 @@
                     <label data-locale="defaultSort">Default Sort</label>
                 </div>
                 <div class='column controls'>
-                    <select name="defaultSort" id="defaultSort" class="settingsCtl">
+                    <select class="settingsCtl" id="defaultSort" name="defaultSort">
                         <option value="last">New dials last</option>
                         <option value="first">New dials first</option>
                     </select>
@@ -228,19 +265,19 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="scaleImages" class="settingsCtl" checked>
+                        <input checked class="settingsCtl" id="scaleImages" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
             </div>
-            <hr>
+
             <div class='row' style="display:none">
                 <div class='column'>
                     <label data-locale="largeTiles">Large Tiles</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="largeTiles" class="settingsCtl" checked>
+                        <input checked class="settingsCtl" id="largeTiles" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -251,7 +288,7 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="showClock" class="settingsCtl">
+                        <input class="settingsCtl" id="showClock" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -262,7 +299,7 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="showTitles" class="settingsCtl" checked>
+                        <input checked class="settingsCtl" id="showTitles" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -273,7 +310,7 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="showCreateDial" class="settingsCtl" checked>
+                        <input checked class="settingsCtl" id="showCreateDial" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -284,7 +321,7 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="showFolders" class="settingsCtl">
+                        <input class="settingsCtl" id="showFolders" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -295,28 +332,29 @@
                 </div>
                 <div class='column controls'>
                     <label class="switch">
-                        <input type="checkbox" id="showSettingsBtn" class="settingsCtl">
+                        <input class="settingsCtl" id="showSettingsBtn" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
             </div>
-
-            <!--
-            <hr>
-            <div>
-                <button id="saveBtn" class="settingsCtl" data-locale="save">Save</button>
-            </div>
-            <hr>
-            <div id="settingsToast" data-locale="saveToast">Settings saved!</div>
-            -->
         </div>
-    </div>
 
-    <script src="js/lib/Sortable.min.js"></script>
-    <script src="js/lib/CSSPlugin.min.js"></script>
-    <script src="js/lib/TweenLite.min.js"></script>
-    <script src="js/lib/jquery-3.6.0.slim.min.js"></script>
-    <script src="js/lib/flexCarousel.min.js"></script>
-    <script src="js/lib/browser-polyfill.min.js"></script>
-    <script src="js/index.js"></script>
+        <!--
+        <hr>
+        <div>
+            <button id="saveBtn" class="settingsCtl" data-locale="save">Save</button>
+        </div>
+        <hr>
+        <div id="settingsToast" data-locale="saveToast">Settings saved!</div>
+        -->
+    </div>
+</div>
+
+<script src="js/lib/Sortable.min.js"></script>
+<script src="js/lib/CSSPlugin.min.js"></script>
+<script src="js/lib/TweenLite.min.js"></script>
+<script src="js/lib/jquery-3.6.0.slim.min.js"></script>
+<script src="js/lib/flexCarousel.min.js"></script>
+<script src="js/lib/browser-polyfill.min.js"></script>
+<script src="js/index.js"></script>
 </body>

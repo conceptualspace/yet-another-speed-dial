@@ -55,6 +55,8 @@ const textColor_picker = document.getElementById("textColor-picker");
 const textColor_picker_wrapper = document.getElementById("textColor-picker-wrapper");
 const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
+const previewOverlay = document.getElementById("previewOverlay");
+const switchesContainer = document.getElementById("switchesContainer");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
@@ -1055,11 +1057,12 @@ function applySettings() {
 
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
-            imgPreview.style.display = 'block';
+            //imgPreview.style.display = 'block';
         }
         if (settings.wallpaper) {
-            previewContainer.style.display = 'flex';
-            backgroundColorContainer.style.display = 'none';
+            previewContainer.style.opacity = '1';
+            switchesContainer.style.transform = "translateY(0)";
+            //backgroundColorContainer.style.display = 'none';
         }
 
     });
@@ -1328,14 +1331,18 @@ imgInput.onchange = function () {
     readURL(this);
 };
 
+previewOverlay.onclick = function() {
+    imgInput.click();
+}
+
 
 wallPaperEnabled.onchange = function () {
     if (this.checked) {
-        previewContainer.style.display = "flex";
-        backgroundColorContainer.style.display = "none";
+        previewContainer.style.opacity = "1";
+        switchesContainer.style.transform = "translateY(0)";
     } else {
-        previewContainer.style.display = "none";
-        backgroundColorContainer.style.display = "flex";
+        previewContainer.style.opacity = "0";
+        switchesContainer.style.transform = "translateY(-160px)";
     }
 };
 
