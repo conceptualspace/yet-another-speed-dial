@@ -1063,6 +1063,9 @@ function applySettings() {
             previewContainer.style.opacity = '1';
             switchesContainer.style.transform = "translateY(0)";
             //backgroundColorContainer.style.display = 'none';
+        } else {
+            previewContainer.style.opacity = '0';
+            switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
         }
 
     });
@@ -1263,6 +1266,7 @@ modalImgInput.onchange = function () {
     });
 };
 
+
 maxColsInput.oninput = function(e) {
     saveSettings()
 }
@@ -1335,16 +1339,6 @@ previewOverlay.onclick = function() {
     imgInput.click();
 }
 
-
-wallPaperEnabled.onchange = function () {
-    if (this.checked) {
-        previewContainer.style.opacity = "1";
-        switchesContainer.style.transform = "translateY(0)";
-    } else {
-        previewContainer.style.opacity = "0";
-        switchesContainer.style.transform = "translateY(-160px)";
-    }
-};
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {

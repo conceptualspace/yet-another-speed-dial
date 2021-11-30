@@ -80,7 +80,6 @@
 }
 
 .sidenav #switchesContainer {
-    transform: translateY(-180px);
     transition: all 160ms ease;
 }
 
