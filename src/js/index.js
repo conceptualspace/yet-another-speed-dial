@@ -1058,15 +1058,18 @@ function applySettings() {
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
             //imgPreview.style.display = 'block';
+            imgPreview.onload = function(e) {
+                if (settings.wallpaper) {
+                    previewContainer.style.opacity = '1';
+                    switchesContainer.style.transform = "translateY(0)";
+                    //backgroundColorContainer.style.display = 'none';
+                } else {
+                    previewContainer.style.opacity = '0';
+                    switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
+                }
+            }
         }
-        if (settings.wallpaper) {
-            previewContainer.style.opacity = '1';
-            switchesContainer.style.transform = "translateY(0)";
-            //backgroundColorContainer.style.display = 'none';
-        } else {
-            previewContainer.style.opacity = '0';
-            switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
-        }
+
 
     });
 }
