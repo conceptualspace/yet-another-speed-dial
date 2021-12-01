@@ -2,7 +2,17 @@
     width: 100%;
      padding: 14px 25px;
     height: 100%;
+    overflow:hidden;
  }
+
+#settingsDiv {
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+#settingsDiv::-webkit-scrollbar {
+    display: none;
+}
 
 .sidenav h1 {
     font-weight: bold;
