@@ -1,9 +1,9 @@
 .sidenav .settings {
     width: 100%;
-     padding: 14px 25px;
+    padding: 14px 25px;
     height: 100%;
-    overflow:hidden;
- }
+    overflow: hidden;
+}
 
 #settingsDiv {
     overflow-y: auto;
@@ -25,7 +25,7 @@
 }
 
 .sidenav hr {
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidenav div {
@@ -36,8 +36,9 @@
     text-decoration: none;
     color: white;
 }
+
 .sidenav a:hover {
-    background-color: rgba(255,255,255,0.2);
+    background-color: rgba(255, 255, 255, 0.2);
 }
 
 .sidenav button {
@@ -56,6 +57,7 @@
     background-color: #cccccc;
     color: #000000;
 }
+
 .sidenav .default:hover {
     background-color: #ffffff;
 }
@@ -63,7 +65,7 @@
 .sidenav #preview {
     width: 270px;
     max-height: 160px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
 }
 
@@ -186,11 +188,12 @@
     height: 24px;
     border: none;
 }
+
 .sidenav #color-picker-wrapper {
     width: 50px;
     padding: 0;
     border-radius: 34px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     /*float: left;*/
 }
 
@@ -198,7 +201,7 @@
     width: 50px;
     padding: 0;
     border-radius: 34px;
-    border: 1px solid rgba(255,255,255,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     /*float: left;*/
 }
 
