@@ -290,12 +290,16 @@ function createFolder() {
 function saveFolder() {
     let name = createFolderModalName.value.trim();
 
-    browser.bookmarks.create({
-        title: name,
-        parentId: speedDialId
-    }).then(node => {
+    if (name.length) {
+        browser.bookmarks.create({
+            title: name,
+            parentId: speedDialId
+        }).then(node => {
+            hideModals();
+        });
+    } else {
         hideModals();
-    });
+    }
 }
 
 function editFolder() {
