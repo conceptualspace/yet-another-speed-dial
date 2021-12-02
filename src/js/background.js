@@ -31,10 +31,17 @@ let tripwireTimestamp = 0;
 const imageRatio = 1.54;
 
 function getSpeedDialId() {
-    browser.bookmarks.search({title: 'Speed Dial', url: undefined}).then(result => {
-        if (result.length && result[0]) {
-            speedDialId = result[0].id;
-            // get subfolder ids
+    browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
+        if (result) {
+            for (let bookmark of result) {
+                if (!bookmark.url) {
+                    speedDialId = bookmark.id;
+                    break;
+                }
+            }
+        }
+
+        if (speedDialId) {
             browser.bookmarks.getChildren(speedDialId).then(results => {
                 for (let result of results) {
                     if (!result.url && result.dateGroupModified) {
@@ -42,12 +49,12 @@ function getSpeedDialId() {
                     }
                 }
             })
-
         } else {
             browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
                 speedDialId = result.id;
             });
         }
+
         ready = true;
         if (messagePorts.length && firstRun) {
             firstRun = false;
