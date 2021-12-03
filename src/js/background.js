@@ -494,8 +494,7 @@ function removeBookmark(id, bookmarkInfo) {
         }, error => {
             console.log(error);
         });
-    }
-    if (bookmarkInfo.node.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
+    } else if (bookmarkInfo.node.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
         browser.storage.local.remove(bookmarkInfo.node.url).catch((err) => {
             console.log(err)
         });
