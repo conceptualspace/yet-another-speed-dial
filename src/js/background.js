@@ -545,8 +545,6 @@ function manualRefresh(url) {
     })
 }
 
-// todo: allow editing URLs from speed dial page
-// todo: something f'd up with getthumbnails
 function changeBookmark(id, info) {
     // info may only contain "changed" info -- ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
@@ -607,9 +605,12 @@ function changeBookmark(id, info) {
                     tripwireTimestamp = Date.now();
                 })
             }
-        } else {
-            // todo, handle yasd bookmarks that are moved outside of yasd but not deleted...
-            //console.log(bookmark[0], info)
+        } else if (bookmark[0] && bookmark[0].url && ( info.oldParentId === speedDialId || folderIds.indexOf(info.oldParentId) !== -1) ) {
+            // handle yasd bookmarks that are moved outside of yasd but not deleted
+            //console.log(bookmark, info)
+            browser.storage.local.remove(bookmark[0].url).catch((err) => {
+                console.log(err)
+            });
         }
     });
 }
