@@ -31,35 +31,36 @@ let tripwireTimestamp = 0;
 const imageRatio = 1.54;
 
 function getSpeedDialId() {
-    browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
-        if (result) {
-            for (let bookmark of result) {
-                if (!bookmark.url) {
-                    speedDialId = bookmark.id;
-                    break;
-                }
-            }
-        }
-
-        if (speedDialId) {
-            browser.bookmarks.getChildren(speedDialId).then(results => {
-                for (let result of results) {
-                    if (!result.url && result.dateGroupModified) {
-                        folderIds.push(result.id);
+    return new Promise((resolve, reject) => {
+        browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
+            if (result) {
+                for (let bookmark of result) {
+                    if (!bookmark.url) {
+                        speedDialId = bookmark.id;
+                        break;
                     }
                 }
-            })
-        } else {
-            browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
-                speedDialId = result.id;
-            });
-        }
-
-        ready = true;
-        if (messagePorts.length && firstRun) {
-            firstRun = false;
-            messagePorts[0].postMessage({ready, cache, settings, speedDialId});
-        }
+            }
+            if (speedDialId) {
+                browser.bookmarks.getChildren(speedDialId).then(results => {
+                    for (let result of results) {
+                        if (!result.url && result.dateGroupModified) {
+                            folderIds.push(result.id);
+                        }
+                    }
+                })
+                resolve()
+            } else {
+                browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
+                    speedDialId = result.id;
+                    resolve();
+                }, error => {
+                    reject(error);
+                });
+            }
+        }, error => {
+            reject(error)
+        });
     });
 }
 
@@ -483,6 +484,17 @@ function getBgColor(image) {
 }
 
 function removeBookmark(id, bookmarkInfo) {
+    if (id === speedDialId) {
+        // the speed dial folder was removed for some reason... refresh it
+        speedDialId = null;
+        getSpeedDialId().then(() => {
+            if (messagePorts.length) {
+               messagePorts[0].postMessage({reset:true, cache, speedDialId});
+            }
+        }, error => {
+            console.log(error);
+        });
+    }
     if (bookmarkInfo.node.url && (bookmarkInfo.parentId === speedDialId || folderIds.indexOf(bookmarkInfo.parentId) !== -1)) {
         browser.storage.local.remove(bookmarkInfo.node.url).catch((err) => {
             console.log(err)
@@ -676,7 +688,15 @@ function init() {
                 }
             }
         }
-        getSpeedDialId();
+        getSpeedDialId().then(() => {
+            ready = true;
+            if (messagePorts.length && firstRun) {
+                firstRun = false;
+                messagePorts[0].postMessage({ready, cache, settings, speedDialId});
+            }
+        }, error => {
+            console.log(error);
+        });
     });
 
     // context menu -> "add to speed dial"

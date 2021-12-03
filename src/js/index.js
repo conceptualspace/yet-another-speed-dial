@@ -133,6 +133,8 @@ function getBookmarks(folderId) {
             addFolderButton.style.display = 'none';
         }
         printBookmarks(result, folderId)
+    }, error => {
+        console.log(error);
     });
 }
 
@@ -1490,6 +1492,11 @@ function init() {
             applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
             cache = m.cache;
+            hideToast();
+            processRefresh();
+        } else if (m.reset) {
+            cache = m.cache;
+            speedDialId = m.speedDialId;
             hideToast();
             processRefresh();
         }
