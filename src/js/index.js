@@ -108,9 +108,11 @@ const debounce = (func, delay= 500, immediate=false) => {
         const args = arguments
         if (immediate && !inDebounce) {
             func.apply(context, args);
+            inDebounce = setTimeout(() => clearTimeout(inDebounce), delay)
+        } else {
+            clearTimeout(inDebounce)
+            inDebounce = setTimeout(() => func.apply(context, args), delay)
         }
-        clearTimeout(inDebounce)
-        inDebounce = setTimeout(() => func.apply(context, args), delay)
     }
 }
 
