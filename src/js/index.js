@@ -314,8 +314,8 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url) {
-    tabMessagePort.postMessage({refreshThumbs: true, url});
+function refreshThumbnails(url, getScreenshots = true) {
+    tabMessagePort.postMessage({refreshThumbs: true, getScreenshots, url});
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
 }
@@ -332,6 +332,26 @@ function removeFolder() {
             showFolder(speedDialId);
         }
         document.getElementById(targetFolder).remove();
+    });
+}
+
+function getChildren(folderId) {
+    return new Promise((resolve, reject) => {
+        browser.bookmarks.getChildren(folderId).then(children => {
+            resolve(children);
+        });
+    });
+}
+
+function refreshAllThumbnails(folder = speedDialId) {
+    getChildren(folder).then(children => {
+        for (let child of children) {
+            if (child && child.url) {
+                refreshThumbnails(child.url, false)
+            } else if (child && folders.includes(child.id)) {
+                refreshAllThumbnails(child.id);
+            }
+        }
     });
 }
 

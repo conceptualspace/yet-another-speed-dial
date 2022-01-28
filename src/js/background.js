@@ -244,7 +244,7 @@ function getOgImage(url) {
                     resolve(images);
                 }
             }, err => {
-                console.log(err);
+                //console.log(err);
                 resolve([]);
             });
         };
@@ -258,19 +258,21 @@ function getOgImage(url) {
 
 function saveThumbnails(url, images, bgColor) {
     return new Promise(function(resolve, reject) {
-        let thumbnails = [];
-        browser.storage.local.get(url)
-            .then(result => {
-                if (result[url] && result[url].thumbnails) {
-                    thumbnails = result[url].thumbnails;
-                }
-                if (images && images.length) {
+        if (images && images.length) {
+            let thumbnails = [];
+            browser.storage.local.get(url)
+                .then(result => {
+                    if (result[url] && result[url].thumbnails) {
+                        thumbnails = result[url].thumbnails;
+                    }
                     thumbnails.push(images);
-                }
-                thumbnails = thumbnails.flat();
-                browser.storage.local.set({[url]:{thumbnails, thumbIndex: 0, bgColor}})
-                    .then(() => resolve());
-            });
+                    thumbnails = thumbnails.flat();
+                    browser.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
+                        .then(() => resolve());
+                });
+        } else {
+            resolve();
+        }
     });
 }
 
@@ -288,13 +290,13 @@ function getScreenshot(url, manualRefresh=false) {
                 }
             })
             .then(tab => {
-                if (tab.url === url) {
+                if (tab && tab.url === url) {
                     let fetchedTitle = tab.title ? tab.title : '';
                     browser.tabs.captureVisibleTab()
                         .then(imageUri => {
                             resolve({screenshot: imageUri, title: fetchedTitle});
                         });
-                } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3000 ) || manualRefresh) {
+                } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || manualRefresh) {
                     // open tab, capture screenshot, and close
                     // todo: complete loaded status sometimes !== actually loaded
                     let tabID = null;
@@ -534,14 +536,19 @@ function created(id, info) {
     changeBookmark(id, info);
 }
 
-function manualRefresh(url) {
-    browser.storage.local.remove(url).then(() => {
-        getThumbnails(url, true).then(() => {
-            pushToCache(url).then(() => {
-                refreshOpen()
+function manualRefresh(url, getScreenshots = true) {
+    if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
+        tripwire++
+        browser.storage.local.remove(url).then(() => {
+            getThumbnails(url, getScreenshots).then(() => {
+                pushToCache(url).then(() => {
+                    refreshOpen()
+                    tripwire--;
+                    tripwireTimestamp = Date.now();
+                })
             })
         })
-    })
+    }
 }
 
 function changeBookmark(id, info) {
@@ -625,7 +632,7 @@ function connected(p) {
             }
         }
         else if (m.refreshThumbs) {
-            manualRefresh(m.url)
+            manualRefresh(m.url, m.getScreenshots)
         }
         else if (m.updateCache) {
             pushToCache(m.url, m.i);
