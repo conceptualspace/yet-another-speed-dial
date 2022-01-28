@@ -149,6 +149,7 @@ h1 {
     overflow: hidden;
     text-overflow: ellipsis;
     padding: 5px 10px 0 10px;
+    transition: opacity 160ms ease;
 }
 
 .createDial {
