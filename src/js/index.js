@@ -823,6 +823,47 @@ function saveBookmarkSettings() {
 }
 
 // todo: maybe refactor this in gsap 3
+// todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
+function layout() {
+    if (layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
+        windowSize = window.innerWidth;
+        containerSize = getComputedStyle(bookmarksContainer).maxWidth;
+
+        let b = [];
+
+        for (let i = 0; i < boxes.length; i++) {
+            let box = boxes[i];
+            const lastX = box.x;
+            const lastY = box.y;
+            // todo: we can make some assumptions to calculate this faster...
+            box.x = box.node.offsetLeft;
+            box.y = box.node.offsetTop;
+            if (lastX !== box.x || lastY !== box.y) {
+                const x = box.transform.x + lastX - box.x;
+                const y = box.transform.y + lastY - box.y;
+                // Tween to 0 to remove the transforms
+                TweenMax.set(box.node, {x, y});
+                b.push(box.node);
+            }
+        }
+        // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
+        // a resize occurs the animation will start from the right position
+        TweenMax.staggerTo(b, layoutFolder ? 0 : 0.7, {x: 0, y: 0, stagger:0.006, ease});
+        layoutFolder = false;
+    }
+}
+
+function ease(progress) {
+    const omega = 12;
+    const zeta = 0.8;
+    const beta = Math.sqrt(1.0 - zeta * zeta);
+    progress = 1 - Math.cos(progress * Math.PI / 2);
+    progress = 1 / beta *
+        Math.exp(-zeta * omega * progress) *
+        Math.sin(beta * omega * progress + Math.atan(beta / zeta));
+    return 1 - progress;
+}
+
 const animate = debounce(() => {
     //var inputs = document.querySelectorAll("input");
     let currentParent;
@@ -831,8 +872,6 @@ const animate = debounce(() => {
     //const observerConfig = { attributes: false, childList: true, subtree: false };
     const total = nodes.length;
     //const time = 0.9;
-    const omega = 12;
-    const zeta = 0.8;
     //let boxes = [];
     //let windowSize = window.innerWidth;
 
@@ -846,53 +885,7 @@ const animate = debounce(() => {
         boxes[i] = {node, transform, x, y};
     }
 
-    //const observer = new MutationObserver(() => { dirty = true; });
-    //observer.observe(bookmarksContainer, observerConfig);
-
-    // todo: move this
-    // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-    // TweenMax.ticker.addEventListener("tick", layout);
-    window.onresize = layout;
-
     layout();
-
-    function layout() {
-        if (layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
-            windowSize = window.innerWidth;
-            containerSize = getComputedStyle(bookmarksContainer).maxWidth;
-
-            let b = [];
-
-            for (let i = 0; i < total; i++) {
-                let box = boxes[i];
-                const lastX = box.x;
-                const lastY = box.y;
-                // todo: we can make some assumptions to calculate this faster...
-                box.x = box.node.offsetLeft;
-                box.y = box.node.offsetTop;
-                if (lastX !== box.x || lastY !== box.y) {
-                    const x = box.transform.x + lastX - box.x;
-                    const y = box.transform.y + lastY - box.y;
-                    // Tween to 0 to remove the transforms
-                    TweenMax.set(box.node, {x, y});
-                    b.push(box.node);
-                }
-            }
-            // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
-            // a resize occurs the animation will start from the right position
-            TweenMax.staggerTo(b, layoutFolder ? 0 : 0.7, {x: 0, y: 0, stagger:0.006, ease});
-            layoutFolder = false;
-        }
-    }
-
-    function ease(progress) {
-        const beta = Math.sqrt(1.0 - zeta * zeta);
-        progress = 1 - Math.cos(progress * Math.PI / 2);
-        progress = 1 / beta *
-            Math.exp(-zeta * omega * progress) *
-            Math.sin(beta * omega * progress + Math.atan(beta / zeta));
-        return 1 - progress;
-    }
 
 }, 500);
 
@@ -1524,6 +1517,8 @@ function init() {
             processRefresh();
         }
     });
+
+    window.onresize = layout;
 
     tabMessagePort.postMessage({getCache: true});
 
