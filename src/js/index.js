@@ -865,15 +865,14 @@ function ease(progress) {
 }
 
 const animate = debounce(() => {
-    //var inputs = document.querySelectorAll("input");
     let currentParent;
-    if (currentFolder && currentFolder !== speedDialId) { currentParent = currentFolder } else { currentParent = "wrap"}
+    if (currentFolder && currentFolder !== speedDialId) {
+        currentParent = currentFolder
+    } else {
+        currentParent = "wrap"
+    }
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
-    //const observerConfig = { attributes: false, childList: true, subtree: false };
     const total = nodes.length;
-    //const time = 0.9;
-    //let boxes = [];
-    //let windowSize = window.innerWidth;
 
     TweenMax.set(nodes, {lazy: true, x: "+=0"});
 
