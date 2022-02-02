@@ -119,6 +119,7 @@ h1 {
     height: 140px;
     border-radius: 7px;
     margin: 12px;
+    will-change: transform;
 }
 
 .tile:hover {
