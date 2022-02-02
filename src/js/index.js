@@ -195,6 +195,7 @@ function showFolder(id) {
             setTimeout(function () {
                 //layoutFolder = id;
                 folder.style.opacity = "1";
+                animate()
             }, 20);
         } else {
             folder.style.display = "none";
@@ -824,7 +825,9 @@ function saveBookmarkSettings() {
 // todo: maybe refactor this in gsap 3
 const animate = debounce(() => {
     //var inputs = document.querySelectorAll("input");
-    const nodes = document.querySelectorAll(".tile");
+    let currentParent;
+    if (currentFolder && currentFolder !== speedDialId) { currentParent = currentFolder } else { currentParent = "wrap"}
+    const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     //const observerConfig = { attributes: false, childList: true, subtree: false };
     const total = nodes.length;
     //const time = 0.9;
@@ -833,7 +836,7 @@ const animate = debounce(() => {
     //let boxes = [];
     //let windowSize = window.innerWidth;
 
-    TweenLite.set(nodes, {lazy: true, x: "+=0"});
+    TweenMax.set(nodes, {lazy: true, x: "+=0"});
 
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
@@ -848,7 +851,7 @@ const animate = debounce(() => {
 
     // todo: move this
     // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-    // TweenLite.ticker.addEventListener("tick", layout);
+    // TweenMax.ticker.addEventListener("tick", layout);
     window.onresize = layout;
 
     layout();
@@ -858,28 +861,26 @@ const animate = debounce(() => {
             windowSize = window.innerWidth;
             containerSize = getComputedStyle(bookmarksContainer).maxWidth;
 
+            let b = [];
+
             for (let i = 0; i < total; i++) {
                 let box = boxes[i];
-                let randTime;
                 const lastX = box.x;
                 const lastY = box.y;
+                // todo: we can make some assumptions to calculate this faster...
                 box.x = box.node.offsetLeft;
                 box.y = box.node.offsetTop;
                 if (lastX !== box.x || lastY !== box.y) {
                     const x = box.transform.x + lastX - box.x;
                     const y = box.transform.y + lastY - box.y;
-                    if (layoutFolder) {
-                        // folder opened -- zero duration because we are just setting the positions of the dials, so whenever
-                        // a resize occurs the animation will start from the right position
-                        randTime = 0;
-                    } else {
-                        randTime = ((i / (total * 2)) + 0.6).toFixed(1);
-                    }
                     // Tween to 0 to remove the transforms
-                    TweenLite.set(box.node, {x, y});
-                    TweenLite.to(box.node, randTime, {x: 0, y: 0, ease});
+                    TweenMax.set(box.node, {x, y});
+                    b.push(box.node);
                 }
             }
+            // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
+            // a resize occurs the animation will start from the right position
+            TweenMax.staggerTo(b, layoutFolder ? 0 : 0.7, {x: 0, y: 0, stagger:0.006, ease});
             layoutFolder = false;
         }
     }
