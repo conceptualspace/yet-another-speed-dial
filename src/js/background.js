@@ -368,6 +368,9 @@ function getLogo(url) {
             } else {
                 resolve(null);
             }
+        }).catch(err => {
+            console.log(err);
+            resolve(null);
         });
     });
 }
