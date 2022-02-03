@@ -15,6 +15,7 @@ let defaults = {
     largeTiles: true,
     scaleImages: false,
     showTitles: true,
+    labelFontSize: 14,
     showAddSite: true,
     showFolders: true,
     showSettingsBtn: true,
