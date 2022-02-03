@@ -879,7 +879,8 @@ function layout() {
         }
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
-        TweenMax.staggerTo(b, layoutFolder ? 0 : 0.7, {x: 0, y: 0, stagger:0.006, ease});
+        let duration = layoutFolder ? 0 : 0.7;
+        TweenMax.staggerTo(b, duration, {x: 0, y: 0, stagger:{amount: 0.2}, ease});
         layoutFolder = false;
     }
 }
