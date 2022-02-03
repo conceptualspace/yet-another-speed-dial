@@ -160,7 +160,8 @@ function removeBookmark(url) {
         })
 }
 
-function moveBookmark(url, idFrom, idTo) {
+function moveBookmark(url, idFrom, idTo, oldIndex, newIndex) {
+    // todo: fix index calculation when moving dial to another folder...?
     if (url && idFrom && idTo) {
         // the id of the main speed dial page is "wrap"; todo: clean this up
         if (idTo === "wrap") {
@@ -173,13 +174,54 @@ function moveBookmark(url, idFrom, idTo) {
             .then(bookmarks => {
                 for (let bookmark of bookmarks) {
                     if (bookmark.parentId === idFrom) {
-                        browser.bookmarks.move(bookmark.id, {parentId: idTo})
+                        browser.bookmarks.move(bookmark.id, {parentId: idTo, index: newIndex})
                         // avoid chaos if there are duplicate bookmarks inside the folder; we're only dragging one so just move one
-                        // todo: tiles need to store ids in addition to url..
                         break;
                     }
                 }
             });
+    } else if (url && newIndex >= 0) {
+        // dial not moving folders, just position (index)
+        // trying a loop over the subtree to compare performance with search...
+        let currentParent = currentFolder ? currentFolder : speedDialId
+
+        browser.bookmarks.getSubTree(currentParent).then(node => {
+            if (node) {
+                let match = false;
+                let folderIndexes = [];
+                for (const bookmark of node[0].children) {
+                    //&& bookmark.index === evt.oldIndex
+                    if (bookmark.url === url) {
+                        match = bookmark;
+                    } else if (bookmark.type === 'separator' || !bookmark.url) {
+                        folderIndexes.push(bookmark.index)
+                    }
+                }
+                if (match) {
+                    // subfolders have ordered positions, so dial indexes are different in the bookmarks manager
+                    // and the DOM (where folders omitted) so we need to account for their position when moving a dial
+                    let indexOffset = newIndex - oldIndex;
+                    let newIndexOffset = indexOffset;
+
+                    for (let folderIndex of folderIndexes) {
+                        if (indexOffset < 0 && (folderIndex >= match.index + newIndexOffset) && folderIndex < match.index) {
+                            newIndexOffset--;
+                        } else if (indexOffset > 0 && folderIndex > match.index && folderIndex <= match.index + newIndexOffset) {
+                            newIndexOffset++;
+                        }
+                    }
+
+                    // chrome-only off by 1 bug when moving a bookmark forward
+                    if (!browser.runtime.getBrowserInfo) {
+                        if (oldIndex < newIndex) {
+                            newIndexOffset++;
+                        }
+                    }
+
+                    browser.bookmarks.move(match.id, {index: match.index + newIndexOffset})
+                }
+            }
+        });
     }
 }
 
@@ -455,7 +497,10 @@ function printBookmarks(bookmarks, parentId) {
         // preserve sorting from 1.5 versions
         //migrate();
 
-        sort();
+        //sort();
+        bookmarksContainer.style.opacity = "1";
+        bookmarksContainerParent.scrollTop = scrollPos;
+        animate();
         // we take care of this as part of "sort" fn now..
         //bookmarksContainer.style.opacity = "1";
 
@@ -484,28 +529,14 @@ function printBookmarks(bookmarks, parentId) {
             delay: 500, // fixes #40
             delayOnTouchOnly: true,
             onMove: onMoveHandler,
-            onEnd: onEndHandler,
-            store: {
-                set: function (sortable) {
-                    let order = sortable.toArray();
-                    browser.storage.local.set({[parentId]: order});
-                }
-            }
+            onEnd: onEndHandler
         });
 
         // append bookmarks to container
         folderContainerEl.appendChild(fragment);
 
-        // sort
-        browser.storage.local.get(parentId)
-            .then(result => {
-                if (result[parentId]) {
-                    sortable.sort(result[parentId]);
-                    animate();
-                    bookmarksContainerParent.scrollTop = scrollPos;
-                    sortable.save();
-                }
-            });
+        //animate();
+        bookmarksContainerParent.scrollTop = scrollPos;
         //
     }
 }
@@ -1420,17 +1451,20 @@ function onEndHandler(evt) {
         if (evt.from.id !== evt.to.id) {
             // sortable's drop position matches the dom's drop target
             if (evt.to.id === evt.originalEvent.target.id) {
-                moveBookmark(evt.clone.href, evt.from.id, evt.to.id)
+                moveBookmark(evt.clone.href, evt.from.id, evt.to.id, evt.oldIndex, evt.newIndex)
             } else {
                 // sortable's position doesn't match the dom's drop target
                 // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
                 // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
-                moveBookmark(evt.clone.href, evt.from.id, currentFolder)
+                moveBookmark(evt.clone.href, evt.from.id, currentFolder, evt.oldIndex, evt.newIndex)
             }
         } else if (evt.from.id !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            moveBookmark(evt.clone.href, evt.from.id, currentFolder)
+            moveBookmark(evt.clone.href, evt.from.id, currentFolder, evt.oldIndex, evt.newIndex)
+        } else if (evt.oldIndex !== evt.newIndex) {
+            // dial just reordered
+            moveBookmark(evt.clone.href, null, null, evt.oldIndex, evt.newIndex)
         }
     }
 }
@@ -1506,6 +1540,7 @@ function init() {
             speedDialId = m.speedDialId;
             applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
+            //console.log(cache, m.cache);
             cache = m.cache;
             hideToast();
             processRefresh();
@@ -1523,6 +1558,7 @@ function init() {
 
     sortable = new Sortable(bookmarksContainer, {
         //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
+        //forceFallback: true,
         group: 'shared',
         animation: 160,
         ghostClass: 'selected',
@@ -1532,13 +1568,7 @@ function init() {
         delayOnTouchOnly: true,
         // todo: copy same onmove logic from folders
         onMove: onMoveHandler,
-        onEnd: onEndHandler,
-        store: {
-            set: function (sortable) {
-                let order = sortable.toArray();
-                browser.storage.local.set({[speedDialId]: order});
-            }
-        }
+        onEnd: onEndHandler
     });
 
 

@@ -526,6 +526,11 @@ function updateSettings() {
 // todo: test behavior on chrome
 function moved(id, info) {
     //console.log("onMoved", info);
+    if (info && !info.url && !info.title &&  info.parentId === info.oldParentId) {
+        // bookmark was just reordered, dont need to refresh
+        // todo: catch resorting done via bookmarks manager
+        return
+    }
     changeBookmark(id, info);
 }
 
