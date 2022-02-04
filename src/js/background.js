@@ -525,7 +525,7 @@ function updateSettings() {
 
 // todo: test behavior on chrome
 function moved(id, info) {
-    //console.log("onMoved", info);
+    // todo: refresh background tabs
     if (info && !info.url && !info.title &&  info.parentId === info.oldParentId) {
         // bookmark was just reordered, dont need to refresh
         // todo: catch resorting done via bookmarks manager
@@ -535,12 +535,10 @@ function moved(id, info) {
 }
 
 function changed(id, info) {
-    //console.log("onChanged", info);
     changeBookmark(id, info);
 }
 
 function created(id, info) {
-    //console.log("onCreated", info);
     changeBookmark(id, info);
 }
 

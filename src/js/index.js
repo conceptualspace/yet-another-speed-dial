@@ -160,68 +160,38 @@ function removeBookmark(url) {
         })
 }
 
-function moveBookmark(url, idFrom, idTo, oldIndex, newIndex) {
-    // todo: fix index calculation when moving dial to another folder...?
-    if (url && idFrom && idTo) {
+function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId = null) {
+    let options = {}
+
+    function move(id, options) {
+        browser.bookmarks.move(id, options).catch(err => {
+            console.log(err);
+        });
+    }
+
+    if ((toParentId && fromParentId) && toParentId !== fromParentId) {
         // the id of the main speed dial page is "wrap"; todo: clean this up
-        if (idTo === "wrap") {
-            idTo = speedDialId;
-        }
-        if (idFrom === "wrap") {
-            idFrom = speedDialId;
-        }
-        browser.bookmarks.search({url})
-            .then(bookmarks => {
-                for (let bookmark of bookmarks) {
-                    if (bookmark.parentId === idFrom) {
-                        browser.bookmarks.move(bookmark.id, {parentId: idTo, index: newIndex})
-                        // avoid chaos if there are duplicate bookmarks inside the folder; we're only dragging one so just move one
-                        break;
-                    }
-                }
-            });
-    } else if (url && newIndex >= 0) {
-        // dial not moving folders, just position (index)
-        // trying a loop over the subtree to compare performance with search...
-        let currentParent = currentFolder ? currentFolder : speedDialId
+        options.parentId = toParentId === "wrap" ? speedDialId : toParentId;
+    }
 
-        browser.bookmarks.getSubTree(currentParent).then(node => {
-            if (node) {
-                let match = false;
-                let folderIndexes = [];
-                for (const bookmark of node[0].children) {
-                    //&& bookmark.index === evt.oldIndex
-                    if (bookmark.url === url) {
-                        match = bookmark;
-                    } else if (bookmark.type === 'separator' || !bookmark.url) {
-                        folderIndexes.push(bookmark.index)
-                    }
-                }
-                if (match) {
-                    // subfolders have ordered positions, so dial indexes are different in the bookmarks manager
-                    // and the DOM (where folders omitted) so we need to account for their position when moving a dial
-                    let indexOffset = newIndex - oldIndex;
-                    let newIndexOffset = indexOffset;
-
-                    for (let folderIndex of folderIndexes) {
-                        if (indexOffset < 0 && (folderIndex >= match.index + newIndexOffset) && folderIndex < match.index) {
-                            newIndexOffset--;
-                        } else if (indexOffset > 0 && folderIndex > match.index && folderIndex <= match.index + newIndexOffset) {
-                            newIndexOffset++;
-                        }
-                    }
-
-                    // chrome-only off by 1 bug when moving a bookmark forward
-                    if (!browser.runtime.getBrowserInfo) {
-                        if (oldIndex < newIndex) {
-                            newIndexOffset++;
-                        }
-                    }
-
-                    browser.bookmarks.move(match.id, {index: match.index + newIndexOffset})
+    if (newSiblingId) {
+        browser.bookmarks.get(newSiblingId).then(result => {
+            // todo check oldIndex on folder change
+            if (oldIndex > newIndex) {
+                options.index = Math.max(0, result[0].index);
+            } else {
+                options.index = Math.max(0, result[0].index - 1);
+                // chrome-only off by 1 bug when moving a bookmark forward
+                if (!browser.runtime.getBrowserInfo) {
+                    options.index++;
                 }
             }
-        });
+            move(id, options);
+        }).catch(err => {
+            console.log(err);
+        })
+    } else {
+        move(id, options);
     }
 }
 
@@ -1447,25 +1417,30 @@ function onMoveHandler(evt) {
 }
 
 function onEndHandler(evt) {
-    // catch dials moving between folders
-    if (evt.clone.href) {
-        if (evt.from.id !== evt.to.id) {
-            // sortable's drop position matches the dom's drop target
-            if (evt.to.id === evt.originalEvent.target.id) {
-                moveBookmark(evt.clone.href, evt.from.id, evt.to.id, evt.oldIndex, evt.newIndex)
-            } else {
-                // sortable's position doesn't match the dom's drop target
-                // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
-                // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
-                moveBookmark(evt.clone.href, evt.from.id, currentFolder, evt.oldIndex, evt.newIndex)
-            }
-        } else if (evt.from.id !== currentFolder) {
+    if (evt && evt.clone.href) {
+        let id = evt.clone.dataset.id;
+        let fromParentId = evt.from.id;
+        let toParentId = evt.to.id;
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+        let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.dataset.id : null;
+
+        if (evt.from.id !== evt.to.id && evt.to.id !== evt.originalEvent.target.id) {
+            // sortable's position doesn't match the dom's drop target
+            // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
+            // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
+            toParentId = currentFolder;
+        }
+
+        if (evt.from.id === evt.to.id && evt.from.id !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            moveBookmark(evt.clone.href, evt.from.id, currentFolder, evt.oldIndex, evt.newIndex)
-        } else if (evt.oldIndex !== evt.newIndex) {
-            // dial just reordered
-            moveBookmark(evt.clone.href, null, null, evt.oldIndex, evt.newIndex)
+            toParentId = currentFolder;
+        }
+
+        // only move on change
+        if ( (fromParentId !== toParentId) || (oldIndex !== newIndex) ) {
+            moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
         }
     }
 }
