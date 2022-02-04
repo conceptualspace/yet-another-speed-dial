@@ -164,7 +164,9 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     let options = {}
 
     function move(id, options) {
-        browser.bookmarks.move(id, options).catch(err => {
+        browser.bookmarks.move(id, options).then(result => {
+            tabMessagePort.postMessage({refreshInactive: true});
+        }).catch(err => {
             console.log(err);
         });
     }
@@ -176,7 +178,6 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
 
     if (newSiblingId) {
         browser.bookmarks.get(newSiblingId).then(result => {
-            // todo check oldIndex on folder change
             if (oldIndex > newIndex) {
                 options.index = Math.max(0, result[0].index);
             } else {
@@ -1520,6 +1521,14 @@ function init() {
             cache = m.cache;
             hideToast();
             processRefresh();
+        } else if (m.refreshInactive) {
+            browser.tabs.getCurrent().then(tab => {
+                if (!tab.active) {
+                    cache = m.cache;
+                    hideToast();
+                    processRefresh();
+                }
+            })
         } else if (m.reset) {
             cache = m.cache;
             speedDialId = m.speedDialId;

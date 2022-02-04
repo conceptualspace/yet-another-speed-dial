@@ -103,6 +103,12 @@ function refreshOpen() {
     }
 }
 
+function refreshInactive() {
+    for (let port of messagePorts) {
+        port.postMessage({refreshInactive:true, cache});
+    }
+}
+
 // convert relative url paths
 function convertUrlToAbsolute(origin, path) {
     if (path.indexOf('://') > 0) {
@@ -639,6 +645,9 @@ function connected(p) {
         }
         else if (m.refreshThumbs) {
             manualRefresh(m.url, m.getScreenshots)
+        }
+        else if (m.refreshInactive) {
+            refreshInactive();
         }
         else if (m.updateCache) {
             pushToCache(m.url, m.i);
