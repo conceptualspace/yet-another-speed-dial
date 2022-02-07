@@ -178,25 +178,23 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
 
     // todo: refactor
     if (settings.defaultSort === "first") {
-        if (newSiblingId > 0) {
+        if (newSiblingId) {
             browser.bookmarks.get(newSiblingId).then(result => {
                 if (oldIndex > newIndex) {
-                    options.index = Math.max(0, result[0].index +1);
-                } else {
                     options.index = Math.max(0, result[0].index);
                     // chrome-only off by 1 bug when moving a bookmark forward
                     if (!browser.runtime.getBrowserInfo) {
                         options.index++;
                     }
+                } else {
+                    options.index = Math.max(0, result[0].index + 1);
                 }
                 move(id, options);
             }).catch(err => {
                 console.log(err);
             })
-        } else if (newSiblingId === 0) {
-            options.index = 0;
-            move(id, options);
         } else {
+            options.index = 0;
             move(id, options);
         }
     } else {
@@ -1469,18 +1467,10 @@ function onEndHandler(evt) {
         let toParentId = evt.to.id;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
-        let newSiblingId = -1;
+        let newSiblingId = null;
 
-        if (settings.defaultSort && settings.defaultSort === "first") {
-            if (evt.item.nextElementSibling && !evt.item.nextElementSibling.dataset.id) {
-                newSiblingId = 0;
-            } else {
-                newSiblingId = evt.item.nextElementSibling.dataset.id;
-            }
-        } else {
-            if (evt.item.nextElementSibling) {
-                newSiblingId = evt.item.nextElementSibling.dataset.id;
-            }
+        if (evt.item.nextElementSibling && evt.item.nextElementSibling.dataset.id) {
+            newSiblingId = evt.item.nextElementSibling.dataset.id;
         }
 
         if (evt.from.id !== evt.to.id && evt.to.id !== evt.originalEvent.target.id) {
