@@ -160,7 +160,7 @@ function removeBookmark(url) {
         })
 }
 
-function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId = null) {
+function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId) {
     let options = {}
 
     function move(id, options) {
@@ -176,23 +176,48 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
         options.parentId = toParentId === "wrap" ? speedDialId : toParentId;
     }
 
-    if (newSiblingId) {
-        browser.bookmarks.get(newSiblingId).then(result => {
-            if (oldIndex > newIndex) {
-                options.index = Math.max(0, result[0].index);
-            } else {
-                options.index = Math.max(0, result[0].index - 1);
-                // chrome-only off by 1 bug when moving a bookmark forward
-                if (!browser.runtime.getBrowserInfo) {
-                    options.index++;
+    // todo: refactor
+    if (settings.defaultSort === "first") {
+        if (newSiblingId > 0) {
+            browser.bookmarks.get(newSiblingId).then(result => {
+                if (oldIndex > newIndex) {
+                    options.index = Math.max(0, result[0].index +1);
+                } else {
+                    options.index = Math.max(0, result[0].index);
+                    // chrome-only off by 1 bug when moving a bookmark forward
+                    if (!browser.runtime.getBrowserInfo) {
+                        options.index++;
+                    }
                 }
-            }
+                move(id, options);
+            }).catch(err => {
+                console.log(err);
+            })
+        } else if (newSiblingId === 0) {
+            options.index = 0;
             move(id, options);
-        }).catch(err => {
-            console.log(err);
-        })
+        } else {
+            move(id, options);
+        }
     } else {
-        move(id, options);
+        if (newSiblingId) {
+            browser.bookmarks.get(newSiblingId).then(result => {
+                if (oldIndex > newIndex) {
+                    options.index = Math.max(0, result[0].index);
+                } else {
+                    options.index = Math.max(0, result[0].index - 1);
+                    // chrome-only off by 1 bug when moving a bookmark forward
+                    if (!browser.runtime.getBrowserInfo) {
+                        options.index++;
+                    }
+                }
+                move(id, options);
+            }).catch(err => {
+                console.log(err);
+            })
+        } else {
+            move(id, options);
+        }
     }
 }
 
@@ -440,9 +465,9 @@ function printBookmarks(bookmarks, parentId) {
     }
 
     // new dial button
-    let a = document.createElement('a');
-    a.classList.add('tile', 'createDial');
-    a.onclick = function () {
+    let aNewDial = document.createElement('a');
+    aNewDial.classList.add('tile', 'createDial');
+    aNewDial.onclick = function () {
         hideSettings();
         buildCreateDialModal(parentId);
         modalShowEffect(createDialModalContent, createDialModal);
@@ -452,8 +477,7 @@ function printBookmarks(bookmarks, parentId) {
     let content = document.createElement('div');
     content.classList.add('tile-content', 'createDial-content');
     main.appendChild(content);
-    a.appendChild(main);
-    fragment.appendChild(a);
+    aNewDial.appendChild(main);
 
     // root speed dial dir
     if (parentId === speedDialId) {
@@ -462,6 +486,13 @@ function printBookmarks(bookmarks, parentId) {
             printFolderBookmarks();
         }
 
+        if (settings.defaultSort === "first") {
+            let i = fragment.childNodes.length;
+            while (i--)
+                fragment.appendChild(fragment.childNodes[i]);
+        }
+
+        fragment.appendChild(aNewDial);
         bookmarksContainer.appendChild(fragment);
 
         // todo: clean this up, restore sort when we remove migration
@@ -502,6 +533,15 @@ function printBookmarks(bookmarks, parentId) {
             onMove: onMoveHandler,
             onEnd: onEndHandler
         });
+
+        // todo: adjust moveBookmark code for when everything is reversed...
+        if (settings.defaultSort === "first") {
+            let i = fragment.childNodes.length;
+            while (i--)
+                fragment.appendChild(fragment.childNodes[i]);
+        }
+
+        fragment.appendChild(aNewDial);
 
         // append bookmarks to container
         folderContainerEl.appendChild(fragment);
@@ -1299,7 +1339,10 @@ maxColsInput.oninput = function(e) {
 }
 
 defaultSortInput.oninput = function(e) {
-    saveSettings()
+    if (settings.defaultSort !== defaultSortInput.value) {
+        processRefresh();
+        saveSettings()
+    }
 }
 
 wallPaperEnabled.oninput = function(e) {
@@ -1424,7 +1467,19 @@ function onEndHandler(evt) {
         let toParentId = evt.to.id;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
-        let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.dataset.id : null;
+        let newSiblingId = -1;
+
+        if (settings.defaultSort && settings.defaultSort === "first") {
+            if (evt.item.nextElementSibling && !evt.item.nextElementSibling.dataset.id) {
+                newSiblingId = 0;
+            } else {
+                newSiblingId = evt.item.nextElementSibling.dataset.id;
+            }
+        } else {
+            if (evt.item.nextElementSibling) {
+                newSiblingId = evt.item.nextElementSibling.dataset.id;
+            }
+        }
 
         if (evt.from.id !== evt.to.id && evt.to.id !== evt.originalEvent.target.id) {
             // sortable's position doesn't match the dom's drop target
