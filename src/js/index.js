@@ -493,6 +493,7 @@ function printBookmarks(bookmarks, parentId) {
         }
 
         fragment.appendChild(aNewDial);
+        bookmarksContainer.innerHTML = "";
         bookmarksContainer.appendChild(fragment);
 
         // todo: clean this up, restore sort when we remove migration
@@ -544,6 +545,7 @@ function printBookmarks(bookmarks, parentId) {
         fragment.appendChild(aNewDial);
 
         // append bookmarks to container
+        folderContainerEl.innerHTML = "";
         folderContainerEl.appendChild(fragment);
 
         //animate();
@@ -1505,13 +1507,11 @@ const processRefresh = debounce(() => {
     // prevent page scroll on refresh
     // react where are you...
     scrollPos = bookmarksContainerParent.scrollTop;
-    bookmarksContainer.style.opacity = "0";
     noBookmarks.style.display = 'none';
     addFolderButton.style.display = 'inline';
-    bookmarksContainer.innerHTML = "";
-    for (let folder of folders) {
-        document.getElementById(folder).innerHTML = "";
-    }
+
+    //bookmarksContainer.style.opacity = "0";
+
     getBookmarks(speedDialId)
 }, 650, true);
 
