@@ -1473,6 +1473,7 @@ function onEndHandler(evt) {
             newSiblingId = evt.item.nextElementSibling.dataset.id;
         }
 
+        // todo fix this
         if (evt.from.id !== evt.to.id && evt.to.id !== evt.originalEvent.target.id) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
@@ -1487,6 +1488,7 @@ function onEndHandler(evt) {
         }
 
         // only move on change
+        // todo fix this (toParent is undefined except for folders)
         if ( (fromParentId !== toParentId) || (oldIndex !== newIndex) ) {
             moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
         }
