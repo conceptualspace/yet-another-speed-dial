@@ -494,8 +494,7 @@ function printBookmarks(bookmarks, parentId) {
             onMove: onMoveHandler,
             onEnd: onEndHandler
         });
-
-        // todo: adjust moveBookmark code for when everything is reversed...
+        
         if (settings.defaultSort === "first") {
             let i = fragment.childNodes.length;
             while (i--)
