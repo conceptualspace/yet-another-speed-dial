@@ -668,15 +668,37 @@ function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         browser.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
-
-        //todo: detect existing speed dial folder
+        // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
-        if (details.previousVersion && details.previousVersion === '1.14.8') {
-            const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url, active: false });
+        if (details.previousVersion && details.previousVersion < '1.16.0') {
+            // const url = chrome.runtime.getURL("updated.html");
+            // chrome.tabs.create({ url, active: false });
+            migrate().catch(err => {
+                console.log(err)
+            });
         }
     }
+}
+
+async function migrate() {
+    // v1.15 -> v1.16 migration
+    // use native ordering within the bookmarks manager rather than maintaining a separate ordered list in storage
+    console.log("v1.16 migration started...");
+    let storage = await browser.storage.local.get();
+    let folders = Object.entries(storage).filter(value => (!value[0].startsWith('http') && value[0] !== 'settings'));
+    for (let folder of folders) {
+        for (let [index, bookmark] of folder[1].entries()) {
+            if (bookmark && bookmark !== '1wv') {
+                await browser.bookmarks.move(bookmark, {index})
+            }
+        }
+    }
+    // cleanup old sortable list
+    for (let folder of folders) {
+        await browser.storage.local.remove(folder[0])
+    }
+    console.log("migration complete!");
 }
 
 function init() {
