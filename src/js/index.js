@@ -180,7 +180,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     if (settings.defaultSort === "first") {
         if (newSiblingId) {
             browser.bookmarks.get(newSiblingId).then(result => {
-                if (oldIndex > newIndex) {
+                if (toParentId === fromParentId && oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
                     // chrome-only off by 1 bug when moving a bookmark forward
                     if (!browser.runtime.getBrowserInfo) {
@@ -200,7 +200,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     } else {
         if (newSiblingId) {
             browser.bookmarks.get(newSiblingId).then(result => {
-                if (oldIndex > newIndex) {
+                if (toParentId !== fromParentId || oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
                 } else {
                     options.index = Math.max(0, result[0].index - 1);
@@ -481,7 +481,7 @@ function printBookmarks(bookmarks, parentId) {
         }
 
         let folderContainerEl = document.getElementById(parentId);
-        
+
         // todo: this is fubar
         let sortable = new Sortable(folderContainerEl, {
             group: 'shared',
