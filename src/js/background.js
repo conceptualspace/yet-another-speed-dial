@@ -685,12 +685,12 @@ async function migrate() {
     // v1.15 -> v1.16 migration
     // use native ordering within the bookmarks manager rather than maintaining a separate ordered list in storage
     console.log("v1.16 migration started...");
-    let settings = await browser.storage.local.get('settings');
     let storage = await browser.storage.local.get();
+    let settings = storage.settings;
     let folders = Object.entries(storage).filter(value => (!value[0].startsWith('http') && value[0] !== 'settings'));
     for (let folder of folders) {
-        let entries = settings && settings.defaultSort === 'first' ? folder[1].entries().reverse() : folder[1].entries();
-        for (let [index, bookmark] of entries) {
+        let bookmarks = settings && settings.defaultSort === 'first' ? folder[1].reverse() : folder[1];
+        for (let [index, bookmark] of bookmarks.entries()) {
             if (bookmark && bookmark !== '1wv') {
                 await browser.bookmarks.move(bookmark, {index})
             }
