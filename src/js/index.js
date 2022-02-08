@@ -257,38 +257,6 @@ function getThumbs(bookmarkUrl) {
         });
 }
 
-function sort() {
-    browser.storage.local.get(speedDialId)
-        .then(result => {
-            if (result[speedDialId]) {
-                // default setting is now to place new dials in the last position so they dont disrupt the order of dials on the page
-                // if the defaultSort setting is set to "first" this behavior is reversed.
-                // background: newest last is preferable when speed dial is generally static (easier to find tiles with unchanging position)
-                // but ive come to prefer newest first when using YASD for ALL bookmarks (since recently bookmarked sites will now be at the top)
-                // TODO: make this a per folder setting
-                if (settings.defaultSort && settings.defaultSort === "last") {
-                    let savedOrder = result[speedDialId];
-                    let currentOrder = sortable.toArray();
-                    if (currentOrder.length > savedOrder.length) {
-                        let newDials = currentOrder.filter(x => !savedOrder.includes(x));
-                        if (newDials.length > 0) {
-                            for (let dial of newDials) {
-                                savedOrder.splice(-1, 0, dial)
-                            }
-                        }
-                    }
-                    sortable.sort(savedOrder);
-                } else {
-                    sortable.sort(result[speedDialId]);
-                }
-            }
-            animate();
-            bookmarksContainer.style.opacity = "1";
-            bookmarksContainerParent.scrollTop = scrollPos;
-            sortable.save();
-        });
-}
-
 function printFolderBookmarks() {
     for (let folder of folders) {
         getBookmarks(folder)
@@ -494,11 +462,6 @@ function printBookmarks(bookmarks, parentId) {
         bookmarksContainer.innerHTML = "";
         bookmarksContainer.appendChild(fragment);
 
-        // todo: clean this up, restore sort when we remove migration
-        // preserve sorting from 1.5 versions
-        //migrate();
-
-        //sort();
         bookmarksContainer.style.opacity = "1";
         bookmarksContainerParent.scrollTop = scrollPos;
         animate();
@@ -518,8 +481,7 @@ function printBookmarks(bookmarks, parentId) {
         }
 
         let folderContainerEl = document.getElementById(parentId);
-
-        // folder sorting..
+        
         // todo: this is fubar
         let sortable = new Sortable(folderContainerEl, {
             group: 'shared',
@@ -1506,50 +1468,6 @@ const processRefresh = debounce(() => {
 
     getBookmarks(speedDialId)
 }, 650, true);
-
-// v1.x -> 1.6
-// 1.6 uses bookmark id to sort, 1.5 used default SortableJS algorithm
-// todo replace with index from bookmark objects
-function migrate() {
-    browser.storage.local.get("sort").then(result => {
-        if (result && result.sort) {
-
-            console.log("upgrading to v1.6...");
-
-            let idsMapped = {};
-            let idsSorted = [];
-            let tiles = document.getElementsByClassName("tile");
-            for (let tile of tiles) {
-                if (tile.href) {
-                    let str = tile.tagName + tile.className + tile.src + tile.href + tile.textContent,
-                        i = str.length,
-                        sum = 0;
-                    while (i--) {
-                        sum += str.charCodeAt(i);
-                    }
-                    let oldSortId = sum.toString(36);
-                    idsMapped[oldSortId] = tile.getAttribute("data-id");
-                }
-            }
-
-            idsMapped["1wv"] = "1wv";
-
-            for (let item of result.sort) {
-                if (idsMapped[item]) {
-                    idsSorted.push(idsMapped[item]);
-                }
-            }
-            sortable.sort([idsSorted]);
-            browser.storage.local.set({[speedDialId]: idsSorted}).then(setItem => {
-                browser.storage.local.remove("sort");
-                sort();
-                // upgrade complete;
-            });
-        } else {
-            sort();
-        }
-    });
-}
 
 function init() {
 
