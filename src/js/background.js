@@ -13,7 +13,7 @@ let defaults = {
     wallpaperSrc: 'img/bg.jpg',
     backgroundColor: '#111111',
     largeTiles: true,
-    scaleImages: false,
+    scaleImages: true,
     showTitles: true,
     showAddSite: true,
     showFolders: true,
