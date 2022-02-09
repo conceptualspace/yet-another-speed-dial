@@ -1085,10 +1085,13 @@ function applySettings() {
             //imgPreview.style.display = 'block';
             imgPreview.onload = function(e) {
                 if (settings.wallpaper) {
+                    backgroundColorContainer.style.display = "none";
                     previewContainer.style.opacity = '1';
                     switchesContainer.style.transform = "translateY(0)";
+
                     //backgroundColorContainer.style.display = 'none';
                 } else {
+                    backgroundColorContainer.style.display = "flex";
                     previewContainer.style.opacity = '0';
                     switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
                 }
