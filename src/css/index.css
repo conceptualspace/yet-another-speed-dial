@@ -306,16 +306,14 @@ a {
     font-weight: bold;
 }
 
-.close {
+.closeBtn {
     color: #ccc;
     float: right;
     font-size: large;
-    font-weight: bold;
-    font-family: monospace;
 }
 
-.close:hover,
-.close:focus {
+.closeBtn:hover,
+.closeBtn:focus {
     color: #fff;
     text-decoration: none;
 }
