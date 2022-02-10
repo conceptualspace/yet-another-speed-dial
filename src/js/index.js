@@ -353,16 +353,22 @@ function getChildren(folderId) {
     });
 }
 
-function refreshAllThumbnails(folder = speedDialId) {
-    getChildren(folder).then(children => {
+async function refreshAllThumbnails() {
+    const allFolders = folders.concat(speedDialId);
+    let urls = [];
+
+    for (let folder of allFolders) {
+        let children = await browser.bookmarks.getChildren(folder);
         for (let child of children) {
-            if (child && child.url) {
-                refreshThumbnails(child.url, false)
-            } else if (child && folders.includes(child.id)) {
-                refreshAllThumbnails(child.id);
+            if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
+                urls.push(child.url);
             }
         }
-    });
+    }
+
+    tabMessagePort.postMessage({refreshAll: true, urls});
+    toastContent.innerText = ` Capturing images...`;
+    toast.style.transform = "translateX(0%)";
 }
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)

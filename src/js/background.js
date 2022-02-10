@@ -128,6 +128,34 @@ function convertUrlToAbsolute(origin, path) {
     }
 }
 
+function getQuickThumbs(url) {
+    let thumbnails = [];
+    let bgColor = null;
+
+    return new Promise(function(resolve, reject) {
+        getOgImage(url).then(function(images) {
+            if (images) {
+                for (let image of images) {
+                    image && thumbnails.push(image);
+                }
+            }
+        }).then(function(result) {
+            return getLogo(url)
+        }).then(function(result) {
+            if (result) {
+                thumbnails.push(result);
+            }
+            return getBgColor(thumbnails[0])
+        }).then(function(result) {
+            if (result) {
+                bgColor = result;
+            }
+            return saveThumbnails(url, thumbnails, bgColor)
+        }).then(() => resolve())
+        .catch(error => console.log(error));
+    });
+}
+
 function getThumbnails(url, manualRefresh=false) {
     let thumbnails = [];
     let fetchedTitle = '';
@@ -583,9 +611,33 @@ function handleImport() {
             }
         }
         for (let port of messagePorts) {
-            port.postMessage({imported:true, cache, settings});
+            port.postMessage({imported: true, cache, settings});
         }
     });
+}
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function refreshAll(urls) {
+    let i = urls.length;
+    for (let url of urls) {
+        i--;
+        // throttle every 100 requests
+        if (i % 100 === 0) {
+            await sleep(300);
+        }
+        browser.storage.local.remove(url).then(() => {
+            getQuickThumbs(url).then(() => {
+                pushToCache(url).then(() => {
+                    if (i < 1) {
+                        refreshOpen()
+                    }
+                })
+            })
+        });
+    }
 }
 
 function changeBookmark(id, info) {
@@ -670,6 +722,9 @@ function connected(p) {
         }
         else if (m.refreshThumbs) {
             manualRefresh(m.url, m.getScreenshots)
+        }
+        else if (m.refreshAll) {
+            refreshAll(m.urls)
         }
         else if (m.refreshInactive) {
             refreshInactive();
