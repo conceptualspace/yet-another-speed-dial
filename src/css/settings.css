@@ -211,24 +211,6 @@
     width: 0;
 }
 
-.sidenav [type="file"] + label {
-    background: #ffffff;
-    border: none;
-    border-radius: 4px;
-    color: #000000;
-    cursor: default;
-    display: inline-block;
-    outline: none;
-    padding: 0.3em 1em;
-    position: relative;
-    transition: all 0.2s;
-    vertical-align: middle;
-    margin-bottom: .4em;
-}
-
-.sidenav [type="file"] + label:hover {
-    background-color: #cccccc;
-}
 
 .sidenav select {
     position: relative;
@@ -241,6 +223,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+#importExportBtn {
+    height: 25px;
+    color: #aaaaaa;
+}
+
+#importExportBtn:hover {
+    color: #ccc;
 }
 
 .sidenav #settingsToast {

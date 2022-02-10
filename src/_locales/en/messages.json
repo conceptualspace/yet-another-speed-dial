@@ -132,5 +132,14 @@
   },
   "saveToast": {
     "message": "Settings saved!"
+  },
+  "importExport": {
+    "message": "This will backup or restore YASD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
+  },
+  "export": {
+    "message": "Export Settings..."
+  },
+  "import": {
+    "message": "Import Settings..."
   }
 }

@@ -279,19 +279,45 @@ a {
     color: gold;
 }
 
-/* The Close Button */
-.closeBtn {
-    color: #aaaaaa;
-    float: right;
-    font-size: 28px;
+.importExportForm [type="file"] {
+    display: none;
+}
+
+.modal [type="file"] + label {
+    border: none;
+    color: #fff;
+    cursor: default;
+    display: inline-block;
+    outline: none;
+    position: relative;
+    transition: all 160ms;
+    vertical-align: middle;
+    width: 100%;
+    padding: 0.6em;
+    text-align: center;
+}
+
+.modal [type="file"] + label:hover {
+    background-color: #FF3A4FFF;
+}
+
+#statusMessage {
+    color: yellow;
     font-weight: bold;
 }
 
-.closeBtn:hover,
-.closeBtn:focus {
+.close {
+    color: #ccc;
+    float: right;
+    font-size: large;
+    font-weight: bold;
+    font-family: monospace;
+}
+
+.close:hover,
+.close:focus {
     color: #fff;
     text-decoration: none;
-    cursor: pointer;
 }
 
 .tileForm {
@@ -379,7 +405,7 @@ input:focus {
     overflow-x: hidden; /* Disable horizontal scroll */
     transition: 360ms; /* 0.5 second transition effect to slide in the sidenav */
     color: white;
-    display: flex;
+    display: none;
     justify-content: center;
 }
 

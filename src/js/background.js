@@ -563,6 +563,31 @@ function manualRefresh(url, getScreenshots = true) {
     }
 }
 
+function handleImport() {
+    browser.storage.local.get().then(result => {
+        if (result) {
+            // handle case where current version may have new settings not present in export
+            if (result.settings) {
+                settings = Object.assign({}, defaults, result.settings);
+            } else {
+                settings = defaults;
+            }
+            const entries = Object.entries(result);
+            for (let e of entries) {
+                //console.log(e);
+                // todo: filter folder ids
+                if (e[0] !== "settings" && e[1].thumbnails) {
+                    let index = e[1].thumbIndex;
+                    cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
+                }
+            }
+        }
+        for (let port of messagePorts) {
+            port.postMessage({imported:true, cache, settings});
+        }
+    });
+}
+
 function changeBookmark(id, info) {
     // info may only contain "changed" info -- ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
@@ -654,6 +679,8 @@ function connected(p) {
         }
         else if (m.updateSettings) {
             updateSettings();
+        } else if (m.handleImport) {
+            handleImport();
         }
     });
     p.onDisconnect.addListener(function(p) {
@@ -687,6 +714,7 @@ async function migrate() {
     console.log("v1.16 migration started...");
     let storage = await browser.storage.local.get();
     let settings = storage.settings;
+    // < v1.16 sort state was saved with a key 'folder id' and value [bookmark ids]
     let folders = Object.entries(storage).filter(value => (!value[0].startsWith('http') && value[0] !== 'settings'));
     for (let folder of folders) {
         let bookmarks = settings && settings.defaultSort === 'first' ? folder[1].reverse() : folder[1];

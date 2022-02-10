@@ -35,6 +35,9 @@ const deleteFolderModalContent = document.getElementById('deleteFolderModalConte
 const deleteFolderModalName = document.getElementById('deleteFolderModalName');
 const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
 
+const importExportModal = document.getElementById('importExportModal');
+const importExportModalContent = document.getElementById('importExportModalContent');
+
 const toast = document.getElementById('toast');
 const toastContent = document.getElementById('toastContent');
 
@@ -69,9 +72,11 @@ const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
-//const saveBtn = document.getElementById("saveBtn");
-//const importBtn = document.getElementById("importBtn");
-//const settingsToast = document.getElementById("settingsToast");
+const importExportBtn = document.getElementById("importExportBtn");
+const importExportStatus = document.getElementById('statusMessage');
+const exportBtn = document.getElementById("exportBtn");
+const importFileInput = document.getElementById("importFile");
+const importFileLabel = document.getElementById("importFileLabel");
 
 // clock
 const clock = document.getElementById('clock');
@@ -547,8 +552,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent]
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, importExportModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, importExportModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -1373,6 +1378,102 @@ previewOverlay.onclick = function() {
     imgInput.click();
 }
 
+importExportBtn.onclick = function() {
+    hideSettings();
+    importExportStatus.innerText = "";
+    modalShowEffect(importExportModalContent, importExportModal);
+}
+
+exportBtn.onclick = function(e) {
+    e.preventDefault();
+
+    browser.storage.local.get(null).then(function(items) {
+        // filter out unused thumbnails to keep exported file efficient
+        let filteredItems = {};
+        for (const [key, value] of Object.entries(items)) {
+            if (key.startsWith('http')) {
+                let thumbnails = [];
+                let thumbIndex = 0;
+                let bgColor = null;
+
+                if (value.thumbnails && value.thumbnails.length) {
+                    thumbnails.push(value.thumbnails[value.thumbIndex]);
+                }
+                if (value.bgColor) {
+                    bgColor = value.bgColor;
+                }
+                filteredItems[key] = {
+                    thumbnails: thumbnails,
+                    thumbIndex: thumbIndex,
+                    bgColor: value.bgColor
+                };
+            } else if (key.startsWith('settings')) {
+                filteredItems[key] = value;
+            }
+        }
+
+        // save as file; requires downloads permission
+        const blob = new Blob([JSON.stringify(filteredItems)], {type: 'application/json'})
+        const today = new Date();
+        const dateString = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+
+        function handleChanged(delta) {
+            if (delta.state && delta.state.current === "complete") {
+                hideModals();
+            }
+        }
+
+        browser.downloads.onChanged.addListener(handleChanged);
+
+        browser.downloads.download({
+            saveAs: true,
+            url: URL.createObjectURL(blob),
+            filename: `yasd-export-${dateString}.json`
+        });
+    });
+}
+
+importFileLabel.onclick = function() {
+    importFileInput.click();
+}
+
+importFileInput.onchange = function (event) {
+    let filereader = new FileReader();
+
+    filereader.onload = function (event) {
+        let json = null;
+        if (event && event.target) {
+            try {
+                json = JSON.parse(event.target.result);
+            } catch (err) {
+                console.log(err)
+                importExportStatus.innerText = "Error! Unable to parse file."
+            }
+        }
+
+        if (json) {
+            // clear previous settings and import
+            browser.storage.local.clear().then(() => {
+                browser.storage.local.set(json).then(result => {
+                    hideModals();
+                    // refresh page
+                    tabMessagePort.postMessage({handleImport: true});
+                }).catch(err => {
+                    console.log(err)
+                    importExportStatus.innerText = "Error! Unable to parse file."
+                });
+            }).catch(err => {
+                console.log(err)
+                importExportStatus.innerText = "Error! Please try again"
+            })
+        }
+    };
+
+    if (event && event.target && event.target.files) {
+        filereader.readAsText(event.target.files[0]);
+    }
+
+};
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {
@@ -1499,12 +1600,19 @@ function init() {
             speedDialId = m.speedDialId;
             hideToast();
             processRefresh();
+
+        } else if (m.imported) {
+            cache = m.cache;
+            settings = m.settings;
+            applySettings().then(() => processRefresh());
         }
     });
 
     window.onresize = layout;
 
     tabMessagePort.postMessage({getCache: true});
+
+    sidenav.style.display = "flex";
 
     sortable = new Sortable(bookmarksContainer, {
         //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
