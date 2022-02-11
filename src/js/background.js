@@ -764,9 +764,9 @@ function handleInstalled(details) {
 }
 
 async function migrate() {
-    // v1.15 -> v1.16 migration
+    // v1.15 -> v2.0 migration
     // use native ordering within the bookmarks manager rather than maintaining a separate ordered list in storage
-    console.log("v1.16 migration started...");
+    console.log("v2.0 migration started...");
     let storage = await browser.storage.local.get();
     let settings = storage.settings;
     // < v1.16 sort state was saved with a key 'folder id' and value [bookmark ids]
