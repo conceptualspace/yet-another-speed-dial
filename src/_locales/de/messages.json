@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "Yet Another Speed Dial",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Ordner hinzufügen Schaltfläche"
+  },
+  "address": {
+    "message": "Adresse"
+  },
+  "addSiteButton": {
+    "message": "Seite hinzufügen Schaltfläche"
+  },
+  "addTo": {
+    "message": "Zu Kurzwahl hinzufügen"
+  },
+  "backgroundColor": {
+    "message": "Hintergrundfarbe"
+  },
+  "browse": {
+    "message": "Durchsuche..."
+  },
+  "cancel": {
+    "message": "Abbrechen"
+  },
+  "captureMessage": {
+    "message": "Dadurch wird die Seite vorübergehend in einer neuen Registerkarte geöffnet, um das Bild aufzunehmen"
+  },
+  "clock": {
+    "message": "Uhr"
+  },
+  "confirmDelete": {
+    "message": "Möchten Sie diesen Ordner wirklich dauerhaft entfernen?"
+  },
+  "createFolder": {
+    "message": "Ordner erstellen"
+  },
+  "defaultSort": {
+    "message": "Standardsortierung"
+  },
+  "delete": {
+    "message": "Unterdrücken"
+  },
+  "edit": {
+    "message": "Bearbeiten"
+  },
+  "editFolder": {
+    "message": "Ordner bearbeiten..."
+  },
+  "export": {
+    "message": "Exporteinstellungen..."
   },
   "extensionDescription": {
-    "message": "Eine moderne Kurzwahl für Firefox und Chrome",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "Eine moderne Kurzwahl für Firefox und Chrome"
   },
-  "title": {
-    "message": "Kurzwahl"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
   },
   "home": {
     "message": "Zuhause"
   },
-  "save": {
-    "message": "Speichern"
+  "import": {
+    "message": "Importeinstellungen..."
   },
-  "cancel": {
-    "message": "Abbrechen"
+  "importExport": {
+    "message": "Dadurch werden YASD-Einstellungen und Miniaturansichten gesichert oder wiederhergestellt.\n\nBeachten Sie, dass alle Kurzwahlen vom Browser als Lesezeichen verwaltet werden. Stellen Sie sicher, dass sie separat über den Lesezeichen-Manager gesichert oder synchronisiert werden.\n\nWARNUNG: Durch das Importieren werden Ihre aktuellen Einstellungen ersetzt."
+  },
+  "labels": {
+    "message": "Beschriftung"
+  },
+  "largeTiles": {
+    "message": "Große Fliesen"
+  },
+  "maxColumns": {
+    "message": "Max. Spalten"
+  },
+  "name": {
+    "message": "Name"
+  },
+  "newDial": {
+    "message": "Neue Kurzwahl..."
+  },
+  "newFolder": {
+    "message": "Neuer Ordner..."
   },
   "newInstall1": {
     "message": "Erste Schritte mit Yet Another Speed Dial"
@@ -31,103 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Weitere Einstellungen sehen Sie, indem Sie auf das Zahnrad in der oberen rechten Ecke klicken"
   },
+  "newPrivate": {
+    "message": "In neuem privaten Fenster öffnen"
+  },
   "newTab": {
     "message": "In neuem Tab öffnen"
   },
   "newWin": {
     "message": "In neuem Fenster öffnen"
   },
-  "newPrivate": {
-    "message": "In neuem privaten Fenster öffnen"
-  },
-  "edit": {
-    "message": "Bearbeiten"
-  },
   "refresh": {
     "message": "Miniaturansichten Aktualisieren"
-  },
-  "delete": {
-    "message": "Unterdrücken"
-  },
-  "editFolder": {
-    "message": "Ordner bearbeiten..."
   },
   "remove": {
     "message": "Entfernen"
   },
-  "newDial": {
-    "message": "Neue Kurzwahl..."
+  "save": {
+    "message": "Speichern"
   },
-  "newFolder": {
-    "message": "Neuer Ordner..."
+  "saveToast": {
+    "message": "Einstellungen gerettet!"
+  },
+  "scaleImages": {
+    "message": "Bilder passen"
   },
   "settings": {
     "message": "Einstellungen..."
   },
-  "tileTitle": {
-    "message": "Titel"
-  },
-  "address": {
-    "message": "Adresse"
-  },
-  "uploadImage": {
-    "message": "Bild hochladen ..."
-  },
-  "captureMessage": {
-    "message": "Dadurch wird die Seite vorübergehend in einer neuen Registerkarte geöffnet, um das Bild aufzunehmen"
-  },
-  "addTo": {
-    "message": "Zu Kurzwahl hinzufügen"
-  },
-  "name": {
-    "message": "Name"
-  },
-  "createFolder": {
-    "message": "Ordner erstellen"
-  },
-  "confirmDelete": {
-    "message": "Möchten Sie diesen Ordner wirklich dauerhaft entfernen?"
+  "settingsButton": {
+    "message": "Einstellungs Schaltfläche"
   },
   "settingsTitle": {
     "message": "Einstellungen"
   },
-  "wallpaper": {
-    "message": "Hintergrund"
-  },
-  "browse": {
-    "message": "Durchsuche..."
-  },
-  "backgroundColor": {
-    "message": "Hintergrundfarbe"
-  },
   "textColor": {
     "message": "Textfarbe"
   },
-  "largeTiles": {
-    "message": "Große Fliesen"
+  "tileTitle": {
+    "message": "Titel"
   },
-  "maxColumns": {
-    "message": "Max. Spalten"
+  "title": {
+    "message": "Kurzwahl"
   },
-  "defaultSort": {
-    "message": "Standardsortierung"
+  "uploadImage": {
+    "message": "Bild hochladen ..."
   },
-  "clock": {
-    "message": "Uhr"
-  },
-  "Labels": {
-    "message": "Beschriftung"
-  },
-  "addSiteButton": {
-    "message": "Seite hinzufügen Schaltfläche"
-  },
-  "addFolderButton": {
-    "message": "Ordner hinzufügen Schaltfläche"
-  },
-  "settingsButton": {
-    "message": "Einstellungs Schaltfläche"
-  },
-  "saveToast": {
-    "message": "Einstellungen gerettet!"
+  "wallpaper": {
+    "message": "Hintergrund"
   }
 }

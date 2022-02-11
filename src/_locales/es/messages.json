@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "otra marcación rápida",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Añadir carpeta botón"
+  },
+  "address": {
+    "message": "URL"
+  },
+  "addSiteButton": {
+    "message": "Añadir sitio botón"
+  },
+  "addTo": {
+    "message": "Añadir a Marcación Rápida"
+  },
+  "backgroundColor": {
+    "message": "Color de fondo"
+  },
+  "browse": {
+    "message": "Navegar..."
+  },
+  "cancel": {
+    "message": "Cancele"
+  },
+  "captureMessage": {
+    "message": "Esto abrirá temporalmente el sitio en una nueva pestaña para capturar la imagen"
+  },
+  "clock": {
+    "message": "Reloj"
+  },
+  "confirmDelete": {
+    "message": "¿Está seguro de que quiere eliminar permanentemente esta carpeta?"
+  },
+  "createFolder": {
+    "message": "Crear carpeta"
+  },
+  "defaultSort": {
+    "message": "Clasificar"
+  },
+  "delete": {
+    "message": "Elimine"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "editFolder": {
+    "message": "Editar Carpeta..."
+  },
+  "export": {
+    "message": "Exportar configuración..."
   },
   "extensionDescription": {
-    "message": "una moderna marcación rápida para firefox y chrome",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "una moderna marcación rápida para firefox y chrome"
   },
-  "title": {
-    "message": "Marcación Rápida"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "otra marcación rápida"
   },
   "home": {
     "message": "Inicio"
   },
-  "save": {
-    "message": "Guarde"
+  "import": {
+    "message": "Importar ajustes..."
   },
-  "cancel": {
-    "message": "Cancele"
+  "importExport": {
+    "message": "Esto hará una copia de seguridad o restaurará la configuración y las miniaturas de YASD.\n\nTenga en cuenta que el navegador administra todas las marcaciones rápidas como favoritos. Asegúrese de que tengan una copia de seguridad por separado mediante el administrador de marcadores o la sincronización.\n\nADVERTENCIA: la importación reemplazará su configuración actual."
+  },
+  "labels": {
+    "message": "Etiquetas"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Columnas máx"
+  },
+  "name": {
+    "message": "Nombre"
+  },
+  "newDial": {
+    "message": "Nueva Marcación Rápida..."
+  },
+  "newFolder": {
+    "message": "Nueva Carpeta..."
   },
   "newInstall1": {
     "message": "¡Empiece con Yet Another Speed Dial!"
@@ -31,103 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Acceda a más configuraciones haciendo clic en el engranaje en la esquina superior derecha"
   },
+  "newPrivate": {
+    "message": "Abrir en nueva ventana privada"
+  },
   "newTab": {
     "message": "Abrir en nueva pestaña"
   },
   "newWin": {
     "message": "Abrir en nueva ventana"
   },
-  "newPrivate": {
-    "message": "Abrir en nueva ventana privada"
-  },
-  "edit": {
-    "message": "Editar"
-  },
   "refresh": {
     "message": "Actualizar Miniaturas"
-  },
-  "delete": {
-    "message": "Elimine"
-  },
-  "editFolder": {
-    "message": "Editar Carpeta..."
   },
   "remove": {
     "message": "Eliminar"
   },
-  "newDial": {
-    "message": "Nueva Marcación Rápida..."
+  "save": {
+    "message": "Guarde"
   },
-  "newFolder": {
-    "message": "Nueva Carpeta..."
+  "saveToast": {
+    "message": "Settings saved!"
+  },
+  "scaleImages": {
+    "message": "Imágenes de fit"
   },
   "settings": {
     "message": "Ajustes..."
   },
-  "tileTitle": {
-    "message": "Título"
-  },
-  "address": {
-    "message": "URL"
-  },
-  "uploadImage": {
-    "message": "Cargar imagen ..."
-  },
-  "captureMessage": {
-    "message": "Esto abrirá temporalmente el sitio en una nueva pestaña para capturar la imagen"
-  },
-  "addTo": {
-    "message": "Añadir a Marcación Rápida"
-  },
-  "name": {
-    "message": "Nombre"
-  },
-  "createFolder": {
-    "message": "Crear carpeta"
-  },
-  "confirmDelete": {
-    "message": "¿Está seguro de que quiere eliminar permanentemente esta carpeta?"
+  "settingsButton": {
+    "message": "Ajustes botón"
   },
   "settingsTitle": {
     "message": "Ajustes"
   },
-  "wallpaper": {
-    "message": "Fondo"
-  },
-  "browse": {
-    "message": "Navegar..."
-  },
-  "backgroundColor": {
-    "message": "Color de fondo"
-  },
   "textColor": {
     "message": "Color del texto"
   },
-  "largeTiles": {
-    "message": "Large Tiles"
+  "tileTitle": {
+    "message": "Título"
   },
-  "maxColumns": {
-    "message": "Columnas máx"
+  "title": {
+    "message": "Marcación Rápida"
   },
-  "defaultSort": {
-    "message": "Clasificar"
+  "uploadImage": {
+    "message": "Cargar imagen ..."
   },
-  "clock": {
-    "message": "Reloj"
-  },
-  "Labels": {
-    "message": "Etiquetas"
-  },
-  "addSiteButton": {
-    "message": "Añadir sitio botón"
-  },
-  "addFolderButton": {
-    "message": "Añadir carpeta botón"
-  },
-  "settingsButton": {
-    "message": "Ajustes botón"
-  },
-  "saveToast": {
-    "message": "Settings saved!"
+  "wallpaper": {
+    "message": "Fondo"
   }
 }

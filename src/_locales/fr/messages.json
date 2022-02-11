@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "encore un autre speed dial",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Bouton Ajouter un dossier"
+  },
+  "address": {
+    "message": "Adresse"
+  },
+  "addSiteButton": {
+    "message": "Bouton Ajouter de site"
+  },
+  "addTo": {
+    "message": "Ajouter à la Speed Dial"
+  },
+  "backgroundColor": {
+    "message": "Contexte Couleur"
+  },
+  "browse": {
+    "message": "Feuilleter..."
+  },
+  "cancel": {
+    "message": "Annulez"
+  },
+  "captureMessage": {
+    "message": "Cela ouvrira temporairement le site dans un nouvel onglet pour capturer l'image"
+  },
+  "clock": {
+    "message": "L'horloge"
+  },
+  "confirmDelete": {
+    "message": "Êtes-vous sûr de vouloir supprimer définitivement ce dossier?"
+  },
+  "createFolder": {
+    "message": "Créer le dossier"
+  },
+  "defaultSort": {
+    "message": "Tri par défaut"
+  },
+  "delete": {
+    "message": "Supprimer"
+  },
+  "edit": {
+    "message": "Éditer"
+  },
+  "editFolder": {
+    "message": "Modifier le dossier..."
+  },
+  "export": {
+    "message": "Exporter les paramètres..."
   },
   "extensionDescription": {
-    "message": "un cadran de vitesse moderne pour firefox et chrome",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "un cadran de vitesse moderne pour firefox et chrome"
   },
-  "title": {
-    "message": "Speed Dial"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "encore un autre speed dial"
   },
   "home": {
     "message": "Accueil"
   },
-  "save": {
-    "message": "Enregistrer"
+  "import": {
+    "message": "Importer les configurations..."
   },
-  "cancel": {
-    "message": "Annulez"
+  "importExport": {
+    "message": "Cela sauvegardera ou restaurera les paramètres et les vignettes YASD.\n\nNotez que tous les numéros abrégés sont gérés par le navigateur sous forme de signets. Assurez-vous qu'ils sont sauvegardés séparément via le gestionnaire de signets ou la synchronisation.\n\nAVERTISSEMENT : L'importation remplacera vos paramètres actuels."
+  },
+  "labels": {
+    "message": "Étiquettes"
+  },
+  "largeTiles": {
+    "message": "Grands Carreaux"
+  },
+  "maxColumns": {
+    "message": "Colonnes max"
+  },
+  "name": {
+    "message": "Nom"
+  },
+  "newDial": {
+    "message": "Nouveau Speed Dial..."
+  },
+  "newFolder": {
+    "message": "Nouveau Dossier..."
   },
   "newInstall1": {
     "message": "Lancez-vous avec Yet Another Speed Dial!"
@@ -31,106 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
   },
+  "newPrivate": {
+    "message": "Ouvrir dans une nouvelle fenêtre privée"
+  },
   "newTab": {
     "message": "Ouvrir dans un nouvel onglet"
   },
   "newWin": {
     "message": "Ouvrir dans une nouvelle fenêtre"
   },
-  "newPrivate": {
-    "message": "Ouvrir dans une nouvelle fenêtre privée"
-  },
-  "edit": {
-    "message": "Éditer"
-  },
   "refresh": {
     "message": "Actualiser les miniatures"
-  },
-  "delete": {
-    "message": "Supprimer"
-  },
-  "editFolder": {
-    "message": "Modifier le dossier..."
   },
   "remove": {
     "message": "Retirer"
   },
-  "newDial": {
-    "message": "Nouveau Speed Dial..."
+  "save": {
+    "message": "Enregistrer"
   },
-  "newFolder": {
-    "message": "Nouveau Dossier..."
-  },
-  "settings": {
-    "message": "Paramètres..."
-  },
-  "tileTitle": {
-    "message": "Titre"
-  },
-  "address": {
-    "message": "Adresse"
-  },
-  "uploadImage": {
-    "message": "Télécharger l'image ..."
-  },
-  "captureMessage": {
-    "message": "Cela ouvrira temporairement le site dans un nouvel onglet pour capturer l'image"
-  },
-  "addTo": {
-    "message": "Ajouter à la Speed Dial"
-  },
-  "name": {
-    "message": "Nom"
-  },
-  "createFolder": {
-    "message": "Créer le dossier"
-  },
-  "confirmDelete": {
-    "message": "Êtes-vous sûr de vouloir supprimer définitivement ce dossier?"
-  },
-  "settingsTitle": {
-    "message": "Paramètres"
-  },
-  "wallpaper": {
-    "message": "Contexte Image"
-  },
-  "browse": {
-    "message": "Feuilleter..."
-  },
-  "backgroundColor": {
-    "message": "Contexte Couleur"
-  },
-  "textColor": {
-    "message": "Couleur du texte"
-  },
-  "largeTiles": {
-    "message": "Grands Carreaux"
-  },
-  "maxColumns": {
-    "message": "Colonnes max"
-  },
-  "defaultSort": {
-    "message": "Tri par défaut"
+  "saveToast": {
+    "message": "Paramètres sauvegardés!"
   },
   "scaleImages": {
     "message": "Ajuster les images"
   },
-  "clock": {
-    "message": "L'horloge"
-  },
-  "Labels": {
-    "message": "Étiquettes"
-  },
-  "addSiteButton": {
-    "message": "Bouton Ajouter de site"
-  },
-  "addFolderButton": {
-    "message": "Bouton Ajouter un dossier"
+  "settings": {
+    "message": "Paramètres..."
   },
   "settingsButton": {
     "message": "Bouton Paramètres"
   },
-  "saveToast": {
-    "message": "Paramètres sauvegardés!"
+  "settingsTitle": {
+    "message": "Paramètres"
+  },
+  "textColor": {
+    "message": "Couleur du texte"
+  },
+  "tileTitle": {
+    "message": "Titre"
+  },
+  "title": {
+    "message": "Speed Dial"
+  },
+  "uploadImage": {
+    "message": "Télécharger l'image ..."
+  },
+  "wallpaper": {
+    "message": "Contexte Image"
   }
 }

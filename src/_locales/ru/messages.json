@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "еще один быстрый набор",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Кнопка добавления папки"
+  },
+  "address": {
+    "message": "Адрес"
+  },
+  "addSiteButton": {
+    "message": "Кнопка добавления сайта"
+  },
+  "addTo": {
+    "message": "Добавить в Speed Dial"
+  },
+  "backgroundColor": {
+    "message": "Цвет фона"
+  },
+  "browse": {
+    "message": "Обзор..."
+  },
+  "cancel": {
+    "message": "Отменить"
+  },
+  "captureMessage": {
+    "message": "Это временно откроет сайт в новой вкладке для захвата изображения."
+  },
+  "clock": {
+    "message": "Часы"
+  },
+  "confirmDelete": {
+    "message": "Вы действительно хотите удалить эту папку навсегда?"
+  },
+  "createFolder": {
+    "message": "Создать папку"
+  },
+  "defaultSort": {
+    "message": "Сортировать"
+  },
+  "delete": {
+    "message": "Удалить"
+  },
+  "edit": {
+    "message": "Редактировать"
+  },
+  "editFolder": {
+    "message": "Редактировать папку..."
+  },
+  "export": {
+    "message": "Экспорт настроек..."
   },
   "extensionDescription": {
-    "message": "современный быстрый набор для Firefox и Chrome",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "современный быстрый набор для Firefox и Chrome"
   },
-  "title": {
-    "message": "Speed Dial"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "еще один быстрый набор"
   },
   "home": {
     "message": "Домой"
   },
-  "save": {
-    "message": "Сохранить"
+  "import": {
+    "message": "Импорт настроек..."
   },
-  "cancel": {
-    "message": "Отменить"
+  "importExport": {
+    "message": "Это создаст резервную копию или восстановит настройки и миниатюры YASD.\n\nОбратите внимание, что все номера быстрого набора управляются браузером как закладки. Убедитесь, что они сохранены отдельно через диспетчер закладок или синхронизацию.\n\nВНИМАНИЕ: Импорт заменит ваши текущие настройки."
+  },
+  "labels": {
+    "message": "Названия сайтов"
+  },
+  "largeTiles": {
+    "message": "Большие плитки"
+  },
+  "maxColumns": {
+    "message": "Количество столбцов"
+  },
+  "name": {
+    "message": "Название"
+  },
+  "newDial": {
+    "message": "Новый Speed Dial..."
+  },
+  "newFolder": {
+    "message": "Новая папка..."
   },
   "newInstall1": {
     "message": "Начни с Yet Another Speed Dial!"
@@ -31,103 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Чтобы получить доступ к дополнительным настройкам, нажмите шестеренку в правом верхнем углу."
   },
+  "newPrivate": {
+    "message": "Открыть в новом приватном окне"
+  },
   "newTab": {
     "message": "Открыть в новой вкладке"
   },
   "newWin": {
     "message": "Открыть в новом окне"
   },
-  "newPrivate": {
-    "message": "Открыть в новом приватном окне"
-  },
-  "edit": {
-    "message": "Редактировать"
-  },
   "refresh": {
     "message": "Обновить миниатюры"
-  },
-  "delete": {
-    "message": "Удалить"
-  },
-  "editFolder": {
-    "message": "Редактировать папку..."
   },
   "remove": {
     "message": "Удалить"
   },
-  "newDial": {
-    "message": "Новый Speed Dial..."
+  "save": {
+    "message": "Сохранить"
   },
-  "newFolder": {
-    "message": "Новая папка..."
+  "saveToast": {
+    "message": "Настройки сохранены!"
+  },
+  "scaleImages": {
+    "message": "Подогнать изображения"
   },
   "settings": {
     "message": "Настройки..."
   },
-  "tileTitle": {
-    "message": "Заголовок"
-  },
-  "address": {
-    "message": "Адрес"
-  },
-  "uploadImage": {
-    "message": "Загрузить изображение..."
-  },
-  "captureMessage": {
-    "message": "Это временно откроет сайт в новой вкладке для захвата изображения."
-  },
-  "addTo": {
-    "message": "Добавить в Speed Dial"
-  },
-  "name": {
-    "message": "Название"
-  },
-  "createFolder": {
-    "message": "Создать папку"
-  },
-  "confirmDelete": {
-    "message": "Вы действительно хотите удалить эту папку навсегда?"
+  "settingsButton": {
+    "message": "Кнопка настроек"
   },
   "settingsTitle": {
     "message": "Настройки"
   },
-  "wallpaper": {
-    "message": "Фоновое изображение\n"
-  },
-  "browse": {
-    "message": "Обзор..."
-  },
-  "backgroundColor": {
-    "message": "Цвет фона"
-  },
   "textColor": {
     "message": "Цвет текста"
   },
-  "largeTiles": {
-    "message": "Большие плитки"
+  "tileTitle": {
+    "message": "Заголовок"
   },
-  "maxColumns": {
-    "message": "Количество столбцов"
+  "title": {
+    "message": "Speed Dial"
   },
-  "defaultSort": {
-    "message": "Сортировать"
+  "uploadImage": {
+    "message": "Загрузить изображение..."
   },
-  "clock": {
-    "message": "Часы"
-  },
-  "Labels": {
-    "message": "Названия сайтов"
-  },
-  "addSiteButton": {
-    "message": "Кнопка добавления сайта"
-  },
-  "addFolderButton": {
-    "message": "Кнопка добавления папки"
-  },
-  "settingsButton": {
-    "message": "Кнопка настроек"
-  },
-  "saveToast": {
-    "message": "Настройки сохранены!"
+  "wallpaper": {
+    "message": "Фоновое изображение\n"
   }
 }

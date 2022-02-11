@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "yet another speed dial",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Add Folder Button"
+  },
+  "address": {
+    "message": "Address"
+  },
+  "addSiteButton": {
+    "message": "Add Site Button"
+  },
+  "addTo": {
+    "message": "Add to Speed Dial"
+  },
+  "backgroundColor": {
+    "message": "Background Color"
+  },
+  "browse": {
+    "message": "Browse..."
+  },
+  "cancel": {
+    "message": "Cancel"
+  },
+  "captureMessage": {
+    "message": "This will temporarily open the site in a new tab to capture the image"
+  },
+  "clock": {
+    "message": "Clock"
+  },
+  "confirmDelete": {
+    "message": "Are you sure you want to permanently remove this folder?"
+  },
+  "createFolder": {
+    "message": "Create Folder"
+  },
+  "defaultSort": {
+    "message": "Sort"
+  },
+  "delete": {
+    "message": "Delete"
+  },
+  "edit": {
+    "message": "Edit"
+  },
+  "editFolder": {
+    "message": "Edit Folder..."
+  },
+  "export": {
+    "message": "Export Settings..."
   },
   "extensionDescription": {
-    "message": "a modern speed dial for chrome, edge, and firefox",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "a modern speed dial for chrome, edge, and firefox"
   },
-  "title": {
-    "message": "Speed Dial"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "yet another speed dial"
   },
   "home": {
     "message": "Home"
   },
-  "save": {
-    "message": "Save"
+  "import": {
+    "message": "Import Settings..."
   },
-  "cancel": {
-    "message": "Cancel"
+  "importExport": {
+    "message": "This will backup or restore YASD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
+  },
+  "labels": {
+    "message": "Labels"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Max Columns"
+  },
+  "name": {
+    "message": "Name"
+  },
+  "newDial": {
+    "message": "New Speed Dial..."
+  },
+  "newFolder": {
+    "message": "New Folder..."
   },
   "newInstall1": {
     "message": "Get started with Yet Another Speed Dial!"
@@ -31,115 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Access more settings by clicking the gear in the top-right corner"
   },
+  "newPrivate": {
+    "message": "Open in new private window"
+  },
   "newTab": {
     "message": "Open in new tab"
   },
   "newWin": {
     "message": "Open in new window"
   },
-  "newPrivate": {
-    "message": "Open in new private window"
-  },
-  "edit": {
-    "message": "Edit"
-  },
   "refresh": {
     "message": "Refresh Thumbnails"
-  },
-  "delete": {
-    "message": "Delete"
-  },
-  "editFolder": {
-    "message": "Edit Folder..."
   },
   "remove": {
     "message": "Remove"
   },
-  "newDial": {
-    "message": "New Speed Dial..."
-  },
-  "newFolder": {
-    "message": "New Folder..."
-  },
-  "settings": {
-    "message": "Settings..."
-  },
-  "tileTitle": {
-    "message": "Title"
-  },
-  "address": {
-    "message": "Address"
-  },
-  "uploadImage": {
-    "message": "Upload Image ..."
-  },
-  "captureMessage": {
-    "message": "This will temporarily open the site in a new tab to capture the image"
-  },
-  "addTo": {
-    "message": "Add to Speed Dial"
-  },
-  "name": {
-    "message": "Name"
-  },
-  "createFolder": {
-    "message": "Create Folder"
-  },
-  "confirmDelete": {
-    "message": "Are you sure you want to permanently remove this folder?"
-  },
-  "settingsTitle": {
-    "message": "Settings"
-  },
-  "wallpaper": {
-    "message": "Wallpaper"
-  },
-  "browse": {
-    "message": "Browse..."
-  },
-  "backgroundColor": {
-    "message": "Background Color"
-  },
-  "textColor": {
-    "message": "Text Color"
-  },
-  "largeTiles": {
-    "message": "Large Tiles"
-  },
-  "maxColumns": {
-    "message": "Max Columns"
-  },
-  "defaultSort": {
-    "message": "Sort"
-  },
-  "scaleImages": {
-    "message": "Scale Images"
-  },
-  "clock": {
-    "message": "Clock"
-  },
-  "Labels": {
-    "message": "Labels"
-  },
-  "addSiteButton": {
-    "message": "Add Site Button"
-  },
-  "addFolderButton": {
-    "message": "Add Folder Button"
-  },
-  "settingsButton": {
-    "message": "Settings Button"
+  "save": {
+    "message": "Save"
   },
   "saveToast": {
     "message": "Settings saved!"
   },
-  "importExport": {
-    "message": "This will backup or restore YASD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
+  "scaleImages": {
+    "message": "Scale Images"
   },
-  "export": {
-    "message": "Export Settings..."
+  "settings": {
+    "message": "Settings..."
   },
-  "import": {
-    "message": "Import Settings..."
+  "settingsButton": {
+    "message": "Settings Button"
+  },
+  "settingsTitle": {
+    "message": "Settings"
+  },
+  "textColor": {
+    "message": "Text Color"
+  },
+  "tileTitle": {
+    "message": "Title"
+  },
+  "title": {
+    "message": "Speed Dial"
+  },
+  "uploadImage": {
+    "message": "Upload Image ..."
+  },
+  "wallpaper": {
+    "message": "Wallpaper"
   }
 }

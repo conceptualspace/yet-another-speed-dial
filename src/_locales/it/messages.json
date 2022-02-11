@@ -1,23 +1,86 @@
 {
-  "extensionName": {
-    "message": "un'altra chiamata rapida",
-    "description": "title of the app, displayed in store"
+  "addFolderButton": {
+    "message": "Aggiungi cartella Button"
+  },
+  "address": {
+    "message": "URL"
+  },
+  "addSiteButton": {
+    "message": "Aggiungi sito Button"
+  },
+  "addTo": {
+    "message": "Aggiungi alla Selezione Rapida"
+  },
+  "backgroundColor": {
+    "message": "Colore di sfondo"
+  },
+  "browse": {
+    "message": "Sfoglia..."
+  },
+  "cancel": {
+    "message": "Annulla"
+  },
+  "captureMessage": {
+    "message": "Questo aprirà temporaneamente il sito in una nuova scheda per catturare l'immagine"
+  },
+  "clock": {
+    "message": "Orologio"
+  },
+  "confirmDelete": {
+    "message": "Sei sicuro di voler rimuovere definitivamente questa cartella?"
+  },
+  "createFolder": {
+    "message": "Crea cartella"
+  },
+  "defaultSort": {
+    "message": "Ordinare"
+  },
+  "delete": {
+    "message": "Elimina"
+  },
+  "edit": {
+    "message": "Modificare"
+  },
+  "editFolder": {
+    "message": "Modifica Cartella..."
+  },
+  "export": {
+    "message": "Esporta impostazioni..."
   },
   "extensionDescription": {
-    "message": "una moderna selezione rapida per firefox e chrome",
-    "description":"description of the app, displayed in store"
+    "description": "description of the app, displayed in store",
+    "message": "una moderna selezione rapida per firefox e chrome"
   },
-  "title": {
-    "message": "Selezione Rapida"
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "un'altra chiamata rapida"
   },
   "home": {
     "message": "Home"
   },
-  "save": {
-    "message": "Salva"
+  "import": {
+    "message": "Importa impostazioni..."
   },
-  "cancel": {
-    "message": "Annulla"
+  "importExport": {
+    "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature YASD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
+  },
+  "labels": {
+    "message": "Etichette"
+  },
+  "largeTiles": {
+    "message": "Large Tiles"
+  },
+  "maxColumns": {
+    "message": "Colonne massime"
+  },
+  "name": {
+    "message": "Nome"
+  },
+  "newDial": {
+    "message": "Nuova Selezione Rapida..."
+  },
+  "newFolder": {
+    "message": "Nuovo Cartella..."
   },
   "newInstall1": {
     "message": "Inizia con Yet Another Speed Dial!"
@@ -31,103 +94,52 @@
   "newInstall4": {
     "message": "\uD83D\uDC8E Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
   },
+  "newPrivate": {
+    "message": "Aprire in una nuova finestra privata"
+  },
   "newTab": {
     "message": "Aprire in una nuova scheda"
   },
   "newWin": {
     "message": "Aprire in una nuova finestra"
   },
-  "newPrivate": {
-    "message": "Aprire in una nuova finestra privata"
-  },
-  "edit": {
-    "message": "Modificare"
-  },
   "refresh": {
     "message": "Aggiorna miniature"
-  },
-  "delete": {
-    "message": "Elimina"
-  },
-  "editFolder": {
-    "message": "Modifica Cartella..."
   },
   "remove": {
     "message": "Rimuovi"
   },
-  "newDial": {
-    "message": "Nuova Selezione Rapida..."
+  "save": {
+    "message": "Salva"
   },
-  "newFolder": {
-    "message": "Nuovo Cartella..."
+  "saveToast": {
+    "message": "Settings saved!"
+  },
+  "scaleImages": {
+    "message": "Immagini in scala"
   },
   "settings": {
     "message": "Impostazioni..."
   },
-  "tileTitle": {
-    "message": "Titolo"
-  },
-  "address": {
-    "message": "URL"
-  },
-  "uploadImage": {
-    "message": "Carica immagine ..."
-  },
-  "captureMessage": {
-    "message": "Questo aprirà temporaneamente il sito in una nuova scheda per catturare l'immagine"
-  },
-  "addTo": {
-    "message": "Aggiungi alla Selezione Rapida"
-  },
-  "name": {
-    "message": "Nome"
-  },
-  "createFolder": {
-    "message": "Crea cartella"
-  },
-  "confirmDelete": {
-    "message": "Sei sicuro di voler rimuovere definitivamente questa cartella?"
+  "settingsButton": {
+    "message": "Impostazioni Button"
   },
   "settingsTitle": {
     "message": "Impostazioni"
   },
-  "wallpaper": {
-    "message": "Background"
-  },
-  "browse": {
-    "message": "Sfoglia..."
-  },
-  "backgroundColor": {
-    "message": "Colore di sfondo"
-  },
   "textColor": {
     "message": "Colore del testo"
   },
-  "largeTiles": {
-    "message": "Large Tiles"
+  "tileTitle": {
+    "message": "Titolo"
   },
-  "maxColumns": {
-    "message": "Colonne massime"
+  "title": {
+    "message": "Selezione Rapida"
   },
-  "defaultSort": {
-    "message": "Ordinare"
+  "uploadImage": {
+    "message": "Carica immagine ..."
   },
-  "clock": {
-    "message": "Orologio"
-  },
-  "Labels": {
-    "message": "Etichette"
-  },
-  "addSiteButton": {
-    "message": "Aggiungi sito Button"
-  },
-  "addFolderButton": {
-    "message": "Aggiungi cartella Button"
-  },
-  "settingsButton": {
-    "message": "Impostazioni Button"
-  },
-  "saveToast": {
-    "message": "Settings saved!"
+  "wallpaper": {
+    "message": "Background"
   }
 }
