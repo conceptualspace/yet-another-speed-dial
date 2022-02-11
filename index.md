@@ -1,6 +1,6 @@
-## Support
+## Help and Support
 
-Having trouble with YASD? First, check out our FAQs below. If your question is not answered here, or you wish to report a bug, please do so on our **[GitHub issues page](https://github.com/conceptualspace/yet-another-speed-dial/issues)**. For anything else contact me directly at dev AT conceptualspace DOT net and I’ll help you sort it out.
+If your question is not answered below or you wish to file a bug report, please see our **[GitHub issues page](https://github.com/conceptualspace/yet-another-speed-dial/issues)**. For anything else contact me directly at dev AT conceptualspace DOT net and I’ll help you sort it out.
 
 ## FAQs
 
