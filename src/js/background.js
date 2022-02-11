@@ -753,7 +753,7 @@ function handleInstalled(details) {
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
-        if (details.previousVersion && details.previousVersion < '1.16.0') {
+        if (details.previousVersion && details.previousVersion < '2.0.0') {
             // const url = chrome.runtime.getURL("updated.html");
             // chrome.tabs.create({ url, active: false });
             migrate().catch(err => {
