@@ -1,36 +1,20 @@
-## Yet Another Speed Dial
-You can use the [editor on GitHub](https://github.com/conceptualspace/yet-another-speed-dial/edit/gh-pages/index.md) to maintain and preview the content for your website in Markdown files.
-
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
-
-### Markdown
-
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/conceptualspace/yet-another-speed-dial/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
 ### Support or Contact
 
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+Having trouble with YASD? Check out our [GitHub issues page](https://docs.github.com/categories/github-pages-basics/), or you can contact me directly at dev AT conceptualspace DOT net and I’ll help you sort it out.
+
+### FAQs
+
+# Can I use different images for the speed dials?
+Yes! Just right-click the speed dial and select Edit.
+
+# One of my site thumbnails disappeared?
+YASD loads thumbnails using the Open Graph standard. This keeps those thumbnails up to date automatically, but if a website removes the image it may no longer load in YASD. To fetch new images, simply right-click the dial and select "Refresh thumbnails".
+
+# How do I backup and restore my data?
+Speed dials are stored in the browser as bookmarks, so to backup your speed dials, you can use the bookmark manager or browser sync. This backup does not include thumbnails or settings, so to backup and restore them you can use the "Import and Export" feature in the YASD settings menu.
+
+# Can I open speed dial links in Firefox Containers?
+Yes, just use Shift + Right-click on the speed dial to access the default context menu.
+
+# Can I open speed dial links in new tabs?
+Yes, just use Ctrl + Click or middle click.
