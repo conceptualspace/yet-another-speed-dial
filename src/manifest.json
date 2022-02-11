@@ -3,7 +3,7 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "author": "dev@conceptualspace.net",
   "icons": {
     "16": "icons/icon16.png",
