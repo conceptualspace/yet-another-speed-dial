@@ -1,8 +1,8 @@
 ## Support
 
-Having trouble with YASD? First, check out our FAQs below. If your question is not answered here, or you wish to report a bug, please do so on our [GitHub issues page](https://github.com/conceptualspace/yet-another-speed-dial/issues). For anything else please feel free to contact me directly at dev AT conceptualspace DOT net and I’ll help you sort it out.
+Having trouble with YASD? First, check out our FAQs below. If your question is not answered here, or you wish to report a bug, please do so on our **[GitHub issues page](https://github.com/conceptualspace/yet-another-speed-dial/issues)**. For anything else contact me directly at dev AT conceptualspace DOT net and I’ll help you sort it out.
 
-### FAQs
+## FAQs
 
 ### Can I use different images for the speed dials?
 Yes! Just right-click the speed dial and select Edit.
