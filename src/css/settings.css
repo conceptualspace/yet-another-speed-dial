@@ -225,12 +225,12 @@
     white-space: nowrap;
 }
 
-#importExportBtn {
+.settingsLink {
     height: 25px;
     color: #aaaaaa;
 }
 
-#importExportBtn:hover {
+.settingsLink:hover {
     color: #ccc;
 }
 

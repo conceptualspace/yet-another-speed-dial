@@ -64,6 +64,9 @@
   "importExport": {
     "message": "Dadurch werden YASD-Einstellungen und Miniaturansichten gesichert oder wiederhergestellt.\n\nBeachten Sie, dass alle Kurzwahlen vom Browser als Lesezeichen verwaltet werden. Stellen Sie sicher, dass sie separat über den Lesezeichen-Manager gesichert oder synchronisiert werden.\n\nWARNUNG: Durch das Importieren werden Ihre aktuellen Einstellungen ersetzt."
   },
+  "importExportLink": {
+    "message": "Import und Export..."
+  },
   "labels": {
     "message": "Beschriftung"
   },

@@ -64,6 +64,9 @@
   "importExport": {
     "message": "Esto hará una copia de seguridad o restaurará la configuración y las miniaturas de YASD.\n\nTenga en cuenta que el navegador administra todas las marcaciones rápidas como favoritos. Asegúrese de que tengan una copia de seguridad por separado mediante el administrador de marcadores o la sincronización.\n\nADVERTENCIA: la importación reemplazará su configuración actual."
   },
+  "importExportLink": {
+    "message": "Importar y exportar..."
+  },
   "labels": {
     "message": "Etiquetas"
   },

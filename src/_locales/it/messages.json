@@ -64,6 +64,9 @@
   "importExport": {
     "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature YASD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
   },
+  "importExportLink": {
+    "message": "Importazione e esportazione..."
+  },
   "labels": {
     "message": "Etichette"
   },

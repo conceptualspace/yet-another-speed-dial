@@ -64,6 +64,9 @@
   "importExport": {
     "message": "Cela sauvegardera ou restaurera les paramètres et les vignettes YASD.\n\nNotez que tous les numéros abrégés sont gérés par le navigateur sous forme de signets. Assurez-vous qu'ils sont sauvegardés séparément via le gestionnaire de signets ou la synchronisation.\n\nAVERTISSEMENT : L'importation remplacera vos paramètres actuels."
   },
+  "importExportLink": {
+    "message": "Importer et exporter..."
+  },
   "labels": {
     "message": "Étiquettes"
   },
