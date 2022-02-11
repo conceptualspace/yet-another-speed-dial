@@ -1107,8 +1107,13 @@ function applySettings() {
                     switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
                 }
             }
+            imgPreview.onerror = function(e) {
+                // reset to default on error with user image
+                settings.wallpaperSrc = 'img/bg.jpg';
+                imgPreview.setAttribute('src', settings.wallpaperSrc);
+                browser.storage.local.set({settings});
+            }
         }
-
 
     });
 }
