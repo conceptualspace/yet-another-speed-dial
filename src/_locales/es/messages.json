@@ -55,6 +55,9 @@
     "description": "title of the app, displayed in store",
     "message": "otra marcación rápida"
   },
+  "help": {
+    "message": "Ayudar"
+  },
   "home": {
     "message": "Inicio"
   },

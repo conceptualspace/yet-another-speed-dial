@@ -55,6 +55,9 @@
     "description": "title of the app, displayed in store",
     "message": "un'altra chiamata rapida"
   },
+  "help": {
+    "message": "Aiuto"
+  },
   "home": {
     "message": "Home"
   },

@@ -55,6 +55,9 @@
     "description": "title of the app, displayed in store",
     "message": "yet another speed dial"
   },
+  "help": {
+    "message": "Help"
+  },
   "home": {
     "message": "Home"
   },

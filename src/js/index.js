@@ -77,6 +77,7 @@ const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabel = document.getElementById("importFileLabel");
+const helpBtn = document.getElementById("help");
 
 // clock
 const clock = document.getElementById('clock');
@@ -105,6 +106,7 @@ let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
+const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 
 const debounce = (func, delay= 500, immediate=false) => {
     let inDebounce
@@ -1393,6 +1395,10 @@ importExportBtn.onclick = function() {
     hideSettings();
     importExportStatus.innerText = "";
     modalShowEffect(importExportModalContent, importExportModal);
+}
+
+helpBtn.onclick = function() {
+    browser.tabs.create({ url: helpUrl });
 }
 
 exportBtn.onclick = function(e) {

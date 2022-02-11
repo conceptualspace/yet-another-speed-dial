@@ -55,6 +55,9 @@
     "description": "title of the app, displayed in store",
     "message": "еще один быстрый набор"
   },
+  "help": {
+    "message": "Помощь"
+  },
   "home": {
     "message": "Домой"
   },
