@@ -339,11 +339,20 @@ function getScreenshot(url, manualRefresh=false) {
                             let fetchedTitle = tabInfo.title ? tabInfo.title : '';
                             // workaround for chrome, which can only capture the active tab
                             if (!browser.runtime.getBrowserInfo) {
-                                browser.tabs.update(tabID, {active:true}).then(tab => {
+                                browser.tabs.update(tabID, {active:true}).then(newTab => {
+                                    // short timeout before capturing the screenshot because some sites have transition
+                                    // effects when tab activated
                                     setTimeout(function() {
                                         browser.tabs.captureVisibleTab().then(imageUri => {
                                             browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                            browser.tabs.remove(tabID);
+                                            browser.tabs.remove(tabID).then(() => {
+                                                if (tab) {
+                                                    // restore the tab that was active before (not required in ff)
+                                                    browser.tabs.update(tab.id, {active:true}).catch((err) => {
+                                                        console.log(err);
+                                                    });
+                                                }
+                                            });
                                             resolve({screenshot: imageUri, title: fetchedTitle});
                                         }, (err) => {
                                             console.log(err)
