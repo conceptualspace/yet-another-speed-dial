@@ -284,6 +284,8 @@ function folderLink(title, id) {
     a.onclick = function () {
         showFolder(id);
         currentFolder = id;
+        scrollPos = 0;
+        bookmarksContainerParent.scrollTop = scrollPos;
     };
 
     // todo: allow dropping directly on folder title?
