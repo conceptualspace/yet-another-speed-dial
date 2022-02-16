@@ -179,7 +179,8 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     }
 
     if ((toParentId && fromParentId) && toParentId !== fromParentId) {
-        options.parentId = toParentId;
+        // the id of the main speed dial page is "wrap"; todo: clean this up
+        options.parentId = toParentId === "wrap" ? speedDialId : toParentId;
     }
 
     // todo: refactor
@@ -200,7 +201,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
                 console.log(err);
             })
         } else {
-
+            options.index = 0;
             move(id, options);
         }
     } else {
@@ -220,7 +221,6 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
                 console.log(err);
             })
         } else {
-            options.index = 0;
             move(id, options);
         }
     }
@@ -1547,8 +1547,8 @@ function onMoveHandler(evt) {
 function onEndHandler(evt) {
     if (evt && evt.clone.href) {
         let id = evt.clone.dataset.id;
-        let fromParentId = evt.from.id === "wrap" ? speedDialId : evt.from.id
-        let toParentId = evt.to.id === "wrap" ? speedDialId : evt.to.id;
+        let fromParentId = evt.from.id;
+        let toParentId = evt.to.id;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
         let newSiblingId = null;
@@ -1563,14 +1563,12 @@ function onEndHandler(evt) {
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
             // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
             toParentId = currentFolder;
-            newSiblingId = null;
         }
 
         if (evt.from.id === evt.to.id && evt.from.id !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
             toParentId = currentFolder;
-            newSiblingId = null;
         }
 
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex ) {
