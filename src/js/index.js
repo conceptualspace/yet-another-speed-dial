@@ -160,8 +160,6 @@ function removeBookmark(url) {
                     if (cleanup) {
                         browser.storage.local.remove(url);
                     }
-                    // todo -- this only working for root folder?
-                    sortable.save();
                 }
             }
         })
