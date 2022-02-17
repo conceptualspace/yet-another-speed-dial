@@ -179,13 +179,12 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     }
 
     if ((toParentId && fromParentId) && toParentId !== fromParentId) {
-        // the id of the main speed dial page is "wrap"; todo: clean this up
-        options.parentId = toParentId === "wrap" ? speedDialId : toParentId;
+        options.parentId = toParentId;
     }
 
     // todo: refactor
     if (settings.defaultSort === "first") {
-        if (newSiblingId) {
+        if (newSiblingId && newSiblingId !== -1) {
             browser.bookmarks.get(newSiblingId).then(result => {
                 if (toParentId === fromParentId && oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
@@ -201,11 +200,13 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
                 console.log(err);
             })
         } else {
-            options.index = 0;
+            if (!newSiblingId) {
+                options.index = 0;
+            }
             move(id, options);
         }
     } else {
-        if (newSiblingId) {
+        if (newSiblingId && newSiblingId !== -1) {
             browser.bookmarks.get(newSiblingId).then(result => {
                 if (toParentId !== fromParentId || oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
@@ -1544,31 +1545,44 @@ function onMoveHandler(evt) {
     }
 }
 
+function dewrap(str) {
+    // unlike folder tabs, main dial container doesnt include the folder id
+    // todo: cleanup
+    if (str === "wrap") {
+        return speedDialId
+    } else {
+        return str
+    }
+}
+
 function onEndHandler(evt) {
     if (evt && evt.clone.href) {
         let id = evt.clone.dataset.id;
-        let fromParentId = evt.from.id;
-        let toParentId = evt.to.id;
+        let fromParentId = dewrap(evt.from.id);
+        let toParentId = dewrap(evt.to.id);
+        let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.dataset.id : null;
+        let newSiblingParentId = newSiblingId ? dewrap(evt.item.nextElementSibling.parentElement.id) : null;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
-        let newSiblingId = null;
-
-        if (evt.item.nextElementSibling && evt.item.nextElementSibling.dataset.id) {
-            newSiblingId = evt.item.nextElementSibling.dataset.id;
-        }
 
         // todo: test if this is needed
-        if (evt.from.id !== evt.to.id && evt.to.id !== evt.originalEvent.target.id) {
+        if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
             // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
-            toParentId = currentFolder;
+            toParentId = currentFolder ? currentFolder : speedDialId;
         }
 
-        if (evt.from.id === evt.to.id && evt.from.id !== currentFolder) {
+        if (fromParentId === toParentId && fromParentId !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            toParentId = currentFolder;
+            toParentId = currentFolder ? currentFolder : speedDialId;
+        }
+
+        // if the sibling's parent doesnt match the parent we are moving to discard this sibling
+        // can occur when dropping onto a non sortable target (like folder name)
+        if (newSiblingParentId && newSiblingParentId !== toParentId) {
+            newSiblingId = -1 ;
         }
 
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex ) {
