@@ -763,8 +763,8 @@ function handleInstalled(details) {
     } else if (details.reason === 'update') {
         // perform any migrations here...
         if (details.previousVersion && details.previousVersion < '2.0.0') {
-            // const url = chrome.runtime.getURL("updated.html");
-            // chrome.tabs.create({ url, active: false });
+            const url = chrome.runtime.getURL("updated.html");
+            chrome.tabs.create({ url, active: false });
             migrate().catch(err => {
                 console.log(err)
             });
