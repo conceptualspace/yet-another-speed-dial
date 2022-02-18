@@ -318,6 +318,25 @@ a {
     text-decoration: none;
 }
 
+.button {
+    border: none;
+    color: #fff;
+    cursor: default;
+    display: inline-block;
+    outline: none;
+    position: relative;
+    transition: all 160ms;
+    vertical-align: middle;
+    width: 100%;
+    padding: 0.6em;
+    text-align: center;
+}
+
+.disabled {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
 .tileForm {
     padding: .6em;
 }

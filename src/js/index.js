@@ -1392,19 +1392,7 @@ previewOverlay.onclick = function() {
     imgInput.click();
 }
 
-importExportBtn.onclick = function() {
-    hideSettings();
-    importExportStatus.innerText = "";
-    modalShowEffect(importExportModalContent, importExportModal);
-}
-
-helpBtn.onclick = function() {
-    browser.tabs.create({ url: helpUrl });
-}
-
-exportBtn.onclick = function(e) {
-    e.preventDefault();
-
+function prepareExport() {
     browser.storage.local.get(null).then(function(items) {
         // filter out unused thumbnails to keep exported file efficient
         let filteredItems = {};
@@ -1435,20 +1423,23 @@ exportBtn.onclick = function(e) {
         const today = new Date();
         const dateString = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
 
-        function handleChanged(delta) {
-            if (delta.state && delta.state.current === "complete") {
-                hideModals();
-            }
-        }
+        exportBtn.setAttribute('href', URL.createObjectURL(blob));
+        exportBtn.download = `yasd-export-${dateString}.json`;
+        exportBtn.classList.remove('disabled');
 
-        browser.downloads.onChanged.addListener(handleChanged);
-
-        browser.downloads.download({
-            saveAs: true,
-            url: URL.createObjectURL(blob),
-            filename: `yasd-export-${dateString}.json`
-        });
     });
+}
+
+importExportBtn.onclick = function() {
+    hideSettings();
+    importExportStatus.innerText = "";
+    exportBtn.classList.add('disabled');
+    prepareExport();
+    modalShowEffect(importExportModalContent, importExportModal);
+}
+
+helpBtn.onclick = function() {
+    browser.tabs.create({ url: helpUrl });
 }
 
 importFileLabel.onclick = function() {
