@@ -83,7 +83,7 @@ const helpBtn = document.getElementById("help");
 const clock = document.getElementById('clock');
 
 const port = "p-" + new Date().getTime();
-const tabMessagePort = browser.runtime.connect({name: port});
+let tabMessagePort = null;
 
 let cache = null;
 let settings = null;
@@ -1593,6 +1593,7 @@ const processRefresh = debounce(() => {
 }, 650, true);
 
 function init() {
+    tabMessagePort = browser.runtime.connect({name: port});
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
@@ -1630,7 +1631,13 @@ function init() {
         }
     });
 
-    window.onresize = layout;
+    tabMessagePort.onDisconnect.addListener(obj => {
+        if (browser.runtime.lastError) {
+            // for some reason the background page is not responding
+            // todo: setup a timer to try again
+            console.log(browser.runtime.lastError.message);
+        }
+    })
 
     tabMessagePort.postMessage({getCache: true});
 
@@ -1651,6 +1658,7 @@ function init() {
         onEnd: onEndHandler
     });
 
+    window.onresize = layout;
 
 }
 
