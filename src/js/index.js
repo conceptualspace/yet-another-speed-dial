@@ -154,6 +154,10 @@ function removeBookmark(url) {
             let cleanup = bookmarks.length < 2;
             for (let bookmark of bookmarks) {
                 if (bookmark.parentId === currentParent) {
+                    // animate removal
+                    targetNode.style.display = "none";
+                    layout(true);
+                    // remove dial
                     targetNode.remove();
                     browser.bookmarks.remove(bookmark.id);
                     // if we have duplicates (ex in other folders), keep the image cache, otherwise purge it
@@ -839,10 +843,9 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-// todo: maybe refactor this in gsap 3
 // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-function layout() {
-    if (layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
+function layout(force = false) {
+    if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
         containerSize = getComputedStyle(bookmarksContainer).maxWidth;
 
@@ -1041,8 +1044,10 @@ function applySettings() {
 
         if (settings.maxCols && settings.maxCols !== "100") {
             document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
+            layout();
         } else {
             document.documentElement.style.setProperty('--columns', '100%')
+            layout();
         }
 
         if (settings.showFolders) {
