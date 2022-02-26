@@ -1,0 +1,17 @@
+on: workflow_dispatch
+
+name: Submit to Web Stores
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Package
+        run: make package
+      - name: Create zips
+        run: make zip
+      - name: Browser Plugin Publish
+        uses: plasmo-corp/bpp@v1
+        with:
+          keys: ${{ secrets.SUBMIT_KEYS }}
