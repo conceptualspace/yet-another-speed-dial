@@ -694,6 +694,12 @@ function changeBookmark(id, info) {
                     // firefox creates a placeholder for the folder when created via bookmark manager
                     return
                 }
+                if (info && info.title && Object.keys(info).length === 1) {
+                    // folder is just being renamed
+                    refreshOpen()
+                    return
+                }
+
                 // new folder
                 folderIds.push(id);
                 // recurse through the folder and get thumbnails

@@ -324,10 +324,13 @@ function saveFolder() {
 }
 
 function editFolder() {
+    let title = editFolderModalName.value.trim();
     browser.bookmarks.update(targetFolder, {
-        title: editFolderModalName.value.trim()
+        title
     }).then(node => {
         hideModals();
+    }).catch(err => {
+        console.log(err);
     });
 }
 
@@ -399,9 +402,8 @@ function printBookmarks(bookmarks, parentId) {
                     folders.push(bookmark.id);
                     folderLink(bookmark.title, bookmark.id)
                 } else {
-                    if (bookmark.id === targetFolder && targetFolderName !== bookmark.title) {
-                        targetFolderLink.textContent = bookmark.title;
-                    }
+                    let el = document.querySelector(`[folderid="${bookmark.id}"]`);
+                    if (el) {el.innerText = bookmark.title}
                 }
 
             } else if (bookmark.url && bookmark.url.startsWith("http")) {
