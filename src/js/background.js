@@ -474,6 +474,8 @@ function offscreenCanvasShim(w=1, h=1) {
 }
 
 // calculate the bg color of a given image
+// samples the second pixel from the top left and the second pixel from either the top-right or bottom-left
+// depending on whether the image is narrow or wide
 // todo: punt this to a worker
 // todo: export functions resused in index.js
 function getBgColor(image) {
@@ -482,18 +484,22 @@ function getBgColor(image) {
         img.onload = function () {
             let imgWidth = img.naturalWidth;
             let imgHeight = img.naturalHeight;
-            let sx, sy, direction;
+            let sx, sy, sw, sh, direction;
 
             if ((imgWidth / imgHeight) > imageRatio) {
                 // image is wide; sample top and bottom
-                sy = imgHeight - 1
-                sx = 0;
+                sy = imgHeight - 2
+                sx = 2;
+                sw = 1
+                sh = -1
                 direction = 'bottom'
 
             } else {
                 // sample left and right
-                sx = imgWidth - 1
-                sy = 0;
+                sx = imgWidth - 2
+                sy = 2;
+                sw = -1
+                sh = -1
                 direction = 'right'
             }
 
@@ -506,14 +512,14 @@ function getBgColor(image) {
             context.drawImage(img, 0, 0);
 
             // get the top left pixel, cheap and easy
-            // todo: if its equally performant, sample all corners and return the mode
-            let pixelA = context.getImageData(0, 0, 1, 1);
+            // todo: if its equally performant, sample all corners and return the mode?
+            let pixelA = context.getImageData(1, 1, 2, 2);
             rgba[0] = pixelA.data[0];
             rgba[1] = pixelA.data[1];
             rgba[2] = pixelA.data[2];
             rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
 
-            let pixelB = context.getImageData(sx, sy, 1, 1);
+            let pixelB = context.getImageData(sx, sy, sw, sh);
             rgbaa[0] = pixelB.data[0];
             rgbaa[1] = pixelB.data[1];
             rgbaa[2] = pixelB.data[2];
