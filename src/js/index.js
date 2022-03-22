@@ -734,8 +734,8 @@ function getBgColor(image) {
     rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
 
     // if part of the edge is transparent, make whole bg transparent
-    if ((rgba[3]) === 0) {rgbaa[3] = 0}
-    if ((rgbaa[3]) === 0) {rgba[3] = 0}
+    if ((rgba[3]) < 0.1) {rgbaa[3] = 0}
+    if ((rgbaa[3]) < 0.1) {rgba[3] = 0}
 
     //return rgba;
     return `linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`;
