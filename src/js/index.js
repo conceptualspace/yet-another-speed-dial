@@ -334,8 +334,8 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url, getScreenshots = true) {
-    tabMessagePort.postMessage({refreshThumbs: true, getScreenshots, url});
+function refreshThumbnails(url) {
+    tabMessagePort.postMessage({refreshThumbs: true, url});
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
 }

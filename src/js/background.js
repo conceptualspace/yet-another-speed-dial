@@ -128,165 +128,144 @@ function convertUrlToAbsolute(origin, path) {
     }
 }
 
-function getQuickThumbs(url) {
-    let thumbnails = [];
-    let bgColor = null;
+async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
 
-    return new Promise(function(resolve, reject) {
-        getOgImage(url).then(function(images) {
-            if (images) {
-                for (let image of images) {
-                    image && thumbnails.push(image);
-                }
+    let title = null;
+
+    try {
+        const images = await fetchImages(url);
+
+        if (!options.quickRefresh) {
+            const results = await getScreenshot(url, options.forceScreenshot)
+            if (results.title) {
+                title = results.title
             }
-        }).then(function(result) {
-            return getLogo(url)
-        }).then(function(result) {
-            if (result) {
-                thumbnails.push(result);
+            if (results.screenshot) {
+                images.push(results.screenshot)
             }
-            return getBgColor(thumbnails[0])
-        }).then(function(result) {
-            if (result) {
-                bgColor = result;
-            }
-            return saveThumbnails(url, thumbnails, bgColor)
-        }).then(() => resolve())
-        .catch(error => console.log(error));
-    });
+        }
+    
+        const resizedImages = await Promise.all(images.map(async (image) => {
+            const result = await resizeImage(image);
+            return result
+        }))
+
+        const thumbs = resizedImages.filter(item => item)
+
+        if (thumbs.length) {
+            const bgColor = await getBgColor(thumbs[0])
+            cache[url] = [thumbs[0], bgColor];
+            await saveThumbnails(url, thumbs, bgColor)
+        }
+
+        return title;
+
+    } catch (err) {
+        console.log(err);
+        return
+    }
 }
 
-function getThumbnails(url, manualRefresh=false) {
-    let thumbnails = [];
-    let fetchedTitle = '';
-    let bgColor = null;
-    return new Promise(function(resolve, reject) {
-        getOgImage(url)
-            .then(function(images) {
-                if (images) {
-                    for (let image of images) {
-                        image && thumbnails.push(image);
-                    }
-                }
-                return getScreenshot(url, manualRefresh)
-            })
-            .then(function(result) {
-                if (result) {
-                    if (result.title) {
-                        fetchedTitle = result.title
-                    }
-                    if (result.screenshot) {
-                        return resizeThumb(result.screenshot)
-                    }
-                }
-            })
-            .then(function(result) {
-                if (result) {
-                    thumbnails.push(result);
-                }
-                return getLogo(url)
-            })
-            .then(function(result) {
-                if (result) {
-                    thumbnails.push(result);
-                }
-                return getBgColor(thumbnails[0])
-            })
-            .then(function(result) {
-                if (result) {
-                    bgColor = result;
-                }
-                return saveThumbnails(url, thumbnails, bgColor)
-            })
-            .then(() => resolve(fetchedTitle))
-            .catch(error => console.log(error));
-    });
-}
+// fetch images
+// finds open graph images, apple icons, favicons, and first image of page
+function fetchImages(url) {
+    return new Promise(function (resolve, reject) {
 
-function getOgImage(url) {
-    return new Promise(function(resolve, reject) {
-        // tracking protection hack. use local resource instead
-        let whitelist = [
+        const whitelist = [
             "mail.google.com",
             "gmail.com",
             "www.facebook.com",
             "www.reddit.com",
             "twitter.com"
         ];
-        let hostname = new URL(url).hostname;
-        if (whitelist.includes(hostname)) {
-            resolve(['img/'+hostname+'.png']);
-            return;
-        }
 
-        let xhr = new XMLHttpRequest();
-        xhr.onerror = function(e) {
-            //console.log(e);
-            resolve([]);
-        };
-        xhr.onload = function () {
-            let images = [];
-            // get open graph images
-            if (!xhr.responseXML) {
-                resolve([]);
-                return
-            }
-            let metas = xhr.responseXML.getElementsByTagName("meta");
-            for (let meta of metas) {
-                if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
-                    let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
-                    images.push(imageUrl)
+        const hostname = new URL(url).hostname;
+
+        // default favicons
+        let images = [new URL(url).origin + "/favicon.ico", 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=256'];
+
+        if (whitelist.includes(hostname)) {
+            resolve(['img/' + hostname + '.png']);
+            return;
+        } else {
+            let xhr = new XMLHttpRequest();
+            xhr.open("GET", url);
+            // fix for shitty websites, like imdb
+            xhr.overrideMimeType("text/html");
+            xhr.timeout = 6500; // time in milliseconds
+            xhr.responseType = "document";
+
+            xhr.onerror = function (e) {
+                //console.log(e);
+                resolve(images);
+                return;
+            };
+
+            xhr.ontimeout = function (e) {
+                resolve(images);
+                return;
+            };
+
+            xhr.onload = function () {
+                
+                if (!xhr.responseXML) {
+                    return
                 }
-            }
-            // get large icons
-            let sizes = [
-                "192x192",
-                "180x180",
-                "144x144",
-                "96x96"
-            ];
-            for (let size of sizes) {
-                let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
-                if (icon) {
-                    let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
-                    images.push(imageUrl);
-                    break;
+
+                // get first image from page
+                let firstImage = xhr.responseXML.querySelector('img');
+                if (firstImage) {
+                    images.unshift(firstImage.src);
                 }
-            }
-            // get apple touch icon
-            let appleIcon = xhr.responseXML.querySelector('link[rel="apple-touch-icon"]');
-            if (appleIcon) {
-                let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                images.push(imageUrl);
-            }
-            // get large favicon
-            let favicon = new URL(url).origin + "/favicon.ico";
-            fetch(new Request(favicon)).then(response => {
-                if (response.status === 200) {
-                    let icon = new Image();
-                    icon.onerror = function() {
-                        resolve(images);
-                    };
-                    icon.onload = function() {
-                        if (this.height >= 96) {
-                            images.push(favicon);
-                        }
-                        resolve(images);
-                    };
-                    icon.src = favicon;
-                } else {
-                    resolve(images);
+
+                // amazon images
+                let mainImage = xhr.responseXML.querySelector('#main-image-container img');
+                if (mainImage) {
+                    images.unshift(mainImage.src);
                 }
-            }, err => {
-                //console.log(err);
-                resolve([]);
-            });
-        };
-        xhr.open("GET", url);
-        xhr.responseType = "document";
-        // fix for shitty websites, like imdb
-        xhr.overrideMimeType("text/html");
-        xhr.send();
+
+                // get apple touch icon
+                let appleIcon = xhr.responseXML.querySelector('link[rel="apple-touch-icon"]');
+                if (appleIcon) {
+                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                    images.unshift(imageUrl);
+                }
+
+                // get large icons
+                let sizes = [
+                    "512x512",
+                    "256x256",
+                    "192x192",
+                    "180x180",
+                    "144x144",
+                    "96x96"
+                ];
+                for (let size of sizes) {
+                    let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
+                    if (icon) {
+                        let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
+                        images.unshift(imageUrl);
+                        break;
+                    }
+                }
+
+                // get open graph images
+                let metas = xhr.responseXML.getElementsByTagName("meta");
+                for (let meta of metas) {
+                    if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
+                        let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
+                        images.unshift(imageUrl)
+                    }
+                }
+                
+                resolve(images);
+                return;
+
+            };
+
+            xhr.send();
+
+        }
     });
 }
 
@@ -311,7 +290,7 @@ function saveThumbnails(url, images, bgColor) {
 }
 
 // requires <all_urls> permission to capture image without a user gesture
-function getScreenshot(url, manualRefresh=false) {
+function getScreenshot(url, forceScreenshot=false) {
     return new Promise(function(resolve, reject) {
         // capture from an existing tab if its open
         browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
@@ -330,7 +309,7 @@ function getScreenshot(url, manualRefresh=false) {
                         .then(imageUri => {
                             resolve({screenshot: imageUri, title: fetchedTitle});
                         });
-                } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || manualRefresh) {
+                } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || forceScreenshot) {
                     // open tab, capture screenshot, and close
                     // todo: complete loaded status sometimes !== actually loaded
                     let tabID = null;
@@ -390,7 +369,7 @@ function getScreenshot(url, manualRefresh=false) {
                                 if (timer) clearTimeout(timer);
                                 // tab was already closed, we all good
                             });
-                        }, 15000)
+                        }, 10000)
                     });
                 } else {
                     resolve(null);
@@ -401,62 +380,97 @@ function getScreenshot(url, manualRefresh=false) {
     });
 }
 
-function getLogo(url) {
-    return new Promise(function(resolve, reject) {
-        // todo: setting to enable/disable this?
-        let logoUrl = 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=200';
-        fetch(new Request(logoUrl)).then(response => {
-            if (response.status === 200) {
-                resolve(logoUrl);
-            } else {
-                resolve(null);
-            }
-        }).catch(err => {
-            console.log(err);
-            resolve(null);
-        });
-    });
-}
-
-function resizeThumb(dataURI) {
-    return new Promise(function(resolve, reject) {
-        if (dataURI && dataURI.length) {
+// downscale image
+function resizeImage(image, screenshot=false) {
+    return new Promise(function (resolve, reject) {
+        if (image && image.length) {
             let img = new Image();
+
+            img.onerror = function(event) {
+                resolve();
+            }
+
             img.onload = function () {
-                if (this.height > 512 && this.width > 512) {
+
+                let sWidth = this.width;
+                let sHeight = this.height;
+
+                if (sHeight > 256 || sWidth > 256) {
 
                     let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d');
-                    let canvas2 = document.createElement('canvas');
-                    let ctx2 = canvas2.getContext('2d', {willReadFrequently:true});
-                    ctx2.imageSmoothingEnabled = true;
-                    ctx2.imageSmoothingQuality = "high";
+                    let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = "high";
 
-                    // first pass: crop scrollbars, blur filter as an approximation for resampling
-                    canvas.width = this.width - 20;
-                    canvas.height = this.height - 20;
-                    ctx.filter = `blur(1px)`;
-                    ctx.drawImage(this, 0, 0, this.width - 18, this.height - 18, 0, 0, canvas.width, canvas.height);
+                    const maxSize = 256;
+                    const maxWidth = Math.round(256 * imageRatio);
 
-                    // second pass: downscale to target size
-                    let height = 256;
-                    let ratio = height / this.height;
-                    let width = Math.round(this.width * ratio);
+                    const sRatio = sWidth / sHeight
 
-                    canvas2.width = width;
-                    canvas2.height = height;
+                    let sX = 0;
+                    let sY = 0;
+                    let dX = 0;
+                    let dY = 0;
+                    let dWidth = sWidth;
+                    let dHeight = sHeight;
 
-                    ctx2.drawImage(canvas, 0, 0, width, height);
+                    // remove scrollbars from screenshots
+                    if (screenshot) {
+                        console.log("screenshot detected...");
+                        sWidth = sWidth - 20;
+                        sHeight = sHeight - 20;
+                    }
 
-                    const newDataURI = canvas2.toDataURL('image/webp');
+                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                    if (sRatio < imageRatio && sRatio > (imageRatio - 0.2)) {
+                        // aspect is narrower, crop top and bottom
+                        let naturalHeight = maxWidth / sRatio
+                        let crop = ( naturalHeight - maxSize ) 
+                        sY = crop / 2; // take equal amounts from each side
+                        sHeight = sHeight - crop;
+                        dHeight = maxSize;
+                        dWidth = Math.round(maxSize * imageRatio)
+                        
+                    } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
+                        // aspect is wider, crop sides to fit
+                        let naturalWidth = maxSize * sRatio
+                        let crop = ( naturalWidth - maxWidth )
+                        sX = crop / 2;
+                        sWidth = sWidth - crop;
+                        dWidth = maxSize;
+                        dHeight = Math.round(maxSize / imageRatio)
+                    } else if (sWidth > sHeight) {
+                        // rescale to max width of 256px
+                        let ratio = maxSize / sWidth;
+                        dHeight = Math.round(sHeight * ratio);
+                        dWidth = maxSize;
+                    } else {
+                        // rescale to max height of 256px
+                        let ratio = maxSize / sHeight;
+                        dWidth = Math.round(sWidth * ratio);
+                        dHeight = maxSize;
+                    }
+
+                    canvas.width = dWidth;
+                    canvas.height = dHeight;
+
+                    //console.log(sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight);
+                    ctx.drawImage(this, sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight)
+
+                    const newDataURI = canvas.toDataURL('image/webp');
                     resolve(newDataURI);
+
+                } else if (sHeight >= 96 || sWidth >= 96) {
+                    resolve(image);
                 } else {
-                    resolve(dataURI);
+                    // discard images < 96px
+                    resolve();
                 }
             };
-            img.src = dataURI;
+            img.crossOrigin = "Anonymous";
+            img.src = image;
         } else {
-            resolve([]);
+            resolve();
         }
     });
 }
@@ -595,16 +609,14 @@ function created(id, info) {
     changeBookmark(id, info);
 }
 
-function manualRefresh(url, getScreenshots = true) {
+function manualRefresh(url) {
     if (url && (url.startsWith('https://') || url.startsWith('http://'))) {
         tripwire++
         browser.storage.local.remove(url).then(() => {
-            getThumbnails(url, getScreenshots).then(() => {
-                pushToCache(url).then(() => {
-                    refreshOpen()
-                    tripwire--;
-                    tripwireTimestamp = Date.now();
-                })
+            getThumbnails(url, {forceScreenshot: true}).then(() => {
+                refreshOpen()
+                tripwire--;
+                tripwireTimestamp = Date.now();
             })
         })
     }
@@ -635,27 +647,23 @@ function handleImport() {
     });
 }
 
-async function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+function refreshBatch(urls, index = 0) {
+    // avoid too many connections
+    let batchSize = 200;
+    let batch = urls.slice(index, index+batchSize);
 
-async function refreshAll(urls) {
-    let i = urls.length;
-    for (let url of urls) {
-        i--;
-        // throttle every 100 requests
-        if (i % 100 === 0) {
-            await sleep(300);
-        }
-        browser.storage.local.remove(url).then(() => {
-            getQuickThumbs(url).then(() => {
-                pushToCache(url).then(() => {
-                    if (i < 1) {
-                        refreshOpen()
-                    }
-                })
-            })
-        });
+    if (batch.length) {
+        Promise.all(batch.map(url =>
+            getThumbnails(url, {quickRefresh: true})
+        )).then(() => {
+            // todo show progress in UI
+            // console.log(Math.round((index / urls.length)*100) + "%")
+            refreshBatch(urls, index+batchSize)
+        }).catch((err) => {
+            console.log(err);
+        })
+    } else {
+        refreshOpen()
     }
 }
 
@@ -680,18 +688,16 @@ function changeBookmark(id, info) {
                             tripwireTimestamp = Date.now();
                         } else {
                             getThumbnails(bookmark[0].url).then((fetchedTitle) => {
-                                pushToCache(bookmark[0].url).then(() => {
-                                    if (fetchedTitle && fetchedTitle !== '' && fetchedTitle !== bookmark[0].title) {
-                                        browser.bookmarks.update(id, {
-                                            title: fetchedTitle
-                                        });
-                                        // updating the bookmark title will trigger changebookmark to rerun and refresh above
-                                    } else {
-                                        refreshOpen()
-                                    }
-                                    tripwire--;
-                                    tripwireTimestamp = Date.now();
-                                })
+                                if (fetchedTitle && fetchedTitle !== '' && fetchedTitle !== bookmark[0].title) {
+                                    browser.bookmarks.update(id, {
+                                        title: fetchedTitle
+                                    });
+                                    // updating the bookmark title will trigger changebookmark to rerun and refresh above
+                                } else {
+                                    refreshOpen()
+                                }
+                                tripwire--;
+                                tripwireTimestamp = Date.now();
                             })
                         }
                     });
@@ -746,10 +752,25 @@ function connected(p) {
             }
         }
         else if (m.refreshThumbs) {
-            manualRefresh(m.url, m.getScreenshots)
+            manualRefresh(m.url)
         }
         else if (m.refreshAll) {
-            refreshAll(m.urls)
+            // save current settings
+            let settings = null;
+            browser.storage.local.get('settings').then(result => {
+                if (result && result.settings) {
+                    settings = result.settings
+                }
+                // clear local storage
+                browser.storage.local.clear().then(() => {
+                    // restore settings
+                    if (settings) {
+                        browser.storage.local.set({settings})
+                    }
+                    // fetch new images
+                    refreshBatch(m.urls)
+                })
+            })
         }
         else if (m.refreshInactive) {
             refreshInactive();
