@@ -44,7 +44,7 @@ function getSpeedDialId() {
             if (speedDialId) {
                 browser.bookmarks.getChildren(speedDialId).then(results => {
                     for (let result of results) {
-                        if (!result.url && result.dateGroupModified) {
+                        if (!result.url && result.title) {
                             folderIds.push(result.id);
                         }
                     }

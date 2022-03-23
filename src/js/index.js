@@ -393,7 +393,7 @@ function printBookmarks(bookmarks, parentId) {
         for (let bookmark of bookmarks) {
             // folders
             // ignore subfolders for now
-            if (!bookmark.url && bookmark.dateGroupModified && bookmark.parentId === speedDialId) {
+            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) {
                 // setup "tabs" folder header links
                 if (!folders.length) {
                     folderLink(homeFolderTitle, speedDialId)
