@@ -100,6 +100,7 @@ h1 {
     opacity: 0.85;
     font-weight: bold;
     transition: padding 160ms ease, outline 160ms ease;
+    margin: 12px;
 }
 
 .folderTitle:hover {
@@ -434,12 +435,19 @@ input:focus {
     align-items: center;
 }
 
+#folders {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
 #addFolderIcon {
     display: var(--show-folders);
     height: 1.2rem;
     vertical-align: middle;
     opacity: 0.7;
     margin-left: 12px;
+    margin-right: 12px;
     transition: 360ms ease;
     fill: var(--color);
 }

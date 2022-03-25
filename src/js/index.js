@@ -278,7 +278,7 @@ function folderLink(title, id) {
     if (id === speedDialId) {
         a.id = "homeFolderLink";
     }
-    a.classList.add('tile');
+    //a.classList.add('tile');
     a.classList.add('folderTitle');
     a.setAttribute('folderId', id);
     let linkText = document.createTextNode(title);
