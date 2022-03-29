@@ -137,10 +137,10 @@ async function getThumbnails(url, options = {quickRefresh: false, forceScreensho
 
         if (!options.quickRefresh) {
             const results = await getScreenshot(url, options.forceScreenshot)
-            if (results.title) {
+            if (results && results.title) {
                 title = results.title
             }
-            if (results.screenshot) {
+            if (results && results.screenshot) {
                 images.push(results.screenshot)
             }
         }
