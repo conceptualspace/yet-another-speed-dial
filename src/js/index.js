@@ -169,6 +169,37 @@ function removeBookmark(url) {
         })
 }
 
+function moveFolder(id, oldIndex, newIndex, newSiblingId) {
+    let options = {};
+
+    function move(id, options) {
+        browser.bookmarks.move(id, options).then(result => {
+            tabMessagePort.postMessage({refreshInactive: true})
+        }).catch(err => {
+            console.log(err);
+        })
+    }
+
+    if (newSiblingId && newSiblingId !== -1) {
+        browser.bookmarks.get(newSiblingId).then(result => {
+            if (oldIndex >= newIndex) {
+                options.index = Math.max(0, result[0].index);
+            } else {
+                options.index = Math.max(0, result[0].index - 1);
+                // chrome-only off by 1 bug when moving a bookmark forward
+                if (!browser.runtime.getBrowserInfo) {
+                    options.index++;
+                }
+            }
+            move(id, options);
+        }).catch(err => {
+            console.log(err);
+        })
+    } else {
+        move(id, options);
+    }
+}
+
 function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId) {
     let options = {}
 
@@ -1592,6 +1623,17 @@ function onEndHandler(evt) {
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex ) {
             moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
         }
+    } else if (evt && evt.clone.classList.contains('folderTitle')) {
+        let oldIndex = evt.oldIndex;
+        let newIndex = evt.newIndex;
+
+        if (newIndex !== oldIndex) {
+            if (evt.clone.attributes.folderid) {
+                let id = evt.clone.attributes.folderid.value;
+                let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.attributes.folderid.value : null;
+                moveFolder(id, oldIndex, newIndex, newSiblingId)
+            }
+        }
     }
 }
 
@@ -1628,6 +1670,8 @@ function init() {
         } else if (m.refreshInactive) {
             browser.tabs.getCurrent().then(tab => {
                 if (!tab.active) {
+                    folders = [];
+                    foldersContainer.innerHTML = "";
                     cache = m.cache;
                     hideToast();
                     processRefresh();
@@ -1670,6 +1714,18 @@ function init() {
         delayOnTouchOnly: true,
         // todo: copy same onmove logic from folders
         onMove: onMoveHandler,
+        onEnd: onEndHandler
+    });
+
+    new Sortable(foldersContainer, {
+        animation: 150,
+        forceFallback: true,
+        fallbackTolerance: 4,
+        filter: "#homeFolderLink",
+        ghostClass: 'selected',
+        onMove: function (evt) {
+            return evt.related.id !== 'homeFolderLink';
+        },
         onEnd: onEndHandler
     });
 
