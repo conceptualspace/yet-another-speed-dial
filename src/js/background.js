@@ -289,95 +289,100 @@ function saveThumbnails(url, images, bgColor) {
     });
 }
 
-// requires <all_urls> permission to capture image without a user gesture
-function getScreenshot(url, forceScreenshot=false) {
-    return new Promise(function(resolve, reject) {
-        // capture from an existing tab if its open
-        browser.tabs.query({active: true, windowId: browser.windows.WINDOW_ID_CURRENT})
-            .then(tabs => {
-                if (tabs && tabs[0]) {
-                    return browser.tabs.get(tabs[0].id)
-                } else {
-                    // todo: restructure this
-                    resolve([])
-                }
-            })
-            .then(tab => {
-                if (tab && tab.url === url) {
-                    let fetchedTitle = tab.title ? tab.title : '';
-                    browser.tabs.captureVisibleTab()
-                        .then(imageUri => {
-                            resolve({screenshot: imageUri, title: fetchedTitle});
-                        });
-                } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || forceScreenshot) {
-                    // open tab, capture screenshot, and close
-                    // todo: complete loaded status sometimes !== actually loaded
-                    let tabID = null;
-                    function handleUpdatedTab(tabId, changeInfo, tabInfo) {
-                        if (tabId === tabID && changeInfo.status === "complete") {
-                            let fetchedTitle = tabInfo.title ? tabInfo.title : '';
-                            // workaround for chrome, which can only capture the active tab
-                            if (!browser.runtime.getBrowserInfo) {
-                                browser.tabs.update(tabID, {active:true}).then(newTab => {
-                                    // short timeout before capturing the screenshot because some sites have transition
-                                    // effects when tab activated
-                                    setTimeout(function() {
-                                        browser.tabs.captureVisibleTab().then(imageUri => {
-                                            browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                            browser.tabs.remove(tabID).then(() => {
-                                                if (tab) {
-                                                    // restore the tab that was active before (not required in ff)
-                                                    browser.tabs.update(tab.id, {active:true}).catch((err) => {
-                                                        console.log(err);
-                                                    });
-                                                }
-                                            });
-                                            resolve({screenshot: imageUri, title: fetchedTitle});
-                                        }, (err) => {
-                                            console.log(err)
-                                            // carry on like it aint no tang
-                                            resolve(null);
-                                        });
-                                    }, 1240);
-                                })
-                            } else {
-                                setTimeout(function() {
-                                    browser.tabs.captureTab(tabID).then(imageUri => {
-                                        browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                        browser.tabs.remove(tabID);
-                                        resolve({screenshot: imageUri, title: fetchedTitle});
-                                    }, (err) => {
-                                        console.log(err);
-                                        resolve(null);
-                                    });
-                                }, 1240);
-                            }
-                        }
-                    }
-                    browser.tabs.onUpdated.addListener(handleUpdatedTab);
 
-                    browser.tabs.create({url, active:false}).then(tab => {
-                        tabID = tab.id;
-                        // timeout for site to load
-                        // todo: add a cancel button to UI
-                        let timer = setTimeout(function() {
-                            browser.tabs.get(tabID).then(tab => {
-                                browser.tabs.onUpdated.removeListener(handleUpdatedTab);
-                                browser.tabs.remove(tabID);
-                                resolve([])
-                            }, (err) => {
-                                if (timer) clearTimeout(timer);
-                                // tab was already closed, we all good
-                            });
-                        }, 10000)
-                    });
-                } else {
-                    resolve(null);
-                }
-            }, (err) => {
+function getScreenshot(url, forceScreenshot = false) {
+
+    return new Promise(async function(resolve, reject) {
+
+        const activeTab = await browser.tabs.query({
+            windowId: browser.windows.WINDOW_ID_CURRENT,
+            active: true
+        }).catch(err => {
+            console.log(err);
+        })
+
+        if (activeTab && activeTab.length && activeTab[0].url === url) {
+            const title = activeTab.title ? activeTab.title : '';
+            const screenshot = await browser.tabs.captureVisibleTab().catch(err => {
                 console.log(err);
-            });
+            })
+
+            resolve({screenshot, title});
+
+        } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || forceScreenshot) {
+
+            async function handleUpdated(tabId, changeInfo, tabInfo) {
+                if (changeInfo.status === "complete" && tabId === tab.id) {
+
+                    // screencapture on chrome requires tab to be active
+                    if (!browser.runtime.getBrowserInfo) {
+                        const updatedTab = await browser.tabs.update(tabId, {active: true}).catch(err => {
+                            console.log(err);
+                        })
+                    }
+
+                    setTimeout(async function() {
+
+                        const title = tabInfo.title ? tabInfo.title : '';
+                        let screenshot;
+
+                        // screencapture on chrome requires tab to be active
+                        if (!browser.runtime.getBrowserInfo) {
+                            screenshot = await browser.tabs.captureVisibleTab().catch(err => {
+                                console.log(err);
+                            })
+                        } else {
+                            screenshot = await browser.tabs.captureTab(tabId).catch(err => {
+                                console.log(err);
+                            })
+                        }
+
+                        const removedTab = await browser.tabs.remove(tabId).catch(err => {
+                            console.log(err)
+                        })
+
+                        if (activeTab && activeTab.length) {
+                            // restore the tab that was active before (not required in ff)
+                            browser.tabs.update(activeTab[0].id, {active:true}).catch(err => {
+                                console.log(err);
+                            })
+                        }
+
+                        browser.tabs.onUpdated.removeListener(handleUpdated);
+
+                        if (timer) {
+                            clearTimeout(timer);
+                        }
+
+                        resolve({screenshot, title});
+                    }, 700);
+                }
+            }
+
+            browser.tabs.onUpdated.addListener(handleUpdated);
+
+            const tab = await browser.tabs.create({
+                active: false,
+                url
+            }).catch(err => {
+                console.log(err);
+                return
+            })
+
+            // timeout for site to load
+            let timer = setTimeout(async function() {
+                const staleTab = await browser.tabs.remove(tab.id).catch(err => {
+                    console.log(err)
+                })
+                browser.tabs.onUpdated.removeListener(handleUpdated);
+                resolve();
+            }, 10000)
+
+        } else {
+            resolve();
+        }
     });
+
 }
 
 // downscale image
