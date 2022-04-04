@@ -130,40 +130,48 @@ function convertUrlToAbsolute(origin, path) {
 
 async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
 
+    let images = [];
+    let resizedImages = [];
     let title = null;
 
-    try {
-        const images = await fetchImages(url);
-
-        if (!options.quickRefresh) {
-            const results = await getScreenshot(url, options.forceScreenshot)
-            if (results && results.title) {
-                title = results.title
-            }
-            if (results && results.screenshot) {
-                images.push(results.screenshot)
-            }
-        }
-    
-        const resizedImages = await Promise.all(images.map(async (image) => {
-            const result = await resizeImage(image);
-            return result
-        }))
-
-        const thumbs = resizedImages.filter(item => item)
-
-        if (thumbs.length) {
-            const bgColor = await getBgColor(thumbs[0])
-            cache[url] = [thumbs[0], bgColor];
-            await saveThumbnails(url, thumbs, bgColor)
-        }
-
-        return title;
-
-    } catch (err) {
+    images = await fetchImages(url).catch(err => {
         console.log(err);
-        return
+    })
+
+    resizedImages = await Promise.all(images.map(async (image) => {
+        const result = await resizeImage(image).catch(err => {
+            console.log(err);
+        });
+        return result
+    }))
+
+    if (!options.quickRefresh) {
+        const results = await getScreenshot(url, options.forceScreenshot).catch(err => {
+            console.log(err);
+        })
+
+        if (results && results.title) {
+            title = results.title
+        }
+
+        if (results && results.screenshot) {
+            const screenshot = await resizeImage(results.screenshot, true).catch(err => {
+                console.log(err);
+            })
+            resizedImages.push(screenshot)
+        }
     }
+
+    const thumbs = resizedImages.filter(item => item)
+
+    if (thumbs.length) {
+        const bgColor = await getBgColor(thumbs[0])
+        cache[url] = [thumbs[0], bgColor];
+        await saveThumbnails(url, thumbs, bgColor)
+    }
+
+    return title;
+
 }
 
 // fetch images
@@ -337,9 +345,7 @@ function getScreenshot(url, forceScreenshot = false) {
                             })
                         }
 
-                        const removedTab = await browser.tabs.remove(tabId).catch(err => {
-                            console.log(err)
-                        })
+                        browser.tabs.onUpdated.removeListener(handleUpdated);
 
                         if (activeTab && activeTab.length) {
                             // restore the tab that was active before (not required in ff)
@@ -348,14 +354,16 @@ function getScreenshot(url, forceScreenshot = false) {
                             })
                         }
 
-                        browser.tabs.onUpdated.removeListener(handleUpdated);
-
                         if (timer) {
                             clearTimeout(timer);
                         }
 
+                        browser.tabs.remove(tabId).catch(err => {
+                            console.log(err)
+                        })
+
                         resolve({screenshot, title});
-                    }, 700);
+                    }, 1000);
                 }
             }
 
@@ -371,10 +379,10 @@ function getScreenshot(url, forceScreenshot = false) {
 
             // timeout for site to load
             let timer = setTimeout(async function() {
-                const staleTab = await browser.tabs.remove(tab.id).catch(err => {
+                browser.tabs.onUpdated.removeListener(handleUpdated);
+                browser.tabs.remove(tab.id).catch(err => {
                     console.log(err)
                 })
-                browser.tabs.onUpdated.removeListener(handleUpdated);
                 resolve();
             }, 10000)
 
@@ -421,9 +429,8 @@ function resizeImage(image, screenshot=false) {
 
                     // remove scrollbars from screenshots
                     if (screenshot) {
-                        console.log("screenshot detected...");
-                        sWidth = sWidth - 20;
-                        sHeight = sHeight - 20;
+                        sWidth = sWidth - 17;
+                        sHeight = sHeight - 17;
                     }
 
                     // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
