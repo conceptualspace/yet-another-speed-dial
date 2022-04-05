@@ -469,7 +469,7 @@ function resizeImage(image, screenshot=false) {
                     //console.log(sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight);
                     ctx.drawImage(this, sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight)
 
-                    const newDataURI = canvas.toDataURL('image/webp');
+                    const newDataURI = canvas.toDataURL('image/webp', 0.94);
                     resolve(newDataURI);
 
                 } else if (sHeight >= 96 || sWidth >= 96) {
