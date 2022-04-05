@@ -18,3 +18,9 @@ For now this setting is hidden behind a special command: from the Speed Dial tab
 
 ### Can I open speed dial links in Firefox Containers?
 Yes, just use Shift + Right-click on the speed dial to access the default context menu.
+
+### Can I move multiple dials or folders at once?
+Yes, since dials are just bookmarks you can arrange them in the bookmarks manager. Look for the *Other Bookmarks > Speed Dial* folder.
+
+### I want new sites to appear at the bottom of the page and not the top
+You can change this preference in *Settings > Sort*
