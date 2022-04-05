@@ -18,6 +18,3 @@ YASD loads thumbnails using the Open Graph standard. This keeps those thumbnails
 
 ### Can I open speed dial links in Firefox Containers?
 Yes, just use Shift + Right-click on the speed dial to access the default context menu.
-
-### Can I open speed dial links in new tabs?
-Yes, just use Ctrl + Click or middle click.
