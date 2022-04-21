@@ -374,6 +374,7 @@ function getScreenshot(url, forceScreenshot = false) {
                 url
             }).catch(err => {
                 console.log(err);
+                resolve();
                 return
             })
 
