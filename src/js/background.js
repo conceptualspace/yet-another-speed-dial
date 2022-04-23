@@ -192,6 +192,16 @@ function fetchImages(url) {
         // default favicons
         let images = [new URL(url).origin + "/favicon.ico", 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=256'];
 
+        // avoid duplicates and preserve the presedence of images
+        function insert(imageUrl) {
+            let existingIndex = images.indexOf(imageUrl);
+            if (existingIndex === -1) {
+                images.unshift(imageUrl);
+            } else {
+                images.unshift(images.splice(existingIndex, 1)[0])
+            }
+        }
+
         if (whitelist.includes(hostname)) {
             resolve(['img/' + hostname + '.png']);
             return;
@@ -222,21 +232,33 @@ function fetchImages(url) {
 
                 // get first image from page
                 let firstImage = xhr.responseXML.querySelector('img');
-                if (firstImage) {
-                    images.unshift(firstImage.src);
+                if (firstImage && firstImage.src) {
+                    // filter known problematic images
+                    const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
+                    if (!filters.some(element => firstImage.src.includes(element))) {
+                        insert(firstImage.src);
+                    }
                 }
 
                 // amazon images
                 let mainImage = xhr.responseXML.querySelector('#main-image-container img');
-                if (mainImage) {
-                    images.unshift(mainImage.src);
+                if (mainImage && mainImage.src) {
+                    // filter for 'look inside' amazon book images; grab the next image
+                    if (mainImage.id === 'sitbLogoImg') {
+                        let newMainImage = xhr.responseXML.querySelectorAll('#main-image-container img')[1];
+                        if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
+                            insert(newMainImage.src);
+                        }
+                    } else {
+                        insert(mainImage.src);
+                    }
                 }
 
                 // get apple touch icon
                 let appleIcon = xhr.responseXML.querySelector('link[rel="apple-touch-icon"]');
                 if (appleIcon) {
                     let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                    images.unshift(imageUrl);
+                    insert(imageUrl);
                 }
 
                 // get large icons
@@ -252,7 +274,7 @@ function fetchImages(url) {
                     let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
                     if (icon) {
                         let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
-                        images.unshift(imageUrl);
+                        insert(imageUrl);
                         break;
                     }
                 }
@@ -262,7 +284,7 @@ function fetchImages(url) {
                 for (let meta of metas) {
                     if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
                         let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
-                        images.unshift(imageUrl)
+                        insert(imageUrl);
                     }
                 }
                 
@@ -553,8 +575,10 @@ function getBgColor(image) {
             rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
 
             // if part of the edge is transparent, make whole bg transparent
-            if ((rgba[3]) < 0.7) {rgbaa[3] = 0}
-            if ((rgbaa[3]) < 0.7) {rgba[3] = 0}
+            if ((rgba[3]) < 0.9 || rgbaa[3] < 0.9) {
+                rgba[3] = 0
+                rgbaa[3] = 0
+            }
 
             //return rgba;
             //console.log(direction, rgba, rgbaa);
