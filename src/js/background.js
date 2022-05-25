@@ -225,7 +225,7 @@ function fetchImages(url) {
             };
 
             xhr.onload = function () {
-                
+
                 if (!xhr.responseXML) {
                     return
                 }
@@ -287,7 +287,7 @@ function fetchImages(url) {
                         insert(imageUrl);
                     }
                 }
-                
+
                 resolve(images);
                 return;
 
@@ -324,93 +324,120 @@ function getScreenshot(url, forceScreenshot = false) {
 
     return new Promise(async function(resolve, reject) {
 
-        const activeTab = await browser.tabs.query({
+        const targetTab = await browser.tabs.query({
             windowId: browser.windows.WINDOW_ID_CURRENT,
-            active: true
+            url
         }).catch(err => {
             console.log(err);
         })
 
-        if (activeTab && activeTab.length && activeTab[0].url === url) {
-            const title = activeTab.title ? activeTab.title : '';
+        if (targetTab && targetTab.length && targetTab[0].active) {
+            const title = targetTab.title ? targetTab.title : '';
             const screenshot = await browser.tabs.captureVisibleTab().catch(err => {
                 console.log(err);
             })
 
             resolve({screenshot, title});
 
-        } else if ( ( tripwire < 2 && Date.now() - tripwireTimestamp > 3500 ) || forceScreenshot) {
+        } else {
 
-            async function handleUpdated(tabId, changeInfo, tabInfo) {
-                if (changeInfo.status === "complete" && tabId === tab.id) {
+            const activeTab = await browser.tabs.query({
+                windowId: browser.windows.WINDOW_ID_CURRENT,
+                active: true
+            }).catch(err => {
+                console.log(err);
+            })
 
-                    // screencapture on chrome requires tab to be active
-                    if (!browser.runtime.getBrowserInfo) {
-                        const updatedTab = await browser.tabs.update(tabId, {active: true}).catch(err => {
-                            console.log(err);
-                        })
-                    }
+            if (targetTab && targetTab.length) {
+                await browser.tabs.update(targetTab[0].id, {active: true}).catch(err => {
+                    // todo: could be a race condition here
+                    console.log(err);
+                });
+                const title = targetTab.title ? targetTab.title : '';
+                const screenshot = await browser.tabs.captureVisibleTab().catch(err => {
+                    console.log(err);
+                })
+                if (activeTab && activeTab.length) {
+                    // restore the tab that was active before (not required in ff)
+                    browser.tabs.update(activeTab[0].id, {active: true}).catch(err => {
+                        console.log(err);
+                    })
+                }
+                resolve({screenshot, title});
 
-                    setTimeout(async function() {
+            } else if ((tripwire < 2 && Date.now() - tripwireTimestamp > 3500) || forceScreenshot) {
 
-                        const title = tabInfo.title ? tabInfo.title : '';
-                        let screenshot;
+                async function handleUpdated(tabId, changeInfo, tabInfo) {
+                    if (changeInfo.status === "complete" && tabId === tab.id) {
 
                         // screencapture on chrome requires tab to be active
                         if (!browser.runtime.getBrowserInfo) {
-                            screenshot = await browser.tabs.captureVisibleTab().catch(err => {
-                                console.log(err);
-                            })
-                        } else {
-                            screenshot = await browser.tabs.captureTab(tabId).catch(err => {
+                            const updatedTab = await browser.tabs.update(tabId, {active: true}).catch(err => {
                                 console.log(err);
                             })
                         }
 
-                        browser.tabs.onUpdated.removeListener(handleUpdated);
+                        setTimeout(async function () {
 
-                        if (activeTab && activeTab.length) {
-                            // restore the tab that was active before (not required in ff)
-                            browser.tabs.update(activeTab[0].id, {active:true}).catch(err => {
-                                console.log(err);
+                            const title = tabInfo.title ? tabInfo.title : '';
+                            let screenshot;
+
+                            // screencapture on chrome requires tab to be active
+                            if (!browser.runtime.getBrowserInfo) {
+                                screenshot = await browser.tabs.captureVisibleTab().catch(err => {
+                                    console.log(err);
+                                })
+                            } else {
+                                screenshot = await browser.tabs.captureTab(tabId).catch(err => {
+                                    console.log(err);
+                                })
+                            }
+
+                            browser.tabs.onUpdated.removeListener(handleUpdated);
+
+                            if (activeTab && activeTab.length) {
+                                // restore the tab that was active before (not required in ff)
+                                browser.tabs.update(activeTab[0].id, {active: true}).catch(err => {
+                                    console.log(err);
+                                })
+                            }
+
+                            if (timer) {
+                                clearTimeout(timer);
+                            }
+
+                            browser.tabs.remove(tabId).catch(err => {
+                                console.log(err)
                             })
-                        }
 
-                        if (timer) {
-                            clearTimeout(timer);
-                        }
-
-                        browser.tabs.remove(tabId).catch(err => {
-                            console.log(err)
-                        })
-
-                        resolve({screenshot, title});
-                    }, 1000);
+                            resolve({screenshot, title});
+                        }, 1000);
+                    }
                 }
-            }
 
-            browser.tabs.onUpdated.addListener(handleUpdated);
+                browser.tabs.onUpdated.addListener(handleUpdated);
 
-            const tab = await browser.tabs.create({
-                active: false,
-                url
-            }).catch(err => {
-                console.log(err);
-                resolve();
-                return
-            })
-
-            // timeout for site to load
-            let timer = setTimeout(async function() {
-                browser.tabs.onUpdated.removeListener(handleUpdated);
-                browser.tabs.remove(tab.id).catch(err => {
-                    console.log(err)
+                const tab = await browser.tabs.create({
+                    active: false,
+                    url
+                }).catch(err => {
+                    console.log(err);
+                    resolve();
+                    return
                 })
-                resolve();
-            }, 10000)
 
-        } else {
-            resolve();
+                // timeout for site to load
+                let timer = setTimeout(async function () {
+                    browser.tabs.onUpdated.removeListener(handleUpdated);
+                    browser.tabs.remove(tab.id).catch(err => {
+                        console.log(err)
+                    })
+                    resolve();
+                }, 10000)
+
+            } else {
+                resolve();
+            }
         }
     });
 
@@ -460,12 +487,12 @@ function resizeImage(image, screenshot=false) {
                     if (sRatio < imageRatio && sRatio > (imageRatio - 0.2)) {
                         // aspect is narrower, crop top and bottom
                         let naturalHeight = maxWidth / sRatio
-                        let crop = ( naturalHeight - maxSize ) 
+                        let crop = ( naturalHeight - maxSize )
                         sY = crop / 2; // take equal amounts from each side
                         sHeight = sHeight - crop;
                         dHeight = maxSize;
                         dWidth = Math.round(maxSize * imageRatio)
-                        
+
                     } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
                         // aspect is wider, crop sides to fit
                         let naturalWidth = maxSize * sRatio
