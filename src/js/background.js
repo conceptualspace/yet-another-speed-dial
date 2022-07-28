@@ -326,7 +326,7 @@ function getScreenshot(url, forceScreenshot = false) {
 
         const targetTab = await browser.tabs.query({
             windowId: browser.windows.WINDOW_ID_CURRENT,
-            url
+            url: url.split('#')[0] // tabs.query doesn't match fragment identifiers :/
         }).catch(err => {
             console.log(err);
         })
@@ -348,7 +348,7 @@ function getScreenshot(url, forceScreenshot = false) {
                 console.log(err);
             })
 
-            if (targetTab && targetTab.length) {
+            if (targetTab && targetTab.length && targetTab[0].url === url) {
                 await browser.tabs.update(targetTab[0].id, {active: true}).catch(err => {
                     // todo: could be a race condition here
                     console.log(err);
