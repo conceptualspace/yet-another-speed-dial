@@ -64,7 +64,6 @@ const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
 const largeTilesInput = document.getElementById("largeTiles");
-const scaleImagesInput = document.getElementById("scaleImages");
 const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
@@ -1077,6 +1076,7 @@ function applySettings() {
             document.documentElement.style.setProperty('--color', settings.textColor);
         }
 
+        /*
         if (settings.scaleImages) {
             document.documentElement.style.setProperty('--image-scaling', 'contain');
             //document.documentElement.style.setProperty('--image-width', '140px');
@@ -1084,6 +1084,7 @@ function applySettings() {
             document.documentElement.style.setProperty('--image-scaling', 'cover');
             //document.documentElement.style.setProperty('--image-width', '188px');
         }
+        */
 
         if (settings.maxCols && settings.maxCols !== "100") {
             document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
@@ -1135,7 +1136,6 @@ function applySettings() {
         showTitlesInput.checked = settings.showTitles;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
-        scaleImagesInput.checked = settings.scaleImages;
         showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
@@ -1177,7 +1177,6 @@ function saveSettings() {
     settings.showTitles = showTitlesInput.checked;
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
-    settings.scaleImages = scaleImagesInput.checked;
     settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
@@ -1393,10 +1392,6 @@ textColor_picker.onchange = function () {
 };
 
 showTitlesInput.oninput = function(e) {
-    saveSettings()
-}
-
-scaleImagesInput.oninput = function(e) {
     saveSettings()
 }
 

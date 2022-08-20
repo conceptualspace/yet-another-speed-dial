@@ -13,7 +13,6 @@ let defaults = {
     wallpaperSrc: 'img/bg.jpg',
     backgroundColor: '#111111',
     largeTiles: true,
-    scaleImages: true,
     showTitles: true,
     showAddSite: true,
     showFolders: true,
@@ -492,7 +491,6 @@ function resizeImage(image, screenshot=false) {
                         sHeight = sHeight - crop;
                         dHeight = maxSize;
                         dWidth = Math.round(maxSize * imageRatio)
-
                     } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
                         // aspect is wider, crop sides to fit
                         let naturalWidth = maxSize * sRatio

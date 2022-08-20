@@ -6,7 +6,7 @@
     --clock: none;
     --settings: none;
     --columns: 100%;
-    --image-scaling: cover;
+    --image-scaling: contain;
 }
 
 html, body {
