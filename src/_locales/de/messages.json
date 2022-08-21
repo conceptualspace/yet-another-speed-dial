@@ -112,6 +112,9 @@
   "refresh": {
     "message": "Miniaturansichten Aktualisieren"
   },
+  "remember": {
+    "message": "Ordner merken"
+  },
   "remove": {
     "message": "Entfernen"
   },

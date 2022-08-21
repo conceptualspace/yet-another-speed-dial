@@ -112,6 +112,9 @@
   "refresh": {
     "message": "Actualizar Miniaturas"
   },
+  "remember": {
+    "message": "Recordar última carpeta"
+  },
   "remove": {
     "message": "Eliminar"
   },

@@ -112,6 +112,9 @@
   "refresh": {
     "message": "Aggiorna miniature"
   },
+  "remember": {
+    "message": "Ricorda l'ultima cartella"
+  },
   "remove": {
     "message": "Rimuovi"
   },

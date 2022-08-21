@@ -13,6 +13,7 @@ let defaults = {
     wallpaperSrc: 'img/bg.jpg',
     backgroundColor: '#111111',
     largeTiles: true,
+    rememberFolder: false,
     showTitles: true,
     showAddSite: true,
     showFolders: true,
@@ -23,6 +24,7 @@ let defaults = {
     textColor: '#ffffff'
 };
 let cache = {};
+let currentFolder = null;
 let ready = false;
 let firstRun = true;
 let tripwire = 0;
@@ -808,7 +810,7 @@ function connected(p) {
     p.onMessage.addListener(function(m) {
         if (m.getCache) {
             if (ready && speedDialId) {
-                p.postMessage({ready, cache, settings, speedDialId});
+                p.postMessage({ready, cache, settings, speedDialId, currentFolder});
             } else {
                 p.postMessage({ready:false});
             }
@@ -844,6 +846,9 @@ function connected(p) {
             updateSettings();
         } else if (m.handleImport) {
             handleImport();
+        }
+        else if (m.currentFolder) {
+            currentFolder = m.currentFolder;
         }
     });
     p.onDisconnect.addListener(function(p) {

@@ -112,6 +112,9 @@
   "refresh": {
     "message": "Refresh Thumbnails"
   },
+  "remember": {
+    "message": "Remember Last Folder"
+  },
   "remove": {
     "message": "Remove"
   },

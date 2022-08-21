@@ -64,6 +64,7 @@ const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
 const largeTilesInput = document.getElementById("largeTiles");
+const rememberFolderInput = document.getElementById("rememberFolder");
 const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
@@ -319,6 +320,7 @@ function folderLink(title, id) {
         currentFolder = id;
         scrollPos = 0;
         bookmarksContainerParent.scrollTop = scrollPos;
+        tabMessagePort.postMessage({currentFolder: id});
     };
 
     // todo: allow dropping directly on folder title?
@@ -512,6 +514,12 @@ function printBookmarks(bookmarks, parentId) {
         bookmarksContainer.innerHTML = "";
         bookmarksContainer.appendChild(fragment);
 
+        if (settings.rememberFolder && currentFolder && currentFolder !== speedDialId) {
+            bookmarksContainer.style.opacity = "1";
+            bookmarksContainer.style.display = "none";
+        } else {
+            //bookmarksContainer.style.display = "flex";
+        }
         bookmarksContainer.style.opacity = "1";
         bookmarksContainerParent.scrollTop = scrollPos;
         animate();
@@ -524,8 +532,22 @@ function printBookmarks(bookmarks, parentId) {
             let folderContainer = document.createElement('div');
             folderContainer.id = parentId;
             folderContainer.classList.add('container');
-            folderContainer.style.display = 'none';
-            folderContainer.style.opacity = "1";
+            if (settings.rememberFolder && currentFolder === parentId) {
+                folderContainer.style.display = 'flex';
+                folderContainer.style.opacity = "0";
+                setTimeout(function () {
+                    //layoutFolder = id;
+                    folderContainer.style.opacity = "1";
+                    animate()
+                }, 20);
+                let titleEl = document.querySelectorAll(`[folderid="${currentFolder}"]`)[0];
+                if (titleEl) {
+                    titleEl.classList.add('activeFolder');
+                }
+            } else {
+                folderContainer.style.display = 'none';
+                folderContainer.style.opacity = "1";
+            }
             //document.body.append(folderContainer);
             bookmarksContainerParent.append(folderContainer);
         }
@@ -1141,6 +1163,7 @@ function applySettings() {
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
         defaultSortInput.value = settings.defaultSort;
+        rememberFolderInput.checked = settings.rememberFolder;
 
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
@@ -1182,6 +1205,7 @@ function saveSettings() {
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
     settings.defaultSort = defaultSortInput.value;
+    settings.rememberFolder = rememberFolderInput.checked;
 
     applySettings();
 
@@ -1404,6 +1428,10 @@ showFoldersInput.oninput = function(e) {
 }
 
 showClockInput.oninput = function(e) {
+    saveSettings()
+}
+
+rememberFolderInput.oninput = function(e) {
     saveSettings()
 }
 
@@ -1658,6 +1686,7 @@ function init() {
             cache = m.cache;
             settings = m.settings;
             speedDialId = m.speedDialId;
+            currentFolder = m.currentFolder;
             applySettings().then(() => getBookmarks(speedDialId));
         } else if (m.refresh) {
             //console.log(cache, m.cache);
