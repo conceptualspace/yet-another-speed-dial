@@ -257,7 +257,7 @@ function fetchImages(url) {
 
                 // get apple touch icon
                 let appleIcon = xhr.responseXML.querySelector('link[rel="apple-touch-icon"]');
-                if (appleIcon) {
+                if (appleIcon && appleIcon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
                     insert(imageUrl);
                 }
@@ -273,7 +273,7 @@ function fetchImages(url) {
                 ];
                 for (let size of sizes) {
                     let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
-                    if (icon) {
+                    if (icon && icon.getAttribute('href')) {
                         let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
                         insert(imageUrl);
                         break;
