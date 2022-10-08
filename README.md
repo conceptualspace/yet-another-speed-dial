@@ -32,7 +32,7 @@ YASD loads thumbnails using the Open Graph standard. This keeps those thumbnails
 This is required for YASD to capture an image of the website for the thumbnail. **YASD accesses absolutely no other data for any reason whatsoever**. These two features (visual thumbnails and user privacy) were the primary motivation for creating YASD. Note, YASD still works if you deny this permission, just without capturing thumbnails. You can find the YASD privacy policy here: https://conceptualspace.net/privacy.md
 
 #### Why is YASD showing CPU usage in the Chrome task manager?
-While the actual CPU usage is very low (confirm using your OS task manager), some cycles are used to elimate jankiness. YASD uses a high performance rendering engine (GSAP) to keep user ineractions and animations smooth. The usage is 0 when YASD is not in focus.
+While the actual CPU usage is very low (confirm using your OS task manager), some cycles are used to elimate jankiness. YASD uses a high performance rendering engine (GSAP) to keep user interactions and animations smooth. The usage is 0 when YASD is not in focus.
 
 #### Can I open speed dial links in Firefox Containers?
 Yes, just use <kbd>Shift</kbd> + <kbd>Right-click</kbd> on the speed dial to access the default context menu.
