@@ -352,6 +352,7 @@ a {
 .formItem > button {
     padding: .6em;
     width: 100%;
+    border-radius: 6px;
 }
 
 .formItem > button {
@@ -384,9 +385,9 @@ a {
 }
 
 input {
-    border: none;
+    border: 1px solid #333;
     outline: none;
-    background-color: #111111;
+    background-color: #333;
     color: #f2f2f2;
     font-size: medium;
 }
@@ -396,7 +397,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
   }
 
 .inputBorder {
-    border-top: 2px solid dimgray;
+    border-top: 1px solid #1692EA;
+    margin: 0 2px 0 2px;
     transform: scaleX(0);
     transition: transform 200ms;
     transform-origin:  50% 50%;
