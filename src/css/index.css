@@ -196,7 +196,9 @@ a {
     z-index: 2;
     background-color: #111111;
     color: #ffffff;
-    border: 1px solid grey;
+    border: none;
+    border-radius: 3px;
+    box-shadow: 0 0 10px 0 rgba(0,0,0,0.2);
     transition: visibility 0s, opacity 160ms ease;
 }
 .menu-options {
@@ -213,13 +215,6 @@ a {
 }
 .menu-option:hover {
     background-color: #333333;
-}
-
-#settingsMenu {
-    padding: 0;
-}
-#settingsMenu > .menu-options {
-    margin: 0;
 }
 
 .modal {
