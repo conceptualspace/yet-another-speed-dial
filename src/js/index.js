@@ -725,6 +725,22 @@ function createDial() {
     });
 }
 
+function openAllTabs() {
+    let folder = document.getElementById(currentFolder);
+    let dials = [...folder?.getElementsByClassName('tile')];
+
+    console.log(dials);
+    
+    dials?.forEach(dial => {
+        if (dial.href) {
+            browser.tabs.create({
+                url: dial.href,
+                active: false
+            });
+        }
+    });
+}
+
 function offscreenCanvasShim(w, h) {
     try {
         return new OffscreenCanvas(w, h);
@@ -1297,6 +1313,9 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'newPrivate':
                     browser.windows.create({"url": targetTileHref, "incognito": true});
+                    break;
+                case 'openAll':
+                    openAllTabs();
                     break;
                 case 'edit':
                     buildModal(targetTileHref, targetTileTitle).then(() => {
