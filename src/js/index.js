@@ -396,15 +396,13 @@ function getChildren(folderId) {
 }
 
 async function refreshAllThumbnails() {
-    const allFolders = folders.concat(speedDialId);
+    //const allFolders = folders.concat(speedDialId);
     let urls = [];
 
-    for (let folder of allFolders) {
-        let children = await browser.bookmarks.getChildren(folder);
-        for (let child of children) {
-            if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
-                urls.push(child.url);
-            }
+    let children = await browser.bookmarks.getChildren(currentFolder);
+    for (let child of children) {
+        if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
+            urls.push(child.url);
         }
     }
 
@@ -1307,6 +1305,9 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'refresh':
                     refreshThumbnails(targetTileHref);
+                    break;
+                case 'refreshAll':
+                    refreshAllThumbnails();
                     break;
                 case 'delete':
                     removeBookmark(targetTileHref);

@@ -731,6 +731,15 @@ function refreshBatch(urls, index = 0) {
     }
 }
 
+async function refreshAll(urls) {
+    for (let url of urls) {
+        await browser.storage.local.remove(url).catch((err) => {
+            console.log(err)
+        });
+    }
+    refreshBatch(urls)
+}
+
 function changeBookmark(id, info) {
     // info may only contain "changed" info -- ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
@@ -819,6 +828,10 @@ function connected(p) {
             manualRefresh(m.url)
         }
         else if (m.refreshAll) {
+            refreshAll(m.urls)
+        }
+        // todo: reset not enabled in the ui
+        else if (m.reset) {
             // save current settings
             let settings = null;
             browser.storage.local.get('settings').then(result => {
@@ -832,7 +845,7 @@ function connected(p) {
                         browser.storage.local.set({settings})
                     }
                     // fetch new images
-                    refreshBatch(m.urls)
+                    //refreshBatch(m.urls)
                 })
             })
         }
