@@ -732,19 +732,21 @@ function createDial() {
 }
 
 function openAllTabs() {
-    let folder = document.getElementById(currentFolder);
-    let dials = [...folder?.getElementsByClassName('tile')];
+    let currentFolderId = (currentFolder === speedDialId) ? 'wrap' : currentFolder;
+    let folder = document.getElementById(currentFolderId);
 
-    console.log(dials);
-    
-    dials?.forEach(dial => {
-        if (dial.href) {
-            browser.tabs.create({
-                url: dial.href,
-                active: false
-            });
-        }
-    });
+    if (folder) {
+        let dials = [...folder.getElementsByClassName('tile')];
+        
+        dials?.forEach(dial => {
+            if (dial.href) {
+                browser.tabs.create({
+                    url: dial.href,
+                    active: false
+                });
+            }
+        });
+    }
 }
 
 function offscreenCanvasShim(w, h) {
