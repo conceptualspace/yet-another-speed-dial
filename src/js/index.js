@@ -399,22 +399,25 @@ function getChildren(folderId) {
     });
 }
 
-async function refreshAllThumbnails() {
-    //const allFolders = folders.concat(speedDialId);
+function refreshAllThumbnails() {
     let urls = [];
-
-    let children = await browser.bookmarks.getChildren(currentFolder);
-    for (let child of children) {
-        if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
-            urls.push(child.url);
-        }
-    }
-
+    
     hideModals();
 
-    tabMessagePort.postMessage({refreshAll: true, urls});
-    toastContent.innerText = ` Capturing images...`;
-    toast.style.transform = "translateX(0%)";
+    browser.bookmarks.getChildren(currentFolder).then(children => {
+        if (children && children.length) {
+            for (let child of children) {
+                if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
+                    urls.push(child.url);
+                }
+            }
+            tabMessagePort.postMessage({refreshAll: true, urls});
+            toastContent.innerText = ` Capturing images...`;
+            toast.style.transform = "translateX(0%)";
+        }
+    }).catch(err => {
+        console.log(err);
+    });
 }
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
