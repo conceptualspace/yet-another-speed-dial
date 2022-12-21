@@ -38,6 +38,10 @@ const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
 const importExportModal = document.getElementById('importExportModal');
 const importExportModalContent = document.getElementById('importExportModalContent');
 
+const refreshAllModal = document.getElementById('refreshAllModal');
+const refreshAllModalContent = document.getElementById('refreshAllModalContent');
+const refreshAllModalSave = document.getElementById('refreshAllModalSave');
+
 const toast = document.getElementById('toast');
 const toastContent = document.getElementById('toastContent');
 
@@ -406,6 +410,8 @@ async function refreshAllThumbnails() {
         }
     }
 
+    hideModals();
+
     tabMessagePort.postMessage({refreshAll: true, urls});
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
@@ -617,8 +623,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, importExportModalContent]
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -1326,7 +1332,7 @@ window.addEventListener("mousedown", e => {
                     refreshThumbnails(targetTileHref);
                     break;
                 case 'refreshAll':
-                    refreshAllThumbnails();
+                    modalShowEffect(refreshAllModalContent, refreshAllModal);
                     break;
                 case 'delete':
                     removeBookmark(targetTileHref);
@@ -1370,6 +1376,7 @@ addFolderButton.addEventListener("click", createFolder);
 createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
+refreshAllModalSave.addEventListener("click", refreshAllThumbnails);
 
 for (let button of closeModal) {
     button.onclick = function (e) {
