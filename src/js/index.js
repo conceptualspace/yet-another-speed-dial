@@ -401,10 +401,11 @@ function getChildren(folderId) {
 
 function refreshAllThumbnails() {
     let urls = [];
+    let parent = currentFolder ? currentFolder : speedDialId;
     
     hideModals();
 
-    browser.bookmarks.getChildren(currentFolder).then(children => {
+    browser.bookmarks.getChildren(parent).then(children => {
         if (children && children.length) {
             for (let child of children) {
                 if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
@@ -735,8 +736,7 @@ function createDial() {
 }
 
 function openAllTabs() {
-    let currentFolderId = (currentFolder === speedDialId) ? 'wrap' : currentFolder;
-    let folder = document.getElementById(currentFolderId);
+    let folder = currentFolder ? document.getElementById(currentFolder) : document.getElementById('wrap');
 
     if (folder) {
         let dials = [...folder.getElementsByClassName('tile')];
