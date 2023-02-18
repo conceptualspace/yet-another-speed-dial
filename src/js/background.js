@@ -190,8 +190,20 @@ function fetchImages(url) {
 
         const hostname = new URL(url).hostname;
 
+        let images = [];
+
         // default favicons
-        let images = [new URL(url).origin + "/favicon.ico", 'https://logo.clearbit.com/' + new URL(url).hostname + '?size=256'];
+        images.push(new URL(url).origin + "/favicon.ico")
+        // amazon hack
+        if (hostname.includes('amazon')) {
+            images.push('img/amazon.com.png');
+            // dont fetch other images for the root page
+            if (hostname.startsWith('amazon') && hostname.length < 14) {
+                resolve(images);
+            }
+        } else {
+            images.push('https://logo.clearbit.com/' + new URL(url).hostname + '?size=256');
+        }
 
         // avoid duplicates and preserve the presedence of images
         function insert(imageUrl) {
