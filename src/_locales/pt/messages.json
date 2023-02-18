@@ -1,0 +1,154 @@
+{
+  "addFolderButton": {
+    "message": "Botão Adicionar Pasta"
+  },
+  "address": {
+    "message": "URL"
+  },
+  "addSiteButton": {
+    "message": "Botão Adicionar site"
+  },
+  "addTo": {
+    "message": "Adicionar à discagem rápida"
+  },
+  "backgroundColor": {
+    "message": "Cor de fundo"
+  },
+  "browse": {
+    "message": "Procurar..."
+  },
+  "cancel": {
+    "message": "Cancelar"
+  },
+  "captureMessage": {
+    "message": "Isso abrirá temporariamente o site em uma nova guia para capturar a imagem"
+  },
+  "clock": {
+    "message": "Relógio"
+  },
+  "confirmDelete": {
+    "message": "Tem certeza de que deseja remover permanentemente esta pasta?"
+  },
+  "createFolder": {
+    "message": "Criar Pasta"
+  },
+  "defaultSort": {
+    "message": "Classificar"
+  },
+  "delete": {
+    "message": "Excluir"
+  },
+  "edit": {
+    "message": "Editar"
+  },
+  "editFolder": {
+    "message": "Editar Pasta..."
+  },
+  "export": {
+    "message": "Exportar Configurações..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "uma nova guia moderna para chrome, edge e firefox"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "mais uma discagem rápida"
+  },
+  "help": {
+    "message": "Ajuda"
+  },
+  "home": {
+    "message": "Início"
+  },
+  "import": {
+    "message": "Configurações de importação..."
+  },
+  "importExport": {
+    "message": "Isso fará backup ou restaurará as configurações e miniaturas.\n\nObserve que todas as discagens rápidas são gerenciadas pelo navegador como favoritos. Certifique-se de que eles sejam copiados separadamente por meio do gerenciador de favoritos ou sincronização.\n\nAVISO: a importação substituirá suas configurações atuais."
+  },
+  "importExportLink": {
+    "message": "Importar e Exportar..."
+  },
+  "labels": {
+    "message": "Rótulos"
+  },
+  "largeTiles": {
+    "message": "Blocos grandes"
+  },
+  "maxColumns": {
+    "message": "Max Cols"
+  },
+  "name": {
+    "message": "Nome"
+  },
+  "newDial": {
+    "message": "Nova discagem rápida..."
+  },
+  "newFolder": {
+    "message": "Nova Pasta..."
+  },
+  "newInstall1": {
+    "message": "Comece com mais uma discagem rápida!"
+  },
+  "newInstall2": {
+    "message": "⭐ Adicione sites clicando no botão abaixo ou adicione favoritos à pasta Discagem Rápida"
+  },
+  "newInstall3": {
+    "message": "✨ Os mostradores podem ser modificados clicando com o botão direito do mouse neles"
+  },
+  "newInstall4": {
+    "message": "\uD83D\uDC8E Acesse mais configurações clicando na engrenagem no canto superior direito"
+  },
+  "newPrivate": {
+    "message": "Abrir em nova janela privada"
+  },
+  "newTab": {
+    "message": "Abrir em nova guia"
+  },
+  "newWin": {
+    "message": "Abrir em nova janela"
+  },
+  "refresh": {
+    "message": "Atualizar miniaturas"
+  },
+  "remember": {
+    "message": "Lembrar última pasta"
+  },
+  "remove": {
+    "message": "Remover"
+  },
+  "save": {
+    "message": "Salvar"
+  },
+  "saveToast": {
+    "message": "Configurações salvas!"
+  },
+  "scaleImages": {
+    "message": "Ajustar escala imagem"
+  },
+  "settings": {
+    "message": "Configurações..."
+  },
+  "settingsButton": {
+    "message": "Botão Configurações"
+  },
+  "settingsTitle": {
+    "message": "Configurações"
+  },
+  "textColor": {
+    "message": "Cor do texto"
+  },
+  "tileTitle": {
+    "message": "Nome"
+  },
+  "title": {
+    "message": "Discagem rápida"
+  },
+  "uploadImage": {
+    "message": "Adicionar imagem ..."
+  },
+  "wallpaper": {
+    "message": "Papel de parede"
+  }
+}
