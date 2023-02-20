@@ -105,6 +105,8 @@ h1 {
 
 .folderTitle:hover {
     opacity: 1;
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 .activeFolder {
@@ -123,8 +125,9 @@ h1 {
     will-change: transform;
 }
 
-.tile:hover {
-
+.tile-content:hover {
+    -webkit-transform: scale(0.95);
+    transform: scale(0.95);
 }
 
 .tile-main {
@@ -527,4 +530,3 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     vertical-align: middle;
     padding-left: 10px;
 }
-
