@@ -3,8 +3,8 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "2.5.4",
-  "author": "dev@conceptualspace.net",
+  "version": "0.0.1",
+  "author": "allan@cairns.id.au",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -45,7 +45,7 @@
   "web_accessible_resources": ["icons/icon128.png"],
   "browser_specific_settings": {
     "gecko": {
-      "id": "yet_another_speed_dial@conceptualspace.net",
+      "id": "simple_speed_dial@cairns.id.au",
       "strict_min_version": "59.0"
     }
   }

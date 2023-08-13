@@ -99,6 +99,7 @@ h1 {
 .folderTitle {
     opacity: 0.85;
     font-weight: bold;
+    font-size: large;
     transition: padding 160ms ease, outline 160ms ease;
     margin: 12px;
 }
@@ -441,7 +442,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #foldersContainer {
-    min-height: 78px;
+    /* min-height: 78px; */
     margin-right: 140px;
     margin-left: 30px;
     display: flex;
@@ -449,6 +450,12 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #folders {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+}
+
+#breadcrumbs {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -528,3 +535,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     padding-left: 10px;
 }
 
+span {
+    text-decoration: none;
+    color: var(--color);
+    outline: 0;
+}

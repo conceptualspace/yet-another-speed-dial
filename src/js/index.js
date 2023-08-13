@@ -1,5 +1,4 @@
-// yet another speed dial
-// copyright 2019 dev@conceptualspace.net
+// YASD-remix
 // absolutely no warranty is expressed or implied
 
 'use strict';
@@ -7,36 +6,12 @@
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = document.getElementById('wrap');
+const breadcrumbsContainer = document.getElementById('breadcrumbs');
 const foldersContainer = document.getElementById('folders');
-const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
-const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
 const modalContent = document.getElementById('tileModalContent');
-
-const createDialModal = document.getElementById('createDialModal');
-const createDialModalContent = document.getElementById('createDialModalContent');
-const createDialModalURL = document.getElementById('createDialModalURL');
-const createDialModalSave = document.getElementById('createDialModalSave');
-
-const createFolderModal = document.getElementById('createFolderModal');
-const createFolderModalContent = document.getElementById('createFolderModalContent');
-const createFolderModalName = document.getElementById('createFolderModalName');
-const createFolderModalSave = document.getElementById('createFolderModalSave');
-
-const editFolderModal = document.getElementById('editFolderModal');
-const editFolderModalContent = document.getElementById('editFolderModalContent');
-const editFolderModalName = document.getElementById('editFolderModalName');
-const editFolderModalSave = document.getElementById('editFolderModalSave');
-
-const deleteFolderModal = document.getElementById('deleteFolderModal');
-const deleteFolderModalContent = document.getElementById('deleteFolderModalContent');
-const deleteFolderModalName = document.getElementById('deleteFolderModalName');
-const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
-
-const importExportModal = document.getElementById('importExportModal');
-const importExportModalContent = document.getElementById('importExportModalContent');
 
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
@@ -70,8 +45,6 @@ const backgroundColorContainer = document.getElementById("backgroundColorContain
 const largeTilesInput = document.getElementById("largeTiles");
 const rememberFolderInput = document.getElementById("rememberFolder");
 const showTitlesInput = document.getElementById("showTitles");
-const showCreateDialInput = document.getElementById("showCreateDial");
-const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const maxColsInput = document.getElementById("maxcols");
@@ -108,13 +81,17 @@ let containerSize = null;
 let layoutFolder = false;
 let boxes = [];
 let hourCycle = 'h12';
+
+let breadcrumbs = [];
+let breadcrumbTitles = [];
+
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 
-const debounce = (func, delay= 500, immediate=false) => {
+const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
-    return function() {
+    return function () {
         const context = this
         const args = arguments
         if (immediate && !inDebounce) {
@@ -129,168 +106,37 @@ const debounce = (func, delay= 500, immediate=false) => {
 
 // detect clock settings
 if (!locale.startsWith("en")) {
-    hourCycle = Intl.DateTimeFormat(locale, {hour: 'numeric'}).resolvedOptions().hourCycle;
+    hourCycle = Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle;
 }
 
 function displayClock() {
-    clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hourCycle: hourCycle});
+    clock.textContent = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
     setTimeout(displayClock, 10000);
 }
 
 displayClock();
 
-function getBookmarks(folderId) {
-    browser.bookmarks.getChildren(folderId).then(result => {
-        if (folderId === speedDialId && !result.length && settings.showFolders) {
-            noBookmarks.style.display = 'block';
-            addFolderButton.style.display = 'none';
-        }
-        printBookmarks(result, folderId)
-    }, error => {
-        console.log(error);
-    });
-}
+function showFolder(id, title) {
 
-function removeBookmark(url) {
-    let currentParent = currentFolder ? currentFolder : speedDialId
-    browser.bookmarks.search({url})
-        .then(bookmarks => {
-            let cleanup = bookmarks.length < 2;
-            for (let bookmark of bookmarks) {
-                if (bookmark.parentId === currentParent) {
-                    // animate removal
-                    targetNode.style.display = "none";
-                    layout(true);
-                    // remove dial
-                    targetNode.remove();
-                    browser.bookmarks.remove(bookmark.id);
-                    // if we have duplicates (ex in other folders), keep the image cache, otherwise purge it
-                    if (cleanup) {
-                        browser.storage.local.remove(url);
-                    }
-                }
-            }
-        })
-}
+    currentFolder = id;
 
-function moveFolder(id, oldIndex, newIndex, newSiblingId) {
-    let options = {};
-
-    function move(id, options) {
-        browser.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({refreshInactive: true})
-        }).catch(err => {
-            console.log(err);
-        })
+    if (!title) {
+        title = 'how did I get here without a title?';
     }
 
-    if (newSiblingId && newSiblingId !== -1) {
-        browser.bookmarks.get(newSiblingId).then(result => {
-            if (oldIndex >= newIndex) {
-                options.index = Math.max(0, result[0].index);
-            } else {
-                options.index = Math.max(0, result[0].index - 1);
-                // chrome-only off by 1 bug when moving a bookmark forward
-                if (!browser.runtime.getBrowserInfo) {
-                    options.index++;
-                }
-            }
-            move(id, options);
-        }).catch(err => {
-            console.log(err);
-        })
-    } else {
-        move(id, options);
-    }
-}
-
-function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId) {
-    let options = {}
-
-    function move(id, options) {
-        browser.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({refreshInactive: true});
-        }).catch(err => {
-            console.log(err);
-        });
+    if (breadcrumbs.includes(id)) { // navigating back up the folder tree
+        breadcrumbs.length = breadcrumbs.indexOf(id) + 1;
+        breadcrumbTitles.length = breadcrumbs.indexOf(id) + 1;
+    } else { // navigating to sub-folder
+        breadcrumbs.push(id);
+        breadcrumbTitles.push(title);
     }
 
-    if ((toParentId && fromParentId) && toParentId !== fromParentId) {
-        options.parentId = toParentId;
-    }
-
-    // todo: refactor
-    if (settings.defaultSort === "first") {
-        if (newSiblingId && newSiblingId !== -1) {
-            browser.bookmarks.get(newSiblingId).then(result => {
-                if (toParentId === fromParentId && oldIndex >= newIndex) {
-                    options.index = Math.max(0, result[0].index);
-                    // chrome-only off by 1 bug when moving a bookmark forward
-                    if (!browser.runtime.getBrowserInfo) {
-                        options.index++;
-                    }
-                } else {
-                    options.index = Math.max(0, result[0].index + 1);
-                }
-                move(id, options);
-            }).catch(err => {
-                console.log(err);
-            })
-        } else {
-            if (!newSiblingId) {
-                options.index = 0;
-            }
-            move(id, options);
-        }
-    } else {
-        if (newSiblingId && newSiblingId !== -1) {
-            browser.bookmarks.get(newSiblingId).then(result => {
-                if (toParentId !== fromParentId || oldIndex >= newIndex) {
-                    options.index = Math.max(0, result[0].index);
-                } else {
-                    options.index = Math.max(0, result[0].index - 1);
-                    // chrome-only off by 1 bug when moving a bookmark forward
-                    if (!browser.runtime.getBrowserInfo) {
-                        options.index++;
-                    }
-                }
-                move(id, options);
-            }).catch(err => {
-                console.log(err);
-            })
-        } else {
-            move(id, options);
-        }
-    }
-}
-
-function showFolder(id) {
     hideSettings();
-    let folders = document.getElementsByClassName('container');
-    for (let folder of folders) {
-        if (folder.id === id || (folder.id === 'wrap' && id === speedDialId)) {
-            folder.style.display = "flex"
-            folder.style.opacity = "0";
-            layoutFolder = true;
-            // transition between folders. todo more elegant solution
-            setTimeout(function () {
-                //layoutFolder = id;
-                folder.style.opacity = "1";
-                animate()
-            }, 20);
-        } else {
-            folder.style.display = "none";
-        }
-    }
-    // style the active tab
-    let folderTitles = document.getElementsByClassName('folderTitle');
-    for (let title of folderTitles) {
-        if (title.attributes.folderid.value === id) {
-            title.classList.add('activeFolder');
-        } else {
-            title.classList.remove('activeFolder');
-        }
-    }
+
+    refreshBreadcrumbs();
+    refreshFolders(id);
+    refreshBookmarks(id);
 }
 
 function getThumbs(bookmarkUrl) {
@@ -302,16 +148,11 @@ function getThumbs(bookmarkUrl) {
         });
 }
 
-function printFolderBookmarks() {
-    for (let folder of folders) {
-        getBookmarks(folder)
-    }
-}
-
 function folderLink(title, id) {
     let a = document.createElement('a');
     if (id === speedDialId) {
         a.id = "homeFolderLink";
+        return; // todo come up with a less hacky way to disable home in folder list
     }
     //a.classList.add('tile');
     a.classList.add('folderTitle');
@@ -320,11 +161,11 @@ function folderLink(title, id) {
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
-        showFolder(id);
+        showFolder(id, title);
         currentFolder = id;
         scrollPos = 0;
         bookmarksContainerParent.scrollTop = scrollPos;
-        tabMessagePort.postMessage({currentFolder: id});
+        tabMessagePort.postMessage({ currentFolder: id });
     };
 
     // todo: allow dropping directly on folder title?
@@ -334,75 +175,149 @@ function folderLink(title, id) {
     foldersContainer.appendChild(a);
 }
 
-function createFolder() {
-    hideSettings();
-    createFolderModalName.value = '';
-    createFolderModalName.focus();
-    createFolderModal.style.transform = "translateX(0%)";
-    createFolderModal.style.opacity = "1";
-    createFolderModalContent.style.transform = "scale(1)";
-    createFolderModalContent.style.opacity = "1";
-}
+// todo: refactor this and folderLink function to share logic
+function breadcrumbLink(title, id, disabled) {
 
-function saveFolder() {
-    let name = createFolderModalName.value.trim();
-
-    if (name.length) {
-        browser.bookmarks.create({
-            title: name,
-            parentId: speedDialId
-        }).then(node => {
-            hideModals();
-        });
-    } else {
-        hideModals();
+    let a = document.createElement('a');
+    if (id === speedDialId) {
+        a.id = "homeFolderLink";
+    } else { // add separator between breadcrumbs
+        let s = document.createElement('span');
+        let separator = document.createTextNode('>');
+        s.appendChild(separator);
+        s.classList.add('folderTitle');
+        breadcrumbsContainer.appendChild(s);
     }
+    //a.classList.add('tile');
+    a.classList.add('folderTitle');
+    a.setAttribute('folderId', id);
+    let linkText = document.createTextNode(title);
+    a.appendChild(linkText);
+    //a.href = "#"+bookmark.id;
+    if (!disabled) {    // disable leaf node
+        a.onclick = function () {
+            showFolder(id, title);
+            currentFolder = id;
+            scrollPos = 0;
+            bookmarksContainerParent.scrollTop = scrollPos;
+            tabMessagePort.postMessage({ currentFolder: id });
+        };
+    }
+
+    // todo: allow dropping directly on folder title?
+    a.ondragenter = dragenterHandler;
+    a.ondragleave = dragleaveHandler;
+
+    breadcrumbsContainer.appendChild(a);
 }
 
-function editFolder() {
-    let title = editFolderModalName.value.trim();
-    browser.bookmarks.update(targetFolder, {
-        title
-    }).then(node => {
-        hideModals();
+function refreshBreadcrumbs() {
+
+    breadcrumbsContainer.innerHTML = "";
+
+    if (breadcrumbs.length === 0) { // add home folder
+        breadcrumbs.push(speedDialId);
+        breadcrumbTitles.push(homeFolderTitle);
+    }
+
+    for (let i = 0; i < breadcrumbs.length; i++) {
+        breadcrumbLink(breadcrumbTitles[i], breadcrumbs[i], i === breadcrumbs.length - 1 ? true : false);
+    }
+
+}
+
+function refreshFolders(parent) {
+
+    foldersContainer.innerHTML = "";
+
+    browser.bookmarks.getChildren(parent).then(children => {
+        if (children && children.length) {
+            for (let child of children) {
+                if (!child.url && child.parentId === parent) {
+                    folders.push(child.id);
+                    folderLink(child.title, child.id);
+                }
+            }
+        }
     }).catch(err => {
         console.log(err);
     });
+
+
+}
+
+function refreshBookmarks(parent) {
+
+    bookmarksContainer.innerHTML = "";
+
+    browser.bookmarks.getChildren(parent).then(children => {
+
+        if (children && children.length) {
+
+            for (let child of children) {
+
+                if (child.url && child.parentId === parent && child.url.startsWith("http")) {
+
+                    // restricted to valid url schemes for security reasons -- http and https. see #26
+                    // in ff bookmark "separators" can be created that have "data:" as the url.
+                    let thumbBg, thumbUrl = null;
+                    if (cache[child.url]) {
+                        thumbUrl = cache[child.url][0];
+                        thumbBg = cache[child.url][1]
+                    } else {
+                        thumbUrl = "../img/default.png";
+                    }
+                    let a = document.createElement('a');
+                    a.classList.add('tile');
+                    a.href = child.url;
+                    a.setAttribute('data-id', child.id);
+
+                    let main = document.createElement('div');
+                    main.classList.add('tile-main');
+
+                    let content = document.createElement('div');
+                    content.classList.add('tile-content');
+                    if (thumbBg) {
+                        content.style.backgroundImage = `url('${thumbUrl}'), ${thumbBg}`;
+                    } else {
+                        content.style.backgroundImage = `url('${thumbUrl}')`;
+                    }
+
+                    let title = document.createElement('div');
+                    title.classList.add('tile-title');
+                    if (!settings.showTitles) {
+                        title.classList.add('hide');
+                    }
+                    title.textContent = child.title;
+
+                    main.appendChild(content);
+                    main.appendChild(title);
+                    a.appendChild(main);
+
+                    bookmarksContainer.appendChild(a);
+                }
+
+            }
+
+            bookmarksContainer.style.opacity = "1";
+
+        }
+    }).catch(err => {
+        console.log(err);
+    });
+
 }
 
 function refreshThumbnails(url) {
-    tabMessagePort.postMessage({refreshThumbs: true, url});
+    tabMessagePort.postMessage({ refreshThumbs: true, url });
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
-}
-
-function removeFolder() {
-    browser.bookmarks.removeTree(targetFolder).then(() => {
-        hideModals();
-        targetFolderLink.remove();
-        folders.splice(folders.indexOf(targetFolder), 1);
-        if (!folders.length) {
-            document.getElementById('homeFolderLink').remove();
-        }
-        if (document.getElementById(targetFolder).style.display === 'flex') {
-            showFolder(speedDialId);
-        }
-        document.getElementById(targetFolder).remove();
-    });
-}
-
-function getChildren(folderId) {
-    return new Promise((resolve, reject) => {
-        browser.bookmarks.getChildren(folderId).then(children => {
-            resolve(children);
-        });
-    });
 }
 
 function refreshAllThumbnails() {
     let urls = [];
     let parent = currentFolder ? currentFolder : speedDialId;
-    
+
     hideModals();
 
     browser.bookmarks.getChildren(parent).then(children => {
@@ -412,185 +327,13 @@ function refreshAllThumbnails() {
                     urls.push(child.url);
                 }
             }
-            tabMessagePort.postMessage({refreshAll: true, urls});
+            tabMessagePort.postMessage({ refreshAll: true, urls });
             toastContent.innerText = ` Capturing images...`;
             toast.style.transform = "translateX(0%)";
         }
     }).catch(err => {
         console.log(err);
     });
-}
-
-// assumes 'bookmarks' param is content of a folder (from getBookmarks)
-function printBookmarks(bookmarks, parentId) {
-    let fragment = document.createDocumentFragment();
-
-    //let folderContainer = document.createElement('div');
-    //folderContainer.id = parentId;
-    //document.body.append(div)
-
-    if (bookmarks) {
-        for (let bookmark of bookmarks) {
-            // folders
-            // ignore subfolders for now
-            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) {
-                // setup "tabs" folder header links
-                if (!folders.length) {
-                    folderLink(homeFolderTitle, speedDialId)
-                }
-                if (folders.indexOf(bookmark.id) === -1) {
-                    folders.push(bookmark.id);
-                    folderLink(bookmark.title, bookmark.id)
-                } else {
-                    let el = document.querySelector(`[folderid="${bookmark.id}"]`);
-                    if (el) {el.innerText = bookmark.title}
-                }
-
-            } else if (bookmark.url && bookmark.url.startsWith("http")) {
-                // restricted to valid url schemes for security reasons -- http and https. see #26
-                // in ff bookmark "separators" can be created that have "data:" as the url.
-                let thumbBg, thumbUrl = null;
-                if (cache[bookmark.url]) {
-                    // if the image is a blob:
-                    //iconURL = URL.createObjectURL(result.icon);
-                    //iconURL = result.icon;
-                    thumbUrl = cache[bookmark.url][0];
-                    thumbBg = cache[bookmark.url][1]
-                } else {
-                    thumbUrl = "../img/default.png";
-                }
-                let a = document.createElement('a');
-                a.classList.add('tile');
-                a.href = bookmark.url;
-                a.setAttribute('data-id', bookmark.id);
-
-                let main = document.createElement('div');
-                main.classList.add('tile-main');
-
-                let content = document.createElement('div');
-                content.classList.add('tile-content');
-                if (thumbBg) {
-                    content.style.backgroundImage = `url('${thumbUrl}'), ${thumbBg}`;
-                } else {
-                    content.style.backgroundImage = `url('${thumbUrl}')`;
-                }
-
-                let title = document.createElement('div');
-                title.classList.add('tile-title');
-                if (!settings.showTitles) {
-                    title.classList.add('hide');
-                }
-                title.textContent = bookmark.title;
-
-                main.appendChild(content);
-                main.appendChild(title);
-                a.appendChild(main);
-                fragment.appendChild(a);
-            }
-        }
-    }
-
-    // new dial button
-    let aNewDial = document.createElement('a');
-    aNewDial.classList.add('tile', 'createDial');
-    aNewDial.onclick = function () {
-        hideSettings();
-        buildCreateDialModal(parentId);
-        modalShowEffect(createDialModalContent, createDialModal);
-    };
-    let main = document.createElement('div');
-    main.classList.add('tile-main');
-    let content = document.createElement('div');
-    content.classList.add('tile-content', 'createDial-content');
-    main.appendChild(content);
-    aNewDial.appendChild(main);
-
-    // root speed dial dir
-    if (parentId === speedDialId) {
-        // populate folders divs
-        if (folders.length) {
-            printFolderBookmarks();
-        }
-
-        if (settings.defaultSort === "first") {
-            let i = fragment.childNodes.length;
-            while (i--)
-                fragment.appendChild(fragment.childNodes[i]);
-        }
-
-        fragment.appendChild(aNewDial);
-        bookmarksContainer.innerHTML = "";
-        bookmarksContainer.appendChild(fragment);
-
-        if (settings.rememberFolder && currentFolder && currentFolder !== speedDialId) {
-            bookmarksContainer.style.opacity = "1";
-            bookmarksContainer.style.display = "none";
-        } else {
-            //bookmarksContainer.style.display = "flex";
-        }
-        bookmarksContainer.style.opacity = "1";
-        bookmarksContainerParent.scrollTop = scrollPos;
-        animate();
-        // we take care of this as part of "sort" fn now..
-        //bookmarksContainer.style.opacity = "1";
-
-    } else {
-        // build a folder "tab"
-        if (!document.getElementById(parentId)) {
-            let folderContainer = document.createElement('div');
-            folderContainer.id = parentId;
-            folderContainer.classList.add('container');
-            if (settings.rememberFolder && currentFolder === parentId) {
-                folderContainer.style.display = 'flex';
-                folderContainer.style.opacity = "0";
-                setTimeout(function () {
-                    //layoutFolder = id;
-                    folderContainer.style.opacity = "1";
-                    animate()
-                }, 20);
-                let titleEl = document.querySelectorAll(`[folderid="${currentFolder}"]`)[0];
-                if (titleEl) {
-                    titleEl.classList.add('activeFolder');
-                }
-            } else {
-                folderContainer.style.display = 'none';
-                folderContainer.style.opacity = "1";
-            }
-            //document.body.append(folderContainer);
-            bookmarksContainerParent.append(folderContainer);
-        }
-
-        let folderContainerEl = document.getElementById(parentId);
-
-        // todo: this is fubar
-        let sortable = new Sortable(folderContainerEl, {
-            group: 'shared',
-            animation: 160,
-            ghostClass: 'selected',
-            dragClass: 'dragging',
-            filter: ".createDial",
-            delay: 500, // fixes #40
-            delayOnTouchOnly: true,
-            onMove: onMoveHandler,
-            onEnd: onEndHandler
-        });
-
-        if (settings.defaultSort === "first") {
-            let i = fragment.childNodes.length;
-            while (i--)
-                fragment.appendChild(fragment.childNodes[i]);
-        }
-
-        fragment.appendChild(aNewDial);
-
-        // append bookmarks to container
-        folderContainerEl.innerHTML = "";
-        folderContainerEl.appendChild(fragment);
-
-        //animate();
-        bookmarksContainerParent.scrollTop = scrollPos;
-        //
-    }
 }
 
 function showContextMenu(el, top, left) {
@@ -609,7 +352,7 @@ function showContextMenu(el, top, left) {
 }
 
 function hideMenus() {
-    let menus = [menu, settingsMenu, folderMenu]
+    let menus = [menu, settingsMenu]
     for (let el of menus) {
         el.style.visibility = "hidden";
         el.style.opacity = "0";
@@ -627,8 +370,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+    let modals = [modal, refreshAllModal];
+    let modalContents = [modalContent, refreshAllModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -661,12 +404,6 @@ function modalShowEffect(contentEl, modalEl) {
 function hideToast() {
     toast.style.transform = "translateX(100%)";
     toastContent.innerText = '';
-}
-
-function buildCreateDialModal(parentId) {
-    createDialModalURL.value = '';
-    createDialModalURL.parentId = parentId ? parentId : speedDialId;
-    createDialModalURL.focus();
 }
 
 async function buildModal(url, title) {
@@ -709,7 +446,7 @@ async function buildModal(url, title) {
                 newCarousel.appendChild(imgDiv);
             }
         }
-        $('#carousel').flexCarousel({height: '180px'});
+        $('#carousel').flexCarousel({ height: '180px' });
     }
 }
 
@@ -721,26 +458,12 @@ function rectifyUrl(url) {
     }
 }
 
-function createDial() {
-    let url = rectifyUrl(createDialModalURL.value.trim());
-
-    browser.bookmarks.create({
-        title: url,
-        url: url,
-        parentId: createDialModalURL.parentId
-    }).then(node => {
-        hideModals();
-        toastContent.innerText = ` Capturing images for ${url}...`;
-        toast.style.transform = "translateX(0%)";
-    });
-}
-
 function openAllTabs() {
     let folder = currentFolder ? document.getElementById(currentFolder) : document.getElementById('wrap');
 
     if (folder) {
         let dials = [...folder.getElementsByClassName('tile')];
-        
+
         dials?.forEach(dial => {
             if (dial.href) {
                 browser.tabs.create({
@@ -758,7 +481,7 @@ function offscreenCanvasShim(w, h) {
     } catch (err) {
         // offscreencanvas not supported in ff
         let canvas = document.createElement('canvas');
-        canvas.width  = w;
+        canvas.width = w;
         canvas.height = h;
         return canvas;
     }
@@ -793,7 +516,7 @@ function getBgColor(image) {
     let canvas = offscreenCanvasShim(imgWidth, imgHeight);
     // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
     // todo add to other contexts
-    let context = canvas.getContext('2d', {willReadFrequently:true});
+    let context = canvas.getContext('2d', { willReadFrequently: true });
     context.drawImage(image, 0, 0);
 
     // get the top left pixel, cheap and easy
@@ -847,8 +570,8 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = 0;
                 }
-                browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
-                    tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
+                    tabMessagePort.postMessage({ updateCache: true, url: newUrl, i: thumbIndex });
                     if (title !== targetTileTitle) {
                         updateTitle()
                     }
@@ -879,8 +602,8 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
-                            tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                        browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
+                            tabMessagePort.postMessage({ updateCache: true, url: newUrl, i: thumbIndex });
                             if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
                             }
@@ -906,9 +629,9 @@ function saveBookmarkSettings() {
         //let order = sortable.toArray();
         //browser.storage.local.set({"sort":order});
         // todo: temp hack to match all until we start using bookmark ids
-        browser.bookmarks.search({url})
+        browser.bookmarks.search({ url })
             .then(bookmarks => {
-                if (bookmarks.length <= 1 && ( url !== newUrl) ) {
+                if (bookmarks.length <= 1 && (url !== newUrl)) {
                     // cleanup unused thumbnails
                     browser.storage.local.remove(url)
                 }
@@ -951,14 +674,14 @@ function layout(force = false) {
                 const x = box.transform.x + lastX - box.x;
                 const y = box.transform.y + lastY - box.y;
                 // Tween to 0 to remove the transforms
-                TweenMax.set(box.node, {x, y});
+                TweenMax.set(box.node, { x, y });
                 b.push(box.node);
             }
         }
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
         let duration = layoutFolder ? 0 : 0.7;
-        TweenMax.staggerTo(b, duration, {x: 0, y: 0, stagger:{amount: 0.2}, ease});
+        TweenMax.staggerTo(b, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
         layoutFolder = false;
     }
 }
@@ -984,14 +707,14 @@ const animate = debounce(() => {
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     const total = nodes.length;
 
-    TweenMax.set(nodes, {lazy: true, x: "+=0"});
+    TweenMax.set(nodes, { lazy: true, x: "+=0" });
 
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         const transform = node._gsTransform;
         const x = node.offsetLeft;
         const y = node.offsetTop;
-        boxes[i] = {node, transform, x, y};
+        boxes[i] = { node, transform, x, y };
     }
 
     layout();
@@ -1014,7 +737,7 @@ function resizeBackground(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', {willReadFrequently:true});
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -1049,7 +772,7 @@ function resizeThumb(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', {willReadFrequently:true});
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -1181,9 +904,7 @@ function applySettings() {
         textColor_picker.value = settings.textColor;
         textColor_picker_wrapper.style.backgroundColor = settings.textColor;
         showTitlesInput.checked = settings.showTitles;
-        showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
-        showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
@@ -1193,7 +914,7 @@ function applySettings() {
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
             //imgPreview.style.display = 'block';
-            imgPreview.onload = function(e) {
+            imgPreview.onload = function (e) {
                 if (settings.wallpaper) {
                     backgroundColorContainer.style.display = "none";
                     previewContainer.style.opacity = '1';
@@ -1206,11 +927,11 @@ function applySettings() {
                     switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
                 }
             }
-            imgPreview.onerror = function(e) {
+            imgPreview.onerror = function (e) {
                 // reset to default on error with user image
                 settings.wallpaperSrc = 'img/bg.jpg';
                 imgPreview.setAttribute('src', settings.wallpaperSrc);
-                browser.storage.local.set({settings});
+                browser.storage.local.set({ settings });
             }
         }
 
@@ -1223,9 +944,7 @@ function saveSettings() {
     settings.backgroundColor = color_picker.value;
     settings.textColor = textColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
-    settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
-    settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
@@ -1234,7 +953,7 @@ function saveSettings() {
 
     applySettings();
 
-    browser.storage.local.set({settings})
+    browser.storage.local.set({ settings })
         .then(() => {
             /*
             settingsToast.style.opacity = "1";
@@ -1243,7 +962,7 @@ function saveSettings() {
             }, 3500);
              */
 
-            tabMessagePort.postMessage({updateSettings: true});
+            tabMessagePort.postMessage({ updateSettings: true });
         });
 }
 
@@ -1268,7 +987,6 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderLink = e.target;
         targetFolder = e.target.attributes.folderId.nodeValue;
         targetFolderName = e.target.textContent;
-        showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
     } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
@@ -1317,13 +1035,13 @@ window.addEventListener("mousedown", e => {
                     openSettings();
                     break;
                 case 'newTab':
-                    browser.tabs.create({url: targetTileHref});
+                    browser.tabs.create({ url: targetTileHref });
                     break;
                 case 'newWin':
-                    browser.windows.create({"url": targetTileHref});
+                    browser.windows.create({ "url": targetTileHref });
                     break;
                 case 'newPrivate':
-                    browser.windows.create({"url": targetTileHref, "incognito": true});
+                    browser.windows.create({ "url": targetTileHref, "incognito": true });
                     break;
                 case 'openAll':
                     openAllTabs();
@@ -1338,28 +1056,6 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
-                    break;
-                case 'delete':
-                    removeBookmark(targetTileHref);
-                    break;
-                case 'editFolder':
-                    //buildFolderModal(targetFolder, targetFolderName);
-                    editFolderModalName.value = targetFolderName;
-                    modalShowEffect(editFolderModalContent, editFolderModal);
-                    break;
-                case 'deleteFolder':
-                    deleteFolderModalName.textContent = targetFolderName;
-                    modalShowEffect(deleteFolderModalContent, deleteFolderModal);
-                    break;
-                case 'newDial':
-                    // prevent default required to stop focus from leaving the modal input
-                    e.preventDefault();
-                    buildCreateDialModal(currentFolder);
-                    modalShowEffect(createDialModalContent, createDialModal);
-                    break;
-                case 'newFolder':
-                    e.preventDefault();
-                    createFolder();
                     break;
             }
             break;
@@ -1376,11 +1072,6 @@ window.addEventListener("keydown", event => {
 });
 
 modalSave.addEventListener("click", saveBookmarkSettings);
-createDialModalSave.addEventListener("click", createDial);
-addFolderButton.addEventListener("click", createFolder);
-createFolderModalSave.addEventListener("click", saveFolder)
-editFolderModalSave.addEventListener("click", editFolder)
-deleteFolderModalSave.addEventListener("click", removeFolder);
 refreshAllModalSave.addEventListener("click", refreshAllThumbnails);
 
 for (let button of closeModal) {
@@ -1404,13 +1095,6 @@ modalURL.addEventListener('keydown', e => {
     }
 });
 
-createDialModalURL.addEventListener('keydown', e => {
-    if (e.code === "Enter") {
-        e.preventDefault();
-        createDial();
-    }
-});
-
 modalImgInput.onchange = function () {
     readImage(this).then(image => {
         resizeThumb(image).then(resizedImage => {
@@ -1420,18 +1104,18 @@ modalImgInput.onchange = function () {
 };
 
 
-maxColsInput.oninput = function(e) {
+maxColsInput.oninput = function (e) {
     saveSettings()
 }
 
-defaultSortInput.oninput = function(e) {
+defaultSortInput.oninput = function (e) {
     if (settings.defaultSort !== defaultSortInput.value) {
         processRefresh();
         saveSettings()
     }
 }
 
-wallPaperEnabled.oninput = function(e) {
+wallPaperEnabled.oninput = function (e) {
     saveSettings()
 }
 
@@ -1447,27 +1131,19 @@ textColor_picker.onchange = function () {
     }
 };
 
-showTitlesInput.oninput = function(e) {
+showTitlesInput.oninput = function (e) {
     saveSettings()
 }
 
-showCreateDialInput.oninput = function(e) {
+showClockInput.oninput = function (e) {
     saveSettings()
 }
 
-showFoldersInput.oninput = function(e) {
+rememberFolderInput.oninput = function (e) {
     saveSettings()
 }
 
-showClockInput.oninput = function(e) {
-    saveSettings()
-}
-
-rememberFolderInput.oninput = function(e) {
-    saveSettings()
-}
-
-showSettingsBtnInput.oninput = function(e) {
+showSettingsBtnInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -1475,14 +1151,6 @@ reader.onload = function (e) {
     resizeBackground(e.target.result).then(imagedata => {
         imgPreview.setAttribute('src', imagedata);
         imgPreview.style.display = 'block';
-        // dynamically set text color based on background
-        /*
-        getAverageRGB(imagedata).then(rgb => {
-            let textColor = contrast(rgb);
-            settings.textColor = textColor
-            document.documentElement.style.setProperty('--color', textColor);
-        });
-         */
         saveSettings()
     })
 };
@@ -1491,101 +1159,13 @@ imgInput.onchange = function () {
     readURL(this);
 };
 
-previewOverlay.onclick = function() {
+previewOverlay.onclick = function () {
     imgInput.click();
 }
 
-function prepareExport() {
-    browser.storage.local.get(null).then(function(items) {
-        // filter out unused thumbnails to keep exported file efficient
-        let filteredItems = {};
-        for (const [key, value] of Object.entries(items)) {
-            if (key.startsWith('http')) {
-                let thumbnails = [];
-                let thumbIndex = 0;
-                let bgColor = null;
-
-                if (value.thumbnails && value.thumbnails.length) {
-                    thumbnails.push(value.thumbnails[value.thumbIndex]);
-                }
-                if (value.bgColor) {
-                    bgColor = value.bgColor;
-                }
-                filteredItems[key] = {
-                    thumbnails: thumbnails,
-                    thumbIndex: thumbIndex,
-                    bgColor: value.bgColor
-                };
-            } else if (key.startsWith('settings')) {
-                filteredItems[key] = value;
-            }
-        }
-
-        // save as file; requires downloads permission
-        const blob = new Blob([JSON.stringify(filteredItems)], {type: 'application/json'})
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
-
-        exportBtn.setAttribute('href', URL.createObjectURL(blob));
-        exportBtn.download = `yasd-export-${dateString}.json`;
-        exportBtn.classList.remove('disabled');
-
-    });
-}
-
-importExportBtn.onclick = function() {
-    hideSettings();
-    importExportStatus.innerText = "";
-    exportBtn.classList.add('disabled');
-    prepareExport();
-    modalShowEffect(importExportModalContent, importExportModal);
-}
-
-helpBtn.onclick = function() {
+helpBtn.onclick = function () {
     browser.tabs.create({ url: helpUrl });
 }
-
-importFileLabel.onclick = function() {
-    importFileInput.click();
-}
-
-importFileInput.onchange = function (event) {
-    let filereader = new FileReader();
-
-    filereader.onload = function (event) {
-        let json = null;
-        if (event && event.target) {
-            try {
-                json = JSON.parse(event.target.result);
-            } catch (err) {
-                console.log(err)
-                importExportStatus.innerText = "Error! Unable to parse file."
-            }
-        }
-
-        if (json) {
-            // clear previous settings and import
-            browser.storage.local.clear().then(() => {
-                browser.storage.local.set(json).then(result => {
-                    hideModals();
-                    // refresh page
-                    tabMessagePort.postMessage({handleImport: true});
-                }).catch(err => {
-                    console.log(err)
-                    importExportStatus.innerText = "Error! Unable to parse file."
-                });
-            }).catch(err => {
-                console.log(err)
-                importExportStatus.innerText = "Error! Please try again"
-            })
-        }
-    };
-
-    if (event && event.target && event.target.files) {
-        filereader.readAsText(event.target.files[0]);
-    }
-
-};
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {
@@ -1674,10 +1254,10 @@ function onEndHandler(evt) {
         // if the sibling's parent doesnt match the parent we are moving to discard this sibling
         // can occur when dropping onto a non sortable target (like folder name)
         if (newSiblingParentId && newSiblingParentId !== toParentId) {
-            newSiblingId = -1 ;
+            newSiblingId = -1;
         }
 
-        if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex ) {
+        if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
             moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
         }
     } else if (evt && evt.clone.classList.contains('folderTitle')) {
@@ -1703,11 +1283,12 @@ const processRefresh = debounce(() => {
 
     //bookmarksContainer.style.opacity = "0";
 
-    getBookmarks(speedDialId)
+    showFolder(speedDialId)
+
 }, 650, true);
 
 function init() {
-    tabMessagePort = browser.runtime.connect({name: port});
+    tabMessagePort = browser.runtime.connect({ name: port });
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
@@ -1719,9 +1300,8 @@ function init() {
             settings = m.settings;
             speedDialId = m.speedDialId;
             currentFolder = m.currentFolder;
-            applySettings().then(() => getBookmarks(speedDialId));
+            applySettings().then(() => showFolder(speedDialId, homeFolderTitle));
         } else if (m.refresh) {
-            //console.log(cache, m.cache);
             cache = m.cache;
             hideToast();
             processRefresh();
@@ -1756,7 +1336,7 @@ function init() {
         }
     })
 
-    tabMessagePort.postMessage({getCache: true});
+    tabMessagePort.postMessage({ getCache: true });
 
     sidenav.style.display = "flex";
 
@@ -1792,3 +1372,7 @@ function init() {
 }
 
 init();
+
+// TODO - fix open all
+// TODO - add setting for root folder
+// TODO - find dead code

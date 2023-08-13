@@ -13,7 +13,7 @@
 <body>
 <!-- new install -->
 <div class="default-content" id="noBookmarks">
-    <h1 class="default-content" data-locale="newInstall1">Get started with Yet Another Speed Dial!</h1>
+    <h1 class="default-content" data-locale="newInstall1">Get started with YASD-remix</h1>
     <p class="default-content helpText" data-locale="newInstall2">⭐ Add sites by clicking the button below, or add
         bookmarks to the Speed Dial folder</p>
     <p class="default-content helpText" data-locale="newInstall3">✨ Dials can be modified by right-clicking on them</p>
@@ -24,11 +24,10 @@
 <!--
 <div id="foldersContainer" style="position:absolute; top:0; left:0"><span id="folders"></span><a title="Add Folder" class="tile folderTitle" style="padding-left: 12px; font-size: large; transform: matrix(1, 0, 0, 1, 0, 0);">+</a></div>
 -->
-<div class="folders" id="foldersContainer"><div id="folders"></div><a id="addFolderButton" title="Add Folder">
-    <svg height="24" id="addFolderIcon" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h2v2h2v-2h2v-2h-2v-2h-2v2h-2z"></path>
-    </svg>
-</a></div>
+<div class="breadcrumbs" id="breadcrumbs"></div>
+<div class="folders" id="foldersContainer">
+    <div id="folders"></div>
+</div>
 
 <!-- speed dial content injected here -->
 <div class="tileContainer" id="tileContainer">
@@ -49,23 +48,11 @@
         <li class="menu-option" data-locale="edit" id="edit">Edit</li>
         <li class="menu-separator"></li>
         <li class="menu-option" data-locale="refresh" id="refresh">Refresh Thumbnails</li>
-        <li class="menu-separator"></li>
-        <li class="menu-option" data-locale="delete" id="delete">Delete</li>
-    </ul>
-</div>
-
-<div class="menu" id="folderMenu">
-    <ul class="menu-options">
-        <li class="menu-option" data-locale="editFolder" id="editFolder">Edit Folder...</li>
-        <li class="menu-option" data-locale="remove" id="deleteFolder">Remove</li>
     </ul>
 </div>
 
 <div class="menu" id="settingsMenu">
     <ul class="menu-options">
-        <li class="menu-option" data-locale="newDial" id="newDial">New Speed Dial...</li>
-        <li class="menu-option" data-locale="newFolder" id="newFolder">New Folder...</li>
-        <li class="menu-separator"></li>
         <li class="menu-option" id="openAll">Open all</li>
         <li class="menu-separator"></li>
         <li class="menu-option" id="refreshAll">Refresh All Thumbnails...</li>
@@ -97,74 +84,6 @@
     </div>
 </div>
 
-<!-- create dial modal window -->
-<div class="modal" id="createDialModal">
-    <div class="modal-content" id="createDialModalContent">
-        <form action="" class="tileForm">
-            <div class="formItem"><label data-locale="address" for="createDialModalURL">Address</label></div>
-            <div class="formItem"><input id="createDialModalURL" type="text"></div>
-            <div class="formItem"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the
-                site in a new tab to capture the image</em></p></div>
-            <div class="formItem">
-                <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- create folder modal window -->
-<div class="modal" id="createFolderModal">
-    <div class="modal-content" id="createFolderModalContent">
-        <form action="" class="tileForm">
-            <div class="formItem"><label data-locale="name" for="createFolderModalName">Name</label></div>
-            <div class="formItem"><input id="createFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- edit folder modal window -->
-<div class="modal" id="editFolderModal">
-    <div class="modal-content" id="editFolderModalContent">
-        <form action="" class="tileForm">
-            <div class="formItem"><label data-locale="name" for="editFolderModalName">Name</label></div>
-            <div class="formItem"><input id="editFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- delete folder modal confirmation window -->
-<div class="modal" id="deleteFolderModal">
-    <div class="modal-content" id="deleteFolderModalContent">
-        <form action="" class="tileForm">
-            <div id="deleteFolderModalName"></div>
-
-            <div class="formItem"><br/><label data-locale="confirmDelete">Are you sure you want to permanently remove
-                this folder?</label><br/><br/></div>
-            <div class="formItem">
-                <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <!-- refresh all thumbnails modal window -->
 <div class="modal" id="refreshAllModal">
     <div class="modal-content" id="refreshAllModalContent">
@@ -181,30 +100,6 @@
             <button class="close" data-locale="cancel">Cancel</button>
         </div>
 
-    </div>
-</div>
-
-<!-- import/export modal window -->
-<div class="modal" id="importExportModal">
-    <div class="modal-content" id="importExportModalContent">
-        <form action="" class="tileForm">
-            <div id="importExportModalName"><strong>Import / Export Settings</strong><span class="close closeBtn">✕</span></div>
-
-            <div class="formItem"><br/><label data-locale="importExport">
-                This will backup or restore YASD settings and thumbnails. Note, all speed dials are managed by the
-                browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync. WARNING:
-                Importing will replace your current settings.
-            </label><br/><br/><span id="statusMessage"></span><br></div>
-
-            <div class="formItem importExportForm">
-                <input type="file" id="importFile" class="settingsCtl" accept="application/json">
-                <label for="importFile" class="fileInput delete" data-locale="import" id="importFileLabel">Import...</label>
-
-            </div>
-            <div class="formItem">
-                <a id="exportBtn" class="button settingsCtl save disabled" data-locale="export">Export</a>
-            </div>
-        </form>
     </div>
 </div>
 
@@ -351,28 +246,6 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="addSiteButton">Add Site Button</label>
-                </div>
-                <div class='column controls'>
-                    <label class="switch">
-                        <input checked class="settingsCtl" id="showCreateDial" type="checkbox">
-                        <span class="slider round settingsCtl"></span>
-                    </label>
-                </div>
-            </div>
-            <div class='row'>
-                <div class='column'>
-                    <label data-locale="addFolderButton">Add Folder Button</label>
-                </div>
-                <div class='column controls'>
-                    <label class="switch">
-                        <input class="settingsCtl" id="showFolders" type="checkbox">
-                        <span class="slider round settingsCtl"></span>
-                    </label>
-                </div>
-            </div>
-            <div class='row'>
-                <div class='column'>
                     <label data-locale="settingsButton">Settings Button</label>
                 </div>
                 <div class='column controls'>
@@ -384,11 +257,6 @@
             </div>
 
             <hr>
-            <div class='row'>
-                <div class='column'>
-                <label id="importExportBtn" data-locale="importExportLink" class="settingsCtl settingsLink" >Import and Export...</label>
-                    </div>
-            </div>
             <div class='row'>
                 <div class='column'>
                     <label id="help" data-locale="help" class="settingsCtl settingsLink" >Help</label>
