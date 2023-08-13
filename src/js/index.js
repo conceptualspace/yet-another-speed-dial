@@ -48,7 +48,6 @@ const showTitlesInput = document.getElementById("showTitles");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const maxColsInput = document.getElementById("maxcols");
-const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
 const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
@@ -65,7 +64,6 @@ let tabMessagePort = null;
 let cache = null;
 let settings = null;
 let speedDialId = null;
-let sortable = null;
 let targetTileHref = null;
 let targetTileTitle = null;
 let targetNode = null;
@@ -168,10 +166,6 @@ function folderLink(title, id) {
         tabMessagePort.postMessage({ currentFolder: id });
     };
 
-    // todo: allow dropping directly on folder title?
-    a.ondragenter = dragenterHandler;
-    a.ondragleave = dragleaveHandler;
-
     foldersContainer.appendChild(a);
 }
 
@@ -203,10 +197,6 @@ function breadcrumbLink(title, id, disabled) {
             tabMessagePort.postMessage({ currentFolder: id });
         };
     }
-
-    // todo: allow dropping directly on folder title?
-    a.ondragenter = dragenterHandler;
-    a.ondragleave = dragleaveHandler;
 
     breadcrumbsContainer.appendChild(a);
 }
@@ -627,11 +617,6 @@ function saveBookmarkSettings() {
     // find image index
     function updateTitle() {
         // allow ui to respond immediately while bookmark updated
-        //targetNode.children[0].children[1].textContent = title;
-        // sortable ids changed so rewrite to storage
-        //let order = sortable.toArray();
-        //browser.storage.local.set({"sort":order});
-        // todo: temp hack to match all until we start using bookmark ids
         browser.bookmarks.search({ url })
             .then(bookmarks => {
                 if (bookmarks.length <= 1 && (url !== newUrl)) {
@@ -911,7 +896,6 @@ function applySettings() {
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
-        defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
         if (settings.wallpaperSrc) {
@@ -951,7 +935,6 @@ function saveSettings() {
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
-    settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
 
     applySettings();
@@ -986,12 +969,6 @@ document.addEventListener("contextmenu", function (e) {
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.classList.contains('folderTitle') && e.target.id !== "homeFolderLink") {
-        targetFolderLink = e.target;
-        targetFolder = e.target.attributes.folderId.nodeValue;
-        targetFolderName = e.target.textContent;
-        showContextMenu(folderMenu, e.pageY, e.pageX);
-        return false;
     } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
@@ -1012,7 +989,7 @@ window.addEventListener("click", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -1112,13 +1089,6 @@ maxColsInput.oninput = function (e) {
     saveSettings()
 }
 
-defaultSortInput.oninput = function(e) {
-    if (settings.defaultSort !== defaultSortInput.value) {
-        processRefresh();
-        saveSettings()
-    }
-}
-
 wallPaperEnabled.oninput = function (e) {
     saveSettings()
 }
@@ -1171,124 +1141,11 @@ helpBtn.onclick = function () {
     browser.tabs.create({ url: helpUrl });
 }
 
-// native handlers for folder tab target
-function dragenterHandler(ev) {
-    // temporary fix for firefox < v92
-    // firefox returns a text node instead of an element
-    if (ev.target.nodeType === 3) {
-        if (ev.target.parentElement.classList.contains("folderTitle")) {
-            // avoid repaints
-            if (currentFolder !== ev.target.parentElement.attributes.folderid.value) {
-                currentFolder = ev.target.parentElement.attributes.folderid.value;
-                showFolder(currentFolder)
-            }
-        }
-    }
-    else if (ev.target.classList.contains("folderTitle")) {
-        // avoid repaints
-        // todo replace style changes with class;
-        if (currentFolder !== ev.target.attributes.folderid.value) {
-            ev.target.style.padding = "20px";
-            ev.target.style.outline = "2px dashed white";
-            currentFolder = ev.target.attributes.folderid.value;
-            showFolder(currentFolder)
-        }
-    }
-}
-
-function dragleaveHandler(ev) {
-    // temporary fix for firefox < v92
-    if (ev.target.nodeType === 3) {
-        return
-    }
-    else if (ev.target.classList.contains("folderTitle")) {
-        ev.target.style.padding = "0";
-        ev.target.style.outline = "none";
-    }
-}
-
-// Sortable helper fns
-function onMoveHandler(evt) {
-    if (evt.related) {
-        if (evt.to.children.length > 1) {
-            // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
-            return !evt.related.classList.contains('createDial');
-        } else {
-            // force new dial to drop before add dial button
-            evt.to.prepend(evt.dragged);
-            return false;
-        }
-    }
-}
-
-function dewrap(str) {
-    // unlike folder tabs, main dial container doesnt include the folder id
-    // todo: cleanup
-    if (str === "wrap") {
-        return speedDialId
-    } else {
-        return str
-    }
-}
-
-function onEndHandler(evt) {
-    if (evt && evt.clone.href) {
-        let id = evt.clone.dataset.id;
-        let fromParentId = dewrap(evt.from.id);
-        let toParentId = dewrap(evt.to.id);
-        let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.dataset.id : null;
-        let newSiblingParentId = newSiblingId ? dewrap(evt.item.nextElementSibling.parentElement.id) : null;
-        let oldIndex = evt.oldIndex;
-        let newIndex = evt.newIndex;
-
-        // todo: test if this is needed
-        if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
-            // sortable's position doesn't match the dom's drop target
-            // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
-            // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
-            toParentId = currentFolder ? currentFolder : speedDialId;
-        }
-
-        if (fromParentId === toParentId && fromParentId !== currentFolder) {
-            // occurs when there is no sortable target -- for example dropping the dial onto the folder name
-            // or some space of the page outside the sortable container element
-            toParentId = currentFolder ? currentFolder : speedDialId;
-        }
-
-        // if the sibling's parent doesnt match the parent we are moving to discard this sibling
-        // can occur when dropping onto a non sortable target (like folder name)
-        if (newSiblingParentId && newSiblingParentId !== toParentId) {
-            newSiblingId = -1;
-        }
-
-        if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
-            moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
-        }
-    } else if (evt && evt.clone.classList.contains('folderTitle')) {
-        let oldIndex = evt.oldIndex;
-        let newIndex = evt.newIndex;
-
-        if (newIndex !== oldIndex) {
-            if (evt.clone.attributes.folderid) {
-                let id = evt.clone.attributes.folderid.value;
-                let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.attributes.folderid.value : null;
-                moveFolder(id, oldIndex, newIndex, newSiblingId)
-            }
-        }
-    }
-}
-
 const processRefresh = debounce(() => {
-    // prevent page scroll on refresh
-    // react where are you...
     scrollPos = bookmarksContainerParent.scrollTop;
     noBookmarks.style.display = 'none';
     addFolderButton.style.display = 'inline';
-
-    //bookmarksContainer.style.opacity = "0";
-
     showFolder(speedDialId, homeFolderTitle)
-
 }, 650, true);
 
 function init() {
@@ -1335,8 +1192,6 @@ function init() {
 
     tabMessagePort.onDisconnect.addListener(obj => {
         if (browser.runtime.lastError) {
-            // for some reason the background page is not responding
-            // todo: setup a timer to try again
             console.log(browser.runtime.lastError.message);
         }
     })
@@ -1344,33 +1199,6 @@ function init() {
     tabMessagePort.postMessage({ getCache: true });
 
     sidenav.style.display = "flex";
-
-    // sortable = new Sortable(bookmarksContainer, {
-    //     //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
-    //     //forceFallback: true,
-    //     group: 'shared',
-    //     animation: 160,
-    //     ghostClass: 'selected',
-    //     dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
-    //     filter: ".createDial",
-    //     delay: 500, // fixes #40
-    //     delayOnTouchOnly: true,
-    //     // todo: copy same onmove logic from folders
-    //     onMove: onMoveHandler,
-    //     onEnd: onEndHandler
-    // });
-
-    // new Sortable(foldersContainer, {
-    //     animation: 150,
-    //     forceFallback: true,
-    //     fallbackTolerance: 4,
-    //     filter: "#homeFolderLink",
-    //     ghostClass: 'selected',
-    //     onMove: function (evt) {
-    //         return evt.related.id !== 'homeFolderLink';
-    //     },
-    //     onEnd: onEndHandler
-    // });
 
     window.onresize = layout;
 
@@ -1381,4 +1209,3 @@ init();
 // TODO - fix open all
 // TODO - add setting for root folder
 // TODO - find dead code
-// TODO - remove sortable

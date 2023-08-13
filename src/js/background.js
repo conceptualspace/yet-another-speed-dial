@@ -20,7 +20,6 @@ let defaults = {
     showSettingsBtn: true,
     showClock: true,
     maxCols: '100',
-    defaultSort: 'first',
     textColor: '#ffffff'
 };
 let cache = {};
@@ -891,37 +890,7 @@ function handleInstalled(details) {
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         // perform any migrations here...
-        if (details.previousVersion && details.previousVersion < '2.0.0') {
-            const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url, active: false });
-            migrate().catch(err => {
-                console.log(err)
-            });
-        }
     }
-}
-
-async function migrate() {
-    // v1.15 -> v2.0 migration
-    // use native ordering within the bookmarks manager rather than maintaining a separate ordered list in storage
-    console.log("v2.0 migration started...");
-    let storage = await browser.storage.local.get();
-    let settings = storage.settings;
-    // < v1.16 sort state was saved with a key 'folder id' and value [bookmark ids]
-    let folders = Object.entries(storage).filter(value => (!value[0].startsWith('http') && value[0] !== 'settings'));
-    for (let folder of folders) {
-        let bookmarks = settings && settings.defaultSort === 'first' ? folder[1].reverse() : folder[1];
-        for (let [index, bookmark] of bookmarks.entries()) {
-            if (bookmark && bookmark !== '1wv') {
-                await browser.bookmarks.move(bookmark, {index})
-            }
-        }
-    }
-    // cleanup old sortable list
-    for (let folder of folders) {
-        await browser.storage.local.remove(folder[0])
-    }
-    console.log("migration complete!");
 }
 
 function init() {
