@@ -53,7 +53,7 @@
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "yet another speed dial"
+    "message": "Simple Speed Dial"
   },
   "help": {
     "message": "Help"
@@ -65,7 +65,7 @@
     "message": "Import Settings..."
   },
   "importExport": {
-    "message": "This will backup or restore YASD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
+    "message": "This will backup or restore SSD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
   },
   "importExportLink": {
     "message": "Import and Export..."
@@ -89,7 +89,7 @@
     "message": "New Folder..."
   },
   "newInstall1": {
-    "message": "Get started with Yet Another Speed Dial!"
+    "message": "Get started with Simple Speed Dial!"
   },
   "newInstall2": {
     "message": "⭐ Add sites by clicking the button below, or add bookmarks to the Speed Dial folder"

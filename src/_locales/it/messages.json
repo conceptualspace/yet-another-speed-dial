@@ -65,7 +65,7 @@
     "message": "Importa impostazioni..."
   },
   "importExport": {
-    "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature YASD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
+    "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature SSD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
   },
   "importExportLink": {
     "message": "Importazione e esportazione..."
@@ -89,7 +89,7 @@
     "message": "Nuovo Cartella..."
   },
   "newInstall1": {
-    "message": "Inizia con Yet Another Speed Dial!"
+    "message": "Inizia con Simple Speed Dial!"
   },
   "newInstall2": {
     "message": "⭐ Aggiungi siti facendo clic sul pulsante in basso o crea un segnalibro nella cartella Chiamata rapida"

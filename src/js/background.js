@@ -1,4 +1,4 @@
-// yet another speed dial
+// Simple Speed Dial
 // copyright 2019 dev@conceptualspace.net
 // absolutely no warranty is expressed or implied
 
@@ -817,7 +817,7 @@ function changeBookmark(id, info) {
                 })
             }
         } else if (bookmark[0] && bookmark[0].url && ( info.oldParentId === speedDialId || folderIds.indexOf(info.oldParentId) !== -1) ) {
-            // handle yasd bookmarks that are moved outside of yasd but not deleted
+            // handle SSD bookmarks that are moved outside of SSD but not deleted
             //console.log(bookmark, info)
             browser.storage.local.remove(bookmark[0].url).catch((err) => {
                 console.log(err)

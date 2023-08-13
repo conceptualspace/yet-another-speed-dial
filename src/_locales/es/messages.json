@@ -65,7 +65,7 @@
     "message": "Importar ajustes..."
   },
   "importExport": {
-    "message": "Esto hará una copia de seguridad o restaurará la configuración y las miniaturas de YASD.\n\nTenga en cuenta que el navegador administra todas las marcaciones rápidas como favoritos. Asegúrese de que tengan una copia de seguridad por separado mediante el administrador de marcadores o la sincronización.\n\nADVERTENCIA: la importación reemplazará su configuración actual."
+    "message": "Esto hará una copia de seguridad o restaurará la configuración y las miniaturas de SSD.\n\nTenga en cuenta que el navegador administra todas las marcaciones rápidas como favoritos. Asegúrese de que tengan una copia de seguridad por separado mediante el administrador de marcadores o la sincronización.\n\nADVERTENCIA: la importación reemplazará su configuración actual."
   },
   "importExportLink": {
     "message": "Importar y exportar..."
@@ -89,7 +89,7 @@
     "message": "Nueva Carpeta..."
   },
   "newInstall1": {
-    "message": "¡Empiece con Yet Another Speed Dial!"
+    "message": "¡Empiece con Simple Speed Dial!"
   },
   "newInstall2": {
     "message": "⭐ Agregue sitios haciendo clic en el botón de abajo, o cree un marcador en la carpeta Marcación rápida"

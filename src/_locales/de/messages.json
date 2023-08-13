@@ -53,7 +53,7 @@
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "Simple Speed Dial"
   },
   "help": {
     "message": "Hilfe"
@@ -65,7 +65,7 @@
     "message": "Importeinstellungen..."
   },
   "importExport": {
-    "message": "Dadurch werden YASD-Einstellungen und Miniaturansichten gesichert oder wiederhergestellt.\n\nBeachten Sie, dass alle Kurzwahlen vom Browser als Lesezeichen verwaltet werden. Stellen Sie sicher, dass sie separat über den Lesezeichen-Manager gesichert oder synchronisiert werden.\n\nWARNUNG: Durch das Importieren werden Ihre aktuellen Einstellungen ersetzt."
+    "message": "Dadurch werden SSD-Einstellungen und Miniaturansichten gesichert oder wiederhergestellt.\n\nBeachten Sie, dass alle Kurzwahlen vom Browser als Lesezeichen verwaltet werden. Stellen Sie sicher, dass sie separat über den Lesezeichen-Manager gesichert oder synchronisiert werden.\n\nWARNUNG: Durch das Importieren werden Ihre aktuellen Einstellungen ersetzt."
   },
   "importExportLink": {
     "message": "Import und Export..."
@@ -89,7 +89,7 @@
     "message": "Neuer Ordner..."
   },
   "newInstall1": {
-    "message": "Erste Schritte mit Yet Another Speed Dial"
+    "message": "Erste Schritte mit Simple Speed Dial"
   },
   "newInstall2": {
     "message": "⭐ Fügen Sie Websites hinzu, indem Sie auf die Schaltfläche unten klicken, oder erstellen Sie ein Lesezeichen im Speed Dial Ordner"
