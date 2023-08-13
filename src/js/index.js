@@ -12,6 +12,8 @@ const menu = document.getElementById('contextMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
 const modalContent = document.getElementById('tileModalContent');
+const importExportModal = document.getElementById('importExportModal');
+const importExportModalContent = document.getElementById('importExportModalContent');
 
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
@@ -363,8 +365,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, refreshAllModal];
-    let modalContents = [modalContent, refreshAllModalContent]
+    let modals = [modal, refreshAllModal, importExportModal];
+    let modalContents = [modalContent, refreshAllModalContent, importExportModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -1137,10 +1139,96 @@ previewOverlay.onclick = function () {
     imgInput.click();
 }
 
+function prepareExport() {
+    browser.storage.local.get(null).then(function(items) {
+        // filter out unused thumbnails to keep exported file efficient
+        let filteredItems = {};
+        for (const [key, value] of Object.entries(items)) {
+            if (key.startsWith('http')) {
+                let thumbnails = [];
+                let thumbIndex = 0;
+                let bgColor = null;
+
+                if (value.thumbnails && value.thumbnails.length) {
+                    thumbnails.push(value.thumbnails[value.thumbIndex]);
+                }
+                if (value.bgColor) {
+                    bgColor = value.bgColor;
+                }
+                filteredItems[key] = {
+                    thumbnails: thumbnails,
+                    thumbIndex: thumbIndex,
+                    bgColor: value.bgColor
+                };
+            } else if (key.startsWith('settings')) {
+                filteredItems[key] = value;
+            }
+        }
+
+        // save as file; requires downloads permission
+        const blob = new Blob([JSON.stringify(filteredItems)], {type: 'application/json'})
+        const today = new Date();
+        const dateString = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+
+        exportBtn.setAttribute('href', URL.createObjectURL(blob));
+        exportBtn.download = `ssd-export-${dateString}.json`;
+        exportBtn.classList.remove('disabled');
+
+    });
+}
+
+importExportBtn.onclick = function() {
+    hideSettings();
+    importExportStatus.innerText = "";
+    exportBtn.classList.add('disabled');
+    prepareExport();
+    modalShowEffect(importExportModalContent, importExportModal);
+}
 helpBtn.onclick = function () {
     browser.tabs.create({ url: helpUrl });
 }
 
+importFileLabel.onclick = function() {
+    importFileInput.click();
+}
+
+importFileInput.onchange = function (event) {
+    let filereader = new FileReader();
+
+    filereader.onload = function (event) {
+        let json = null;
+        if (event && event.target) {
+            try {
+                json = JSON.parse(event.target.result);
+            } catch (err) {
+                console.log(err)
+                importExportStatus.innerText = "Error! Unable to parse file."
+            }
+        }
+
+        if (json) {
+            // clear previous settings and import
+            browser.storage.local.clear().then(() => {
+                browser.storage.local.set(json).then(result => {
+                    hideModals();
+                    // refresh page
+                    tabMessagePort.postMessage({handleImport: true});
+                }).catch(err => {
+                    console.log(err)
+                    importExportStatus.innerText = "Error! Unable to parse file."
+                });
+            }).catch(err => {
+                console.log(err)
+                importExportStatus.innerText = "Error! Please try again"
+            })
+        }
+    };
+
+    if (event && event.target && event.target.files) {
+        filereader.readAsText(event.target.files[0]);
+    }
+
+};
 const processRefresh = debounce(() => {
     scrollPos = bookmarksContainerParent.scrollTop;
     noBookmarks.style.display = 'none';

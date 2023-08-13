@@ -103,6 +103,30 @@
     </div>
 </div>
 
+<!-- import/export modal window -->
+<div class="modal" id="importExportModal">
+    <div class="modal-content" id="importExportModalContent">
+        <form action="" class="tileForm">
+            <div id="importExportModalName"><strong>Import / Export Settings</strong><span class="close closeBtn">✕</span></div>
+
+            <div class="formItem"><br/><label data-locale="importExport">
+                This will backup or restore SSD settings and thumbnails. Note, all speed dials are managed by the
+                browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync. WARNING:
+                Importing will replace your current settings.
+            </label><br/><br/><span id="statusMessage"></span><br></div>
+
+            <div class="formItem importExportForm">
+                <input type="file" id="importFile" class="settingsCtl" accept="application/json">
+                <label for="importFile" class="fileInput delete" data-locale="import" id="importFileLabel">Import...</label>
+
+            </div>
+            <div class="formItem">
+                <a id="exportBtn" class="button settingsCtl save disabled" data-locale="export">Export</a>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="clock"></div>
 
 <div id="toast">
@@ -247,6 +271,11 @@
             </div>
 
             <hr>
+            <div class='row'>
+                <div class='column'>
+                <label id="importExportBtn" data-locale="importExportLink" class="settingsCtl settingsLink" >Import and Export...</label>
+                    </div>
+            </div>
             <div class='row'>
                 <div class='column'>
                     <label id="help" data-locale="help" class="settingsCtl settingsLink" >Help</label>
