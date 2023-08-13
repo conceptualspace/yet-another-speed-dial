@@ -13,8 +13,7 @@ A modern, cross-browser speed dial that respects your privacy, inspired by Opera
 
 - Automatically generates thumbnails and screenshots, or add your own.
 - Uses the native bookmarks library so speed dials can be synced by the browser.
-- Sortable with drag and drop
-- Supports folders
+- Supports folders (including sub-folders!)
 - Simple and fast UI
 - No ads, trackers, or BS :)
 

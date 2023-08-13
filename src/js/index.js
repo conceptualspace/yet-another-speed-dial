@@ -1,4 +1,4 @@
-// YASD-remix
+// Simple Speed Dial
 // absolutely no warranty is expressed or implied
 
 'use strict';
@@ -232,7 +232,8 @@ function refreshFolders(parent) {
 
     browser.bookmarks.getChildren(parent).then(children => {
         if (children && children.length) {
-            for (let child of children) {
+            let sortedChildren = children.sort((c1, c2) => (c1.title.localeCompare(c2.title)));
+            for (let child of sortedChildren) {
                 if (!child.url && child.parentId === parent) {
                     folders.push(child.id);
                     folderLink(child.title, child.id);
@@ -254,7 +255,9 @@ function refreshBookmarks(parent) {
 
         if (children && children.length) {
 
-            for (let child of children) {
+            let sortedChildren = children.sort((c1, c2) => (c1.title.localeCompare(c2.title)));
+
+            for (let child of sortedChildren) {
 
                 if (child.url && child.parentId === parent && child.url.startsWith("http")) {
 
@@ -987,6 +990,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderLink = e.target;
         targetFolder = e.target.attributes.folderId.nodeValue;
         targetFolderName = e.target.textContent;
+        showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
     } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
@@ -1108,7 +1112,7 @@ maxColsInput.oninput = function (e) {
     saveSettings()
 }
 
-defaultSortInput.oninput = function (e) {
+defaultSortInput.oninput = function(e) {
     if (settings.defaultSort !== defaultSortInput.value) {
         processRefresh();
         saveSettings()
@@ -1283,7 +1287,7 @@ const processRefresh = debounce(() => {
 
     //bookmarksContainer.style.opacity = "0";
 
-    showFolder(speedDialId)
+    showFolder(speedDialId, homeFolderTitle)
 
 }, 650, true);
 
@@ -1302,6 +1306,7 @@ function init() {
             currentFolder = m.currentFolder;
             applySettings().then(() => showFolder(speedDialId, homeFolderTitle));
         } else if (m.refresh) {
+            //console.log(cache, m.cache);
             cache = m.cache;
             hideToast();
             processRefresh();
@@ -1340,32 +1345,32 @@ function init() {
 
     sidenav.style.display = "flex";
 
-    sortable = new Sortable(bookmarksContainer, {
-        //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
-        //forceFallback: true,
-        group: 'shared',
-        animation: 160,
-        ghostClass: 'selected',
-        dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
-        filter: ".createDial",
-        delay: 500, // fixes #40
-        delayOnTouchOnly: true,
-        // todo: copy same onmove logic from folders
-        onMove: onMoveHandler,
-        onEnd: onEndHandler
-    });
+    // sortable = new Sortable(bookmarksContainer, {
+    //     //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
+    //     //forceFallback: true,
+    //     group: 'shared',
+    //     animation: 160,
+    //     ghostClass: 'selected',
+    //     dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
+    //     filter: ".createDial",
+    //     delay: 500, // fixes #40
+    //     delayOnTouchOnly: true,
+    //     // todo: copy same onmove logic from folders
+    //     onMove: onMoveHandler,
+    //     onEnd: onEndHandler
+    // });
 
-    new Sortable(foldersContainer, {
-        animation: 150,
-        forceFallback: true,
-        fallbackTolerance: 4,
-        filter: "#homeFolderLink",
-        ghostClass: 'selected',
-        onMove: function (evt) {
-            return evt.related.id !== 'homeFolderLink';
-        },
-        onEnd: onEndHandler
-    });
+    // new Sortable(foldersContainer, {
+    //     animation: 150,
+    //     forceFallback: true,
+    //     fallbackTolerance: 4,
+    //     filter: "#homeFolderLink",
+    //     ghostClass: 'selected',
+    //     onMove: function (evt) {
+    //         return evt.related.id !== 'homeFolderLink';
+    //     },
+    //     onEnd: onEndHandler
+    // });
 
     window.onresize = layout;
 
@@ -1376,3 +1381,4 @@ init();
 // TODO - fix open all
 // TODO - add setting for root folder
 // TODO - find dead code
+// TODO - remove sortable
