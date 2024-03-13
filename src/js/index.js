@@ -128,9 +128,7 @@ const debounce = (func, delay= 500, immediate=false) => {
 }
 
 // detect clock settings
-if (!locale.startsWith("en")) {
-    hourCycle = Intl.DateTimeFormat(locale, {hour: 'numeric'}).resolvedOptions().hourCycle;
-}
+hourCycle = Intl.DateTimeFormat(locale, {hour: 'numeric'}).resolvedOptions().hourCycle;
 
 function displayClock() {
     clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hourCycle: hourCycle});
