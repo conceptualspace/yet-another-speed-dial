@@ -4,6 +4,10 @@
 
 'use strict';
 
+if (typeof browser === "undefined") {
+    var browser = chrome;
+}
+
 let messagePorts = [];
 let speedDialId = null;
 let folderIds = [];
@@ -29,11 +33,16 @@ let ready = false;
 let firstRun = true;
 let tripwire = 0;
 let tripwireTimestamp = 0;
-const imageRatio = 1.54;
+
+const evtTabClosed = new EventTarget();
+const evtGotThumbs = new EventTarget();
+
+const TabClosedEvent = 'TabClosed';
+const GotThumbsEvent = 'GotThumbs';
 
 function getSpeedDialId() {
     return new Promise((resolve, reject) => {
-        browser.bookmarks.search({title: 'Speed Dial'}).then(result => {
+        browser.bookmarks.search({ title: 'Speed Dial' }).then(result => {
             if (result) {
                 for (let bookmark of result) {
                     if (!bookmark.url) {
@@ -52,7 +61,7 @@ function getSpeedDialId() {
                 })
                 resolve()
             } else {
-                browser.bookmarks.create({title: 'Speed Dial'}).then(result => {
+                browser.bookmarks.create({ title: 'Speed Dial' }).then(result => {
                     speedDialId = result.id;
                     resolve();
                 }, error => {
@@ -88,8 +97,8 @@ function createBookmarkFromBrowser(tab) {
 function handleBrowserAction(tab) {
     createBookmarkFromBrowser(tab)
     browser.browserAction.disable(tab.id);
-    browser.browserAction.setBadgeText({text:"✅️", tabId:tab.id})
-    browser.browserAction.setBadgeBackgroundColor({color: [0, 0, 0, 0]});
+    browser.browserAction.setBadgeText({ text: "✅️", tabId: tab.id })
+    browser.browserAction.setBadgeBackgroundColor({ color: [0, 0, 0, 0] });
 }
 
 function onClickHandler(info, tab) {
@@ -100,106 +109,191 @@ function onClickHandler(info, tab) {
 
 function refreshOpen() {
     for (let port of messagePorts) {
-        port.postMessage({refresh:true, cache});
+        port.postMessage({ refresh: true, cache });
     }
 }
 
 function refreshInactive() {
     for (let port of messagePorts) {
-        port.postMessage({refreshInactive:true, cache});
+        port.postMessage({ refreshInactive: true, cache });
     }
 }
 
-// convert relative url paths
-function convertUrlToAbsolute(origin, path) {
-    if (path.indexOf('://') > 0) {
-        return path
-    } else if (path.indexOf('//') === 0) {
-        return 'https:' + path;
-    } else {
-        let url = new URL(origin);
-        if (path.slice(0,1) === "/") {
-            return url.origin + path;
-        } else {
-            if (url.pathname.slice(-1) !== "/") {
-                url.pathname = url.pathname + "/";
-            }
-            return url.origin + url.pathname + path;
-        }
-    }
-}
+function waitForEvent(element, eventName) {
+    return new Promise((resolve) => {
+      const handler = () => {
+        element.removeEventListener(eventName, handler);
+        resolve(); 
+      };
+      element.addEventListener(eventName, handler);
+    });
+  }
 
-async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
+async function getThumbnails(url, options = { quickRefresh: false, forceScreenshot: false }) {
 
     let images = [];
-    let resizedImages = [];
+    let bgColor = null;
     let title = null;
 
-    images = await fetchImages(url).catch(err => {
-        console.log(err);
-    })
+    // Create the tab
+    await browser.tabs.create({ url }, ctab => {
 
+        let detectHang = setTimeout(function () {
+            //console.log("YASD: getThumbnails timeout", url);
+            browser.tabs.remove(ctab.id, function () {
+                evtGotThumbs.dispatchEvent(new Event(GotThumbsEvent));
+                evtTabClosed.dispatchEvent(new Event(TabClosedEvent));
+            });
+        }, 10000);
+
+        browser.tabs.onUpdated.addListener(updateListener);
+
+        function updateListener(utabid, changeInfo, utab) {
+            // make sure the status is 'complete' and it's the right tab
+            // console.log("YASD: onUpdated:", changeInfo, utab);
+            if (utabid == ctab.id && changeInfo.title) {
+                title = changeInfo.title;
+            }
+            else if (utabid == ctab.id && changeInfo.status == 'complete') {
+                clearTimeout(detectHang);
+                browser.tabs.onUpdated.removeListener(updateListener);
+                browser.scripting.executeScript({
+                    target: {
+                        tabId: ctab.id
+                    },
+                    args: [{ url, options }],
+                    func: getImages,
+                    world: "ISOLATED"
+                }, (result) => {
+                    //console.log("YASD: From script:", url, result)
+
+                    if (typeof result == 'undefined' || result[0].result == null)
+                        images = [];
+                    else {
+                        images = result[0].result.thumbs;
+                        bgColor = result[0].result.bgColor;
+                        title = result[0].result.title;
+                    }
+
+                    //console.log("YASD: Return images:", images);
+                    //console.log("YASD: Return bgColor:", bgColor);
+                    //console.log("YASD: Return title:", title);
+
+                    cache[url] = [images[0], bgColor];
+                    saveThumbnails(url, images, bgColor);
+                    browser.tabs.remove(ctab.id, function () {
+                        evtGotThumbs.dispatchEvent(new Event(GotThumbsEvent));
+                        evtTabClosed.dispatchEvent(new Event(TabClosedEvent));
+                        refreshOpen();
+                    });
+                });
+            }
+        }
+    });
+
+    await waitForEvent(evtGotThumbs, GotThumbsEvent);
+
+    //console.log("YASD: Returned Title:", title);
+    return title;
+}
+
+function saveThumbnails(url, images, bgColor) {
+    return new Promise(function (resolve, reject) {
+        if (images && images.length) {
+            let thumbnails = [];
+            browser.storage.local.get(url)
+                .then(result => {
+                    if (result[url] && result[url].thumbnails) {
+                        thumbnails = result[url].thumbnails;
+                    }
+                    thumbnails.push(images);
+                    thumbnails = thumbnails.flat();
+                    browser.storage.local.set({ [url]: { thumbnails, thumbIndex: 0, bgColor } })
+                        .then(() => resolve());
+                });
+        } else {
+            resolve();
+        }
+    });
+}
+
+async function getImages({ url, options}) {
+
+    let bgColor = null;
+    let thumbs = [];
+
+    if (typeof browser === "undefined") {
+        var browser = chrome;
+    }
+    let resizedImages = [];
+    const imageRatio = 1.54;
+    //console.log("YASD: Running getImages...")
+    images = await fetchImages({ url});
     resizedImages = await Promise.all(images.map(async (image) => {
         const result = await resizeImage(image).catch(err => {
-            console.log(err);
+            console.log("YASD:resizeImage error:", err);
         });
         return result
     }))
 
-    if (!options.quickRefresh) {
-        const results = await getScreenshot(url, options.forceScreenshot).catch(err => {
-            console.log(err);
-        })
+    thumbs = resizedImages.filter(item => item)
 
-        if (results && results.title) {
-            title = results.title
-        }
+    //console.log("YASD: Resized Thumbs:", thumbs);
 
-        if (results && results.screenshot) {
-            const screenshot = await resizeImage(results.screenshot, true).catch(err => {
-                console.log(err);
+    if (!options.quickRefresh || options.forceScreenshot || thumbs.length == 0) {
+        let retsshot = await browser.runtime.sendMessage({ message: 'GetScreenshot' });
+
+        //console.log("YASD: retsshot result:", retsshot)
+
+        if (retsshot.screenshot) {
+            const screenshot = await resizeImage(retsshot.screenshot, true).catch(err => {
+                console.log("YASD: Resize Screeshot error:", err);
             })
-            resizedImages.push(screenshot)
+            thumbs.push(screenshot);
         }
     }
-
-    const thumbs = resizedImages.filter(item => item)
 
     if (thumbs.length) {
-        const bgColor = await getBgColor(thumbs[0])
-        cache[url] = [thumbs[0], bgColor];
-        await saveThumbnails(url, thumbs, bgColor)
+        //console.log("YASD: getting bgcolor...")
+        bgColor = await getBgColor(thumbs[0]);
     }
 
-    return title;
+    let returnedItems = {};
+    returnedItems.thumbs = thumbs;
+    returnedItems.bgColor = bgColor;
+    returnedItems.title = document.title;
 
-}
+    //console.log("YASD: Final Thumbs/bgColor sent the background:", returnedItems);
 
-// fetch images
-// finds open graph images, apple icons, favicons, and first image of page
-function fetchImages(url) {
-    return new Promise(function (resolve, reject) {
+    // Send to background
+    return (returnedItems);  // end of getImages
+
+    // fetch images
+    // finds open graph images, apple icons, favicons, and first image of page
+    async function fetchImages({ url }) {
+
+        //console.log("YASD: Running fetchImages...", url);
 
         const whitelist = [
             "mail.google.com",
             "gmail.com",
             "www.facebook.com",
             "www.reddit.com",
-            "twitter.com"
+            "x.com"
         ];
 
         const hostname = new URL(url).hostname;
-
         let images = [];
 
         // default favicons
-        images.push(new URL(url).origin + "/favicon.ico")
+        images.push(new URL(url).origin + "/favicon.ico");
+
         // amazon hack
         if (hostname.includes('amazon')) {
             images.push('img/amazon.com.png');
             // dont fetch other images for the root page
             if (hostname.startsWith('amazon') && hostname.length < 14) {
-                resolve(images);
+                return (images);
             }
         } else {
             images.push('https://logo.clearbit.com/' + new URL(url).hostname + '?size=256');
@@ -216,419 +310,264 @@ function fetchImages(url) {
         }
 
         if (whitelist.includes(hostname)) {
-            resolve(['img/' + hostname + '.png']);
-            return;
+            //console.log("Hostname match", hostname);
+            return ([browser.runtime.getURL('img/' + hostname + '.png')]);
         } else {
-            let xhr = new XMLHttpRequest();
-            xhr.open("GET", url);
-            // fix for shitty websites, like imdb
-            xhr.overrideMimeType("text/html");
-            xhr.timeout = 6500; // time in milliseconds
-            xhr.responseType = "document";
-
-            xhr.onerror = function (e) {
-                //console.log(e);
-                resolve(images);
-                return;
-            };
-
-            xhr.ontimeout = function (e) {
-                resolve(images);
-                return;
-            };
-
-            xhr.onload = function () {
-
-                if (!xhr.responseXML) {
-                    return
+            // get first image from page
+            let firstImage = document.querySelector('img');
+            if (firstImage && firstImage.src) {
+                // filter known problematic images
+                const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
+                if (!filters.some(element => firstImage.src.includes(element))) {
+                    insert(firstImage.src);
                 }
+            }
 
-                // get first image from page
-                let firstImage = xhr.responseXML.querySelector('img');
-                if (firstImage && firstImage.src) {
-                    // filter known problematic images
-                    const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
-                    if (!filters.some(element => firstImage.src.includes(element))) {
-                        insert(firstImage.src);
+            // amazon images
+            let mainImage = document.querySelector('#main-image-container img');
+            if (mainImage && mainImage.src) {
+                // filter for 'look inside' amazon book images; grab the next image
+                if (mainImage.id === 'sitbLogoImg') {
+                    let newMainImage = htmlDoc.querySelectorAll('#main-image-container img')[1];
+                    if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
+                        insert(newMainImage.src);
                     }
+                } else {
+                    insert(mainImage.src);
                 }
+            }
 
-                // amazon images
-                let mainImage = xhr.responseXML.querySelector('#main-image-container img');
-                if (mainImage && mainImage.src) {
-                    // filter for 'look inside' amazon book images; grab the next image
-                    if (mainImage.id === 'sitbLogoImg') {
-                        let newMainImage = xhr.responseXML.querySelectorAll('#main-image-container img')[1];
-                        if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
-                            insert(newMainImage.src);
-                        }
-                    } else {
-                        insert(mainImage.src);
-                    }
+            // get apple touch icon
+            let appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+            if (appleIcon && appleIcon.getAttribute('href')) {
+                let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                insert(imageUrl);
+            }
+
+            // get large icons
+            let sizes = [
+                "512x512",
+                "256x256",
+                "192x192",
+                "180x180",
+                "144x144",
+                "96x96"
+            ];
+            for (let size of sizes) {
+                let icon = document.querySelector(`link[rel="icon"][sizes="${size}"]`);
+                if (icon && icon.getAttribute('href')) {
+                    let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
+                    insert(imageUrl);
+                    break;
                 }
+            }
 
-                // get apple touch icon
-                let appleIcon = xhr.responseXML.querySelector('link[rel="apple-touch-icon"]');
-                if (appleIcon && appleIcon.getAttribute('href')) {
-                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+            // get open graph images
+            let metas = document.getElementsByTagName("meta");
+            for (let meta of metas) {
+                if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
+                    let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
                     insert(imageUrl);
                 }
+            }
 
-                // get large icons
-                let sizes = [
-                    "512x512",
-                    "256x256",
-                    "192x192",
-                    "180x180",
-                    "144x144",
-                    "96x96"
-                ];
-                for (let size of sizes) {
-                    let icon = xhr.responseXML.querySelector(`link[rel="icon"][sizes="${size}"]`);
-                    if (icon && icon.getAttribute('href')) {
-                        let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
-                        insert(imageUrl);
-                        break;
-                    }
-                }
-
-                // get open graph images
-                let metas = xhr.responseXML.getElementsByTagName("meta");
-                for (let meta of metas) {
-                    if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
-                        let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
-                        insert(imageUrl);
-                    }
-                }
-
-                resolve(images);
-                return;
-
-            };
-
-            xhr.send();
-
+            //console.log("YASD: Images found:", images);
+            return (images);
         }
-    });
-}
 
-function saveThumbnails(url, images, bgColor) {
-    return new Promise(function(resolve, reject) {
-        if (images && images.length) {
-            let thumbnails = [];
-            browser.storage.local.get(url)
-                .then(result => {
-                    if (result[url] && result[url].thumbnails) {
-                        thumbnails = result[url].thumbnails;
+        // convert relative url paths
+        function convertUrlToAbsolute(origin, path) {
+            if (path.indexOf('://') > 0) {
+                return path
+            } else if (path.indexOf('//') === 0) {
+                return 'https:' + path;
+            } else {
+                let url = new URL(origin);
+                if (path.slice(0, 1) === "/") {
+                    return url.origin + path;
+                } else {
+                    if (url.pathname.slice(-1) !== "/") {
+                        url.pathname = url.pathname + "/";
                     }
-                    thumbnails.push(images);
-                    thumbnails = thumbnails.flat();
-                    browser.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
-                        .then(() => resolve());
-                });
-        } else {
-            resolve();
-        }
-    });
-}
-
-
-function getScreenshot(url, forceScreenshot = false) {
-
-    return new Promise(async function(resolve, reject) {
-
-        const targetTab = await browser.tabs.query({
-            windowId: browser.windows.WINDOW_ID_CURRENT,
-            url: url.split('#')[0] // tabs.query doesn't match fragment identifiers :/
-        }).catch(err => {
-            console.log(err);
-        })
-
-        if (targetTab && targetTab.length && targetTab[0].active) {
-            const title = targetTab.title ? targetTab.title : '';
-            const screenshot = await browser.tabs.captureVisibleTab().catch(err => {
-                console.log(err);
-            })
-
-            resolve({screenshot, title});
-
-        } else {
-
-            const activeTab = await browser.tabs.query({
-                windowId: browser.windows.WINDOW_ID_CURRENT,
-                active: true
-            }).catch(err => {
-                console.log(err);
-            })
-
-            if (targetTab && targetTab.length && targetTab[0].url === url) {
-                await browser.tabs.update(targetTab[0].id, {active: true}).catch(err => {
-                    // todo: could be a race condition here
-                    console.log(err);
-                });
-                const title = targetTab.title ? targetTab.title : '';
-                const screenshot = await browser.tabs.captureVisibleTab().catch(err => {
-                    console.log(err);
-                })
-                if (activeTab && activeTab.length) {
-                    // restore the tab that was active before (not required in ff)
-                    browser.tabs.update(activeTab[0].id, {active: true}).catch(err => {
-                        console.log(err);
-                    })
+                    return url.origin + url.pathname + path;
                 }
-                resolve({screenshot, title});
+            }
+        }
+    }
 
-            } else if ((tripwire < 2 && Date.now() - tripwireTimestamp > 3500) || forceScreenshot) {
+    // downscale image
+    function resizeImage(image, screenshot = false) {
+        return new Promise(function (resolve, reject) {
+            if (image != undefined && image.length) {
+                let img = new Image();
 
-                async function handleUpdated(tabId, changeInfo, tabInfo) {
-                    if (changeInfo.status === "complete" && tabId === tab.id) {
+                img.onerror = function (event) {
+                    console.log("YASD: Resizing error", image, event)
+                    //reject(image);
+                    resolve();
+                }
+                img.onload = function () {
+                    let sWidth = this.width;
+                    let sHeight = this.height;
 
-                        // screencapture on chrome requires tab to be active
-                        if (!browser.runtime.getBrowserInfo) {
-                            const updatedTab = await browser.tabs.update(tabId, {active: true}).catch(err => {
-                                console.log(err);
-                            })
+                    if (sHeight > 256 || sWidth > 256) {
+
+                        let canvas = document.createElement('canvas');
+                        let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = "high";
+
+                        const maxSize = 256;
+                        const maxWidth = Math.round(256 * imageRatio);
+
+                        const sRatio = sWidth / sHeight
+
+                        let sX = 0;
+                        let sY = 0;
+                        let dX = 0;
+                        let dY = 0;
+                        let dWidth = sWidth;
+                        let dHeight = sHeight;
+
+                        // remove scrollbars from screenshots
+                        if (screenshot) {
+                            sWidth = sWidth - 17;
+                            sHeight = sHeight - 17;
                         }
 
-                        setTimeout(async function () {
+                        // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                        if (sRatio < imageRatio && sRatio > (imageRatio - 0.2)) {
+                            // aspect is narrower, crop top and bottom
+                            let naturalHeight = maxWidth / sRatio
+                            let crop = (naturalHeight - maxSize)
+                            sY = crop / 2; // take equal amounts from each side
+                            sHeight = sHeight - crop;
+                            dHeight = maxSize;
+                            dWidth = Math.round(maxSize * imageRatio)
+                        } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
+                            // aspect is wider, crop sides to fit
+                            let naturalWidth = maxSize * sRatio
+                            let crop = (naturalWidth - maxWidth)
+                            sX = crop / 2;
+                            sWidth = sWidth - crop;
+                            dWidth = maxSize;
+                            dHeight = Math.round(maxSize / imageRatio)
+                        } else if (sWidth > sHeight) {
+                            // rescale to max width of 256px
+                            let ratio = maxSize / sWidth;
+                            dHeight = Math.round(sHeight * ratio);
+                            dWidth = maxSize;
+                        } else {
+                            // rescale to max height of 256px
+                            let ratio = maxSize / sHeight;
+                            dWidth = Math.round(sWidth * ratio);
+                            dHeight = maxSize;
+                        }
 
-                            const title = tabInfo.title ? tabInfo.title : '';
-                            let screenshot;
+                        canvas.width = dWidth;
+                        canvas.height = dHeight;
 
-                            // screencapture on chrome requires tab to be active
-                            if (!browser.runtime.getBrowserInfo) {
-                                screenshot = await browser.tabs.captureVisibleTab().catch(err => {
-                                    console.log(err);
-                                })
-                            } else {
-                                screenshot = await browser.tabs.captureTab(tabId).catch(err => {
-                                    console.log(err);
-                                })
-                            }
+                        //console.log(sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight);
+                        ctx.drawImage(this, sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight)
 
-                            browser.tabs.onUpdated.removeListener(handleUpdated);
+                        const newDataURI = canvas.toDataURL('image/webp', 0.94);
+                        resolve(newDataURI);
 
-                            if (activeTab && activeTab.length) {
-                                // restore the tab that was active before (not required in ff)
-                                browser.tabs.update(activeTab[0].id, {active: true}).catch(err => {
-                                    console.log(err);
-                                })
-                            }
-
-                            if (timer) {
-                                clearTimeout(timer);
-                            }
-
-                            browser.tabs.remove(tabId).catch(err => {
-                                console.log(err)
-                            })
-
-                            resolve({screenshot, title});
-                        }, 1000);
+                    } else if (sHeight >= 96 || sWidth >= 96) {
+                        resolve(image);
+                    } else {
+                        // discard images < 96px
+                        resolve();
                     }
-                }
-
-                browser.tabs.onUpdated.addListener(handleUpdated);
-
-                const tab = await browser.tabs.create({
-                    active: false,
-                    url
-                }).catch(err => {
-                    console.log(err);
-                    resolve();
-                    return
-                })
-
-                // timeout for site to load
-                let timer = setTimeout(async function () {
-                    browser.tabs.onUpdated.removeListener(handleUpdated);
-                    browser.tabs.remove(tab.id).catch(err => {
-                        console.log(err)
-                    })
-                    resolve();
-                }, 10000)
-
+                };
+                img.crossOrigin = "Anonymous";
+                img.src = image;
             } else {
                 resolve();
             }
-        }
-    });
+        });
+    }
 
-}
-
-// downscale image
-function resizeImage(image, screenshot=false) {
-    return new Promise(function (resolve, reject) {
-        if (image && image.length) {
+    // calculate the bg color of a given image
+    // samples the second pixel from the top left and the second pixel from either the top-right or bottom-left
+    // depending on whether the image is narrow or wide
+    // todo: punt this to a worker
+    // todo: export functions resused in index.js
+    function getBgColor(image) {
+        return new Promise(function (resolve, reject) {
             let img = new Image();
-
-            img.onerror = function(event) {
-                resolve();
-            }
-
             img.onload = function () {
+                let imgWidth = img.naturalWidth;
+                let imgHeight = img.naturalHeight;
+                let sx, sy, sw, sh, direction;
 
-                let sWidth = this.width;
-                let sHeight = this.height;
+                if ((imgWidth / imgHeight) > imageRatio) {
+                    // image is wide; sample top and bottom
+                    sy = imgHeight - 2
+                    sx = 2;
+                    sw = 1
+                    sh = -1
+                    direction = 'bottom'
 
-                if (sHeight > 256 || sWidth > 256) {
-
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-
-                    const maxSize = 256;
-                    const maxWidth = Math.round(256 * imageRatio);
-
-                    const sRatio = sWidth / sHeight
-
-                    let sX = 0;
-                    let sY = 0;
-                    let dX = 0;
-                    let dY = 0;
-                    let dWidth = sWidth;
-                    let dHeight = sHeight;
-
-                    // remove scrollbars from screenshots
-                    if (screenshot) {
-                        sWidth = sWidth - 17;
-                        sHeight = sHeight - 17;
-                    }
-
-                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
-                    if (sRatio < imageRatio && sRatio > (imageRatio - 0.2)) {
-                        // aspect is narrower, crop top and bottom
-                        let naturalHeight = maxWidth / sRatio
-                        let crop = ( naturalHeight - maxSize )
-                        sY = crop / 2; // take equal amounts from each side
-                        sHeight = sHeight - crop;
-                        dHeight = maxSize;
-                        dWidth = Math.round(maxSize * imageRatio)
-                    } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
-                        // aspect is wider, crop sides to fit
-                        let naturalWidth = maxSize * sRatio
-                        let crop = ( naturalWidth - maxWidth )
-                        sX = crop / 2;
-                        sWidth = sWidth - crop;
-                        dWidth = maxSize;
-                        dHeight = Math.round(maxSize / imageRatio)
-                    } else if (sWidth > sHeight) {
-                        // rescale to max width of 256px
-                        let ratio = maxSize / sWidth;
-                        dHeight = Math.round(sHeight * ratio);
-                        dWidth = maxSize;
-                    } else {
-                        // rescale to max height of 256px
-                        let ratio = maxSize / sHeight;
-                        dWidth = Math.round(sWidth * ratio);
-                        dHeight = maxSize;
-                    }
-
-                    canvas.width = dWidth;
-                    canvas.height = dHeight;
-
-                    //console.log(sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight);
-                    ctx.drawImage(this, sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight)
-
-                    const newDataURI = canvas.toDataURL('image/webp', 0.94);
-                    resolve(newDataURI);
-
-                } else if (sHeight >= 96 || sWidth >= 96) {
-                    resolve(image);
                 } else {
-                    // discard images < 96px
-                    resolve();
+                    // sample left and right
+                    sx = imgWidth - 2
+                    sy = 2;
+                    sw = -1
+                    sh = -1
+                    direction = 'right'
                 }
+
+                let rgba = [0, 0, 0, 0];
+                let rgbaa = [0, 0, 0, 0];
+                let canvas = offscreenCanvasShim(imgWidth, imgHeight);
+                // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
+                // todo add to other contexts
+                let context = canvas.getContext('2d', { willReadFrequently: true });
+                context.drawImage(img, 0, 0);
+
+                // get the top left pixel, cheap and easy
+                // todo: if its equally performant, sample all corners and return the mode?
+                let pixelA = context.getImageData(1, 1, 2, 2);
+                rgba[0] = pixelA.data[0];
+                rgba[1] = pixelA.data[1];
+                rgba[2] = pixelA.data[2];
+                rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+                let pixelB = context.getImageData(sx, sy, sw, sh);
+                rgbaa[0] = pixelB.data[0];
+                rgbaa[1] = pixelB.data[1];
+                rgbaa[2] = pixelB.data[2];
+                rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+
+                // if part of the edge is transparent, make whole bg transparent
+                if ((rgba[3]) < 0.9 || rgbaa[3] < 0.9) {
+                    rgba[3] = 0
+                    rgbaa[3] = 0
+                }
+
+                //return rgba;
+                //console.log(direction, rgba, rgbaa);
+                resolve(`linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`);
+            }
+            img.onerror = function () {
+                resolve();
             };
             img.crossOrigin = "Anonymous";
-            img.src = image;
-        } else {
-            resolve();
-        }
-    });
-}
-
-function offscreenCanvasShim(w=1, h=1) {
-    try {
-        return new OffscreenCanvas(w, h);
-    } catch (err) {
-        // offscreencanvas not supported in ff
-        let canvas = document.createElement('canvas');
-        canvas.width  = w;
-        canvas.height = h;
-        return canvas;
+            img.src = image
+        });
     }
-}
-
-// calculate the bg color of a given image
-// samples the second pixel from the top left and the second pixel from either the top-right or bottom-left
-// depending on whether the image is narrow or wide
-// todo: punt this to a worker
-// todo: export functions resused in index.js
-function getBgColor(image) {
-    return new Promise(function(resolve, reject) {
-        let img = new Image();
-        img.onload = function () {
-            let imgWidth = img.naturalWidth;
-            let imgHeight = img.naturalHeight;
-            let sx, sy, sw, sh, direction;
-
-            if ((imgWidth / imgHeight) > imageRatio) {
-                // image is wide; sample top and bottom
-                sy = imgHeight - 2
-                sx = 2;
-                sw = 1
-                sh = -1
-                direction = 'bottom'
-
-            } else {
-                // sample left and right
-                sx = imgWidth - 2
-                sy = 2;
-                sw = -1
-                sh = -1
-                direction = 'right'
-            }
-
-            let rgba = [0, 0, 0, 0];
-            let rgbaa = [0, 0, 0, 0];
-            let canvas = offscreenCanvasShim(imgWidth, imgHeight);
-            // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
-            // todo add to other contexts
-            let context = canvas.getContext('2d', {willReadFrequently:true});
-            context.drawImage(img, 0, 0);
-
-            // get the top left pixel, cheap and easy
-            // todo: if its equally performant, sample all corners and return the mode?
-            let pixelA = context.getImageData(1, 1, 2, 2);
-            rgba[0] = pixelA.data[0];
-            rgba[1] = pixelA.data[1];
-            rgba[2] = pixelA.data[2];
-            rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
-
-            let pixelB = context.getImageData(sx, sy, sw, sh);
-            rgbaa[0] = pixelB.data[0];
-            rgbaa[1] = pixelB.data[1];
-            rgbaa[2] = pixelB.data[2];
-            rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
-
-            // if part of the edge is transparent, make whole bg transparent
-            if ((rgba[3]) < 0.9 || rgbaa[3] < 0.9) {
-                rgba[3] = 0
-                rgbaa[3] = 0
-            }
-
-            //return rgba;
-            //console.log(direction, rgba, rgbaa);
-            resolve(`linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`);
+    function offscreenCanvasShim(w = 1, h = 1) {
+        try {
+            return new OffscreenCanvas(w, h);
+        } catch (err) {
+            // offscreencanvas not supported in ff
+            let canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            return canvas;
         }
-        img.onerror = function() {
-            resolve();
-        };
-        img.crossOrigin = "Anonymous";
-        img.src = image
-    });
+    }
 }
 
 function removeBookmark(id, bookmarkInfo) {
@@ -724,20 +663,38 @@ function handleImport() {
 }
 
 function refreshBatch(urls, index = 0) {
+
+    function send(arr, cb) {
+        lastbatch++;
+        if (lastbatch >= arr.length) return cb();
+        //console.log("YASD:" Refreshing tab#", lastbatch);
+        getThumbnails(arr[lastbatch], { quickRefresh: true });
+    }
+
+    function alldone() {
+        evtTabClosed.removeEventListener(TabClosedEvent, function() {console.log("YASD: All images retrieved");});
+        refreshOpen();
+    }
+
     // avoid too many connections
     let batchSize = 200;
-    let batch = urls.slice(index, index+batchSize);
+    let batch = urls.slice(index, index + batchSize);
+    let lastbatch = -1;
+    evtTabClosed.addEventListener(TabClosedEvent, function() {send(batch, alldone)}, false);
 
     if (batch.length) {
-        Promise.all(batch.map(url =>
-            getThumbnails(url, {quickRefresh: true})
-        )).then(() => {
-            // todo show progress in UI
-            // console.log(Math.round((index / urls.length)*100) + "%")
-            refreshBatch(urls, index+batchSize)
-        }).catch((err) => {
-            console.log(err);
-        })
+
+        send(batch, alldone);
+
+        // Promise.all(batch.map(url =>
+        //     getThumbnails(url, {quickRefresh: true})
+        // )).then(() => {
+        //     // todo show progress in UI
+        //     // console.log(Math.round((index / urls.length)*100) + "%")
+        //     refreshBatch(urls, index+batchSize)
+        // }).catch((err) => {
+        //     console.log(err);
+        // })
     } else {
         refreshOpen()
     }
@@ -881,7 +838,7 @@ function connected(p) {
         messagePorts.splice(i, 1);
     });
 
-    browser.browserAction.disable(p.sender.tab.id);
+    browser.action.disable(p.sender.tab.id);
 }
 
 function handleInstalled(details) {
@@ -892,8 +849,8 @@ function handleInstalled(details) {
     } else if (details.reason === 'update') {
         // perform any migrations here...
         if (details.previousVersion && details.previousVersion < '2.0.0') {
-            const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url, active: false });
+            const url = browser.runtime.getURL("updated.html");
+            browser.tabs.create({ url, active: false });
             migrate().catch(err => {
                 console.log(err)
             });
@@ -925,6 +882,14 @@ async function migrate() {
 }
 
 function init() {
+
+    // keep running.  If not, service worker does not wake up at times, plus will timeout with a YASD tab up, 
+    // thus becoming unresponsive
+    //https://stackoverflow.com/questions/66618136/persistent-service-worker-in-chrome-extension
+    const keepAlive = () => setInterval(browser.runtime.getPlatformInfo, 20e3);
+    browser.runtime.onStartup.addListener(keepAlive);
+    keepAlive();
+
     browser.runtime.onConnect.addListener(connected);
     // ff triggers 'moved' for bookmarks saved to different folder than default
     browser.bookmarks.onMoved.addListener(moved);
@@ -935,7 +900,7 @@ function init() {
     browser.bookmarks.onRemoved.addListener(removeBookmark);
     browser.contextMenus.onClicked.addListener(onClickHandler);
 
-    browser.browserAction.onClicked.addListener(handleBrowserAction);
+    browser.action.onClicked.addListener(handleBrowserAction);
 
     // build a thumbnail cache of url:thumbUrl pairs
     browser.storage.local.get().then(result => {
@@ -966,16 +931,52 @@ function init() {
         });
     });
 
-    // context menu -> "add to speed dial"
-    browser.contextMenus.create({
-        "title": "Add to Speed Dial",
-        "contexts":['page'],
-        "documentUrlPatterns":['<all_urls>'],
-        "id": "addToSpeedDial"
+    browser.contextMenus.removeAll(function () {
+        // context menu -> "add to speed dial"
+        browser.contextMenus.create({
+            "title": "Add to Speed Dial",
+            "contexts": ['page'],
+            "documentUrlPatterns": ['<all_urls>'],
+            "id": "addToSpeedDial"
+        });
     });
 
     browser.runtime.onInstalled.addListener(handleInstalled);
+
+    function handleStartup() {
+        // this breaks starting the browser from a linked url (like in file explorer)
+        // browser.tabs.update(
+        //     {
+        //         url: "index.html"
+        //     }
+        // )
+    }
+    browser.runtime.onStartup.addListener(handleStartup);
 }
 
+// Add message listener - Main dispatcher
+
+browser.runtime.onMessage.addListener(// this is the message listener
+    function (request, sender, sendResponse) {
+
+        //console.log("YASD: Background message received: ", request, sender);
+
+        switch (request.message) {
+
+            case "GetScreenshot":
+                //sendResponse({ status: 'ok' });   // so port doesn't close early
+                browser.tabs.captureVisibleTab(sender.tab.windowId, {}, function (screenshotdataurl) {
+                    if (screenshotdataurl != null) {
+                        sendResponse({ message: "PutScreenshot", screenshot: screenshotdataurl });
+                    }
+                });
+                break;
+
+            default:
+                console.log("YASD: Unknown Service Manager message received:", request.message);
+                break;
+        }
+        return true;  // Keep port open?
+    });
 
 init();

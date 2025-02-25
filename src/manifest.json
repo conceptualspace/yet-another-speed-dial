@@ -1,9 +1,9 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "2.5.5",
+  "version": "3.0.4",
   "author": "dev@conceptualspace.net",
   "icons": {
     "16": "icons/icon16.png",
@@ -20,21 +20,21 @@
     "unlimitedStorage",
     "activeTab",
     "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
     "<all_urls>"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
   },
-  "chrome_settings_overrides": {
-    "homepage": "index.html"
-  },
   "background": {
+    "service_worker": "js/background.js",
     "scripts": [
-      "js/lib/browser-polyfill.min.js",
-      "js/background.js"
+        "js/background.js"
     ]
-  },
-  "browser_action": {
+},
+  "action": {
     "default_icon": {
       "16": "icons/action-icon16.png",
       "24": "icons/action-icon24.png",
@@ -42,11 +42,22 @@
     },
     "default_title": "Add to Speed Dial"
   },
-  "web_accessible_resources": ["icons/icon128.png"],
+  "web_accessible_resources": [
+    {
+        "resources": [
+          "icons/*",
+          "js/lib/browser-polyfill.min.js",
+          "img/*"
+        ],
+        "matches": [
+            "<all_urls>"
+        ]
+    }
+],
   "browser_specific_settings": {
     "gecko": {
       "id": "yet_another_speed_dial@conceptualspace.net",
-      "strict_min_version": "59.0"
+      "strict_min_version": "120.0"
     }
   }
 }
