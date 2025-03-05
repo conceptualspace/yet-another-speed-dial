@@ -16,6 +16,7 @@ chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onInstalled.addListener(handleInstalled);
 
 
 // EVENT HANDLERS //
@@ -116,6 +117,18 @@ function handleManualRefresh(data) {
                 //refreshOpen()
             })
         })
+    }
+}
+
+// LIFECYCLE METHODS //
+
+function handleInstalled(details) {
+    if (details.reason === "install") {
+        // set uninstall URL
+        chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
+        // todo: detect existing speed dial folder
+    } else if (details.reason === 'update') {
+        // perform any migrations here...
     }
 }
 
