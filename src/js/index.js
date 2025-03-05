@@ -479,7 +479,7 @@ async function printBookmarks(bookmarks, parentId) {
                     thumbBg = cache[bookmark.url][1]
                 } else {
                     let images = await getThumbs(bookmark.url);
-                    console.log(images);
+                    //console.log(images);
                     if (images) {
                         thumbUrl = images.thumbnails[0];
                         thumbBg = images.bgColor;
