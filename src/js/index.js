@@ -878,7 +878,7 @@ function saveBookmarkSettings() {
                     thumbIndex = 0;
                 }
                 browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
-                    tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                    //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                     if (title !== targetTileTitle) {
                         updateTitle()
                     }
@@ -910,7 +910,7 @@ function saveBookmarkSettings() {
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
                         browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
-                            tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                            //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                             if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
                             }
@@ -1273,7 +1273,7 @@ function saveSettings() {
             }, 3500);
              */
 
-            tabMessagePort.postMessage({updateSettings: true});
+            //tabMessagePort.postMessage({updateSettings: true});
         });
 }
 
@@ -1599,7 +1599,8 @@ importFileInput.onchange = function (event) {
                 browser.storage.local.set(json).then(result => {
                     hideModals();
                     // refresh page
-                    tabMessagePort.postMessage({handleImport: true});
+                    //tabMessagePort.postMessage({handleImport: true});
+                    processRefresh();
                 }).catch(err => {
                     console.log(err)
                     importExportStatus.innerText = "Error! Unable to parse file."
