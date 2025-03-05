@@ -1,4 +1,9 @@
 // yet another speed dial
+// copyright 2019 dev@conceptualspace.net
+// absolutely no warranty is expressed or implied
+
+'use strict';
+
 
 // EVENT LISTENERS //
 
@@ -9,33 +14,30 @@ chrome.bookmarks.onMoved.addListener(handleBookmarkChanged);
 chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
 chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
-//chrome.runtime.onMessage.addListener(onDone);
+
 chrome.runtime.onMessage.addListener(handleMessages);
-
-// This function performs basic filtering and error checking on messages before
-// dispatching the
-// message to a more specific message handler.
-async function handleMessages(message) {
-  // Return early if this message isn't meant for the worker
-  if (message.target !== 'background') {
-    return;
-  }
-
-  // Dispatch the message to an appropriate handler.
-  switch (message.type) {
-    case 'refreshThumbs':
-		handleManualRefresh(message.data);
-      break;
-	case 'saveThumbnails':
-		handleOffscreenFetchDone(message.data);
-	  break;
-    default:
-      console.warn(`Unexpected message type received: '${message.type}'.`);
-  }
-}
 
 
 // EVENT HANDLERS //
+
+async function handleMessages(message) {
+	// Return early if this message isn't meant for the worker
+	if (message.target !== 'background') {
+	  return;
+	}
+  
+	// Dispatch the message to an appropriate handler.
+	switch (message.type) {
+	  case 'refreshThumbs':
+		  handleManualRefresh(message.data);
+		break;
+	  case 'saveThumbnails':
+		  handleOffscreenFetchDone(message.data);
+		break;
+	  default:
+		console.warn(`Unexpected message type received: '${message.type}'.`);
+	}
+}
 
 async function handleBookmarkChanged(id, info) {
 	// bookmark was just reordered; noop
@@ -95,11 +97,30 @@ async function handleBookmarkRemoved(id, info) {
 	await chrome.storage.local.remove(info.node.url).catch((err) => {
 		console.log(err)
 	});
-	refreshOpen();
+	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
+	//refreshOpen();
 }
 
 
-// IMAGE FUNCTIONS WOOP
+// MESSAGE HANDLERS //
+
+function handleOffscreenFetchDone(data) {
+	console.log(data);
+	saveThumbnails(data.url, data.thumbs, data.bgColor)
+}
+
+function handleManualRefresh(data) {
+    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
+        chrome.storage.local.remove(data.url).then(() => {
+            getThumbnails(data.url, {forceScreenshot: true}).then(() => {
+                //refreshOpen()
+            })
+        })
+    }
+}
+
+
+// THUMBNAIL FUNCTIONS //
 
 async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
 	// cant fetch/parse/format images in service worker: delegate to offscreen document
@@ -125,9 +146,6 @@ async function saveThumbnails(url, images, bgColor) {
 	}
 }
 
-// MESSAGE HANDLERS
-
-
 function refreshOpen() {
     chrome.runtime.sendMessage({
 		target: 'newtab',
@@ -135,25 +153,10 @@ function refreshOpen() {
 	});
 }
 
-function handleOffscreenFetchDone(data) {
-	console.log(data);
-	saveThumbnails(data.url, data.thumbs, data.bgColor)
-}
-
-function handleManualRefresh(data) {
-    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
-        chrome.storage.local.remove(data.url).then(() => {
-            getThumbnails(data.url, {forceScreenshot: true}).then(() => {
-                //refreshOpen()
-            })
-        })
-    }
-}
 
 // UTILS
 
 // offscreen document setup
-
 let creating; // A global promise to avoid concurrency issues
 async function setupOffscreenDocument(path) {
   // Check all windows controlled by the service worker to see if one
