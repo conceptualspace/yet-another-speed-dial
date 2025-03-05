@@ -89,7 +89,9 @@ const clock = document.getElementById('clock');
 const port = "p-" + new Date().getTime();
 let tabMessagePort = null;
 
-let cache = null;
+chrome.runtime.onMessage.addListener(handleMessages);
+
+let cache = {};
 let settings = null;
 let speedDialId = null;
 let sortable = null;
@@ -111,6 +113,24 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+
+let folderIds = [];
+
+let defaults = {
+    wallpaper: true,
+    wallpaperSrc: 'img/bg.jpg',
+    backgroundColor: '#111111',
+    largeTiles: true,
+    rememberFolder: false,
+    showTitles: true,
+    showAddSite: true,
+    showFolders: true,
+    showSettingsBtn: true,
+    showClock: true,
+    maxCols: '100',
+    defaultSort: 'first',
+    textColor: '#ffffff'
+};
 
 const debounce = (func, delay= 500, immediate=false) => {
     let inDebounce
@@ -322,7 +342,8 @@ function folderLink(title, id) {
         currentFolder = id;
         scrollPos = 0;
         bookmarksContainerParent.scrollTop = scrollPos;
-        tabMessagePort.postMessage({currentFolder: id});
+        chrome.storage.local.set({currentFolder: id});
+        //tabMessagePort.postMessage({currentFolder: id});
     };
 
     // todo: allow dropping directly on folder title?
@@ -369,9 +390,11 @@ function editFolder() {
 }
 
 function refreshThumbnails(url) {
-    tabMessagePort.postMessage({refreshThumbs: true, url});
+    //tabMessagePort.postMessage({refreshThumbs: true, url});
+    
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
+    chrome.runtime.sendMessage({target: 'background', type: 'refreshThumbs', data: {url}});
 }
 
 function removeFolder() {
@@ -420,7 +443,7 @@ function refreshAllThumbnails() {
 }
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
-function printBookmarks(bookmarks, parentId) {
+async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
 
     //let folderContainer = document.createElement('div');
@@ -455,7 +478,16 @@ function printBookmarks(bookmarks, parentId) {
                     thumbUrl = cache[bookmark.url][0];
                     thumbBg = cache[bookmark.url][1]
                 } else {
-                    thumbUrl = "../img/default.png";
+                    let images = await getThumbs(bookmark.url);
+                    console.log(images);
+                    if (images) {
+                        thumbUrl = images.thumbnails[0];
+                        thumbBg = images.bgColor;
+                        cache[bookmark.url] = [thumbUrl, thumbBg];
+                    } else {
+                        thumbUrl = "../img/default.png";
+                    }
+ 
                 }
                 let a = document.createElement('a');
                 a.classList.add('tile');
@@ -1704,57 +1736,92 @@ const processRefresh = debounce(() => {
     getBookmarks(speedDialId)
 }, 650, true);
 
+function getSpeedDialId() {
+    return new Promise((resolve, reject) => {
+        chrome.bookmarks.search({title: 'Speed Dial'}).then(result => {
+            if (result) {
+                for (let bookmark of result) {
+                    if (!bookmark.url) {
+                        speedDialId = bookmark.id;
+                        break;
+                    }
+                }
+            }
+            if (speedDialId) {
+                chrome.bookmarks.getChildren(speedDialId).then(results => {
+                    for (let result of results) {
+                        if (!result.url && result.title) {
+                            folderIds.push(result.id);
+                        }
+                    }
+                })
+                resolve()
+            } else {
+                chrome.bookmarks.create({title: 'Speed Dial'}).then(result => {
+                    speedDialId = result.id;
+                    resolve();
+                }, error => {
+                    reject(error);
+                });
+            }
+        }, error => {
+            reject(error)
+        });
+    });
+}
+
+function handleMessages(m) {
+    console.log(m);
+    if (!m.target === 'newtab') {
+        return
+    }
+
+    if (m.data.refresh) {
+        hideToast();
+        processRefresh();
+    }
+}
+
 function init() {
-    tabMessagePort = browser.runtime.connect({name: port});
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
     })
 
-    tabMessagePort.onMessage.addListener(function (m) {
-        if (m.ready) {
-            cache = m.cache;
-            settings = m.settings;
-            speedDialId = m.speedDialId;
-            currentFolder = m.currentFolder;
-            applySettings().then(() => getBookmarks(speedDialId));
-        } else if (m.refresh) {
-            //console.log(cache, m.cache);
-            cache = m.cache;
-            hideToast();
-            processRefresh();
-        } else if (m.refreshInactive) {
-            browser.tabs.getCurrent().then(tab => {
-                if (!tab.active) {
-                    folders = [];
-                    foldersContainer.innerHTML = "";
-                    cache = m.cache;
-                    hideToast();
-                    processRefresh();
-                }
-            })
-        } else if (m.reset) {
-            cache = m.cache;
-            speedDialId = m.speedDialId;
-            hideToast();
-            processRefresh();
+    
 
-        } else if (m.imported) {
-            cache = m.cache;
-            settings = m.settings;
-            applySettings().then(() => processRefresh());
+    // init what used to be background work"
+    // build a thumbnail cache of url:thumbUrl pairs
+    // todo: slow; lets get the current tab first
+    chrome.storage.local.get().then(result => {
+        if (result) {
+            if (result.settings) {
+                settings = Object.assign({}, defaults, result.settings);
+            } else {
+                settings = defaults;
+            }
+            if (settings.rememberFolder && result.currentFolder) {
+                currentFolder = result.currentFolder;
+                //todo: reset to home folder when setting turned off
+            }
+            const entries = Object.entries(result);
+            for (let e of entries) {
+                //console.log(e);
+                // todo: filter folder ids
+                if (e[0] !== "settings" && e[1].thumbnails) {
+                    let index = e[1].thumbIndex;
+                    cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
+                }
+            }
         }
+        getSpeedDialId().then(() => {
+            applySettings().then(() => getBookmarks(speedDialId));
+        }, error => {
+            console.log(error);
+        });
     });
 
-    tabMessagePort.onDisconnect.addListener(obj => {
-        if (browser.runtime.lastError) {
-            // for some reason the background page is not responding
-            // todo: setup a timer to try again
-            console.log(browser.runtime.lastError.message);
-        }
-    })
 
-    tabMessagePort.postMessage({getCache: true});
 
     sidenav.style.display = "flex";
 

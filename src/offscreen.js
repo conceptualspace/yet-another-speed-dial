@@ -42,7 +42,7 @@ async function handleMessages(message) {
 
     if (thumbs.length) {
         const bgColor = await getBgColor(thumbs[0])
-        chrome.runtime.sendMessage({target: 'background', data: {url, thumbs, bgColor}});
+        chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
@@ -251,7 +251,7 @@ async function fetchImages(url) {
         images.push('img/amazon.com.png');
         // dont fetch other images for the root page
         if (hostname.startsWith('amazon') && hostname.length < 14) {
-            resolve(images);
+            return(images);
         }
     } else {
         images.push('https://logo.clearbit.com/' + new URL(url).hostname + '?size=256');

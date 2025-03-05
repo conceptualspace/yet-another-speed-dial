@@ -10,6 +10,29 @@ chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
 chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 //chrome.runtime.onMessage.addListener(onDone);
+chrome.runtime.onMessage.addListener(handleMessages);
+
+// This function performs basic filtering and error checking on messages before
+// dispatching the
+// message to a more specific message handler.
+async function handleMessages(message) {
+  // Return early if this message isn't meant for the worker
+  if (message.target !== 'background') {
+    return;
+  }
+
+  // Dispatch the message to an appropriate handler.
+  switch (message.type) {
+    case 'refreshThumbs':
+		handleManualRefresh(message.data);
+      break;
+	case 'saveThumbnails':
+		handleOffscreenFetchDone(message.data);
+	  break;
+    default:
+      console.warn(`Unexpected message type received: '${message.type}'.`);
+  }
+}
 
 
 // EVENT HANDLERS //
@@ -38,8 +61,7 @@ async function handleBookmarkChanged(id, info) {
     			refreshOpen();
     		} else {
     			// this bookmark needs images
-    			await getThumbnails(bookmarkUrl)
-    			refreshOpen()
+    			getThumbnails(bookmarkUrl)
     		}
     	}
     } else {
@@ -67,58 +89,40 @@ async function handleBookmarkChanged(id, info) {
     }
 }
 
-function handleBookmarkRemoved(id, info) {
+async function handleBookmarkRemoved(id, info) {
 	// todo: handle upsert where speed dial folder is deleted
-	if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
-        chrome.storage.local.remove(info.node.url).catch((err) => {
-            console.log(err)
-        });
-	}
+	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
+	await chrome.storage.local.remove(info.node.url).catch((err) => {
+		console.log(err)
+	});
+	refreshOpen();
 }
 
 
 // IMAGE FUNCTIONS WOOP
 
 async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
-
 	// cant fetch/parse/format images in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
 
-	return new Promise((resolve, reject) => {
-		const onDone = (result) => {
-			console.log(result)
-	        chrome.runtime.onMessage.removeListener(onDone);
-			saveThumbnails(url, result.data.thumbs, result.data.bgColor)
-				.then(() => resolve());
-	    };
-
-	    chrome.runtime.onMessage.addListener(onDone);
-
-		chrome.runtime.sendMessage({
-			target: 'offscreen',
-			data: url
-		});
+	chrome.runtime.sendMessage({
+		target: 'offscreen',
+		data: url
 	});
 }
 
-function saveThumbnails(url, images, bgColor) {
-    return new Promise(function(resolve, reject) {
-        if (images && images.length) {
-            let thumbnails = [];
-            chrome.storage.local.get(url)
-                .then(result => {
-                    if (result[url] && result[url].thumbnails) {
-                        thumbnails = result[url].thumbnails;
-                    }
-                    thumbnails.push(images);
-                    thumbnails = thumbnails.flat();
-                    chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
-                        .then(() => resolve());
-                });
-        } else {
-            resolve();
-        }
-    });
+async function saveThumbnails(url, images, bgColor) {
+	if (images && images.length) {
+		let thumbnails = [];
+		let result = await chrome.storage.local.get(url)
+		if (result[url] && result[url].thumbnails) {
+			thumbnails = result[url].thumbnails;
+		}
+		thumbnails.push(images);
+		thumbnails = thumbnails.flat();
+		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
+		refreshOpen()
+	}
 }
 
 // MESSAGE HANDLERS
@@ -129,6 +133,21 @@ function refreshOpen() {
 		target: 'newtab',
 		data: {refresh:true}
 	});
+}
+
+function handleOffscreenFetchDone(data) {
+	console.log(data);
+	saveThumbnails(data.url, data.thumbs, data.bgColor)
+}
+
+function handleManualRefresh(data) {
+    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
+        chrome.storage.local.remove(data.url).then(() => {
+            getThumbnails(data.url, {forceScreenshot: true}).then(() => {
+                //refreshOpen()
+            })
+        })
+    }
 }
 
 // UTILS
