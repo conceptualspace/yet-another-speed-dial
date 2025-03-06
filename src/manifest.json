@@ -40,7 +40,7 @@
       "24": "icons/action-icon24.png",
       "32": "icons/action-icon32.png"
     },
-    "default_title": "Add to Speed Dial"
+    "default_title": "Yet Another Speed Dial"
   },
   "browser_specific_settings": {
     "gecko": {
