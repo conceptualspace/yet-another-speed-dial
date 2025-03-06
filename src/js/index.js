@@ -433,7 +433,8 @@ function refreshAllThumbnails() {
                     urls.push(child.url);
                 }
             }
-            tabMessagePort.postMessage({refreshAll: true, urls});
+            //tabMessagePort.postMessage({refreshAll: true, urls});
+            chrome.runtime.sendMessage({target: 'background', type: 'refreshAllThumbs', data: {urls}});
             toastContent.innerText = ` Capturing images...`;
             toast.style.transform = "translateX(0%)";
         }

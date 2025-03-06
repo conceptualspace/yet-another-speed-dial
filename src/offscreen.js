@@ -21,6 +21,7 @@ async function handleMessages(message) {
 
     let images = [];
     let resizedImages = [];
+    let thumbs = [];
     let title = null;
 
     let url = message.data;
@@ -29,16 +30,20 @@ async function handleMessages(message) {
         console.log(err);
     })
 
-    resizedImages = await Promise.all(images.map(async (image) => {
-        const result = await resizeImage(image).catch(err => {
-            console.log(err);
-        });
-        return result
-    }))
+    if (images && images.length) {
+        resizedImages = await Promise.all(images.map(async (image) => {
+            const result = await resizeImage(image).catch(err => {
+                console.log(err);
+            });
+            return result
+        }))
+    }
 
     // todo screenshot
 
-    const thumbs = resizedImages.filter(item => item)
+    if (resizedImages && resizedImages.length) {
+        thumbs = resizedImages.filter(item => item)
+    }
 
     if (thumbs.length) {
         const bgColor = await getBgColor(thumbs[0])
@@ -47,8 +52,6 @@ async function handleMessages(message) {
     }
 
     return title;
-
-
 
       //chrome.runtime.sendMessage(images);
 }
@@ -268,8 +271,7 @@ async function fetchImages(url) {
     }
 
     if (whitelist.includes(hostname)) {
-        resolve(['img/' + hostname + '.png']);
-        return;
+        return(['img/' + hostname + '.png']);
     } else {
         try {
             const response = await fetch(url, {
@@ -282,8 +284,7 @@ async function fetchImages(url) {
             });
 
             if (!response.ok) {
-                resolve(images);
-                return;
+                return(images);
             }
 
             const text = await response.text();
