@@ -32,6 +32,9 @@ async function handleMessages(message) {
 	  case 'refreshThumbs':
 		  handleManualRefresh(message.data);
 		break;
+	case 'refreshAllThumbs':
+		handleRefreshAll(message.data);
+		break;
 	  case 'saveThumbnails':
 		  handleOffscreenFetchDone(message.data);
 		break;
@@ -106,7 +109,7 @@ async function handleBookmarkRemoved(id, info) {
 // MESSAGE HANDLERS //
 
 function handleOffscreenFetchDone(data) {
-	console.log(data);
+	//console.log(data);
 	saveThumbnails(data.url, data.thumbs, data.bgColor)
 }
 
@@ -119,6 +122,42 @@ function handleManualRefresh(data) {
         })
     }
 }
+
+async function handleRefreshAll(data) {
+	async function refreshBatch(urls, index = 0, retries = 3) {
+		const batchSize = 200;
+		const delay = 1000; // 1 second delay between batches
+		const batch = urls.slice(index, index + batchSize);
+	
+		if (batch.length) {
+			try {
+				await Promise.all(batch.map(url => getThumbnails(url, { quickRefresh: true })));
+				// todo show progress in UI
+				// console.log(Math.round((index / urls.length) * 100) + "%");
+				setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
+			} catch (err) {
+				console.log(err);
+				if (retries > 0) {
+					console.log(`Retrying batch at index ${index}...`);
+					setTimeout(() => refreshBatch(urls, index, retries - 1), delay);
+				} else {
+					console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
+					setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
+				}
+			}
+		} else {
+			refreshOpen();
+		}
+	}
+
+	for (let url of data.urls) {
+        await chrome.storage.local.remove(url).catch((err) => {
+            console.log(err)
+        });
+    }
+	refreshBatch(data.urls)
+}
+
 
 // LIFECYCLE METHODS //
 
