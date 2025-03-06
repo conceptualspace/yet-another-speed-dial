@@ -1772,13 +1772,13 @@ function getSpeedDialId() {
     });
 }
 
-function handleMessages(m) {
-    console.log(m);
-    if (!m.target === 'newtab') {
+function handleMessages(message) {
+    //console.log(m);
+    if (!message.target === 'newtab') {
         return
     }
 
-    if (m.data.refresh) {
+    if (message.data.refresh) {
         hideToast();
         processRefresh();
     }
