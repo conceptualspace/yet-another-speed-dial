@@ -322,6 +322,13 @@ async function fetchImages(url) {
                 insert(imageUrl);
             }
 
+            // get x-icon
+            let xIcon = doc.querySelector('link[rel="icon"]');
+            if (xIcon && xIcon.getAttribute('href')) {
+                let imageUrl = convertUrlToAbsolute(url, xIcon.getAttribute('href'));
+                insert(imageUrl);
+            }
+            
             // get large icons
             let sizes = [
                 "512x512",
