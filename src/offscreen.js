@@ -297,7 +297,8 @@ async function fetchImages(url) {
                 // filter known problematic images
                 const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
                 if (!filters.some(element => firstImage.src.includes(element))) {
-                    insert(firstImage.src);
+                    let imageUrl = convertUrlToAbsolute(url, firstImage.getAttribute('src')); // can't use .src directly in offscreen doc
+                    insert(imageUrl);
                 }
             }
 
