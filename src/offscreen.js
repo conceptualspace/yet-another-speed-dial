@@ -71,7 +71,7 @@ function convertUrlToAbsolute(origin, path) {
             if (url.pathname.slice(-1) !== "/") {
                 url.pathname = url.pathname + "/";
             }
-            return url.origin + url.pathname + path;
+            return new URL(path, origin).href;
         }
     }
 }
