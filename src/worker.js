@@ -98,9 +98,12 @@ async function handleBookmarkChanged(id, info) {
 async function handleBookmarkRemoved(id, info) {
 	// todo: handle upsert where speed dial folder is deleted
 	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
-	await chrome.storage.local.remove(info.node.url).catch((err) => {
-		console.log(err)
-	});
+	if (info.node.url) {
+		// remove the thumbnail from local storage
+		await chrome.storage.local.remove(info.node.url).catch((err) => {
+			console.log(err)
+		});
+	}
 	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
 	//refreshOpen();
 }
