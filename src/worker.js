@@ -137,16 +137,16 @@ function handleManualRefresh(data) {
 }
 
 async function handleRefreshAll(data) {
-	async function refreshBatch(urls, index = 0, retries = 3) {
+	async function refreshBatch(urls, index = 0, retries = 2) {
 		const batchSize = 200;
-		const delay = 1000; // 1 second delay between batches
+		const delay = 10000;
 		const batch = urls.slice(index, index + batchSize);
 	
 		if (batch.length) {
 			try {
 				await Promise.all(batch.map(url => getThumbnails(url, { quickRefresh: true })));
 				// todo show progress in UI
-				// console.log(Math.round((index / urls.length) * 100) + "%");
+                // todo: we might need to refactor this to promises or timers so the worker doesnt kill the process with a batch scheduled
 				setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
 			} catch (err) {
 				console.log(err);
