@@ -113,17 +113,7 @@ async function handleBookmarkRemoved(id, info) {
 
 async function handleOffscreenFetchDone(data) {
 	//console.log(data);
-	let thumbs = data.thumbs;
-
-	// take screenshot if applicable
-	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-	
-	if (tabs && tabs.length && tabs[0].url === data.url) {
-		const screenshot = await chrome.tabs.captureVisibleTab()
-		thumbs.push(screenshot)
-	}
-
-	saveThumbnails(data.url, thumbs, data.bgColor)
+	saveThumbnails(data.url, data.thumbs, data.bgColor)
 }
 
 function handleManualRefresh(data) {
@@ -188,12 +178,24 @@ function handleInstalled(details) {
 // THUMBNAIL FUNCTIONS //
 
 async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
+
+    // take screenshot if applicable
+    let screenshot = null;
+	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
+	
+	if (tabs && tabs.length && tabs[0].url === url) {
+		screenshot = await chrome.tabs.captureVisibleTab()
+	}
+
 	// cant fetch/parse/format images in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
 
 	chrome.runtime.sendMessage({
 		target: 'offscreen',
-		data: url
+		data: {
+            url,
+            screenshot
+        }
 	});
 }
 

@@ -19,14 +19,14 @@ async function handleMessages(message) {
         return;
       }
 
-    let images = [];
+    let screenshot = message.data.screenshot;
     let resizedImages = [];
     let thumbs = [];
     let title = null;
 
-    let url = message.data;
+    let url = message.data.url;
 
-    images = await fetchImages(url).catch(err => {
+    let images = await fetchImages(url).catch(err => {
         console.log(err);
     })
 
@@ -37,9 +37,17 @@ async function handleMessages(message) {
             });
             return result
         }))
-    }
 
-    // todo screenshot
+        if (screenshot) {
+            // screenshot is handled separately to remove scrollbars
+            let result = await resizeImage(screenshot, true).catch(err => {
+                console.log(err);
+            });
+            if (result) {
+                resizedImages.push(result);
+            }
+        }
+    }
 
     if (resizedImages && resizedImages.length) {
         thumbs = resizedImages.filter(item => item)
@@ -51,7 +59,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    return title;
+    return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);
 }
