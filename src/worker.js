@@ -243,7 +243,7 @@ async function setupOffscreenDocument(path) {
     creating = chrome.offscreen.createDocument({
       url: path,
       reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'fetch image for speed dial from webpage'
+      justification: 'parse document for image tags to use as thumbnail'
     });
     await creating;
     creating = null;
