@@ -111,9 +111,19 @@ async function handleBookmarkRemoved(id, info) {
 
 // MESSAGE HANDLERS //
 
-function handleOffscreenFetchDone(data) {
+async function handleOffscreenFetchDone(data) {
 	//console.log(data);
-	saveThumbnails(data.url, data.thumbs, data.bgColor)
+	let thumbs = data.thumbs;
+
+	// take screenshot if applicable
+	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
+	
+	if (tabs && tabs.length && tabs[0].url === data.url) {
+		const screenshot = await chrome.tabs.captureVisibleTab()
+		thumbs.push(screenshot)
+	}
+
+	saveThumbnails(data.url, thumbs, data.bgColor)
 }
 
 function handleManualRefresh(data) {
