@@ -247,7 +247,6 @@ async function fetchImages(url) {
         "mail.google.com",
         "gmail.com",
         "www.facebook.com",
-        "www.reddit.com",
         "twitter.com"
     ];
 
