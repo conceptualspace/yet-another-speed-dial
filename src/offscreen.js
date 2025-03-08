@@ -380,18 +380,17 @@ async function fetchImages(url) {
             if (images.length < 4) {
                 const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
                 .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
-        
-                let backgroundImages = [];
             
                 for (const sheetUrl of stylesheetLinks) {
                     try {
                         const cssResponse = await fetch(sheetUrl);
                         const cssText = await cssResponse.text();
-                        const images = extractBackgroundImages(cssText)
+                        const cssImages = extractBackgroundImages(cssText)
                             .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
 
-                        if (images.length) {
-                            insert(convertUrlToAbsolute(sheetUrl, image[0])); // just take the first for now
+                        if (cssImages.length) {
+                            images.push(convertUrlToAbsolute(sheetUrl, cssImages[0]))
+                            break;
                         }
 
                     } catch (err) {
