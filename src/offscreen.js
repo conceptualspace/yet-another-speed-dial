@@ -389,6 +389,8 @@ async function fetchImages(url) {
                             .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
 
                         if (cssImages.length) {
+                            // todo: maybe we want to capture them all here and let the resize function keep the best
+                            // todo: fix the absolute url conversion -- i think urls that jump a couple of levels are busted
                             images.push(convertUrlToAbsolute(sheetUrl, cssImages[0]))
                             break;
                         }
