@@ -141,10 +141,10 @@ async function handleRefreshAll(data) {
 			} catch (err) {
 				console.log(err);
 				if (retries > 0) {
-					console.log(`Retrying batch at index ${index}...`);
+					//console.log(`Retrying batch at index ${index}...`);
 					setTimeout(() => refreshBatch(urls, index, retries - 1), delay);
 				} else {
-					console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
+					//console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
 					setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
 				}
 			}
