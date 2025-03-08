@@ -241,6 +241,18 @@ function resizeImage(image, screenshot=false) {
     });
 }
 
+function extractBackgroundImages(cssText) {
+    const backgroundImages = [];
+    const regex = /background(?:-image)?:\s*url\(["']?(.*?)["']?\)/g;
+    
+    let match;
+    while ((match = regex.exec(cssText)) !== null) {
+        backgroundImages.push(match[1]); // Extracted URL
+    }
+
+    return backgroundImages;
+}
+
 async function fetchImages(url) {
 
     const whitelist = [
@@ -361,6 +373,30 @@ async function fetchImages(url) {
                 if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
                     let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
                     insert(imageUrl);
+                }
+            }
+
+            // if we havent had much luck with images, lets check the style sheets
+            if (images.length < 4) {
+                const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
+                .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
+        
+                let backgroundImages = [];
+            
+                for (const sheetUrl of stylesheetLinks) {
+                    try {
+                        const cssResponse = await fetch(sheetUrl);
+                        const cssText = await cssResponse.text();
+                        const images = extractBackgroundImages(cssText)
+                            .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
+
+                        if (images.length) {
+                            insert(convertUrlToAbsolute(sheetUrl, image[0])); // just take the first for now
+                        }
+
+                    } catch (err) {
+                        console.warn(`Could not fetch stylesheet: ${sheetUrl}`, err);
+                    }
                 }
             }
 
