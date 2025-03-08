@@ -32,7 +32,7 @@
     "homepage": "index.html"
   },
   "background": {
-    "service_worker": "worker.js"
+    "service_worker": "background.js"
   },
   "action": {
     "default_icon": {
