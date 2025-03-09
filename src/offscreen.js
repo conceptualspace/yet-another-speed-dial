@@ -20,13 +20,15 @@ async function handleMessages(message) {
       }
 
     let screenshot = message.data.screenshot;
+    let quickRefresh = message.data.quickRefresh;
     let resizedImages = [];
     let thumbs = [];
+    let bgColor = null;
     let title = null;
 
     let url = message.data.url;
 
-    let images = await fetchImages(url).catch(err => {
+    let images = await fetchImages(url, quickRefresh).catch(err => {
         console.log(err);
     })
 
@@ -50,16 +52,17 @@ async function handleMessages(message) {
     }
 
     if (resizedImages && resizedImages.length) {
-        thumbs = resizedImages.filter(item => item)
+        thumbs = resizedImages.filter(item => item).slice(0,5)
     }
 
     if (thumbs.length) {
-        const bgColor = await getBgColor(thumbs[0])
-        chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
+        bgColor = await getBgColor(thumbs[0])
+        
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    return title; //todo: why did i do this?
+    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
+    //return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);
 }
@@ -253,7 +256,7 @@ function extractBackgroundImages(cssText) {
     return backgroundImages;
 }
 
-async function fetchImages(url) {
+async function fetchImages(url, quickRefresh) {
 
     const whitelist = [
         "mail.google.com",
@@ -377,7 +380,7 @@ async function fetchImages(url) {
             }
 
             // if we havent had much luck with images, lets check the style sheets
-            if (images.length < 4) {
+            if (images.length < 4 && !quickRefresh) {
                 const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
                 .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
             
@@ -389,10 +392,10 @@ async function fetchImages(url) {
                             .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
 
                         if (cssImages.length) {
-                            // todo: maybe we want to capture them all here and let the resize function keep the best
                             // todo: fix the absolute url conversion -- i think urls that jump a couple of levels are busted
-                            images.push(convertUrlToAbsolute(sheetUrl, cssImages[0]))
-                            break;
+                            cssImages.forEach(cssImage => {
+                                images.push(convertUrlToAbsolute(sheetUrl, cssImage));
+                            });
                         }
 
                     } catch (err) {

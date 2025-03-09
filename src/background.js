@@ -194,7 +194,8 @@ async function getThumbnails(url, options = {quickRefresh: false, forceScreensho
 		target: 'offscreen',
 		data: {
             url,
-            screenshot
+            screenshot,
+			quickRefresh: options.quickRefresh,
         }
 	});
 }
@@ -209,8 +210,8 @@ async function saveThumbnails(url, images, bgColor) {
 		thumbnails.push(images);
 		thumbnails = thumbnails.flat();
 		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
-		refreshOpen()
 	}
+	refreshOpen()
 }
 
 function refreshOpen() {
