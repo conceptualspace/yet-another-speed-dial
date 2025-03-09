@@ -82,6 +82,7 @@ const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabel = document.getElementById("importFileLabel");
 const helpBtn = document.getElementById("help");
+const dialSizeInput = document.getElementById("dialSize");
 
 // clock
 const clock = document.getElementById('clock');
@@ -129,7 +130,8 @@ let defaults = {
     showClock: true,
     maxCols: '100',
     defaultSort: 'first',
-    textColor: '#ffffff'
+    textColor: '#ffffff',
+    dialSize: 'medium'
 };
 
 const debounce = (func, delay= 500, immediate=false) => {
@@ -1172,6 +1174,16 @@ function applySettings() {
             layout();
         }
 
+        if (settings.dialSize && settings.dialSize !== "medium") {
+            document.documentElement.style.setProperty('--dial-width', settings.dialSize === "large" ? '260px' : '130px');
+            document.documentElement.style.setProperty('--dial-height', settings.dialSize === "large" ? '200px' : '100px');
+            document.documentElement.style.setProperty('--dial-content-height', settings.dialSize === "large" ? '182px' : '82px');
+        } else {
+            document.documentElement.style.setProperty('--dial-width', '188px');
+            document.documentElement.style.setProperty('--dial-height', '140px');
+            document.documentElement.style.setProperty('--dial-content-height', '122px');
+        }
+
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
         } else {
@@ -1218,6 +1230,7 @@ function applySettings() {
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
+        dialSizeInput.value = settings.dialSize;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -1260,6 +1273,7 @@ function saveSettings() {
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
+    settings.dialSize = dialSizeInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
 
@@ -1321,7 +1335,7 @@ window.addEventListener("click", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -1452,6 +1466,10 @@ modalImgInput.onchange = function () {
 
 
 maxColsInput.oninput = function(e) {
+    saveSettings()
+}
+
+dialSizeInput.oninput = function(e) {
     saveSettings()
 }
 
