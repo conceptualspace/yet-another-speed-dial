@@ -100,7 +100,7 @@ h1 {
 }
 
 .folderTitle {
-    opacity: 0.85;
+    opacity: 0.80;
     font-weight: bold;
     transition: padding 160ms ease, outline 160ms ease;
     margin: 12px;
@@ -112,6 +112,8 @@ h1 {
 
 .activeFolder {
     opacity: 1;
+    font-size: larger;
+    font-weight: bolder;
 }
 
 #deleteFolderModalName {
