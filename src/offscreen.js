@@ -88,67 +88,88 @@ function convertUrlToAbsolute(origin, path) {
 }
 
 function getBgColor(image) {
+    // todo: ensure this is performant
     return new Promise(function(resolve, reject) {
         let img = new Image();
         img.onload = function () {
             let imgWidth = img.naturalWidth;
             let imgHeight = img.naturalHeight;
-            let sx, sy, sw, sh, direction;
-
-            if ((imgWidth / imgHeight) > imageRatio) {
-                // image is wide; sample top and bottom
-                sy = imgHeight - 2
-                sx = 2;
-                sw = 1
-                sh = -1
-                direction = 'bottom'
-
-            } else {
-                // sample left and right
-                sx = imgWidth - 2
-                sy = 2;
-                sw = -1
-                sh = -1
-                direction = 'right'
-            }
-
-            let rgba = [0, 0, 0, 0];
-            let rgbaa = [0, 0, 0, 0];
             let canvas = offscreenCanvasShim(imgWidth, imgHeight);
-            // {willReadFrequently:true} readback optimization improves perf for getImageData and toDataURL
-            // todo add to other contexts
             let context = canvas.getContext('2d', {willReadFrequently:true});
             context.drawImage(img, 0, 0);
 
-            // get the top left pixel, cheap and easy
-            // todo: if its equally performant, sample all corners and return the mode?
-            let pixelA = context.getImageData(1, 1, 2, 2);
-            rgba[0] = pixelA.data[0];
-            rgba[1] = pixelA.data[1];
-            rgba[2] = pixelA.data[2];
-            rgba[3] = pixelA.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
+            let totalPixels = 0;
+            let avgColor = [0, 0, 0, 0];
+            let colorCounts = {};
+            let hasTransparentPixel = false;
 
-            let pixelB = context.getImageData(sx, sy, sw, sh);
-            rgbaa[0] = pixelB.data[0];
-            rgbaa[1] = pixelB.data[1];
-            rgbaa[2] = pixelB.data[2];
-            rgbaa[3] = pixelB.data[3] / 255; // imageData alpha value is 0..255 instead of 0..1
-
-            // if part of the edge is transparent, make whole bg transparent
-            if ((rgba[3]) < 0.9 || rgbaa[3] < 0.9) {
-                rgba[3] = 0
-                rgbaa[3] = 0
+            // Sample the top and bottom edges
+            for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
+                for (let y = 0; y < 10; y++) {
+                    let pixelTop = context.getImageData(x, y, 1, 1).data;
+                    let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
+                    let colorKeyTop = `${pixelTop[0]},${pixelTop[1]},${pixelTop[2]},${pixelTop[3]}`;
+                    let colorKeyBottom = `${pixelBottom[0]},${pixelBottom[1]},${pixelBottom[2]},${pixelBottom[3]}`;
+                    colorCounts[colorKeyTop] = (colorCounts[colorKeyTop] || 0) + 1;
+                    colorCounts[colorKeyBottom] = (colorCounts[colorKeyBottom] || 0) + 1;
+                    avgColor[0] += pixelTop[0] + pixelBottom[0];
+                    avgColor[1] += pixelTop[1] + pixelBottom[1];
+                    avgColor[2] += pixelTop[2] + pixelBottom[2];
+                    avgColor[3] += pixelTop[3] + pixelBottom[3];
+                    totalPixels += 2;
+                    if (pixelTop[3] < 255 || pixelBottom[3] < 255) {
+                        hasTransparentPixel = true;
+                    }
+                }
             }
 
-            //return rgba;
-            //console.log(direction, rgba, rgbaa);
-            resolve(`linear-gradient(to ${direction}, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgbaa[0]},${rgbaa[1]},${rgbaa[2]},${rgbaa[3]}) 50%)`);
-        }
+            // Sample the left and right edges
+            for (let y = 10; y < imgHeight - 10; y += 2) { // Sample every other pixel
+                for (let x = 0; x < 10; x++) {
+                    let pixelLeft = context.getImageData(x, y, 1, 1).data;
+                    let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
+                    let colorKeyLeft = `${pixelLeft[0]},${pixelLeft[1]},${pixelLeft[2]},${pixelLeft[3]}`;
+                    let colorKeyRight = `${pixelRight[0]},${pixelRight[1]},${pixelRight[2]},${pixelRight[3]}`;
+                    colorCounts[colorKeyLeft] = (colorCounts[colorKeyLeft] || 0) + 1;
+                    colorCounts[colorKeyRight] = (colorCounts[colorKeyRight] || 0) + 1;
+                    avgColor[0] += pixelLeft[0] + pixelRight[0];
+                    avgColor[1] += pixelLeft[1] + pixelRight[1];
+                    avgColor[2] += pixelLeft[2] + pixelRight[2];
+                    avgColor[3] += pixelLeft[3] + pixelRight[3];
+                    totalPixels += 2;
+                    if (pixelLeft[3] < 255 || pixelRight[3] < 255) {
+                        hasTransparentPixel = true;
+                    }
+                }
+            }
+
+            avgColor = avgColor.map(color => color / totalPixels);
+            avgColor[3] = avgColor[3] / 255; // Normalize alpha value
+
+            let mostCommonColor = null;
+            let maxCount = 0;
+            for (let colorKey in colorCounts) {
+                if (colorCounts[colorKey] > maxCount) {
+                    maxCount = colorCounts[colorKey];
+                    mostCommonColor = colorKey.split(',').map(Number);
+                }
+            }
+
+            if (maxCount > totalPixels / 2) {
+                mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
+                resolve(`linear-gradient(to bottom, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%)`);
+            } else {
+                if (hasTransparentPixel) {
+                    avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
+                }
+                resolve(`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
+            }
+        };
         img.onerror = function() {
             resolve();
         };
         img.crossOrigin = "Anonymous";
-        img.src = image
+        img.src = image;
     });
 }
 
