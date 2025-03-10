@@ -15,12 +15,10 @@
   },
   "permissions": [
     "bookmarks",
-    "contextMenus",
+    "offscreen",
     "storage",
-    "unlimitedStorage",
-    "activeTab",
     "tabs",
-    "offscreen"
+    "unlimitedStorage"
   ],
   "host_permissions": [
     "<all_urls>"
