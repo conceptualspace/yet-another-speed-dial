@@ -23,7 +23,7 @@
     "offscreen"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "https://*/*"
   ],
   "chrome_url_overrides": {
     "newtab": "index.html"
