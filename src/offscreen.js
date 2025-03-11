@@ -179,97 +179,82 @@ function getBgColor(image) {
     });
 }
 
-function resizeImage(image, screenshot=false) {
-    return new Promise(function (resolve, reject) {
-        if (image && image.length) {
-            let img = new Image();
+function resizeImage(image, screenshot = false) {
+    return new Promise((resolve, reject) => {
+        if (!image || !image.length) {
+            return resolve();
+        }
 
-            img.onerror = function(event) {
+        const targetWidth = 256;
+        const targetHeight = 144;
+        const targetRatio = targetWidth / targetHeight;
+        const tolerance = 0.22;
+
+        const img = new Image();
+
+        img.onerror = (event) => {
+            console.error('Image load error:', event);
+            resolve();
+        };
+
+        img.onload = function () {
+            let sWidth = this.width;
+            let sHeight = this.height;
+
+            if (sWidth >= targetWidth || sHeight >= (targetHeight - 22)) {
+
+                if (screenshot) {
+                    sWidth -= 17;
+                    sHeight -= 17;
+                }
+
+                const sRatio = sWidth / sHeight;
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+
+                let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
+
+                // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
+                    // Aspect is narrower, crop top and bottom
+                    let naturalHeight = targetWidth / sRatio;
+                    let crop = (naturalHeight - targetHeight) / 2;
+                    sY = crop;
+                    sHeight -= 2 * crop;
+                } else if (sRatio > targetRatio && sRatio < (targetRatio + tolerance)) {
+                    // Aspect is wider, crop sides
+                    let naturalWidth = targetHeight * sRatio;
+                    let crop = (naturalWidth - targetWidth) / 2;
+                    sX = crop;
+                    sWidth -= 2 * crop;
+                } else {
+                    // Rescale to max height of 256px
+                    let ratio = targetHeight / sHeight;
+                    dWidth = Math.round(sWidth * ratio);
+                    dHeight = targetHeight;
+                }
+
+                canvas.width = dWidth;
+                canvas.height = dHeight;
+                ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
+
+                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                resolve(newDataURI);
+            } else if (sHeight >= 96 || sWidth >= 96) {
+                resolve(image);
+            } else {
+                // discard images < 96px
                 resolve();
             }
+        };
 
-            img.onload = function () {
-
-                let sWidth = this.width;
-                let sHeight = this.height;
-
-                if (sHeight > 256 || sWidth > 256) {
-
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    ctx.imageSmoothingEnabled = true;
-                    ctx.imageSmoothingQuality = "high";
-
-                    const maxSize = 256;
-                    const maxWidth = Math.round(256 * imageRatio);
-
-                    const sRatio = sWidth / sHeight
-
-                    let sX = 0;
-                    let sY = 0;
-                    let dX = 0;
-                    let dY = 0;
-                    let dWidth = sWidth;
-                    let dHeight = sHeight;
-
-                    // remove scrollbars from screenshots
-                    if (screenshot) {
-                        sWidth = sWidth - 17;
-                        sHeight = sHeight - 17;
-                    }
-
-                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
-                    if (sRatio < imageRatio && sRatio > (imageRatio - 0.2)) {
-                        // aspect is narrower, crop top and bottom
-                        let naturalHeight = maxWidth / sRatio
-                        let crop = ( naturalHeight - maxSize )
-                        sY = crop / 2; // take equal amounts from each side
-                        sHeight = sHeight - crop;
-                        dHeight = maxSize;
-                        dWidth = Math.round(maxSize * imageRatio)
-                    } else if (sRatio > imageRatio && sRatio < (imageRatio + 0.2)) {
-                        // aspect is wider, crop sides to fit
-                        let naturalWidth = maxSize * sRatio
-                        let crop = ( naturalWidth - maxWidth )
-                        sX = crop / 2;
-                        sWidth = sWidth - crop;
-                        dWidth = maxSize;
-                        dHeight = Math.round(maxSize / imageRatio)
-                    } else if (sWidth > sHeight) {
-                        // rescale to max width of 256px
-                        let ratio = maxSize / sWidth;
-                        dHeight = Math.round(sHeight * ratio);
-                        dWidth = maxSize;
-                    } else {
-                        // rescale to max height of 256px
-                        let ratio = maxSize / sHeight;
-                        dWidth = Math.round(sWidth * ratio);
-                        dHeight = maxSize;
-                    }
-
-                    canvas.width = dWidth;
-                    canvas.height = dHeight;
-
-                    //console.log(sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight);
-                    ctx.drawImage(this, sX, sY, sWidth, sHeight, dX, dY, dWidth, dHeight)
-
-                    const newDataURI = canvas.toDataURL('image/webp', 0.9);
-                    resolve(newDataURI);
-
-                } else if (sHeight >= 96 || sWidth >= 96) {
-                    resolve(image);
-                } else {
-                    // discard images < 96px
-                    resolve();
-                }
-            };
-            img.crossOrigin = "Anonymous";
-            img.src = image;
-        } else {
-            resolve();
-        }
+        img.crossOrigin = "Anonymous";
+        img.src = image;
     });
 }
+
 
 function extractBackgroundImages(cssText) {
     const backgroundImages = [];
