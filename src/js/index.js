@@ -83,6 +83,7 @@ const importFileInput = document.getElementById("importFile");
 const importFileLabel = document.getElementById("importFileLabel");
 const helpBtn = document.getElementById("help");
 const dialSizeInput = document.getElementById("dialSize");
+const dialRatioInput = document.getElementById("dialRatio");
 
 // clock
 const clock = document.getElementById('clock');
@@ -131,7 +132,8 @@ let defaults = {
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
-    dialSize: 'medium'
+    dialSize: 'medium',
+    dialRatio: 'wide'
 };
 
 const debounce = (func, delay= 500, immediate=false) => {
@@ -487,10 +489,7 @@ async function printBookmarks(bookmarks, parentId) {
                         thumbUrl = images.thumbnails[0];
                         thumbBg = images.bgColor;
                         cache[bookmark.url] = [thumbUrl, thumbBg];
-                    } else {
-                        thumbUrl = "../img/default.png";
                     }
- 
                 }
                 let a = document.createElement('a');
                 a.classList.add('tile');
@@ -505,7 +504,8 @@ async function printBookmarks(bookmarks, parentId) {
                 if (thumbBg) {
                     content.style.backgroundImage = `url('${thumbUrl}'), ${thumbBg}`;
                 } else {
-                    content.style.backgroundImage = `url('${thumbUrl}')`;
+                    // no image, use default
+                    content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
                 }
 
                 let title = document.createElement('div');
@@ -1208,13 +1208,40 @@ function applySettings() {
         }
 
         if (settings.dialSize && settings.dialSize !== "medium") {
-            document.documentElement.style.setProperty('--dial-width', settings.dialSize === "large" ? '260px' : '130px');
-            document.documentElement.style.setProperty('--dial-height', settings.dialSize === "large" ? '200px' : '100px');
-            document.documentElement.style.setProperty('--dial-content-height', settings.dialSize === "large" ? '182px' : '82px');
+            let dialWidth, dialHeight, dialContentHeight;
+            switch (settings.dialSize) {
+                case "large":
+                    dialWidth = '256px';
+                    dialHeight = settings.dialRatio === "square" ? '274px' : '162px';
+                    dialContentHeight = settings.dialRatio === "square" ? '256px' : '144px';
+                    break;
+                case "small":
+                    dialWidth = '178px';
+                    dialHeight = settings.dialRatio === "square" ? '196px' : '118px';
+                    dialContentHeight = settings.dialRatio === "square" ? '178px' : '100px';
+                    break;
+                case "x-small":
+                    dialWidth = '130px';
+                    dialHeight = settings.dialRatio === "square" ? '148px' : '100px';
+                    dialContentHeight = settings.dialRatio === "square" ? '130px' : '82px';
+                    break;
+                default:
+                    dialWidth = '220px';
+                    dialHeight = settings.dialRatio === "square" ? '238px' : '142px';
+                    dialContentHeight = settings.dialRatio === "square" ? '220px' : '124px';
+            }
+            document.documentElement.style.setProperty('--dial-width', dialWidth);
+            document.documentElement.style.setProperty('--dial-height', dialHeight);
+            document.documentElement.style.setProperty('--dial-content-height', dialContentHeight);
         } else {
-            document.documentElement.style.setProperty('--dial-width', '188px');
-            document.documentElement.style.setProperty('--dial-height', '140px');
-            document.documentElement.style.setProperty('--dial-content-height', '122px');
+            document.documentElement.style.setProperty('--dial-width', '220px');
+            if (settings.dialRatio === "square") {
+                document.documentElement.style.setProperty('--dial-height', '238px');
+                document.documentElement.style.setProperty('--dial-content-height', '220px');
+            } else {
+                document.documentElement.style.setProperty('--dial-height', '142px');
+                document.documentElement.style.setProperty('--dial-content-height', '124px');
+            }
         }
 
         if (settings.showFolders) {
@@ -1264,6 +1291,7 @@ function applySettings() {
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
+        dialRatioInput.value = settings.dialRatio;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -1307,6 +1335,7 @@ function saveSettings() {
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
+    settings.dialRatio = dialRatioInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
 
@@ -1368,7 +1397,7 @@ window.addEventListener("click", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -1503,6 +1532,10 @@ maxColsInput.oninput = function(e) {
 }
 
 dialSizeInput.oninput = function(e) {
+    saveSettings()
+}
+
+dialRatioInput.oninput = function(e) {
     saveSettings()
 }
 
