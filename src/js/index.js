@@ -730,6 +730,9 @@ async function buildModal(url, title) {
         let img = document.createElement('img');
         img.crossOrigin = 'Anonymous';
         img.setAttribute('src', images.thumbnails[index]);
+        img.onerror = function() {
+            img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
+        };
         imgDiv.appendChild(img);
         newCarousel.appendChild(imgDiv);
         for (let [i, image] of images.thumbnails.entries()) {
@@ -738,6 +741,9 @@ async function buildModal(url, title) {
                 let img = document.createElement('img');
                 img.crossOrigin = 'Anonymous';
                 img.setAttribute('src', image);
+                img.onerror = function() {
+                    img.setAttribute('src', 'img/default.png'); // todo: cleanup
+                };
                 imgDiv.appendChild(img);
                 newCarousel.appendChild(imgDiv);
             }
