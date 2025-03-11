@@ -103,9 +103,13 @@ function getBgColor(image) {
             let colorCounts = {};
             let hasTransparentPixel = false;
 
+            // background color algorithm
+            // think the results are best when sampling 2 pixels deep from the edges
+            // 1px gives bad results from image artifacts, more than 2px means we average away any natural framing/background in the image
+            
             // Sample the top and bottom edges
             for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
-                for (let y = 0; y < 10; y++) {
+                for (let y = 0; y < 2; y++) {
                     let pixelTop = context.getImageData(x, y, 1, 1).data;
                     let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
                     let colorKeyTop = `${pixelTop[0]},${pixelTop[1]},${pixelTop[2]},${pixelTop[3]}`;
@@ -124,8 +128,8 @@ function getBgColor(image) {
             }
 
             // Sample the left and right edges
-            for (let y = 10; y < imgHeight - 10; y += 2) { // Sample every other pixel
-                for (let x = 0; x < 10; x++) {
+            for (let y = 2; y < imgHeight - 2; y += 2) { // Sample every other pixel
+                for (let x = 0; x < 2; x++) {
                     let pixelLeft = context.getImageData(x, y, 1, 1).data;
                     let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
                     let colorKeyLeft = `${pixelLeft[0]},${pixelLeft[1]},${pixelLeft[2]},${pixelLeft[3]}`;
@@ -154,6 +158,8 @@ function getBgColor(image) {
                     mostCommonColor = colorKey.split(',').map(Number);
                 }
             }
+
+            // todo: clean this up - set background and color separately
 
             if (maxCount > totalPixels / 2) {
                 mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
