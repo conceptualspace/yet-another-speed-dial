@@ -1463,6 +1463,9 @@ window.addEventListener("mousedown", e => {
                 case 'newTab':
                     browser.tabs.create({url: targetTileHref});
                     break;
+                case 'newBackgroundTab':
+                        browser.tabs.create({url: targetTileHref, active: false});
+                        break;
                 case 'newWin':
                     browser.windows.create({"url": targetTileHref});
                     break;

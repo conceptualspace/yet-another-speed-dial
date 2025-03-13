@@ -88,6 +88,9 @@
   "name": {
     "message": "Name"
   },
+  "newBackgroundTab": {
+    "message": "Open in background tab"
+  },
   "newDial": {
     "message": "New Speed Dial..."
   },
