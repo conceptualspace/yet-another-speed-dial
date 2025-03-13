@@ -1715,7 +1715,72 @@ importFileInput.onchange = function (event) {
             }
         }
 
-        if (json) {
+        // todo: improve error handling
+        if (json && json.dials && json.groups) {
+            // import from sd2
+            let bookmarks = json.dials.map(dial => ({
+                title: dial.title,
+                url: dial.url,
+                idgroup: dial.idgroup
+            }));
+
+            let groups = json.groups.map(group => ({
+                id: group.id,
+                title: group.title
+            }));
+
+            // clear previous settings and import
+            // todo: we dont wana nuke everything if we dont end up proceeding with the import
+            chrome.storage.local.clear().then(() => {
+
+                // Create groups and bookmarks
+                let groupPromises = groups.map(group => {
+                    if (group.id === 0) {
+                        return Promise.resolve(speedDialId);
+                    } else {
+                        return chrome.bookmarks.search({title: group.title}).then(existingGroups => {
+                            const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
+                            if (matchingGroups.length > 0) {
+                                return matchingGroups[0].id;
+                            } else {
+                                return chrome.bookmarks.create({
+                                    title: group.title,
+                                    parentId: speedDialId
+                                }).then(node => node.id);
+                            }
+                        });
+                    }
+                });
+
+                Promise.all(groupPromises).then(groupIds => {
+                    bookmarks.forEach(bookmark => {
+                        let parentId = groupIds[bookmark.idgroup];
+                        chrome.bookmarks.search({url: bookmark.url}).then(existingBookmarks => {
+                            let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
+                            if (!existsInFolder) {
+                                chrome.bookmarks.create({
+                                    title: bookmark.title,
+                                    url: bookmark.url,
+                                    parentId: parentId
+                                });
+                            }
+                        });
+                    });
+
+                    hideModals();
+                    // refresh page
+                    processRefresh();
+                }).catch(err => {
+                    console.log(err)
+                    importExportStatus.innerText = "Error! Unable to create folders."
+                });
+
+            }).catch(err => {
+                console.log(err)
+                importExportStatus.innerText = "Something went wrong. Please try again"
+            });
+        } else if (json) {
+            // import from yasd
             // clear previous settings and import
             browser.storage.local.clear().then(() => {
                 browser.storage.local.set(json).then(result => {
@@ -1737,7 +1802,6 @@ importFileInput.onchange = function (event) {
     if (event && event.target && event.target.files) {
         filereader.readAsText(event.target.files[0]);
     }
-
 };
 
 // native handlers for folder tab target

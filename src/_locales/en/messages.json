@@ -71,7 +71,7 @@
     "message": "Import Settings..."
   },
   "importExport": {
-    "message": "This will backup or restore YASD settings and thumbnails.\n\nNote, all speed dials are managed by the browser as bookmarks. Make sure they are backed up separately via the bookmarks manager or sync.\n\nWARNING: Importing will replace your current settings."
+    "message": "This will backup or restore YASD settings and thumbnails.\n\nPlease make sure your browser bookmarks are also backed up separately via the bookmarks manager or sync.\n\nImporting will replace your current settings!"
   },
   "importExportLink": {
     "message": "Import and Export..."

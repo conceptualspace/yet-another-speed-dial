@@ -140,6 +140,12 @@ h1 {
     justify-content: center;
     margin-top: 40px;
     font-weight: 300;
+    opacity: 0.8;
+}
+
+.default-content.helpText.cta:hover {
+    opacity: 1;
+    transition: opacity 160ms ease;
 }
 
 .default-content.helpText.cta svg {
@@ -388,6 +394,7 @@ a {
     width: 100%;
     padding: 0.6em;
     text-align: center;
+    border-radius: 6px;
 }
 
 .disabled {
