@@ -27,3 +27,6 @@ Yes, just use Command + Click or Middle Click (depending on your OS).
 
 ### Can I open speed dial links in Firefox Containers?
 Yes, just use Shift + Right-click on the speed dial to access the default context menu.
+
+### Can I use YASD in a Chrome Incognito window?
+Unfortunately, Google Chrome does not allow extensions to change the new tab page of Incognito windows. If you are a heavy user of Incognito mode, I would suggest trying Firefox, which does not have the limitation.
