@@ -38,6 +38,9 @@
   "delete": {
     "message": "Excluir"
   },
+  "dialRatio": {
+    "message": "Dial Format"
+  },
   "dialSize": {
     "message": "Dial Size"
   },

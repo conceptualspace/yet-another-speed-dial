@@ -38,6 +38,9 @@
   "delete": {
     "message": "Unterdrücken"
   },
+  "dialRatio": {
+    "message": "Dial Format"
+  },
   "dialSize": {
     "message": "Dial Size"
   },
