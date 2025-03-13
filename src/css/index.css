@@ -12,6 +12,46 @@
     --dial-height: 122px;
 }
 
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('../fonts/NotoSans-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('../fonts/NotoSans-Light.woff2') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('../fonts/NotoSans-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('../fonts/NotoSans-ExtraLight.woff2') format('woff2');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Noto Sans';
+    src: url('../fonts/NotoSans-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
 html, body {
     margin: 0;
 }
@@ -19,7 +59,7 @@ html, body {
 body {
     background: #222222;
     background-size: cover;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+    font-family: 'Noto Sans', sans-serif;
     font-size: small;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -27,8 +67,8 @@ body {
 }
 
 h1 {
-    font-weight: lighter;
-    font-size: xx-large;
+    font-weight: 300;
+    font-size: 2.5rem;
 }
 
 .helpText {
@@ -36,6 +76,7 @@ h1 {
     font-weight: 300;
     margin-block-start: 0.5em;
     margin-block-end: 0.5em;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5); /* Add text shadow */
 }
 
 /* total width */
@@ -76,7 +117,7 @@ h1 {
     align-items: center;
     align-content: safe center;
     justify-content: center;
-    min-height: 100%;
+    min-height: calc(100% - 78px);
     max-width: var(--columns);
     margin: auto;
     opacity: 0;
@@ -84,15 +125,33 @@ h1 {
 }
 
 #noBookmarks {
-    display: none;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 80px 100px;
+    padding: 0 100px 80px 100px;
     color: #ffffff;
-    position: fixed;
     width: 100%;
     z-index: 0;
+}
+
+.default-content.helpText.cta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 40px;
+    font-weight: 300;
+}
+
+.default-content.helpText.cta svg {
+    margin-right: 8px; /* Adjust the spacing as needed */
+    vertical-align: middle;
+}
+
+.cta-container {
+    display: flex;
+    gap: 30px; /* Adjust the gap between buttons as needed */
+    justify-content: center;
+    align-items: center;
 }
 
 .hide {

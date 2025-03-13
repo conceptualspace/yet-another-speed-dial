@@ -164,7 +164,7 @@ displayClock();
 function getBookmarks(folderId) {
     browser.bookmarks.getChildren(folderId).then(result => {
         if (folderId === speedDialId && !result.length && settings.showFolders) {
-            noBookmarks.style.display = 'block';
+            //noBookmarks.style.display = 'block';
             addFolderButton.style.display = 'none';
         }
         printBookmarks(result, folderId)
@@ -551,7 +551,31 @@ async function printBookmarks(bookmarks, parentId) {
                 fragment.appendChild(fragment.childNodes[i]);
         }
 
-        fragment.appendChild(aNewDial);
+        if (bookmarks.length) {
+            fragment.appendChild(aNewDial);
+        } else {
+            // new install splash screen
+            const noBookmarksDiv = document.createElement('div');
+            noBookmarksDiv.className = 'default-content';
+            noBookmarksDiv.id = 'noBookmarks';
+            noBookmarksDiv.innerHTML = `
+                <h1 class="default-content" data-locale="newInstall1">${browser.i18n.getMessage('newInstall1')}</h1>
+                <p class="default-content helpText" data-locale="newInstall2">${browser.i18n.getMessage('newInstall2')}</p>
+                <p class="default-content helpText" data-locale="newInstall3">${browser.i18n.getMessage('newInstall3')}</p>
+                <p class="default-content helpText" data-locale="newInstall4">${browser.i18n.getMessage('newInstall4')}</p>
+                <div class="cta-container">
+                <p id="splashImport" class="default-content helpText cta" >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
+                    Import
+                </p>
+                <p id="splashAddDial" class="default-content helpText cta" >
+                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+                Add Site
+                </p>
+                </div>
+            `;
+            fragment.appendChild(noBookmarksDiv);
+        }
         bookmarksContainer.innerHTML = "";
         bookmarksContainer.appendChild(fragment);
 
@@ -1377,7 +1401,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderName = e.target.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
+    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
@@ -1404,6 +1428,18 @@ window.addEventListener("mousedown", e => {
         openSettings();
         return;
     }
+    if (e.target.id === 'splashAddDial') {
+        e.preventDefault();
+        buildCreateDialModal(currentFolder);
+        modalShowEffect(createDialModalContent, createDialModal);
+        return;
+    }
+    if (e.target.id === 'splashImport') {
+        e.preventDefault();
+        modalShowEffect(importExportModalContent, importExportModal);
+        //importFileInput.click();
+        return;
+    }
     switch (e.target.className) {
         // todo: invert this
         case 'default-content':
@@ -1412,6 +1448,7 @@ window.addEventListener("mousedown", e => {
         case 'tile-title':
         case 'container':
         case 'tileContainer':
+        case 'cta-container':
         case 'folders':
             hideSettings();
             break;
@@ -1814,7 +1851,7 @@ const processRefresh = debounce(() => {
     // prevent page scroll on refresh
     // react where are you...
     scrollPos = bookmarksContainerParent.scrollTop;
-    noBookmarks.style.display = 'none';
+    //noBookmarks.style.display = 'none';
     addFolderButton.style.display = 'inline';
 
     //bookmarksContainer.style.opacity = "0";

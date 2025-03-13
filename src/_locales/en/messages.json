@@ -98,13 +98,13 @@
     "message": "Get started with Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Add sites by clicking the button below, or add bookmarks to the Speed Dial folder"
+    "message": "⭐ Just add bookmarks to the Speed Dial folder and they will appear here"
   },
   "newInstall3": {
-    "message": "✨ Dials can be modified by right-clicking on them"
+    "message": "✨ You can organize your bookmarks into subfolders"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Access more settings by clicking the gear in the top-right corner"
+    "message": "✨ Right-click on a dial to edit it. You can also drag and drop to arrange them"
   },
   "newPrivate": {
     "message": "Open in new private window"
