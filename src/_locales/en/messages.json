@@ -71,7 +71,7 @@
     "message": "Import Settings..."
   },
   "importExport": {
-    "message": "This will backup or restore YASD settings and thumbnails.\n\nPlease make sure your browser bookmarks are also backed up separately via the bookmarks manager or sync.\n\nImporting will replace your current settings!"
+    "message": "This will backup or restore YASD settings and thumbnails.\n\nPlease make sure your browser bookmarks are backed up separately via the bookmarks manager or sync. Note that importing will replace your current settings!\n\nYASD can also try to import from Speed Dial 2 and FVD backup files (currently experimental)"
   },
   "importExportLink": {
     "message": "Import and Export..."
