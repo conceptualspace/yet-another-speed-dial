@@ -542,8 +542,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 .settingsIcon svg {
-    height: 21px;
-    width: 21px;
+    height: 24px;
+    width: 24px;
     position: absolute;
     right: 30px;
     top: 30px;
