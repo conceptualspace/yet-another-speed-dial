@@ -193,7 +193,7 @@ function resizeImage(image, screenshot = false) {
         const img = new Image();
 
         img.onerror = (event) => {
-            console.error('Image load error:', event);
+            console.log('Image load error:', event);
             resolve();
         };
 
