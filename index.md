@@ -33,3 +33,6 @@ Yes, just use Shift + Right-click on the speed dial to access the default contex
 
 ### Can I use YASD in a Chrome Incognito window?
 Unfortunately, Google Chrome does not allow extensions to change the new tab page of Incognito windows. If you are a heavy user of Incognito mode, I would suggest trying Firefox, which does not have the limitation.
+
+### Can I help to sponsor this project?
+Sure! See my github profile: https://github.com/sponsors/conceptualspace
