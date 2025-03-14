@@ -11,14 +11,12 @@ Yet Another Speed Dial
 
 A better new tab page and bookmark manager (speed dial) that respects your privacy, inspired by Opera
 
-- Automatically generates thumbnails and screenshots, or add your own.
-- Uses the native bookmarks library so speed dials can be synced by the browser.
-- Sortable with drag and drop
-- Supports folders
-- Simple and fast UI
-- Supports limited importing from other extensions
+- Automatically fetches site thumbnails using open graph standard
+- Supports custom images, sorting, and folders
+- Uses the native bookmarks library so speed dials can be synced by the browser
+- Supports limited importing from other browser extensions
 - Available for Chrome, Edge and Firefox
-- No ads, trackers, or BS
+- Simple and fast UI: no ads, trackers, or bs
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
