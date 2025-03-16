@@ -170,6 +170,10 @@ function handleInstalled(details) {
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
+		if (details.previousVersion < '3.4') {
+			const url = chrome.runtime.getURL("updated.html");
+        	chrome.tabs.create({ url });
+		}
         // perform any migrations here...
     }
 }
