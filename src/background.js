@@ -15,6 +15,8 @@ chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
 chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 
+chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
+
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
@@ -108,6 +110,12 @@ async function handleBookmarkRemoved(id, info) {
 	//refreshOpen();
 }
 
+function handleContextMenuClick(info, tab) {
+	if (info.menuItemId === 'addToSpeedDial') {
+        createBookmarkFromContextMenu(tab)
+    }
+}
+
 
 // MESSAGE HANDLERS //
 
@@ -161,6 +169,35 @@ async function handleRefreshAll(data) {
 	refreshBatch(data.urls)
 }
 
+async function createBookmarkFromContextMenu(tab) {
+	// get the speed dial folder id
+	let speedDialId = null;
+	const bookmarks = await chrome.bookmarks.search("Speed Dial");
+	if (bookmarks.length) {
+		speedDialId = bookmarks[0].id;
+	}
+	// check if the bookmark already exists
+    // check for doopz
+	if (speedDialId) {
+		let match = false;
+		chrome.bookmarks.getSubTree(speedDialId).then(node => {
+			for (const bookmark of node[0].children) {
+				if (tab.url === bookmark.url) {
+					match = true;
+					break;
+				}
+			}
+			if (!match) {
+				chrome.bookmarks.create({
+					parentId: speedDialId,
+					title: tab.title,
+					url: tab.url
+				})
+			}
+		});
+	}
+}
+
 
 // LIFECYCLE METHODS //
 
@@ -176,6 +213,14 @@ function handleInstalled(details) {
 		}
         // perform any migrations here...
     }
+    // create context menu
+    chrome.contextMenus.create({
+        "title": "Add to Speed Dial",
+        "contexts": ['page'],
+        "documentUrlPatterns": ['https://*/*', 'http://*/*'],
+        "id": "addToSpeedDial"
+    });
+
 }
 
 

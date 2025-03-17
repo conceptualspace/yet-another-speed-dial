@@ -15,6 +15,7 @@
   },
   "permissions": [
     "bookmarks",
+    "contextMenus",
     "offscreen",
     "storage",
     "tabs",
