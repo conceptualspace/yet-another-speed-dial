@@ -7,9 +7,9 @@
     --settings: none;
     --columns: 100%;
     --image-scaling: contain;
-    --dial-width: 188px; /* Default dial width */
-    --dial-height: 140px;
-    --dial-height: 122px;
+    --dial-width: 220px;
+    --dial-height: 142px;
+
 }
 
 @font-face {
@@ -223,8 +223,8 @@ h1 {
 }
 
 .createDial {
-    width: 188px;
-    height: 140px;
+    width: var(--dial-width);
+    height: var(--dial-height);
     border-radius: 12px;
     margin: 12px;
     display: var(--create-dial-display);
