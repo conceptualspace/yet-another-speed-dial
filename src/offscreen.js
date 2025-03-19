@@ -188,20 +188,22 @@ function resizeImage(image, screenshot = false) {
         const targetWidth = 256;
         const targetHeight = 144;
         const targetRatio = targetWidth / targetHeight;
-        const tolerance = 0.22;
+        const tolerance = 0.25;
 
         const img = new Image();
 
         img.onerror = (event) => {
-            console.log('Image load error:', event);
             resolve();
         };
 
         img.onload = function () {
-            let sWidth = this.width;
-            let sHeight = this.height;
+            let sWidth = this.naturalWidth || this.width;
+            let sHeight = this.naturalHeight || this.height;
 
+            // resize any image > target size
             if (sWidth >= targetWidth || sHeight >= (targetHeight - 22)) {
+
+                let nocrop = false;
 
                 if (screenshot) {
                     sWidth -= 17;
@@ -217,6 +219,7 @@ function resizeImage(image, screenshot = false) {
                 let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
 
                 // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
                 if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
                     // Aspect is narrower, crop top and bottom
                     let naturalHeight = targetWidth / sRatio;
@@ -230,15 +233,24 @@ function resizeImage(image, screenshot = false) {
                     sX = crop;
                     sWidth -= 2 * crop;
                 } else {
-                    // Rescale to max height of 256px
-                    let ratio = targetHeight / sHeight;
-                    dWidth = Math.round(sWidth * ratio);
-                    dHeight = targetHeight;
+                    nocrop = true;
+                    // image is not close to our target ratio. rescale to a max width/height of 256px without cropping
+                    if (sWidth > sHeight) {
+                        dHeight = Math.round(targetWidth / sRatio);
+                        dWidth = targetWidth;
+                    } else {
+                        dWidth = Math.round(targetHeight * sRatio);
+                        dHeight = targetHeight;
+                    }
                 }
 
                 canvas.width = dWidth;
                 canvas.height = dHeight;
-                ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
+                if (nocrop) {
+                    ctx.drawImage(this, sX, sY, dWidth, dHeight);
+                } else {
+                    ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
+                }
 
                 const newDataURI = canvas.toDataURL('image/webp', 0.9);
                 resolve(newDataURI);
