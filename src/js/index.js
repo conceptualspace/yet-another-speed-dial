@@ -1819,10 +1819,17 @@ fetchImageButton.addEventListener('click', function (event) {
 });
 
 modalBgColorPickerBtn.addEventListener('click', function () {
+    // todo: support alpha
+    // eyedropper currently chrome on windows/mac only
     if ('EyeDropper' in window) {
-        // todo: support eyedropper api (currently chrome on windows/mac only)
+        const eyeDropper = new EyeDropper();
+        eyeDropper.open().then(result => {
+            const color = result.sRGBHex;
+            setInputValue(modalBgColorPickerInput, color);
+        }).catch(error => {
+            console.log('Error opening color picker:', error);
+        });
     } else {
-        // todo: support alpha
         document.getElementById('modalBgColorPickerInput').click();
     }
 });
