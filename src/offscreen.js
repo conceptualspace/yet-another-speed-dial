@@ -96,6 +96,7 @@ function colorsAreSimilar(color1, color2, tolerance = 2) {
 
 function getBgColor(image) {
     // todo: ensure this is performant
+    // todo: ensure our similar color counting is accurate, same as index
     return new Promise(function(resolve, reject) {
         let img = new Image();
         img.onload = function () {

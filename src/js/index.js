@@ -1001,20 +1001,25 @@ function getBgColor(img) {
             let keyColor = key.split(',').map(Number);
             return colorsAreSimilar(color, keyColor);
         });
-
-        if (similarColorKey) {
+    
+        if (similarColorKey && similarColorKey !== colorKey) {
             colorCounts[similarColorKey] += colorCounts[colorKey];
-        } else {
-            colorCounts[colorKey] = colorCounts[colorKey];
+            delete colorCounts[colorKey];
         }
-
-        if (colorCounts[colorKey] > maxCount) {
-            maxCount = colorCounts[colorKey];
+    
+        if (colorCounts[similarColorKey || colorKey] > maxCount) {
+            maxCount = colorCounts[similarColorKey || colorKey];
             mostCommonColor = color;
         }
     }
 
     // todo: clean this up - set background and color separately
+
+    // list colorcounts for debugging
+    console.log(colorCounts);
+    console.log(mostCommonColor);
+    console.log(maxCount);
+    console.log(totalPixels);
 
     if (maxCount > totalPixels / 2) {
         mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
