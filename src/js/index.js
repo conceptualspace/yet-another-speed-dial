@@ -770,7 +770,9 @@ async function buildModal(url, title) {
         imgDiv.appendChild(img);
 
         img.onload = function () {
-            let bgColor = getBgColor(img);
+            // read the bg color and set the color picker preview
+            // todo: stop storing bg in gradient format jesus
+            let bgColor = cssGradientToHex(images.bgColor);
             if (bgColor) {
                 setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
             }
@@ -1054,6 +1056,13 @@ function hexToCssGradient(hex) {
     // Convert hex color to CSS gradient string
     let rgba = hexToRgba(hex);
     return rgbaToCssGradient(rgba);
+}
+
+function cssGradientToHex(gradientString) {
+    // css string is in format: 'linear-gradient(to bottom, rgba(255,255,255,1) 50%, rgba(0,0,0,1) 50%)'
+    const rgbaString = gradientString.split('rgba(')[1].split(')')[0];
+    const [r, g, b, a] = rgbaString.split(',').map(Number);
+    return [r, g, b, a];
 }
 
 function saveBookmarkSettings() {
