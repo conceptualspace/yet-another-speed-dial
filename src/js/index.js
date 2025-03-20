@@ -925,143 +925,87 @@ function offscreenCanvasShim(w, h) {
 
 // calculate the bg color of a given image. returns rgba array [r, g, b, a]
 // todo: duped in offscreen logic; punt this to a worker
-function colorsAreSimilar(color1, color2, tolerance = 2) {
-    return Math.abs(color1[0] - color2[0]) <= tolerance &&
-           Math.abs(color1[1] - color2[1]) <= tolerance &&
-           Math.abs(color1[2] - color2[2]) <= tolerance &&
-           Math.abs(color1[3] - color2[3]) <= tolerance;
-}
+function getBgColor(img) {
+    let imgWidth = img.naturalWidth;
+    let imgHeight = img.naturalHeight;
+    let canvas = offscreenCanvasShim(imgWidth, imgHeight);
+    let context = canvas.getContext('2d', { willReadFrequently: true });
+    context.drawImage(img, 0, 0);
 
-function getBgColor(image) {
-    // todo: ensure this is performant
-    return new Promise(function(resolve, reject) {
-        let img = new Image();
-        img.onload = function () {
-            let imgWidth = img.naturalWidth;
-            let imgHeight = img.naturalHeight;
-            let canvas = offscreenCanvasShim(imgWidth, imgHeight);
-            let context = canvas.getContext('2d', {willReadFrequently:true});
-            context.drawImage(img, 0, 0);
+    let totalPixels = 0;
+    let avgColor = [0, 0, 0, 0];
+    let colorCounts = {};
+    let hasTransparentPixel = false;
 
-            let totalPixels = 0;
-            let avgColor = [0, 0, 0, 0];
-            let colorCounts = [];
-            let hasTransparentPixel = false;
+    // background color algorithm
+    // think the results are best when sampling 2 pixels deep from the edges
+    // 1px gives bad results from image artifacts, more than 2px means we average away any natural framing/background in the image
 
-            // background color algorithm
-            // think the results are best when sampling 2 pixels deep from the edges
-            // 1px gives bad results from image artifacts, more than 2px means we average away any natural framing/background in the image
-            
-            // Sample the top and bottom edges
-            for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
-                for (let y = 0; y < 2; y++) {
-                    let pixelTop = context.getImageData(x, y, 1, 1).data;
-                    let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
-                    avgColor[0] += pixelTop[0] + pixelBottom[0];
-                    avgColor[1] += pixelTop[1] + pixelBottom[1];
-                    avgColor[2] += pixelTop[2] + pixelBottom[2];
-                    avgColor[3] += pixelTop[3] + pixelBottom[3];
-                    totalPixels += 2;
-                    if (pixelTop[3] < 255 || pixelBottom[3] < 255) {
-                        hasTransparentPixel = true;
-                    }
-
-                    let found = false;
-                    for (let colorCount of colorCounts) {
-                        if (colorsAreSimilar(colorCount.color, pixelTop)) {
-                            colorCount.count++;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        colorCounts.push({ color: pixelTop, count: 1 });
-                    }
-
-                    found = false;
-                    for (let colorCount of colorCounts) {
-                        if (colorsAreSimilar(colorCount.color, pixelBottom)) {
-                            colorCount.count++;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        colorCounts.push({ color: pixelBottom, count: 1 });
-                    }
-                }
+    // Sample the top and bottom edges
+    for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
+        for (let y = 0; y < 2; y++) {
+            let pixelTop = context.getImageData(x, y, 1, 1).data;
+            let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
+            let colorKeyTop = `${pixelTop[0]},${pixelTop[1]},${pixelTop[2]},${pixelTop[3]}`;
+            let colorKeyBottom = `${pixelBottom[0]},${pixelBottom[1]},${pixelBottom[2]},${pixelBottom[3]}`;
+            colorCounts[colorKeyTop] = (colorCounts[colorKeyTop] || 0) + 1;
+            colorCounts[colorKeyBottom] = (colorCounts[colorKeyBottom] || 0) + 1;
+            avgColor[0] += pixelTop[0] + pixelBottom[0];
+            avgColor[1] += pixelTop[1] + pixelBottom[1];
+            avgColor[2] += pixelTop[2] + pixelBottom[2];
+            avgColor[3] += pixelTop[3] + pixelBottom[3];
+            totalPixels += 2;
+            if (pixelTop[3] < 255 || pixelBottom[3] < 255) {
+                hasTransparentPixel = true;
             }
+        }
+    }
 
-            // Sample the left and right edges
-            for (let y = 2; y < imgHeight - 2; y += 2) { // Sample every other pixel
-                for (let x = 0; x < 2; x++) {
-                    let pixelLeft = context.getImageData(x, y, 1, 1).data;
-                    let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
-                    avgColor[0] += pixelLeft[0] + pixelRight[0];
-                    avgColor[1] += pixelLeft[1] + pixelRight[1];
-                    avgColor[2] += pixelLeft[2] + pixelRight[2];
-                    avgColor[3] += pixelLeft[3] + pixelRight[3];
-                    totalPixels += 2;
-                    if (pixelLeft[3] < 255 || pixelRight[3] < 255) {
-                        hasTransparentPixel = true;
-                    }
-
-                    let found = false;
-                    for (let colorCount of colorCounts) {
-                        if (colorsAreSimilar(colorCount.color, pixelLeft)) {
-                            colorCount.count++;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        colorCounts.push({ color: pixelLeft, count: 1 });
-                    }
-
-                    found = false;
-                    for (let colorCount of colorCounts) {
-                        if (colorsAreSimilar(colorCount.color, pixelRight)) {
-                            colorCount.count++;
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        colorCounts.push({ color: pixelRight, count: 1 });
-                    }
-                }
+    // Sample the left and right edges
+    for (let y = 2; y < imgHeight - 2; y += 2) { // Sample every other pixel
+        for (let x = 0; x < 2; x++) {
+            let pixelLeft = context.getImageData(x, y, 1, 1).data;
+            let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
+            let colorKeyLeft = `${pixelLeft[0]},${pixelLeft[1]},${pixelLeft[2]},${pixelLeft[3]}`;
+            let colorKeyRight = `${pixelRight[0]},${pixelRight[1]},${pixelRight[2]},${pixelRight[3]}`;
+            colorCounts[colorKeyLeft] = (colorCounts[colorKeyLeft] || 0) + 1;
+            colorCounts[colorKeyRight] = (colorCounts[colorKeyRight] || 0) + 1;
+            avgColor[0] += pixelLeft[0] + pixelRight[0];
+            avgColor[1] += pixelLeft[1] + pixelRight[1];
+            avgColor[2] += pixelLeft[2] + pixelRight[2];
+            avgColor[3] += pixelLeft[3] + pixelRight[3];
+            totalPixels += 2;
+            if (pixelLeft[3] < 255 || pixelRight[3] < 255) {
+                hasTransparentPixel = true;
             }
+        }
+    }
 
-            avgColor = avgColor.map(color => color / totalPixels);
-            avgColor[3] = avgColor[3] / 255; // Normalize alpha value
+    avgColor = avgColor.map(color => color / totalPixels);
+    avgColor[3] = avgColor[3] / 255; // Normalize alpha value
 
-            let mostCommonColor = null;
-            let maxCount = 0;
-            for (let colorCount of colorCounts) {
-                if (colorCount.count > maxCount) {
-                    maxCount = colorCount.count;
-                    mostCommonColor = colorCount.color;
-                }
-            }
+    let mostCommonColor = null;
+    let maxCount = 0;
+    for (let colorKey in colorCounts) {
+        if (colorCounts[colorKey] > maxCount) {
+            maxCount = colorCounts[colorKey];
+            mostCommonColor = colorKey.split(',').map(Number);
+        }
+    }
 
-            // todo: clean this up - set background and color separately
+    // todo: clean this up - set background and color separately
 
-            if (maxCount > totalPixels / 2) {
-                mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
-                resolve(`linear-gradient(to bottom, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%)`);
-            } else {
-                if (hasTransparentPixel) {
-                    avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
-                }
-                resolve(`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
-            }
-        };
-        img.onerror = function() {
-            resolve();
-        };
-        img.crossOrigin = "Anonymous";
-        img.src = image;
-    });
+    if (maxCount > totalPixels / 2) {
+        mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
+        return [mostCommonColor[0], mostCommonColor[1], mostCommonColor[2], mostCommonColor[3]];
+
+        } else {
+        if (hasTransparentPixel) {
+            avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
+        }
+        return [avgColor[0], avgColor[1], avgColor[2], avgColor[3]];
+        //return (`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
+    }
 }
 
 function rgbToHex(rgbArray) {
