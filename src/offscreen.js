@@ -87,6 +87,13 @@ function convertUrlToAbsolute(origin, path) {
     }
 }
 
+function colorsAreSimilar(color1, color2, tolerance = 2) {
+    return Math.abs(color1[0] - color2[0]) <= tolerance &&
+           Math.abs(color1[1] - color2[1]) <= tolerance &&
+           Math.abs(color1[2] - color2[2]) <= tolerance &&
+           Math.abs(color1[3] - color2[3]) <= tolerance;
+}
+
 function getBgColor(image) {
     // todo: ensure this is performant
     return new Promise(function(resolve, reject) {
@@ -100,7 +107,7 @@ function getBgColor(image) {
 
             let totalPixels = 0;
             let avgColor = [0, 0, 0, 0];
-            let colorCounts = {};
+            let colorCounts = [];
             let hasTransparentPixel = false;
 
             // background color algorithm
@@ -112,10 +119,6 @@ function getBgColor(image) {
                 for (let y = 0; y < 2; y++) {
                     let pixelTop = context.getImageData(x, y, 1, 1).data;
                     let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
-                    let colorKeyTop = `${pixelTop[0]},${pixelTop[1]},${pixelTop[2]},${pixelTop[3]}`;
-                    let colorKeyBottom = `${pixelBottom[0]},${pixelBottom[1]},${pixelBottom[2]},${pixelBottom[3]}`;
-                    colorCounts[colorKeyTop] = (colorCounts[colorKeyTop] || 0) + 1;
-                    colorCounts[colorKeyBottom] = (colorCounts[colorKeyBottom] || 0) + 1;
                     avgColor[0] += pixelTop[0] + pixelBottom[0];
                     avgColor[1] += pixelTop[1] + pixelBottom[1];
                     avgColor[2] += pixelTop[2] + pixelBottom[2];
@@ -123,6 +126,30 @@ function getBgColor(image) {
                     totalPixels += 2;
                     if (pixelTop[3] < 255 || pixelBottom[3] < 255) {
                         hasTransparentPixel = true;
+                    }
+
+                    let found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelTop)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelTop, count: 1 });
+                    }
+
+                    found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelBottom)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelBottom, count: 1 });
                     }
                 }
             }
@@ -132,10 +159,6 @@ function getBgColor(image) {
                 for (let x = 0; x < 2; x++) {
                     let pixelLeft = context.getImageData(x, y, 1, 1).data;
                     let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
-                    let colorKeyLeft = `${pixelLeft[0]},${pixelLeft[1]},${pixelLeft[2]},${pixelLeft[3]}`;
-                    let colorKeyRight = `${pixelRight[0]},${pixelRight[1]},${pixelRight[2]},${pixelRight[3]}`;
-                    colorCounts[colorKeyLeft] = (colorCounts[colorKeyLeft] || 0) + 1;
-                    colorCounts[colorKeyRight] = (colorCounts[colorKeyRight] || 0) + 1;
                     avgColor[0] += pixelLeft[0] + pixelRight[0];
                     avgColor[1] += pixelLeft[1] + pixelRight[1];
                     avgColor[2] += pixelLeft[2] + pixelRight[2];
@@ -143,6 +166,30 @@ function getBgColor(image) {
                     totalPixels += 2;
                     if (pixelLeft[3] < 255 || pixelRight[3] < 255) {
                         hasTransparentPixel = true;
+                    }
+
+                    let found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelLeft)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelLeft, count: 1 });
+                    }
+
+                    found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelRight)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelRight, count: 1 });
                     }
                 }
             }
@@ -152,10 +199,10 @@ function getBgColor(image) {
 
             let mostCommonColor = null;
             let maxCount = 0;
-            for (let colorKey in colorCounts) {
-                if (colorCounts[colorKey] > maxCount) {
-                    maxCount = colorCounts[colorKey];
-                    mostCommonColor = colorKey.split(',').map(Number);
+            for (let colorCount of colorCounts) {
+                if (colorCount.count > maxCount) {
+                    maxCount = colorCount.count;
+                    mostCommonColor = colorCount.color;
                 }
             }
 
