@@ -52,6 +52,13 @@ const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
 const modalImgInput = document.getElementById("modalImgFile");
+const modalImgBtn = document.getElementById("modalImgBtn");
+const modalImgUrlBtn = document.getElementById("modalImgUrlBtn");
+const modalImageURLInput = document.getElementById("modalImageURLInput");
+const fetchImageButton = document.getElementById("fetchImageButton");
+const modalBgColorPickerInput = document.getElementById("modalBgColorPickerInput");
+const modalBgColorPickerBtn = document.getElementById("modalBgColorPickerBtn");
+const modalBgColorPreview = document.getElementById("modalBgColorPreview");
 const noBookmarks = document.getElementById('noBookmarks');
 
 // settings sidebar
@@ -136,9 +143,9 @@ let defaults = {
     dialRatio: 'wide'
 };
 
-const debounce = (func, delay= 500, immediate=false) => {
+const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
-    return function() {
+    return function () {
         const context = this
         const args = arguments
         if (immediate && !inDebounce) {
@@ -152,10 +159,10 @@ const debounce = (func, delay= 500, immediate=false) => {
 }
 
 // detect clock settings
-hourCycle = Intl.DateTimeFormat(locale, {hour: 'numeric'}).resolvedOptions().hourCycle;
+hourCycle = Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle;
 
 function displayClock() {
-    clock.textContent = new Date().toLocaleString('en-US', {hour: 'numeric', minute: 'numeric', hourCycle: hourCycle});
+    clock.textContent = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
     setTimeout(displayClock, 10000);
 }
 
@@ -175,7 +182,7 @@ function getBookmarks(folderId) {
 
 function removeBookmark(url) {
     let currentParent = currentFolder ? currentFolder : speedDialId
-    browser.bookmarks.search({url})
+    browser.bookmarks.search({ url })
         .then(bookmarks => {
             let cleanup = bookmarks.length < 2;
             for (let bookmark of bookmarks) {
@@ -200,7 +207,7 @@ function moveFolder(id, oldIndex, newIndex, newSiblingId) {
 
     function move(id, options) {
         browser.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({refreshInactive: true})
+            tabMessagePort.postMessage({ refreshInactive: true })
         }).catch(err => {
             console.log(err);
         })
@@ -231,7 +238,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
 
     function move(id, options) {
         browser.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({refreshInactive: true});
+            tabMessagePort.postMessage({ refreshInactive: true });
         }).catch(err => {
             console.log(err);
         });
@@ -346,7 +353,7 @@ function folderLink(title, id) {
         currentFolder = id;
         scrollPos = 0;
         bookmarksContainerParent.scrollTop = scrollPos;
-        chrome.storage.local.set({currentFolder: id});
+        chrome.storage.local.set({ currentFolder: id });
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
@@ -395,10 +402,10 @@ function editFolder() {
 
 function refreshThumbnails(url) {
     //tabMessagePort.postMessage({refreshThumbs: true, url});
-    
+
     toastContent.innerText = ` Capturing images...`;
     toast.style.transform = "translateX(0%)";
-    chrome.runtime.sendMessage({target: 'background', type: 'refreshThumbs', data: {url}});
+    chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url } });
 }
 
 function removeFolder() {
@@ -427,7 +434,7 @@ function getChildren(folderId) {
 function refreshAllThumbnails() {
     let urls = [];
     let parent = currentFolder ? currentFolder : speedDialId;
-    
+
     hideModals();
 
     browser.bookmarks.getChildren(parent).then(children => {
@@ -438,7 +445,7 @@ function refreshAllThumbnails() {
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
-            chrome.runtime.sendMessage({target: 'background', type: 'refreshAllThumbs', data: {urls}});
+            chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { urls } });
             toastContent.innerText = ` Capturing images...`;
             toast.style.transform = "translateX(0%)";
         }
@@ -469,7 +476,7 @@ async function printBookmarks(bookmarks, parentId) {
                     folderLink(bookmark.title, bookmark.id)
                 } else {
                     let el = document.querySelector(`[folderid="${bookmark.id}"]`);
-                    if (el) {el.innerText = bookmark.title}
+                    if (el) { el.innerText = bookmark.title }
                 }
 
             } else if (bookmark.url && bookmark.url.startsWith("http")) {
@@ -706,6 +713,10 @@ function hideModals() {
             el.style.transform = "translateX(100%)";
         }, 160);
     }
+
+    // Reset modalBtnContainer and imageUrlContainer
+    document.getElementById('modalBtnContainer').style.display = 'flex';
+    document.getElementById('imageUrlContainer').style.display = 'none';
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -748,16 +759,23 @@ async function buildModal(url, title) {
     let images = await getThumbs(url);
     if (images && images.thumbnails.length) {
         // clunky af
-        // todo: support adding a custom image
         let index = images.thumbIndex;
         let imgDiv = document.createElement('div');
         let img = document.createElement('img');
         img.crossOrigin = 'Anonymous';
         img.setAttribute('src', images.thumbnails[index]);
-        img.onerror = function() {
+        img.onerror = function () {
             img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
         };
         imgDiv.appendChild(img);
+
+        img.onload = function () {
+            let bgColor = getBgColor(img);
+            if (bgColor) {
+                setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+            }
+        }
+
         newCarousel.appendChild(imgDiv);
         for (let [i, image] of images.thumbnails.entries()) {
             if (i !== index) {
@@ -765,14 +783,92 @@ async function buildModal(url, title) {
                 let img = document.createElement('img');
                 img.crossOrigin = 'Anonymous';
                 img.setAttribute('src', image);
-                img.onerror = function() {
+                img.onerror = function () {
                     img.setAttribute('src', 'img/default.png'); // todo: cleanup
                 };
                 imgDiv.appendChild(img);
                 newCarousel.appendChild(imgDiv);
             }
         }
-        $('#carousel').flexCarousel({height: '180px'});
+        $('#carousel').flexCarousel({ height: '180px' });
+
+        // listen for carousel navigation to updade the bg color button preview
+        let fcNext = document.querySelector('.fc-next');
+        if (fcNext) {
+            fcNext.addEventListener('click', function () {
+                console.log('next clicked');
+                let cc = document.getElementById('customCarousel');
+                if (cc) {
+                    selectedImageSrc = customCarousel.children[0].src;
+                    let bgColor = getBgColor(customCarousel.children[0]);
+                    if (bgColor) {
+                        setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                    }
+                } else {
+                    let imageNodes = document.getElementsByClassName('fc-slide');
+                    for (let node of imageNodes) {
+                        // div with order "2" is the one being displayed by the carousel
+                        if (node.style.order === '2') {
+                            
+                            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
+                            if (node.children[0].className === "fc-image") {
+                                //selectedImageSrc = node.children[0].children[0].src;
+                                let bgColor = getBgColor(node.children[0].children[0]);
+                                if (bgColor) {
+                                    //setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                }
+                            } else {
+                                //selectedImageSrc = node.children[0].src;
+                                let bgColor = getBgColor(node.children[0]);
+                                if (bgColor) {
+                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        let fcPrev = document.querySelector('.fc-prev');
+        if (fcPrev) {
+            fcPrev.addEventListener('click', function () {
+                console.log('prev clicked');
+                let cc = document.getElementById('customCarousel');
+                if (cc) {
+                    selectedImageSrc = customCarousel.children[0].src;
+                    let bgColor = getBgColor(customCarousel.children[0]);
+                    if (bgColor) {
+                        setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                    }
+                } else {
+                    let imageNodes = document.getElementsByClassName('fc-slide');
+                    for (let node of imageNodes) {
+                        // div with order "2" is the one being displayed by the carousel
+                        if (node.style.order === '2') {
+                            
+                            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
+                            if (node.children[0].className === "fc-image") {
+                                //selectedImageSrc = node.children[0].children[0].src;
+                                let bgColor = getBgColor(node.children[0].children[0]);
+                                if (bgColor) {
+                                    //setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                }
+                            } else {
+                                //selectedImageSrc = node.children[0].src;
+                                let bgColor = getBgColor(node.children[0]);
+                                if (bgColor) {
+                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
     }
 }
 
@@ -803,7 +899,7 @@ function openAllTabs() {
 
     if (folder) {
         let dials = [...folder.getElementsByClassName('tile')];
-        
+
         dials?.forEach(dial => {
             if (dial.href) {
                 browser.tabs.create({
@@ -821,19 +917,19 @@ function offscreenCanvasShim(w, h) {
     } catch (err) {
         // offscreencanvas not supported in ff
         let canvas = document.createElement('canvas');
-        canvas.width  = w;
+        canvas.width = w;
         canvas.height = h;
         return canvas;
     }
 }
 
-// calculate the bg color of a given image
+// calculate the bg color of a given image. returns rgba array [r, g, b, a]
 // todo: duped in offscreen logic; punt this to a worker
 function getBgColor(img) {
     let imgWidth = img.naturalWidth;
     let imgHeight = img.naturalHeight;
     let canvas = offscreenCanvasShim(imgWidth, imgHeight);
-    let context = canvas.getContext('2d', {willReadFrequently:true});
+    let context = canvas.getContext('2d', { willReadFrequently: true });
     context.drawImage(img, 0, 0);
 
     let totalPixels = 0;
@@ -844,7 +940,7 @@ function getBgColor(img) {
     // background color algorithm
     // think the results are best when sampling 2 pixels deep from the edges
     // 1px gives bad results from image artifacts, more than 2px means we average away any natural framing/background in the image
-    
+
     // Sample the top and bottom edges
     for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
         for (let y = 0; y < 2; y++) {
@@ -901,13 +997,45 @@ function getBgColor(img) {
 
     if (maxCount > totalPixels / 2) {
         mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
-        return(`linear-gradient(to bottom, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%)`);
-    } else {
+        return [mostCommonColor[0], mostCommonColor[1], mostCommonColor[2], mostCommonColor[3]];
+
+        } else {
         if (hasTransparentPixel) {
             avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
         }
-        return(`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
+        return [avgColor[0], avgColor[1], avgColor[2], avgColor[3]];
+        //return (`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
     }
+}
+
+function rgbToHex(rgbArray) {
+    // todo: support alpha value
+    // Convert RGB values to hex color
+    let r = Math.round(rgbArray[0]);
+    let g = Math.round(rgbArray[1]);
+    let b = Math.round(rgbArray[2]);
+    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function hexToRgba(hex) {
+    // Convert hex color to RGBA values
+    let r = parseInt(hex.slice(1, 3), 16);
+    let g = parseInt(hex.slice(3, 5), 16);
+    let b = parseInt(hex.slice(5, 7), 16);
+    let a = 1; // Default alpha value
+    return [r, g, b, a];
+}
+
+function rgbaToCssGradient(rgba) {
+    // Convert RGBA values to CSS gradient string
+    // gradient is used as a shortcut to set the background color at same time as image
+    return `linear-gradient(to bottom, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%, rgba(${rgba[0]},${rgba[1]},${rgba[2]},${rgba[3]}) 50%)`;
+}
+
+function hexToCssGradient(hex) {
+    // Convert hex color to CSS gradient string
+    let rgba = hexToRgba(hex);
+    return rgbaToCssGradient(rgba);
 }
 
 function saveBookmarkSettings() {
@@ -919,11 +1047,18 @@ function saveBookmarkSettings() {
     let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
     let bgColor = null;
+    let colorPickerColor = modalBgColorPickerInput.value;
 
     let customCarousel = document.getElementById('customCarousel');
     if (customCarousel) {
         selectedImageSrc = customCarousel.children[0].src;
         bgColor = getBgColor(customCarousel.children[0]);
+        if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
+            console.log("colors dont match, using the picker!")
+            bgColor = hexToCssGradient(colorPickerColor);
+        } else {
+            bgColor = rgbaToCssGradient(bgColor);
+        }
         targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
         //targetNode.children[0].children[0].style.backgroundColor = bgColor;
         browser.storage.local.get(url)
@@ -937,7 +1072,7 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = 0;
                 }
-                browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
+                browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
                     //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                     if (title !== targetTileTitle) {
                         updateTitle()
@@ -956,6 +1091,13 @@ function saveBookmarkSettings() {
                     selectedImageSrc = node.children[0].src;
                     bgColor = getBgColor(node.children[0]);
                 }
+
+                if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
+                    bgColor = hexToCssGradient(colorPickerColor);
+                } else {
+                    bgColor = rgbaToCssGradient(bgColor);
+                }
+
                 // update tile
                 targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
                 //targetNode.children[0].children[0].style.backgroundColor = bgColor;
@@ -969,7 +1111,7 @@ function saveBookmarkSettings() {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({[newUrl]: {thumbnails, thumbIndex, bgColor}}).then(result => {
+                        browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
                             //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                             if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
@@ -996,9 +1138,9 @@ function saveBookmarkSettings() {
         //let order = sortable.toArray();
         //browser.storage.local.set({"sort":order});
         // todo: temp hack to match all until we start using bookmark ids
-        browser.bookmarks.search({url})
+        browser.bookmarks.search({ url })
             .then(bookmarks => {
-                if (bookmarks.length <= 1 && ( url !== newUrl) ) {
+                if (bookmarks.length <= 1 && (url !== newUrl)) {
                     // cleanup unused thumbnails
                     browser.storage.local.remove(url)
                 }
@@ -1041,14 +1183,14 @@ function layout(force = false) {
                 const x = box.transform.x + lastX - box.x;
                 const y = box.transform.y + lastY - box.y;
                 // Tween to 0 to remove the transforms
-                TweenMax.set(box.node, {x, y});
+                TweenMax.set(box.node, { x, y });
                 b.push(box.node);
             }
         }
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
         let duration = layoutFolder ? 0 : 0.7;
-        TweenMax.staggerTo(b, duration, {x: 0, y: 0, stagger:{amount: 0.2}, ease});
+        TweenMax.staggerTo(b, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
         layoutFolder = false;
     }
 }
@@ -1074,14 +1216,14 @@ const animate = debounce(() => {
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     const total = nodes.length;
 
-    TweenMax.set(nodes, {lazy: true, x: "+=0"});
+    TweenMax.set(nodes, { lazy: true, x: "+=0" });
 
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         const transform = node._gsTransform;
         const x = node.offsetLeft;
         const y = node.offsetTop;
-        boxes[i] = {node, transform, x, y};
+        boxes[i] = { node, transform, x, y };
     }
 
     layout();
@@ -1104,7 +1246,7 @@ function resizeBackground(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', {willReadFrequently:true});
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -1139,7 +1281,7 @@ function resizeThumb(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', {willReadFrequently:true});
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -1322,7 +1464,7 @@ function applySettings() {
         if (settings.wallpaperSrc) {
             imgPreview.setAttribute('src', settings.wallpaperSrc);
             //imgPreview.style.display = 'block';
-            imgPreview.onload = function(e) {
+            imgPreview.onload = function (e) {
                 if (settings.wallpaper) {
                     backgroundColorContainer.style.display = "none";
                     previewContainer.style.opacity = '1';
@@ -1335,11 +1477,11 @@ function applySettings() {
                     switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
                 }
             }
-            imgPreview.onerror = function(e) {
+            imgPreview.onerror = function (e) {
                 // reset to default on error with user image
                 settings.wallpaperSrc = 'img/bg.jpg';
                 imgPreview.setAttribute('src', settings.wallpaperSrc);
-                browser.storage.local.set({settings});
+                browser.storage.local.set({ settings });
             }
         }
 
@@ -1365,7 +1507,7 @@ function saveSettings() {
 
     applySettings();
 
-    browser.storage.local.set({settings})
+    browser.storage.local.set({ settings })
         .then(() => {
             /*
             settingsToast.style.opacity = "1";
@@ -1461,16 +1603,16 @@ window.addEventListener("mousedown", e => {
                     openSettings();
                     break;
                 case 'newTab':
-                    browser.tabs.create({url: targetTileHref});
+                    browser.tabs.create({ url: targetTileHref });
                     break;
                 case 'newBackgroundTab':
-                        browser.tabs.create({url: targetTileHref, active: false});
-                        break;
+                    browser.tabs.create({ url: targetTileHref, active: false });
+                    break;
                 case 'newWin':
-                    browser.windows.create({"url": targetTileHref});
+                    browser.windows.create({ "url": targetTileHref });
                     break;
                 case 'newPrivate':
-                    browser.windows.create({"url": targetTileHref, "incognito": true});
+                    browser.windows.create({ "url": targetTileHref, "incognito": true });
                     break;
                 case 'openAll':
                     openAllTabs();
@@ -1558,6 +1700,10 @@ createDialModalURL.addEventListener('keydown', e => {
     }
 });
 
+modalImgBtn.addEventListener('click', function () {
+    document.getElementById('modalImgFile').click();
+});
+
 modalImgInput.onchange = function () {
     readImage(this).then(image => {
         resizeThumb(image).then(resizedImage => {
@@ -1567,26 +1713,26 @@ modalImgInput.onchange = function () {
 };
 
 
-maxColsInput.oninput = function(e) {
+maxColsInput.oninput = function (e) {
     saveSettings()
 }
 
-dialSizeInput.oninput = function(e) {
+dialSizeInput.oninput = function (e) {
     saveSettings()
 }
 
-dialRatioInput.oninput = function(e) {
+dialRatioInput.oninput = function (e) {
     saveSettings()
 }
 
-defaultSortInput.oninput = function(e) {
+defaultSortInput.oninput = function (e) {
     if (settings.defaultSort !== defaultSortInput.value) {
         processRefresh();
         saveSettings()
     }
 }
 
-wallPaperEnabled.oninput = function(e) {
+wallPaperEnabled.oninput = function (e) {
     saveSettings()
 }
 
@@ -1602,27 +1748,27 @@ textColor_picker.onchange = function () {
     }
 };
 
-showTitlesInput.oninput = function(e) {
+showTitlesInput.oninput = function (e) {
     saveSettings()
 }
 
-showCreateDialInput.oninput = function(e) {
+showCreateDialInput.oninput = function (e) {
     saveSettings()
 }
 
-showFoldersInput.oninput = function(e) {
+showFoldersInput.oninput = function (e) {
     saveSettings()
 }
 
-showClockInput.oninput = function(e) {
+showClockInput.oninput = function (e) {
     saveSettings()
 }
 
-rememberFolderInput.oninput = function(e) {
+rememberFolderInput.oninput = function (e) {
     saveSettings()
 }
 
-showSettingsBtnInput.oninput = function(e) {
+showSettingsBtnInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -1646,12 +1792,57 @@ imgInput.onchange = function () {
     readURL(this);
 };
 
-previewOverlay.onclick = function() {
+previewOverlay.onclick = function () {
     imgInput.click();
 }
 
+// add image from url button clicked, show the input field
+modalImgUrlBtn.addEventListener('click', function (event) {
+    event.preventDefault();
+    document.getElementById('modalBtnContainer').style.display = 'none';
+    document.getElementById('imageUrlContainer').style.display = 'flex';
+    modalImageURLInput.focus();
+});
+
+// fetch the image from the url
+fetchImageButton.addEventListener('click', function (event) {
+    event.preventDefault();
+    const imageUrl = modalImageURLInput.value.trim();
+    if (imageUrl) {
+        resizeThumb(imageUrl).then(resizedImage => {
+            addImage(resizedImage);
+        }).catch(error => {
+            // todo: show error message to user in the modal
+            console.error('Error adding image from URL:', error);
+        });
+    }
+});
+
+modalBgColorPickerBtn.addEventListener('click', function () {
+    if ('EyeDropper' in window) {
+        // todo: support eyedropper api (currently chrome on windows/mac only)
+    } else {
+        // todo: support alpha
+        document.getElementById('modalBgColorPickerInput').click();
+    }
+});
+
+modalBgColorPickerInput.addEventListener('input', function () {
+    console.log("color picker input: ", this.value);
+    const color = this.value; // in hex
+    // set the our button color to match
+    modalBgColorPreview.style.fill = color;
+});
+
+// helper function for when we set the color picker value programmatically to update our button
+function setInputValue(inputElement, value) {
+    inputElement.value = value;
+    inputElement.dispatchEvent(new Event('input'));
+}
+
+
 function prepareExport() {
-    browser.storage.local.get(null).then(function(items) {
+    browser.storage.local.get(null).then(function (items) {
         // filter out unused thumbnails to keep exported file efficient
         let filteredItems = {};
         for (const [key, value] of Object.entries(items)) {
@@ -1677,9 +1868,9 @@ function prepareExport() {
         }
 
         // save as file; requires downloads permission
-        const blob = new Blob([JSON.stringify(filteredItems)], {type: 'application/json'})
+        const blob = new Blob([JSON.stringify(filteredItems)], { type: 'application/json' })
         const today = new Date();
-        const dateString = `${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;
+        const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 
         exportBtn.setAttribute('href', URL.createObjectURL(blob));
         exportBtn.download = `yasd-export-${dateString}.json`;
@@ -1688,7 +1879,7 @@ function prepareExport() {
     });
 }
 
-importExportBtn.onclick = function() {
+importExportBtn.onclick = function () {
     hideSettings();
     importExportStatus.innerText = "";
     exportBtn.classList.add('disabled');
@@ -1696,11 +1887,11 @@ importExportBtn.onclick = function() {
     modalShowEffect(importExportModalContent, importExportModal);
 }
 
-helpBtn.onclick = function() {
+helpBtn.onclick = function () {
     browser.tabs.create({ url: helpUrl });
 }
 
-importFileLabel.onclick = function() {
+importFileLabel.onclick = function () {
     importFileInput.click();
 }
 
@@ -1741,7 +1932,7 @@ importFileInput.onchange = function (event) {
                     if (group.id === 0) {
                         return Promise.resolve(speedDialId);
                     } else {
-                        return chrome.bookmarks.search({title: group.title}).then(existingGroups => {
+                        return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
                             const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
                             if (matchingGroups.length > 0) {
                                 return matchingGroups[0].id;
@@ -1758,7 +1949,7 @@ importFileInput.onchange = function (event) {
                 Promise.all(groupPromises).then(groupIds => {
                     bookmarks.forEach(bookmark => {
                         let parentId = groupIds[bookmark.idgroup];
-                        chrome.bookmarks.search({url: bookmark.url}).then(existingBookmarks => {
+                        chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                             let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                             if (!existsInFolder) {
                                 chrome.bookmarks.create({
@@ -1789,12 +1980,12 @@ importFileInput.onchange = function (event) {
                 url: dial.url,
                 groupId: dial.group_id
             }));
-        
+
             let groups = json.db.groups.map(group => ({
                 id: group.id,
                 title: group.name
             }));
-        
+
             // clear previous settings and import
             chrome.storage.local.clear().then(() => {
                 // Create groups and bookmarks
@@ -1802,7 +1993,7 @@ importFileInput.onchange = function (event) {
                     if (group.id === 1) {
                         return Promise.resolve(speedDialId);
                     } else {
-                        return chrome.bookmarks.search({title: group.title}).then(existingGroups => {
+                        return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
                             const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
                             if (matchingGroups.length > 0) {
                                 return matchingGroups[0].id;
@@ -1815,11 +2006,11 @@ importFileInput.onchange = function (event) {
                         });
                     }
                 });
-        
+
                 Promise.all(groupPromises).then(groupIds => {
                     bookmarks.forEach(bookmark => {
                         let parentId = groupIds[bookmark.groupId];
-                        chrome.bookmarks.search({url: bookmark.url}).then(existingBookmarks => {
+                        chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                             let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                             if (!existsInFolder) {
                                 chrome.bookmarks.create({
@@ -1830,7 +2021,7 @@ importFileInput.onchange = function (event) {
                             }
                         });
                     });
-        
+
                     hideModals();
                     // refresh page
                     processRefresh();
@@ -1838,7 +2029,7 @@ importFileInput.onchange = function (event) {
                     console.log(err);
                     importExportStatus.innerText = "Error! Unable to create folders.";
                 });
-        
+
             }).catch(err => {
                 console.log(err);
                 importExportStatus.innerText = "Something went wrong. Please try again";
@@ -1956,10 +2147,10 @@ function onEndHandler(evt) {
         // if the sibling's parent doesnt match the parent we are moving to discard this sibling
         // can occur when dropping onto a non sortable target (like folder name)
         if (newSiblingParentId && newSiblingParentId !== toParentId) {
-            newSiblingId = -1 ;
+            newSiblingId = -1;
         }
 
-        if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex ) {
+        if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
             moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
         }
     } else if (evt && evt.clone.classList.contains('folderTitle')) {
@@ -1990,7 +2181,7 @@ const processRefresh = debounce(() => {
 
 function getSpeedDialId() {
     return new Promise((resolve, reject) => {
-        chrome.bookmarks.search({title: 'Speed Dial'}).then(result => {
+        chrome.bookmarks.search({ title: 'Speed Dial' }).then(result => {
             if (result) {
                 for (let bookmark of result) {
                     if (!bookmark.url) {
@@ -2009,7 +2200,7 @@ function getSpeedDialId() {
                 })
                 resolve()
             } else {
-                chrome.bookmarks.create({title: 'Speed Dial'}).then(result => {
+                chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
                     speedDialId = result.id;
                     resolve();
                 }, error => {
@@ -2040,7 +2231,7 @@ function init() {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
     })
 
-    
+
 
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs

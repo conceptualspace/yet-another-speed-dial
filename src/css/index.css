@@ -12,6 +12,13 @@
 
 }
 
+.buttonContainer {
+    display: flex;
+    justify-content: space-between;
+    margin: .6em 0;
+}
+
+
 @font-face {
     font-family: 'Noto Sans';
     src: url('../fonts/NotoSans-Regular.woff2') format('woff2');
@@ -312,7 +319,7 @@ a {
     border-radius: 6px;
     padding: 5px;
     width: 420px;
-    box-shadow: 0 48px 48px rgba(0, 0, 0, 0.18);
+    box-shadow: 0 48px 48px rgba(0, 0, 0, 0.2);
     transition: 160ms;
 }
 
@@ -428,7 +435,51 @@ a {
 
 }
 
+.formItem > .action {
+    position: relative; /* Ensure the pseudo-element is positioned correctly */
+    background-color: #111111;
+}
+
+.formItem > .actionSecondary {
+    background-color: #111111;
+}
+
+#modalBgColorPickerInput {
+    opacity: 0;
+    position: fixed;
+    width: 0;
+    height: 0;
+    border: none;
+}
+
+.formItem > .action::after {
+    content: '';
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    border-bottom: 2px solid #1692EA;
+    transform: scaleX(0);
+    transition: transform 200ms;
+    transform-origin: 50% 50%;
+}
+
+.formItem > button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    border: none;
+}
+
+.formItem > button svg {
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
 .formItem > .save {
+    /* background-color: #13ac4e; */
     background-color: #1681d9;
 }
 
@@ -437,15 +488,20 @@ a {
 }
 
 .formItem > .close {
-    background-color: dimgrey;
+    background-color: #333;
 }
 
 .formItem > .save:hover {
     background-color: #1692EA;
 }
 
+
+.formItem > .action:hover::after {
+    transform: scaleX(1);
+}
+
 .formItem > .close:hover {
-    background-color: #707070;
+    background-color: #444444
 }
 
 input {
@@ -467,6 +523,28 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     transition: transform 200ms;
     transform-origin:  50% 50%;
 }
+
+#imageUrlContainer {
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+#fetchImageButton {
+    flex: 0 0 26px; /* Make the button 25% of the container's width */
+}
+
+#fetchImageButton svg {
+    fill: rgb(0, 255, 170);
+    opacity: 0.8;
+    transition: all 0.3s ease;
+}
+
+#fetchImageButton:hover svg {
+    opacity: 1;
+    transition: all 0.3s ease;
+}
+
 
 /* overrides */
 .fc-slide {
@@ -490,6 +568,10 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 .fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
     color: #fff;
+}
+
+.fc.fc-circles.fc-circles-overlay .fc-circles {
+    position: unset !important;
 }
 
 .sidenav {
@@ -539,6 +621,10 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 #settingsBtn {
     display: var(--settings);
+}
+
+.right-align {
+    float: right;
 }
 
 .settingsIcon svg {
