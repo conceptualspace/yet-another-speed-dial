@@ -923,6 +923,13 @@ function offscreenCanvasShim(w, h) {
     }
 }
 
+function colorsAreSimilar(color1, color2, tolerance = 2) {
+    return Math.abs(color1[0] - color2[0]) <= tolerance &&
+           Math.abs(color1[1] - color2[1]) <= tolerance &&
+           Math.abs(color1[2] - color2[2]) <= tolerance &&
+           Math.abs(color1[3] - color2[3]) <= tolerance;
+}
+
 // calculate the bg color of a given image. returns rgba array [r, g, b, a]
 // todo: duped in offscreen logic; punt this to a worker
 function getBgColor(img) {
@@ -987,9 +994,21 @@ function getBgColor(img) {
     let mostCommonColor = null;
     let maxCount = 0;
     for (let colorKey in colorCounts) {
+        let color = colorKey.split(',').map(Number);
+        let similarColorKey = Object.keys(colorCounts).find(key => {
+            let keyColor = key.split(',').map(Number);
+            return colorsAreSimilar(color, keyColor);
+        });
+
+        if (similarColorKey) {
+            colorCounts[similarColorKey] += colorCounts[colorKey];
+        } else {
+            colorCounts[colorKey] = colorCounts[colorKey];
+        }
+
         if (colorCounts[colorKey] > maxCount) {
             maxCount = colorCounts[colorKey];
-            mostCommonColor = colorKey.split(',').map(Number);
+            mostCommonColor = color;
         }
     }
 
@@ -999,12 +1018,11 @@ function getBgColor(img) {
         mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
         return [mostCommonColor[0], mostCommonColor[1], mostCommonColor[2], mostCommonColor[3]];
 
-        } else {
+    } else {
         if (hasTransparentPixel) {
             avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
         }
         return [avgColor[0], avgColor[1], avgColor[2], avgColor[3]];
-        //return (`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
     }
 }
 
@@ -1332,6 +1350,14 @@ function addImage(image) {
 
         customCarousel.appendChild(preview);
         modalImgContainer.appendChild(customCarousel);
+
+        // set the color picker to the new image bg color
+        preview.onload = function() {
+            let bgColor = getBgColor(preview);
+            if (bgColor) {
+                setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
+            }
+        };
     }
 }
 
