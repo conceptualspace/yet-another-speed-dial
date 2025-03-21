@@ -2025,243 +2025,254 @@ importFileLabel.onclick = function () {
     importFileInput.click();
 }
 
+function parseJson(event) {
+    try {
+        return JSON.parse(event.target.result);
+    } catch (err) {
+        console.log(err);
+        importExportStatus.innerText = "Error! Unable to parse file.";
+        return null;
+    }
+}
+
 importFileInput.onchange = function (event) {
     let filereader = new FileReader();
 
     filereader.onload = function (event) {
-        let json = null;
-        if (event && event.target) {
-            try {
-                json = JSON.parse(event.target.result);
-            } catch (err) {
-                console.log(err)
-                importExportStatus.innerText = "Error! Unable to parse file."
-            }
-        }
+        let json = parseJson(event);
+        if (!json) return;
 
         // quiet the listeners so yasd doesnt go crazy
-        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } }); // todo: proceed after successful response
-        //todo: re-enable when import complete (lookout might be some promise shenanigans below..)
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } });
+        //todo: proceed once we get a response
+        //todo: re-enable listener when import complete
         //todo: add an option to fetch new thumbnails or use the included ones
 
-        // todo: improve error handling
-        if (json && json.dials && json.groups) {
-            // import from SD2
-            let bookmarks = json.dials.map(dial => ({
-                title: dial.title,
-                url: dial.url,
-                idgroup: dial.idgroup
-            }));
-
-            let groups = json.groups.map(group => ({
-                id: group.id,
-                title: group.title
-            }));
-
-            // clear previous settings and import
-            // todo: we dont wana nuke everything if we dont end up proceeding with the import
-            chrome.storage.local.clear().then(() => {
-
-                // Create groups and bookmarks
-                let groupPromises = groups.map(group => {
-                    if (group.id === 0) {
-                        return Promise.resolve(speedDialId);
-                    } else {
-                        return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
-                            const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
-                            if (matchingGroups.length > 0) {
-                                return matchingGroups[0].id;
-                            } else {
-                                return chrome.bookmarks.create({
-                                    title: group.title,
-                                    parentId: speedDialId
-                                }).then(node => node.id);
-                            }
-                        });
-                    }
-                });
-
-                Promise.all(groupPromises).then(groupIds => {
-                    bookmarks.forEach(bookmark => {
-                        let parentId = groupIds[bookmark.idgroup];
-                        chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
-                            let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
-                            if (!existsInFolder) {
-                                chrome.bookmarks.create({
-                                    title: bookmark.title,
-                                    url: bookmark.url,
-                                    parentId: parentId
-                                });
-                            }
-                        });
-                    });
-
-                    hideModals();
-                    // refresh page
-                    processRefresh();
-                }).catch(err => {
-                    console.log(err)
-                    importExportStatus.innerText = "Error! Unable to create folders."
-                });
-
-            }).catch(err => {
-                console.log(err)
-                importExportStatus.innerText = "Something went wrong. Please try again"
-            });
-        } else if (json && json.db) {
-            // import from FVD
-            let bookmarks = json.db.dials.map(dial => ({
-                title: dial.title,
-                url: dial.url,
-                groupId: dial.group_id
-            }));
-
-            let groups = json.db.groups.map(group => ({
-                id: group.id,
-                title: group.name
-            }));
-
-            // clear previous settings and import
-            chrome.storage.local.clear().then(() => {
-                // Create groups and bookmarks
-                let groupPromises = groups.map(group => {
-                    if (group.id === 1) {
-                        return Promise.resolve(speedDialId);
-                    } else {
-                        return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
-                            const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
-                            if (matchingGroups.length > 0) {
-                                return matchingGroups[0].id;
-                            } else {
-                                return chrome.bookmarks.create({
-                                    title: group.title,
-                                    parentId: speedDialId
-                                }).then(node => node.id);
-                            }
-                        });
-                    }
-                });
-
-                Promise.all(groupPromises).then(groupIds => {
-                    bookmarks.forEach(bookmark => {
-                        let parentId = groupIds[bookmark.groupId];
-                        chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
-                            let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
-                            if (!existsInFolder) {
-                                chrome.bookmarks.create({
-                                    title: bookmark.title,
-                                    url: bookmark.url,
-                                    parentId: parentId
-                                });
-                            }
-                        });
-                    });
-
-                    hideModals();
-                    // refresh page
-                    processRefresh();
-                }).catch(err => {
-                    console.log(err);
-                    importExportStatus.innerText = "Error! Unable to create folders.";
-                });
-
-            }).catch(err => {
-                console.log(err);
-                importExportStatus.innerText = "Something went wrong. Please try again";
-            });
-
-        } else if (json && json.yasd) {
-            // import from yasd v3 format:
-            let yasdData = json.yasd;
-        
-            // Clear previous settings and import new data
-            browser.storage.local.clear().then(() => {
-                // Store settings
-                if (yasdData.settings) {
-                    browser.storage.local.set({ settings: yasdData.settings });
-                }
-        
-                // Store dials
-                let dialPromises = yasdData.dials.map(dial => {
-                    let url = Object.keys(dial)[0];
-                    let dialData = dial[url];
-                    return browser.storage.local.set({ [url]: dialData });
-                });
-        
-                // Create folders and get their IDs
-                let folderPromises = yasdData.folders.sort((a, b) => a.index - b.index).map(folder => {
-                    return browser.bookmarks.search({ title: folder.title }).then(existingFolders => {
-                        const matchingFolders = existingFolders.filter(f => f.parentId === speedDialId);
-                        if (matchingFolders.length > 0) {
-                            return { oldId: folder.id, newId: matchingFolders[0].id };
-                        } else {
-                            return browser.bookmarks.create({
-                                title: folder.title,
-                                parentId: speedDialId
-                            }).then(node => {
-                                return { oldId: folder.id, newId: node.id };
-                            });
-                        }
-                    });
-                });
-        
-                Promise.all(folderPromises).then(folderIdMappings => {
-                    let folderIdMap = {};
-                    folderIdMappings.forEach(mapping => {
-                        folderIdMap[mapping.oldId] = mapping.newId;
-                    });
-        
-                    // Create bookmarks using the new folder IDs
-                    let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
-                        let parentId = folderIdMap[bookmark.folderid] || speedDialId;
-                        return browser.bookmarks.create({
-                            title: bookmark.title,
-                            url: bookmark.url,
-                            parentId: parentId
-                        });
-                    });
-        
-                    Promise.all([...dialPromises, ...bookmarkPromises]).then(() => {
-                        hideModals();
-                        // Refresh page
-                        processRefresh();
-                    }).catch(err => {
-                        console.log(err);
-                        importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
-                    });
-                }).catch(err => {
-                    console.log(err);
-                    importExportStatus.innerText = "Error! Unable to create folders.";
-                });
-            }).catch(err => {
-                console.log(err);
-                importExportStatus.innerText = "Something went wrong. Please try again.";
-            });
-        } else if (json) {
-            // import from old yasd format
-            // clear previous settings and import
-            browser.storage.local.clear().then(() => {
-                browser.storage.local.set(json).then(result => {
-                    hideModals();
-                    // refresh page
-                    //tabMessagePort.postMessage({handleImport: true});
-                    processRefresh();
-                }).catch(err => {
-                    console.log(err)
-                    importExportStatus.innerText = "Error! Unable to parse file."
-                });
-            }).catch(err => {
-                console.log(err)
-                importExportStatus.innerText = "Error! Please try again"
-            })
+        if (json.dials && json.groups) {
+            importFromSD2(json);
+        } else if (json.db) {
+            importFromFVD(json);
+        } else if (json.yasd) {
+            importFromYASD(json);
+        } else {
+            importFromOldYASD(json);
         }
     };
-    
 
     if (event && event.target && event.target.files) {
         filereader.readAsText(event.target.files[0]);
     }
 };
+
+function importFromSD2(json) {
+    let bookmarks = json.dials.map(dial => ({
+        title: dial.title,
+        url: dial.url,
+        idgroup: dial.idgroup
+    }));
+
+    let groups = json.groups.map(group => ({
+        id: group.id,
+        title: group.title
+    }));
+
+    chrome.storage.local.clear().then(() => {
+        // Create groups and bookmarks
+        let groupPromises = groups.map(group => {
+            if (group.id === 0) {
+                return Promise.resolve(speedDialId);
+            } else {
+                return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
+                    const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
+                    if (matchingGroups.length > 0) {
+                        return matchingGroups[0].id;
+                    } else {
+                        return chrome.bookmarks.create({
+                            title: group.title,
+                            parentId: speedDialId
+                        }).then(node => node.id);
+                    }
+                });
+            }
+        });
+
+        Promise.all(groupPromises).then(groupIds => {
+            bookmarks.forEach(bookmark => {
+                let parentId = groupIds[bookmark.idgroup];
+                chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                    let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
+                    if (!existsInFolder) {
+                        chrome.bookmarks.create({
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            parentId: parentId
+                        });
+                    }
+                });
+            });
+
+            hideModals();
+            // refresh page
+            processRefresh();
+        }).catch(err => {
+            console.log(err)
+            importExportStatus.innerText = "SD2 import error! Unable to create folders."
+        });
+
+    }).catch(err => {
+        console.log(err)
+        importExportStatus.innerText = "Something went wrong. Please try again"
+    });
+}
+
+function importFromFVD(json) {
+    let bookmarks = json.db.dials.map(dial => ({
+        title: dial.title,
+        url: dial.url,
+        groupId: dial.group_id
+    }));
+
+    let groups = json.db.groups.map(group => ({
+        id: group.id,
+        title: group.name
+    }));
+
+    // clear previous settings and import
+    chrome.storage.local.clear().then(() => {
+        // Create groups and bookmarks
+        let groupPromises = groups.map(group => {
+            if (group.id === 1) {
+                return Promise.resolve(speedDialId);
+            } else {
+                return chrome.bookmarks.search({ title: group.title }).then(existingGroups => {
+                    const matchingGroups = existingGroups.filter(group => group.parentId === speedDialId);
+                    if (matchingGroups.length > 0) {
+                        return matchingGroups[0].id;
+                    } else {
+                        return chrome.bookmarks.create({
+                            title: group.title,
+                            parentId: speedDialId
+                        }).then(node => node.id);
+                    }
+                });
+            }
+        });
+
+        Promise.all(groupPromises).then(groupIds => {
+            bookmarks.forEach(bookmark => {
+                let parentId = groupIds[bookmark.groupId];
+                chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                    let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
+                    if (!existsInFolder) {
+                        chrome.bookmarks.create({
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            parentId: parentId
+                        });
+                    }
+                });
+            });
+
+            hideModals();
+            // refresh page
+            processRefresh();
+        }).catch(err => {
+            console.log(err);
+            importExportStatus.innerText = "FVD import error! Unable to create folders.";
+        });
+
+    }).catch(err => {
+        console.log(err);
+        importExportStatus.innerText = "Something went wrong. Please try again";
+    });
+}
+
+function importFromYASD(json) {
+    // import from yasd v3 format:
+    let yasdData = json.yasd;
+        
+    // Clear previous settings and import new data
+    browser.storage.local.clear().then(() => {
+        // Store settings
+        if (yasdData.settings) {
+            browser.storage.local.set({ settings: yasdData.settings });
+        }
+
+        // Store dials
+        let dialPromises = yasdData.dials.map(dial => {
+            let url = Object.keys(dial)[0];
+            let dialData = dial[url];
+            return browser.storage.local.set({ [url]: dialData });
+        });
+
+        // Create folders and get their IDs
+        let folderPromises = yasdData.folders.sort((a, b) => a.index - b.index).map(folder => {
+            return browser.bookmarks.search({ title: folder.title }).then(existingFolders => {
+                const matchingFolders = existingFolders.filter(f => f.parentId === speedDialId);
+                if (matchingFolders.length > 0) {
+                    return { oldId: folder.id, newId: matchingFolders[0].id };
+                } else {
+                    return browser.bookmarks.create({
+                        title: folder.title,
+                        parentId: speedDialId
+                    }).then(node => {
+                        return { oldId: folder.id, newId: node.id };
+                    });
+                }
+            });
+        });
+
+        Promise.all(folderPromises).then(folderIdMappings => {
+            let folderIdMap = {};
+            folderIdMappings.forEach(mapping => {
+                folderIdMap[mapping.oldId] = mapping.newId;
+            });
+
+            // Create bookmarks using the new folder IDs
+            let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
+                let parentId = folderIdMap[bookmark.folderid] || speedDialId;
+                return browser.bookmarks.create({
+                    title: bookmark.title,
+                    url: bookmark.url,
+                    parentId: parentId
+                });
+            });
+
+            Promise.all([...dialPromises, ...bookmarkPromises]).then(() => {
+                hideModals();
+                // Refresh page
+                processRefresh();
+            }).catch(err => {
+                console.log(err);
+                importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
+            });
+        }).catch(err => {
+            console.log(err);
+            importExportStatus.innerText = "Error! Unable to create folders.";
+        });
+    }).catch(err => {
+        console.log(err);
+        importExportStatus.innerText = "Something went wrong. Please try again.";
+    });
+}
+
+function importFromOldYASD(json) {
+    // import from old yasd format
+    browser.storage.local.clear().then(() => {
+        browser.storage.local.set(json).then(result => {
+            hideModals();
+            // refresh page
+            //tabMessagePort.postMessage({handleImport: true});
+            processRefresh();
+        }).catch(err => {
+            console.log(err)
+            importExportStatus.innerText = "Error! Unable to parse file."
+        });
+    }).catch(err => {
+        console.log(err)
+        importExportStatus.innerText = "Error! Please try again"
+    })
+}
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {
