@@ -2231,10 +2231,15 @@ function importFromYASD(json) {
             // Create bookmarks using the new folder IDs
             let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
                 let parentId = folderIdMap[bookmark.folderid] || speedDialId;
-                return browser.bookmarks.create({
-                    title: bookmark.title,
-                    url: bookmark.url,
-                    parentId: parentId
+                return browser.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                    let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
+                    if (!existsInFolder) {
+                        return browser.bookmarks.create({
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            parentId: parentId
+                        });
+                    }
                 });
             });
 
