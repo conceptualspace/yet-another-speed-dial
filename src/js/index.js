@@ -1877,7 +1877,7 @@ function setInputValue(inputElement, value) {
 }
 
 
-function prepareExport() {
+function prepareExportV1() {
     browser.storage.local.get(null).then(function (items) {
         // filter out unused thumbnails to keep exported file efficient
         let filteredItems = {};
@@ -1915,6 +1915,100 @@ function prepareExport() {
     });
 }
 
+function prepareExport() {
+    // exports yasd json file that includes all bookmarks within the root speed dial folder, along with the yasd settings and thumbnails from storage
+    // in the following format:
+
+    /*
+    const yasdJson = {
+        "yasd": {
+            "bookmarks":[
+                {"id":123,"title":"Site Title","url":"https://www.website.com","index":1,"folderid":3}
+            ],
+            "folders":[
+                {"id":123,"title":"Folder Title","index":1}
+            ],
+            "settings":{
+                "showClock":true,
+                "backgroundImage":""
+            },
+            "dials": [
+                {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}},
+                {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}}
+            ]
+        }
+    }
+    */
+
+    let yasdJson = {
+        yasd: {
+            version: 3,
+            bookmarks: [],
+            folders: [],
+            settings: {},
+            dials: []
+        }
+    };
+
+    // Get bookmarks and folders within the speed dial folder
+    browser.bookmarks.getSubTree(speedDialId).then(bookmarkTreeNodes => {
+        function traverseBookmarks(nodes, parentId = null) {
+            nodes.forEach(node => {
+                if (node.url) {
+                    yasdJson.yasd.bookmarks.push({
+                        id: node.id,
+                        title: node.title,
+                        url: node.url,
+                        index: node.index,
+                        folderid: parentId
+                    });
+                } else {
+                    yasdJson.yasd.folders.push({
+                        id: node.id,
+                        title: node.title,
+                        index: node.index
+                    });
+                    if (node.children) {
+                        traverseBookmarks(node.children, node.id);
+                    }
+                }
+            });
+        }
+        traverseBookmarks(bookmarkTreeNodes[0].children);
+
+        // Get YASD settings and thumbnails from storage
+        browser.storage.local.get(null).then(items => {
+            for (const [key, value] of Object.entries(items)) {
+                if (key.startsWith('settings')) {
+                    yasdJson.yasd.settings[key] = value;
+                } else if (key.startsWith('http')) {
+                    let thumbnails = [];
+                    if (value.thumbnails && value.thumbnails.length) {
+                        thumbnails.push(value.thumbnails[value.thumbIndex]);
+                    }
+                    yasdJson.yasd.dials.push({
+                        [key]: {
+                            thumbnails: thumbnails,
+                            thumbIndex: 0,
+                            bgColor: value.bgColor
+                        }
+                    });
+                }
+            }
+
+            // Save as file; requires downloads permission
+            const blob = new Blob([JSON.stringify(yasdJson)], { type: 'application/json' });
+            const today = new Date();
+            const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-v3`;
+
+            exportBtn.setAttribute('href', URL.createObjectURL(blob));
+            exportBtn.download = `yasd-export-${dateString}.json`;
+            exportBtn.classList.remove('disabled');
+        });
+    });
+}
+
+
 importExportBtn.onclick = function () {
     hideSettings();
     importExportStatus.innerText = "";
@@ -1944,6 +2038,11 @@ importFileInput.onchange = function (event) {
                 importExportStatus.innerText = "Error! Unable to parse file."
             }
         }
+
+        // quiet the listeners so yasd doesnt go crazy
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } }); // todo: proceed after successful response
+        //todo: re-enable when import complete (lookout might be some promise shenanigans below..)
+        //todo: add an option to fetch new thumbnails or use the included ones
 
         // todo: improve error handling
         if (json && json.dials && json.groups) {
@@ -2071,8 +2170,75 @@ importFileInput.onchange = function (event) {
                 importExportStatus.innerText = "Something went wrong. Please try again";
             });
 
+        } else if (json && json.yasd) {
+            // import from yasd v3 format:
+            let yasdData = json.yasd;
+        
+            // Clear previous settings and import new data
+            browser.storage.local.clear().then(() => {
+                // Store settings
+                if (yasdData.settings) {
+                    browser.storage.local.set({ settings: yasdData.settings });
+                }
+        
+                // Store dials
+                let dialPromises = yasdData.dials.map(dial => {
+                    let url = Object.keys(dial)[0];
+                    let dialData = dial[url];
+                    return browser.storage.local.set({ [url]: dialData });
+                });
+        
+                // Create folders and get their IDs
+                let folderPromises = yasdData.folders.sort((a, b) => a.index - b.index).map(folder => {
+                    return browser.bookmarks.search({ title: folder.title }).then(existingFolders => {
+                        const matchingFolders = existingFolders.filter(f => f.parentId === speedDialId);
+                        if (matchingFolders.length > 0) {
+                            return { oldId: folder.id, newId: matchingFolders[0].id };
+                        } else {
+                            return browser.bookmarks.create({
+                                title: folder.title,
+                                parentId: speedDialId
+                            }).then(node => {
+                                return { oldId: folder.id, newId: node.id };
+                            });
+                        }
+                    });
+                });
+        
+                Promise.all(folderPromises).then(folderIdMappings => {
+                    let folderIdMap = {};
+                    folderIdMappings.forEach(mapping => {
+                        folderIdMap[mapping.oldId] = mapping.newId;
+                    });
+        
+                    // Create bookmarks using the new folder IDs
+                    let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
+                        let parentId = folderIdMap[bookmark.folderid] || speedDialId;
+                        return browser.bookmarks.create({
+                            title: bookmark.title,
+                            url: bookmark.url,
+                            parentId: parentId
+                        });
+                    });
+        
+                    Promise.all([...dialPromises, ...bookmarkPromises]).then(() => {
+                        hideModals();
+                        // Refresh page
+                        processRefresh();
+                    }).catch(err => {
+                        console.log(err);
+                        importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
+                    });
+                }).catch(err => {
+                    console.log(err);
+                    importExportStatus.innerText = "Error! Unable to create folders.";
+                });
+            }).catch(err => {
+                console.log(err);
+                importExportStatus.innerText = "Something went wrong. Please try again.";
+            });
         } else if (json) {
-            // import from yasd
+            // import from old yasd format
             // clear previous settings and import
             browser.storage.local.clear().then(() => {
                 browser.storage.local.set(json).then(result => {
@@ -2090,6 +2256,7 @@ importFileInput.onchange = function (event) {
             })
         }
     };
+    
 
     if (event && event.target && event.target.files) {
         filereader.readAsText(event.target.files[0]);
