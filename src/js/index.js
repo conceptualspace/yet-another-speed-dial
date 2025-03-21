@@ -798,7 +798,6 @@ async function buildModal(url, title) {
         let fcNext = document.querySelector('.fc-next');
         if (fcNext) {
             fcNext.addEventListener('click', function () {
-                console.log('next clicked');
                 let cc = document.getElementById('customCarousel');
                 if (cc) {
                     selectedImageSrc = customCarousel.children[0].src;
@@ -836,7 +835,6 @@ async function buildModal(url, title) {
         let fcPrev = document.querySelector('.fc-prev');
         if (fcPrev) {
             fcPrev.addEventListener('click', function () {
-                console.log('prev clicked');
                 let cc = document.getElementById('customCarousel');
                 if (cc) {
                     selectedImageSrc = customCarousel.children[0].src;
@@ -1012,14 +1010,6 @@ function getBgColor(img) {
             mostCommonColor = color;
         }
     }
-
-    // todo: clean this up - set background and color separately
-
-    // list colorcounts for debugging
-    console.log(colorCounts);
-    console.log(mostCommonColor);
-    console.log(maxCount);
-    console.log(totalPixels);
 
     if (maxCount > totalPixels / 2) {
         mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
@@ -1875,7 +1865,6 @@ modalBgColorPickerBtn.addEventListener('click', function () {
 });
 
 modalBgColorPickerInput.addEventListener('input', function () {
-    console.log("color picker input: ", this.value);
     const color = this.value; // in hex
     // set the our button color to match
     modalBgColorPreview.style.fill = color;
