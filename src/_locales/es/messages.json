@@ -14,6 +14,9 @@
   "backgroundColor": {
     "message": "Color de fondo"
   },
+  "bgColor": {
+    "message": "Color BG"
+  },
   "browse": {
     "message": "Navegar..."
   },
@@ -67,6 +70,12 @@
   "home": {
     "message": "Inicio"
   },
+  "image": {
+    "message": "Imagen"
+  },
+  "imageURL": {
+    "message": "Imagen URL"
+  },
   "import": {
     "message": "Importar ajustes..."
   },
@@ -89,7 +98,7 @@
     "message": "Nombre"
   },
   "newBackgroundTab": {
-    "message": "Open in background tab"
+    "message": "Abrir en pestaña de fondo"
   },
   "newDial": {
     "message": "Nueva Marcación Rápida..."

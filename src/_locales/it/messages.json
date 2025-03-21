@@ -14,6 +14,9 @@
   "backgroundColor": {
     "message": "Colore di sfondo"
   },
+  "bgColor": {
+    "message": "Colore BG"
+  },
   "browse": {
     "message": "Sfoglia..."
   },
@@ -67,6 +70,12 @@
   "home": {
     "message": "Home"
   },
+  "image": {
+    "message": "Immagine"
+  },
+  "imageURL": {
+    "message": "URL Immagine"
+  },
   "import": {
     "message": "Importa impostazioni..."
   },
@@ -89,7 +98,7 @@
     "message": "Nome"
   },
   "newBackgroundTab": {
-    "message": "Open in background tab"
+    "message": "Apri in una scheda in background"
   },
   "newDial": {
     "message": "Nuova Selezione Rapida..."

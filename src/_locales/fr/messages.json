@@ -14,6 +14,9 @@
   "backgroundColor": {
     "message": "Contexte Couleur"
   },
+  "bgColor": {
+    "message": "Couleur BG"
+  },
   "browse": {
     "message": "Feuilleter..."
   },
@@ -67,6 +70,12 @@
   "home": {
     "message": "Accueil"
   },
+  "image": {
+    "message": "Image"
+  },
+  "imageURL": {
+    "message": "URL Image"
+  },
   "import": {
     "message": "Importer les paramètres..."
   },
@@ -89,7 +98,7 @@
     "message": "Nom"
   },
   "newBackgroundTab": {
-    "message": "Open in background tab"
+    "message": "Ouvrir dans un onglet d'arrière-plan"
   },
   "newDial": {
     "message": "Nouveau Speed Dial..."

@@ -14,6 +14,9 @@
   "backgroundColor": {
     "message": "Cor de fundo"
   },
+  "bgColor": {
+    "message": "Cor BG"
+  },
   "browse": {
     "message": "Procurar..."
   },
@@ -67,6 +70,12 @@
   "home": {
     "message": "Início"
   },
+  "image": {
+    "message": "Imagem"
+  },
+  "imageURL": {
+    "message": "URL Imagem"
+  },
   "import": {
     "message": "Configurações de importação..."
   },
@@ -89,7 +98,7 @@
     "message": "Nome"
   },
   "newBackgroundTab": {
-    "message": "Open in background tab"
+    "message": "Abrir na guia em segundo plano"
   },
   "newDial": {
     "message": "Nova discagem rápida..."

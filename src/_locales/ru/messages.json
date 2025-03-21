@@ -14,6 +14,9 @@
   "backgroundColor": {
     "message": "Цвет фона"
   },
+  "bgColor": {
+    "message": "Цвет фона"
+  },
   "browse": {
     "message": "Обзор..."
   },
@@ -67,6 +70,12 @@
   "home": {
     "message": "Домой"
   },
+  "image": {
+    "message": "Изображение"
+  },
+  "imageURL": {
+    "message": "Изображение URL"
+  },
   "import": {
     "message": "Импорт настроек..."
   },
@@ -89,7 +98,7 @@
     "message": "Название"
   },
   "newBackgroundTab": {
-    "message": "Open in background tab"
+    "message": "Открыть в фоновой вкладке"
   },
   "newDial": {
     "message": "Новый Speed Dial..."
