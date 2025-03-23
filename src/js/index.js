@@ -2675,21 +2675,6 @@ function init() {
 
     sidenav.style.display = "flex";
 
-    sortable = new Sortable(bookmarksContainer, {
-        //todo: forceFallback:true seems to work way better on chrome on *linux* (no dif on win/mac)
-        //forceFallback: true,
-        group: 'shared',
-        animation: 160,
-        ghostClass: 'selected',
-        dragClass: 'dragging', // todo: confirm this only applies when forceFallback is used
-        filter: ".createDial",
-        delay: 500, // fixes #40
-        delayOnTouchOnly: true,
-        // todo: copy same onmove logic from folders
-        onMove: onMoveHandler,
-        onEnd: onEndHandler
-    });
-
     new Sortable(foldersContainer, {
         animation: 150,
         forceFallback: true,
