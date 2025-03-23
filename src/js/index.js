@@ -576,7 +576,7 @@ async function printNewSetup() {
 
     // Optimize container update using batch insert
     folderContainerEl.textContent = ''; // Clears old content efficiently
-    batchInsert(folderContainerEl, fragment, 50)
+    folderContainerEl.append(fragment);
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
@@ -696,7 +696,7 @@ async function printBookmarks(bookmarks, parentId) {
 }
 
 
-
+/*
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
 async function printBookmarksOld(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
@@ -899,6 +899,7 @@ async function printBookmarksOld(bookmarks, parentId) {
         //
     }
 }
+*/
 
 function showContextMenu(el, top, left) {
     if ((document.body.clientWidth - left) < (el.clientWidth + 30)) {
