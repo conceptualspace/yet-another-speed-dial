@@ -101,6 +101,7 @@ let tabMessagePort = null;
 chrome.runtime.onMessage.addListener(handleMessages);
 
 let cache = {};
+let resizing = false;
 let settings = null;
 let speedDialId = null;
 let sortable = null;
@@ -2649,6 +2650,16 @@ function handleMessages(message) {
     }
 }
 
+function onResize() {
+    if (!resizing) {
+        requestAnimationFrame(() => {
+            layout();
+            resizing = false;
+        });
+        resizing = true;
+    }
+}
+
 function init() {
 
     const t0 = performance.now();
@@ -2712,7 +2723,7 @@ function init() {
         onEnd: onEndHandler
     });
 
-    window.onresize = layout;
+    window.addEventListener('resize', onResize);
 
 }
 
