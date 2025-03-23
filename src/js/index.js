@@ -592,7 +592,7 @@ async function printBookmarks(bookmarks, parentId) {
         folderContainerEl = document.createElement('div');
         folderContainerEl.id = parentId;
         folderContainerEl.classList.add('container');
-        folderContainerEl.style.display = settings.rememberFolder && currentFolder === parentId ? 'flex' : 'none';
+        folderContainerEl.style.display = currentFolder === parentId ? 'flex' : 'none';
         //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
         folderContainerEl.style.opacity = "0"; // Always visible
 
@@ -637,6 +637,7 @@ async function printBookmarks(bookmarks, parentId) {
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
+
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
 async function printBookmarksOld(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
@@ -2646,12 +2647,6 @@ function init() {
             } else {
                 settings = defaults;
             }
-            if (settings.rememberFolder && settings.currentFolder) {
-                currentFolder = settings.currentFolder;
-                //todo: reset to home folder when setting turned off
-            } else {
-                currentFolder = speedDialId;
-            }
             /*
             const entries = Object.entries(result);
             for (let e of entries) {
@@ -2666,6 +2661,12 @@ function init() {
         }
         const t3 = performance.now();
         getSpeedDialId().then(() => {
+            if (settings.rememberFolder && settings.currentFolder) {
+                currentFolder = settings.currentFolder;
+                //todo: reset to home folder when setting turned off
+            } else {
+                currentFolder = speedDialId;
+            }
             console.log("getSpeedDialId time: " + (performance.now() - t3) + "ms");
             applySettings().then(() => buildDialPages(speedDialId, currentFolder));
         }, error => {
