@@ -6,7 +6,7 @@
 
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
-const bookmarksContainer = document.getElementById('wrap');
+const bookmarksContainer = bookmarksContainerParent
 const foldersContainer = document.getElementById('folders');
 const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
@@ -140,7 +140,8 @@ let defaults = {
     defaultSort: 'first',
     textColor: '#ffffff',
     dialSize: 'medium',
-    dialRatio: 'wide'
+    dialRatio: 'wide',
+    currentFolder: null,
 };
 
 const debounce = (func, delay = 500, immediate = false) => {
@@ -179,6 +180,70 @@ function getBookmarks(folderId) {
         console.log(error);
     });
 }
+
+async function buildDialPages(speedDialId, currentFolderId) {
+    console.log(speedDialId, currentFolderId);
+    console.log("lets FUKIN goo");
+
+    async function getFolders(folderId) {
+        const children = await browser.bookmarks.getChildren(folderId);
+        let folderIds = [];
+        for (let child of children) {
+            if (!child.url && child.title) {
+                folderIds.push(child.id);
+            }
+        }
+        return folderIds;
+    }
+
+    async function getChildren(folderId) {
+        const children = await browser.bookmarks.getChildren(folderId);
+        return children;
+    }
+
+    // build folder header links
+    if (currentFolderId) {
+        folderLink(homeFolderTitle, speedDialId);
+    }
+
+    const t0 = performance.now();
+
+    // get the folders in the current folder
+    const folderIds = await getFolders(speedDialId);
+    for (let folderId of folderIds) {
+        if (folderId !== speedDialId) {
+            folderLink(folderId, folderId);
+        }
+    }
+    console.log("getFolders took " + (performance.now() - t0) + " milliseconds.");
+
+    let t1 = performance.now();
+
+    // build bookmark page for the current folder first, then we build the rest
+    if (currentFolderId) {
+        const children = await getChildren(currentFolderId);
+        if (children && children.length) {
+            await printBookmarks(children, currentFolderId);
+        }
+    }
+
+    console.log("getChildren for first page took " + (performance.now() - t1) + " milliseconds.");
+
+    const t2 = performance.now();
+
+    // get the rest. don't include the current folder again
+    const otherFolderIds = await getFolders(speedDialId);
+    for (let folderId of otherFolderIds) {
+        if (folderId !== currentFolderId) {
+            const children = await getChildren(folderId);
+            if (children && children.length) {
+                await printBookmarks(children, folderId);
+            }
+        }
+    }
+    console.log("getChildren for the rest took " + (performance.now() - t2) + " milliseconds.");
+}
+
 
 function removeBookmark(url) {
     let currentParent = currentFolder ? currentFolder : speedDialId
@@ -353,7 +418,9 @@ function folderLink(title, id) {
         currentFolder = id;
         scrollPos = 0;
         bookmarksContainerParent.scrollTop = scrollPos;
-        chrome.storage.local.set({ currentFolder: id });
+
+        settings.currentFolder = id;
+        browser.storage.local.set({ settings });
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
@@ -454,8 +521,145 @@ function refreshAllThumbnails() {
     });
 }
 
+
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
+function batchInsert(parent, fragment, batchSize = 50, onComplete) {
+    const nodes = Array.from(fragment.childNodes);
+    let index = 0;
+
+    function insertBatch() {
+        let slice = nodes.slice(index, index + batchSize);
+        parent.append(...slice);
+        index += batchSize;
+
+        if (index < nodes.length) {
+            requestAnimationFrame(insertBatch);
+        } else if (onComplete) {
+            requestAnimationFrame(onComplete); // Ensures it runs after DOM updates
+        }
+    }
+
+    insertBatch();
+}
+
 async function printBookmarks(bookmarks, parentId) {
+    if (!bookmarks) return;
+
+    let fragment = document.createDocumentFragment();
+    
+    // Collect URLs for batch thumbnail fetching
+    let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
+    
+    const t00 = performance.now();
+    let thumbnails = await browser.storage.local.get(urls);
+    console.log(`getThumbs from storage took ${performance.now() - t00} ms.`);
+
+    // Process bookmarks
+    for (let bookmark of bookmarks) {
+        if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
+
+        if (bookmark.url?.startsWith("http")) {
+            let images = thumbnails[bookmark.url] || {};
+            let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
+            let thumbBg = images.bgColor || null;
+
+            let a = document.createElement('a');
+            a.classList.add('tile');
+            a.href = bookmark.url;
+            a.setAttribute('data-id', bookmark.id);
+
+            let main = document.createElement('div');
+            main.classList.add('tile-main');
+
+            let content = document.createElement('div');
+            content.classList.add('tile-content');
+            content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
+            content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
+
+            let title = document.createElement('div');
+            title.classList.add('tile-title');
+if (!settings.showTitles) {
+    title.classList.add('hide');
+}
+            title.textContent = bookmark.title;
+
+            main.append(content, title);
+            a.appendChild(main);
+            fragment.appendChild(a);
+        }
+    }
+
+    // Create "New Dial" button
+    let aNewDial = document.createElement('a');
+    aNewDial.classList.add('tile', 'createDial');
+    aNewDial.onclick = () => {
+        hideSettings();
+        buildCreateDialModal(parentId);
+        modalShowEffect(createDialModalContent, createDialModal);
+    };
+
+    let main = document.createElement('div');
+    main.classList.add('tile-main');
+
+    let content = document.createElement('div');
+    content.classList.add('tile-content', 'createDial-content');
+    main.appendChild(content);
+    aNewDial.appendChild(main);
+    fragment.appendChild(aNewDial);
+
+    // Ensure the container exists
+    let folderContainerEl = document.getElementById(parentId);
+    if (!folderContainerEl) {
+        folderContainerEl = document.createElement('div');
+        folderContainerEl.id = parentId;
+        folderContainerEl.classList.add('container');
+        folderContainerEl.style.display = settings.rememberFolder && currentFolder === parentId ? 'flex' : 'none';
+        //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
+        folderContainerEl.style.opacity = "0"; // Always visible
+
+        if (settings.rememberFolder && currentFolder === parentId) {
+            setTimeout(() => {
+                folderContainerEl.style.opacity = "1";
+                animate();
+            }, 20);
+            document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
+        }
+        bookmarksContainerParent.append(folderContainerEl);
+    }
+
+    // Sortable configuration
+    const t0 = performance.now();
+    new Sortable(folderContainerEl, {
+        group: 'shared',
+        animation: 160,
+        ghostClass: 'selected',
+        dragClass: 'dragging',
+        filter: ".createDial",
+        delay: 500,
+        delayOnTouchOnly: true,
+        onMove: onMoveHandler,
+        onEnd: onEndHandler
+    });
+    console.log(`Sortable took ${performance.now() - t0} ms.`);
+
+    // Sorting optimization
+    const t2 = performance.now();
+    if (settings.defaultSort === "first") {
+        Array.from(fragment.childNodes).reverse().forEach(node => fragment.appendChild(node));
+    }
+    console.log(`Sorting took ${performance.now() - t2} ms.`);
+
+    // Optimize container update using batch insert
+    folderContainerEl.textContent = ''; // Clears old content efficiently
+    batchInsert(folderContainerEl, fragment, 50, () => {
+        folderContainerEl.style.opacity = "1"; 
+        animate(); 
+    });
+
+    bookmarksContainerParent.scrollTop = scrollPos;
+}
+// assumes 'bookmarks' param is content of a folder (from getBookmarks)
+async function printBookmarksOld(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
 
     //let folderContainer = document.createElement('div');
@@ -1534,6 +1738,7 @@ function saveSettings() {
     settings.dialRatio = dialRatioInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
+    settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
     applySettings();
 
@@ -2446,26 +2651,29 @@ function handleMessages(message) {
 
 function init() {
 
+    const t0 = performance.now();
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
     })
+    console.log("trnslations time: " + (performance.now() - t0) + "ms");
 
 
 
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs
     // todo: slow; lets get the current tab first
-    chrome.storage.local.get().then(result => {
+    chrome.storage.local.get('settings').then(result => {
         if (result) {
             if (result.settings) {
                 settings = Object.assign({}, defaults, result.settings);
             } else {
                 settings = defaults;
             }
-            if (settings.rememberFolder && result.currentFolder) {
-                currentFolder = result.currentFolder;
+            if (settings.rememberFolder && settings.currentFolder) {
+                currentFolder = settings.currentFolder;
                 //todo: reset to home folder when setting turned off
             }
+            /*
             const entries = Object.entries(result);
             for (let e of entries) {
                 //console.log(e);
@@ -2475,9 +2683,12 @@ function init() {
                     cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
                 }
             }
+            */
         }
+        const t3 = performance.now();
         getSpeedDialId().then(() => {
-            applySettings().then(() => getBookmarks(speedDialId));
+            console.log("getSpeedDialId time: " + (performance.now() - t3) + "ms");
+            applySettings().then(() => buildDialPages(speedDialId, currentFolder));
         }, error => {
             console.log(error);
         });
