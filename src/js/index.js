@@ -187,8 +187,14 @@ async function buildDialPages(speedDialId, currentFolderId) {
         return await browser.bookmarks.getChildren(folderId);
     }
 
-    // Get all subfolders
-    const folders = (await browser.bookmarks.getChildren(speedDialId)).filter(folder => !folder.url);
+    const children = await getChildren(speedDialId);
+    if (!children.length) {
+        // new install
+        addFolderButton.style.display = 'none';
+        return;
+    }
+
+    const folders = children.filter(folder => !folder.url);
 
     // Include speedDial folder
     folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
@@ -635,6 +641,8 @@ async function printBookmarks(bookmarks, parentId) {
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
+
+
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
 async function printBookmarksOld(bookmarks, parentId) {
@@ -2601,6 +2609,7 @@ const processRefresh = debounce(() => {
 
     //bookmarksContainer.style.opacity = "0";
 
+    // todo: this still work with the refactor?
     getBookmarks(speedDialId)
 }, 650, true);
 
