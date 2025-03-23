@@ -182,67 +182,48 @@ function getBookmarks(folderId) {
 }
 
 async function buildDialPages(speedDialId, currentFolderId) {
-    console.log(speedDialId, currentFolderId);
+    const t0 = performance.now();
     console.log("lets FUKIN goo");
 
     async function getChildren(folderId) {
-        const children = await browser.bookmarks.getChildren(folderId);
-        return children;
+        return await browser.bookmarks.getChildren(folderId);
     }
 
-    // build home folder link
-    folderLink(homeFolderTitle, speedDialId);
-
-    const t0 = performance.now();
-
-    // build subfolder header links
+    // Get all subfolders
     const folders = (await browser.bookmarks.getChildren(speedDialId)).filter(folder => !folder.url);
-    console.log(" >>> FOLDERS")
-    console.log(folders)
-    if (folders.length) {
-        // todo sort by folder index
-        for (let folder of folders) {
-            if (folder.id !== speedDialId) {
-                folderLink(folder.title, folder.id);
-            }
-        }
-    }
-    
-    console.log("getFolders took " + (performance.now() - t0) + " milliseconds.");
 
-    let t1 = performance.now();
+    // Include speedDial folder
+    folders.push({ id: speedDialId, title: homeFolderTitle, index: 0 });
 
-    // build bookmark page for the current folder first, then we build the rest
-    console.log(" >>> getting the children of the CURRENT FOLDER: ", currentFolderId);
-    
-    
-    const children = await getChildren(currentFolderId);
-    if (children && children.length) {
-        await printBookmarks(children, currentFolderId);
-    }
+    // sort folders
+    folders.sort((a, b) => {
+        return (a.index || 0) - (b.index || 0);
+    });
 
-    console.log(" >>> now lets get the rest. But wait! if were just getting children of the folders what about the root!")
-
-
-    console.log("getChildren for first page took " + (performance.now() - t1) + " milliseconds.");
-
-    const t2 = performance.now();
-
-    // get the rest. don't include the current folder again
-    
-    if (currentFolderId !== speedDialId) {
-        folders.push({ id: speedDialId, title: homeFolderTitle });
-    }
+    // Build folder header links
     for (let folder of folders) {
-        if (folder.id !== currentFolderId) {
-            const children = await getChildren(folder.id);
-            if (children && children.length) {
-                await printBookmarks(children, folder.id);
+        folderLink(folder.title, folder.id);
+    }
+
+    // Process the current folder's children first
+    const currentChildren = await getChildren(currentFolderId);
+    if (currentChildren.length) {
+        await printBookmarks(currentChildren, currentFolderId);
+    }
+
+    // Process the rest of the folders, if there are more. exclude the current folder
+    if (folders.length > 1) {
+        for (let folder of folders) {
+            if (folder.id !== currentFolderId) {
+                const children = await getChildren(folder.id);
+                if (children.length) {
+                    await printBookmarks(children, folder.id);
+                }
             }
         }
     }
 
-    console.log("getChildren for the rest took " + (performance.now() - t2) + " milliseconds.");
+    console.log("build dials took " + (performance.now() - t0) + " milliseconds.");
 }
 
 
