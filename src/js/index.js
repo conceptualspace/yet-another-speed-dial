@@ -1572,16 +1572,13 @@ function resizeThumb(dataURI) {
                 let ratio = height / this.height;
                 let width = Math.round(this.width * ratio);
 
-                let canvas = document.createElement('canvas');
+                let canvas = new OffscreenCanvas(width, height)
                 let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
-
-                canvas.width = width;
-                canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
                 // webp encoding falls back to png on firefox
-                const newDataURI = canvas.toDataURL('image/webp', 0.7);
+                const newDataURI = canvas.toDataURL('image/webp', 0.8);
                 resolve(newDataURI);
             } else {
                 resolve(dataURI);
