@@ -191,6 +191,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        printNewSetup();
         return;
     }
 
@@ -526,6 +527,58 @@ function batchInsert(parent, fragment, batchSize = 50, onComplete) {
     }
 
     insertBatch();
+}
+
+async function printNewSetup() {
+    console.log("new install")
+    let fragment = document.createDocumentFragment();
+
+    // Ensure the container exists
+    let folderContainerEl = document.getElementById(speedDialId);
+    if (!folderContainerEl) {
+        folderContainerEl = document.createElement('div');
+        folderContainerEl.id = speedDialId;
+        folderContainerEl.classList.add('container');
+        folderContainerEl.style.display = currentFolder === speedDialId ? 'flex' : 'none';
+        //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
+        folderContainerEl.style.opacity = "0";
+
+        if (currentFolder === speedDialId) {
+            setTimeout(() => {
+                folderContainerEl.style.opacity = "1";
+                animate();
+            }, 20);
+            document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
+        }
+        bookmarksContainerParent.append(folderContainerEl);
+    }
+
+    const noBookmarksDiv = document.createElement('div');
+    noBookmarksDiv.className = 'default-content';
+    noBookmarksDiv.id = 'noBookmarks';
+    noBookmarksDiv.innerHTML = `
+        <h1 class="default-content" data-locale="newInstall1">${browser.i18n.getMessage('newInstall1')}</h1>
+        <p class="default-content helpText" data-locale="newInstall2">${browser.i18n.getMessage('newInstall2')}</p>
+        <p class="default-content helpText" data-locale="newInstall3">${browser.i18n.getMessage('newInstall3')}</p>
+        <p class="default-content helpText" data-locale="newInstall4">${browser.i18n.getMessage('newInstall4')}</p>
+        <div class="cta-container">
+        <p id="splashImport" class="default-content helpText cta" >
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
+            Import
+        </p>
+        <p id="splashAddDial" class="default-content helpText cta" >
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
+        Add Site
+        </p>
+        </div>
+    `;
+    fragment.appendChild(noBookmarksDiv);
+
+    // Optimize container update using batch insert
+    folderContainerEl.textContent = ''; // Clears old content efficiently
+    batchInsert(folderContainerEl, fragment, 50)
+
+    bookmarksContainerParent.scrollTop = scrollPos;
 }
 
 async function printBookmarks(bookmarks, parentId) {
