@@ -182,9 +182,6 @@ function getBookmarks(folderId) {
 }
 
 async function buildDialPages(speedDialId, currentFolderId) {
-    const t0 = performance.now();
-    console.log("lets FUKIN goo");
-
     async function getChildren(folderId) {
         return await browser.bookmarks.getChildren(folderId);
     }
@@ -193,7 +190,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     const folders = (await browser.bookmarks.getChildren(speedDialId)).filter(folder => !folder.url);
 
     // Include speedDial folder
-    folders.push({ id: speedDialId, title: homeFolderTitle, index: 0 });
+    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
 
     // sort folders
     folders.sort((a, b) => {
@@ -222,8 +219,6 @@ async function buildDialPages(speedDialId, currentFolderId) {
             }
         }
     }
-
-    console.log("build dials took " + (performance.now() - t0) + " milliseconds.");
 }
 
 
