@@ -592,9 +592,7 @@ async function printBookmarks(bookmarks, parentId) {
     // Collect URLs for batch thumbnail fetching
     let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
     
-    const t00 = performance.now();
     let thumbnails = await browser.storage.local.get(urls);
-    console.log(`getThumbs from storage took ${performance.now() - t00} ms.`);
 
     // Process bookmarks
     for (let bookmark of bookmarks) {
@@ -670,7 +668,6 @@ async function printBookmarks(bookmarks, parentId) {
     }
 
     // Sortable configuration
-    const t0 = performance.now();
     new Sortable(folderContainerEl, {
         group: 'shared',
         animation: 160,
@@ -682,14 +679,11 @@ async function printBookmarks(bookmarks, parentId) {
         onMove: onMoveHandler,
         onEnd: onEndHandler
     });
-    console.log(`Sortable took ${performance.now() - t0} ms.`);
 
     // Sorting optimization
-    const t2 = performance.now();
     if (settings.defaultSort === "first") {
         Array.from(fragment.childNodes).reverse().forEach(node => fragment.appendChild(node));
     }
-    console.log(`Sorting took ${performance.now() - t2} ms.`);
 
     // Optimize container update using batch insert
     folderContainerEl.textContent = ''; // Clears old content efficiently
@@ -1323,7 +1317,7 @@ function saveBookmarkSettings() {
         selectedImageSrc = customCarousel.children[0].src;
         bgColor = getBgColor(customCarousel.children[0]);
         if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
-            console.log("colors dont match, using the picker!")
+            //console.log("colors dont match, using the picker!")
             bgColor = hexToCssGradient(colorPickerColor);
         } else {
             bgColor = rgbaToCssGradient(bgColor);
@@ -2703,7 +2697,7 @@ function getSpeedDialId() {
 }
 
 function handleMessages(message) {
-    console.log(message);
+    //console.log(message);
     if (!message.target === 'newtab') {
         return
     }
@@ -2726,13 +2720,9 @@ function onResize() {
 
 function init() {
 
-    const t0 = performance.now();
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
     })
-    console.log("trnslations time: " + (performance.now() - t0) + "ms");
-
-
 
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs
@@ -2756,7 +2746,7 @@ function init() {
             }
             */
         }
-        const t3 = performance.now();
+
         getSpeedDialId().then(() => {
             if (settings.rememberFolder && settings.currentFolder) {
                 currentFolder = settings.currentFolder;
@@ -2764,7 +2754,6 @@ function init() {
             } else {
                 currentFolder = speedDialId;
             }
-            console.log("getSpeedDialId time: " + (performance.now() - t3) + "ms");
             applySettings().then(() => buildDialPages(speedDialId, currentFolder));
         }, error => {
             console.log(error);
