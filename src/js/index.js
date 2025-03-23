@@ -223,10 +223,6 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     console.log(" >>> now lets get the rest. But wait! if were just getting children of the folders what about the root!")
 
-    if (currentFolderId !== speedDialId) {
-        // root folder not included in the folders list, so we get them here
-        await printBookmarks(children, speedDialId);
-    }
 
     console.log("getChildren for first page took " + (performance.now() - t1) + " milliseconds.");
 
@@ -234,16 +230,18 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     // get the rest. don't include the current folder again
     
-    if (folders.length) {
-        for (let folder of folders) {
-            if (folder.id !== currentFolderId) {
-                const children = await getChildren(folder.id);
-                if (children && children.length) {
-                    await printBookmarks(children, folder.id);
-                }
+    if (currentFolderId !== speedDialId) {
+        folders.push({ id: speedDialId, title: homeFolderTitle });
+    }
+    for (let folder of folders) {
+        if (folder.id !== currentFolderId) {
+            const children = await getChildren(folder.id);
+            if (children && children.length) {
+                await printBookmarks(children, folder.id);
             }
         }
     }
+
     console.log("getChildren for the rest took " + (performance.now() - t2) + " milliseconds.");
 }
 
