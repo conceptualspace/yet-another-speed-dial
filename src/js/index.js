@@ -197,7 +197,10 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     // build subfolder header links
     const folders = (await browser.bookmarks.getChildren(speedDialId)).filter(folder => !folder.url);
+    console.log(" >>> FOLDERS")
+    console.log(folders)
     if (folders.length) {
+        // todo sort by folder index
         for (let folder of folders) {
             if (folder.id !== speedDialId) {
                 folderLink(folder.title, folder.id);
@@ -210,9 +213,19 @@ async function buildDialPages(speedDialId, currentFolderId) {
     let t1 = performance.now();
 
     // build bookmark page for the current folder first, then we build the rest
+    console.log(" >>> getting the children of the CURRENT FOLDER: ", currentFolderId);
+    
+    
     const children = await getChildren(currentFolderId);
     if (children && children.length) {
         await printBookmarks(children, currentFolderId);
+    }
+
+    console.log(" >>> now lets get the rest. But wait! if were just getting children of the folders what about the root!")
+
+    if (currentFolderId !== speedDialId) {
+        // root folder not included in the folders list, so we get them here
+        await printBookmarks(children, speedDialId);
     }
 
     console.log("getChildren for first page took " + (performance.now() - t1) + " milliseconds.");
@@ -220,6 +233,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     const t2 = performance.now();
 
     // get the rest. don't include the current folder again
+    
     if (folders.length) {
         for (let folder of folders) {
             if (folder.id !== currentFolderId) {
@@ -403,6 +417,8 @@ function folderLink(title, id) {
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
+        console.log("clicked link")
+        console.log("going to show folder: ", id);
         showFolder(id);
         currentFolder = id;
         scrollPos = 0;
