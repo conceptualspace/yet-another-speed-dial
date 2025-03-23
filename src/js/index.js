@@ -1425,6 +1425,7 @@ function ease(progress) {
 }
 
 const animate = debounce(() => {
+    requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
     let currentParent;
     if (currentFolder) {
         currentParent = currentFolder
@@ -1432,19 +1433,28 @@ const animate = debounce(() => {
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     const total = nodes.length;
 
-    TweenMax.set(nodes, { lazy: true, x: "+=0" });
+    if (!nodes.length) return;
+    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
 
+    const nodePositions = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
-        const transform = node._gsTransform;
-        const x = node.offsetLeft;
-        const y = node.offsetTop;
-        boxes[i] = { node, transform, x, y };
+        nodePositions.push({
+            node,
+            transform: node._gsTransform,
+            x: node.offsetLeft,
+            y: node.offsetTop
+        });
+    }
+
+    for (let i = 0; i < total; i++) {
+        boxes[i] = nodePositions[i];
     }
 
     layout();
 
-}, 500);
+    });
+}, 300)
 
 function readURL(input) {
     if (input.files && input.files[0]) {
