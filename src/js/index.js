@@ -205,6 +205,9 @@ async function buildDialPages(speedDialId, currentFolderId) {
         return (a.index || 0) - (b.index || 0);
     });
 
+    // clear any existing data so we can refresh
+    foldersContainer.innerHTML = '';
+
     // Build folder header links
     for (let folder of folders) {
         folderLink(folder.title, folder.id);
@@ -2664,7 +2667,8 @@ const processRefresh = debounce(() => {
     //bookmarksContainer.style.opacity = "0";
 
     // todo: this still work with the refactor?
-    getBookmarks(speedDialId)
+    //getBookmarks(speedDialId)
+    buildDialPages(speedDialId, currentFolder)
 }, 650, true);
 
 function getSpeedDialId() {
@@ -2702,7 +2706,7 @@ function getSpeedDialId() {
 }
 
 function handleMessages(message) {
-    //console.log(m);
+    console.log(message);
     if (!message.target === 'newtab') {
         return
     }
