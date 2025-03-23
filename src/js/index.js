@@ -185,17 +185,6 @@ async function buildDialPages(speedDialId, currentFolderId) {
     console.log(speedDialId, currentFolderId);
     console.log("lets FUKIN goo");
 
-    async function getFolders(folderId) {
-        const children = await browser.bookmarks.getChildren(folderId);
-        let folderIds = [];
-        for (let child of children) {
-            if (!child.url && child.title) {
-                folderIds.push(child.id);
-            }
-        }
-        return folderIds;
-    }
-
     async function getChildren(folderId) {
         const children = await browser.bookmarks.getChildren(folderId);
         return children;
@@ -207,12 +196,15 @@ async function buildDialPages(speedDialId, currentFolderId) {
     const t0 = performance.now();
 
     // build subfolder header links
-    const folders = await browser.bookmarks.getChildren(speedDialId);
-    for (let folder of folders) {
-        if (!folder.url && folder.id !== speedDialId) {
-            folderLink(folder.title, folder.id);
+    const folders = (await browser.bookmarks.getChildren(speedDialId)).filter(folder => !folder.url);
+    if (folders.length) {
+        for (let folder of folders) {
+            if (folder.id !== speedDialId) {
+                folderLink(folder.title, folder.id);
+            }
         }
     }
+    
     console.log("getFolders took " + (performance.now() - t0) + " milliseconds.");
 
     let t1 = performance.now();
@@ -228,11 +220,13 @@ async function buildDialPages(speedDialId, currentFolderId) {
     const t2 = performance.now();
 
     // get the rest. don't include the current folder again
-    for (let folder of folders) {
-        if (!folder.url && folder.id !== currentFolderId) {
-            const children = await getChildren(folder.id);
-            if (children && children.length) {
-                await printBookmarks(children, folder.id);
+    if (folders.length) {
+        for (let folder of folders) {
+            if (folder.id !== currentFolderId) {
+                const children = await getChildren(folder.id);
+                if (children && children.length) {
+                    await printBookmarks(children, folder.id);
+                }
             }
         }
     }
@@ -573,9 +567,9 @@ async function printBookmarks(bookmarks, parentId) {
 
             let title = document.createElement('div');
             title.classList.add('tile-title');
-if (!settings.showTitles) {
-    title.classList.add('hide');
-}
+            if (!settings.showTitles) {
+                title.classList.add('hide');
+            }
             title.textContent = bookmark.title;
 
             main.append(content, title);
@@ -1429,10 +1423,8 @@ function ease(progress) {
 
 const animate = debounce(() => {
     let currentParent;
-    if (currentFolder && currentFolder !== speedDialId) {
+    if (currentFolder) {
         currentParent = currentFolder
-    } else {
-        currentParent = "wrap"
     }
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     const total = nodes.length;
