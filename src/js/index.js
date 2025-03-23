@@ -594,9 +594,9 @@ async function printBookmarks(bookmarks, parentId) {
         folderContainerEl.classList.add('container');
         folderContainerEl.style.display = currentFolder === parentId ? 'flex' : 'none';
         //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
-        folderContainerEl.style.opacity = "0"; // Always visible
+        folderContainerEl.style.opacity = "0";
 
-        if (settings.rememberFolder && currentFolder === parentId) {
+        if (currentFolder === parentId) {
             setTimeout(() => {
                 folderContainerEl.style.opacity = "1";
                 animate();
@@ -630,10 +630,7 @@ async function printBookmarks(bookmarks, parentId) {
 
     // Optimize container update using batch insert
     folderContainerEl.textContent = ''; // Clears old content efficiently
-    batchInsert(folderContainerEl, fragment, 50, () => {
-        folderContainerEl.style.opacity = "1"; 
-        animate(); 
-    });
+    batchInsert(folderContainerEl, fragment, 50)
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
