@@ -1373,27 +1373,42 @@ function layout(force = false) {
         windowSize = window.innerWidth;
         containerSize = getComputedStyle(bookmarksContainer).maxWidth;
 
-        let b = [];
+        let nodesToAnimate = [];
+        let positions = [];
 
+        // avoid layout thrashing
+        // batch reads
         for (let i = 0; i < boxes.length; i++) {
             let box = boxes[i];
-            const lastX = box.x;
-            const lastY = box.y;
-            // todo: we can make some assumptions to calculate this faster...
-            box.x = box.node.offsetLeft;
-            box.y = box.node.offsetTop;
-            if (lastX !== box.x || lastY !== box.y) {
-                const x = box.transform.x + lastX - box.x;
-                const y = box.transform.y + lastY - box.y;
-                // Tween to 0 to remove the transforms
-                TweenMax.set(box.node, { x, y });
-                b.push(box.node);
-            }
+            positions[i] = { 
+                node: box.node,
+                x: box.node.offsetLeft,
+                y: box.node.offsetTop,
+                lastX: box.x,
+                lastY: box.y
+            };
         }
+
+        // batch writes
+        for (let i = 0; i < boxes.length; i++) {
+            let box = positions[i];
+            if (box.lastX !== box.x || box.lastY !== box.y || force) {
+                const x = boxes[i].transform.x + box.lastX - box.x;
+                const y = boxes[i].transform.y + box.lastY - box.y;
+                TweenMax.set(box.node, { x, y });
+                nodesToAnimate.push(box.node);
+            }
+            boxes[i].x = box.x;
+            boxes[i].y = box.y;
+        }
+
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
-        let duration = layoutFolder ? 0 : 0.7;
-        TweenMax.staggerTo(b, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+        if (nodesToAnimate.length > 0 || force) {
+            let duration = layoutFolder ? 0 : 0.7;
+            TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+        }
+
         layoutFolder = false;
     }
 }
