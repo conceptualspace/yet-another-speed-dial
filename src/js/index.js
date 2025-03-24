@@ -473,10 +473,14 @@ function removeFolder() {
         if (!folders.length) {
             document.getElementById('homeFolderLink').remove();
         }
-        if (document.getElementById(targetFolder).style.display === 'flex') {
+
+        if (currentFolder === targetFolder) {
+            currentFolder = speedDialId;;
+            bookmarksContainerParent.scrollTop = scrollPos;
             showFolder(speedDialId);
+            settings.currentFolder = speedDialId;
+            browser.storage.local.set({ settings })
         }
-        document.getElementById(targetFolder).remove();
     });
 }
 
