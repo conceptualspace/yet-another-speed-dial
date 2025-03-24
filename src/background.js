@@ -89,8 +89,8 @@ async function handleGetThumbs(data, batchSize = 25) {
             });
         }
 
-        // Short delay to avoid overwhelming message passing
-       // await new Promise(resolve => setTimeout(resolve, 5));
+    	// Short delay to avoid overwhelming message passing
+    	await new Promise(resolve => setTimeout(resolve, 10));
     }
 }
 
