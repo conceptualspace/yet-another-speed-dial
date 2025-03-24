@@ -2725,8 +2725,6 @@ function setBackgroundImage(thumb) {
         let id = thumb.parentId + "-" + thumb.id;
         let element = document.getElementById(id);
 
-        console.log(thumb.thumbnail)
-
         if (element) {
             try {
                 //await preloadImage(thumb.thumbnail);
