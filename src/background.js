@@ -75,7 +75,7 @@ async function handleGetThumbs(data, batchSize = 50) {
                     id: bookmark.id,
                     parentId: bookmark.parentId,
                     url: bookmark.url,
-                    thumbnail: storedData.thumbnails[bookmark.thumbIndex || 0],
+                    thumbnail: storedData.thumbnails[storedData.thumbIndex || 0],
                     bgColor: storedData.bgColor
                 };
             })
