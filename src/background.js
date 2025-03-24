@@ -89,8 +89,9 @@ async function handleGetThumbs(data, batchSize = 50) {
             });
         }
 
+		// todo: maybe replace this with a message port so we dont blast every tab
     	// Short delay to avoid overwhelming message passing
-    	await new Promise(resolve => setTimeout(resolve, 10));
+    	await new Promise(resolve => setTimeout(resolve, 5));
     }
 }
 

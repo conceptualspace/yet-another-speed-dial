@@ -2731,10 +2731,7 @@ function preloadImage(url) {
 }
 
 function setBackgroundImage(thumb) {
-    requestAnimationFrame(async () => {
-        let id = thumb.parentId + "-" + thumb.id;
-        let element = document.getElementById(id);
-
+    const setImage = async (element) => {
         if (element) {
             try {
                 //await preloadImage(thumb.thumbnail);
@@ -2746,6 +2743,78 @@ function setBackgroundImage(thumb) {
                 console.error('Error preloading image:', error);
             }
         }
+    };
+
+    const id = thumb.parentId + "-" + thumb.id;
+    let element = document.getElementById(id);
+
+    if (element) {
+        setImage(element);
+    } else {
+        const observer = new MutationObserver((mutations, obs) => {
+            element = document.getElementById(id);
+            if (element) {
+                setImage(element);
+                obs.disconnect();
+            }
+        });
+
+        const parentElement = document.getElementById(thumb.parentId);
+
+        observer.observe(parentElement, {
+            childList: true,
+            subtree: true
+        });
+    }
+}
+
+function setBackgroundImages(thumbnails) {
+    const elementsToUpdate = [];
+    const observers = new Map();
+
+    thumbnails.forEach(thumb => {
+        const id = thumb.parentId + "-" + thumb.id;
+        let element = document.getElementById(id);
+
+        if (element) {
+            elementsToUpdate.push({ element, thumb });
+        } else {
+            let observer = observers.get(thumb.parentId);
+            if (!observer) {
+                const parentElement = document.getElementById(thumb.parentId);
+                if (!parentElement) return; // Skip if parent is missing
+
+                observer = new MutationObserver((mutations, obs) => {
+                    thumbnails.forEach(t => {
+                        const el = document.getElementById(t.parentId + "-" + t.id);
+                        if (el) {
+                            elementsToUpdate.push({ element: el, thumb: t });
+                        }
+                    });
+
+                    if (elementsToUpdate.length) {
+                        batchApplyImages(elementsToUpdate);
+                        obs.disconnect();
+                    }
+                });
+
+                observer.observe(parentElement, { childList: true, subtree: true });
+                observers.set(thumb.parentId, observer);
+            }
+        }
+    });
+
+    if (elementsToUpdate.length) {
+        batchApplyImages(elementsToUpdate);
+    }
+}
+
+function batchApplyImages(elements) {
+    requestAnimationFrame(() => {
+        elements.forEach(({ element, thumb }) => {
+            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
+            element.style.backgroundColor = "unset";
+        });
     });
 }
 
@@ -2763,7 +2832,7 @@ function handleMessages(message) {
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
         //console.log(message.data);
         // todo: background not working?
-        message.data.forEach(thumb => setBackgroundImage(thumb));
+        setBackgroundImages(message.data);
         
     }
 }
