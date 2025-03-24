@@ -15,6 +15,7 @@ chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
 chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 
+chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
@@ -162,6 +163,17 @@ function handleContextMenuClick(info, tab) {
 	if (info.menuItemId === 'addToSpeedDial') {
         createBookmarkFromContextMenu(tab)
     }
+}
+
+function handleBrowserAction(tab) {
+	// if tab is a web page bookmark it to speed dial
+	if (tab.url && (tab.url.startsWith('https://') || tab.url.startsWith('http://'))) {
+		createBookmarkFromContextMenu(tab);
+		chrome.action.setBadgeText({text:"✔", tabId:tab.id})
+		chrome.action.setBadgeBackgroundColor({ color: '#13ac4e' }); // Green color
+	} else {
+		//chrome.tabs.create({ url: "https://github.com/conceptualspace/yet-another-speed-dial" });
+	}
 }
 
 
