@@ -2727,7 +2727,7 @@ function setBackgroundImage(thumb) {
 
         if (element) {
             try {
-                await preloadImage(thumb.thumbnail);
+                //await preloadImage(thumb.thumbnail);
                 element.style.backgroundImage = `url(${thumb.thumbnail})`;
                 element.style.backgroundColor = thumb.bgColor;
             } catch (error) {
