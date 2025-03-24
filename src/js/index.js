@@ -209,8 +209,10 @@ async function buildDialPages(speedDialId, currentFolderId) {
     foldersContainer.innerHTML = '';
 
     // Build folder header links
-    for (let folder of folders) {
-        folderLink(folder.title, folder.id);
+    if (folders && folders.length > 1) {
+        for (let folder of folders) {
+            folderLink(folder.title, folder.id);
+        }
     }
 
     // Process the current folder's children first
