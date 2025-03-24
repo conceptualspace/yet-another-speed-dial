@@ -217,18 +217,15 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     // Process the current folder's children first
     const currentChildren = await getChildren(currentFolderId);
-    if (currentChildren.length) {
-        await printBookmarks(currentChildren, currentFolderId);
-    }
+    await printBookmarks(currentChildren, currentFolderId);
+
 
     // Process the rest of the folders, if there are more. exclude the current folder
     if (folders.length > 1) {
         for (let folder of folders) {
             if (folder.id !== currentFolderId) {
                 const children = await getChildren(folder.id);
-                if (children.length) {
-                    await printBookmarks(children, folder.id);
-                }
+                await printBookmarks(children, folder.id);
             }
         }
     }
