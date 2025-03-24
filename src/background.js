@@ -53,7 +53,7 @@ async function handleMessages(message) {
 	}
 }
 
-async function handleGetThumbs(data, batchSize = 25) {
+async function handleGetThumbs(data, batchSize = 50) {
     let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http"));
 
     if (!bookmarks.length) return;
