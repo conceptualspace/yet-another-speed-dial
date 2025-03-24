@@ -52,30 +52,44 @@ async function handleMessages(message) {
 	}
 }
 
-async function handleGetThumbs(data) {
-    let bookmarks = data;
+async function handleGetThumbs(data, batchSize = 25) {
+    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http"));
 
-    if (bookmarks && bookmarks.length) {
-        for (let bookmark of bookmarks) {
-            if (bookmark.url?.startsWith("http")) {
-                let result = await chrome.storage.local.get(bookmark.url);
-                if (result[bookmark.url]) {
-                    let thumb = {
-                        id: bookmark.id,
-                        parentId: bookmark.parentId,
-                        url: bookmark.url,
-                        thumbnail: result[bookmark.url].thumbnails[bookmark.thumbIndex || 0],
-                        bgColor: result[bookmark.url].bgColor
-                    };
+    if (!bookmarks.length) return;
 
-                    chrome.runtime.sendMessage({
-                        target: 'newtab',
-                        type: 'thumb',
-                        data: { thumb }
-                    });
-                }
-            }
+    // Fetch all thumbnails in batches
+    for (let i = 0; i < bookmarks.length; i += batchSize) {
+        let batch = bookmarks.slice(i, i + batchSize);
+
+        // Get multiple URLs at once
+        let urls = batch.map(bookmark => bookmark.url);
+        let results = await chrome.storage.local.get(urls);
+
+        let thumbs = batch
+            .map(bookmark => {
+                let storedData = results[bookmark.url];
+                if (!storedData) return null;
+
+                return {
+                    id: bookmark.id,
+                    parentId: bookmark.parentId,
+                    url: bookmark.url,
+                    thumbnail: storedData.thumbnails[bookmark.thumbIndex || 0],
+                    bgColor: storedData.bgColor
+                };
+            })
+            .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
+
+        if (thumbs.length) {
+            chrome.runtime.sendMessage({
+                target: 'newtab',
+                type: 'thumbBatch',
+                data: thumbs
+            });
         }
+
+        // Short delay to avoid overwhelming message passing
+       // await new Promise(resolve => setTimeout(resolve, 5));
     }
 }
 

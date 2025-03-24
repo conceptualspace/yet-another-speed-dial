@@ -2746,12 +2746,12 @@ function handleMessages(message) {
     if (message.data.refresh) {
         hideToast();
         processRefresh();
-    } else if(message.type === 'thumb') {
+    } else if(message.type === 'thumbBatch') {
         // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
         //console.log(message.data);
         // todo: background not working?
-        setBackgroundImage(message.data.thumb);
+        message.data.forEach(thumb => setBackgroundImage(thumb));
         
     }
 }
