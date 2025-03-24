@@ -2725,11 +2725,15 @@ function setBackgroundImage(thumb) {
         let id = thumb.parentId + "-" + thumb.id;
         let element = document.getElementById(id);
 
+        console.log(thumb.thumbnail)
+
         if (element) {
             try {
                 //await preloadImage(thumb.thumbnail);
-                element.style.backgroundImage = `url(${thumb.thumbnail})`;
-                element.style.backgroundColor = thumb.bgColor;
+                // todo: use a solid color not this gradient shit failed experiment
+                element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
+                // unset the existing bg color
+                element.style.backgroundColor = "unset";
             } catch (error) {
                 console.error('Error preloading image:', error);
             }
