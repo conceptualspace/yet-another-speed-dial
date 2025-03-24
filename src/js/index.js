@@ -590,18 +590,28 @@ async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
     
     // Collect URLs for batch thumbnail fetching
-    let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
+    //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
     
-    let thumbnails = await browser.storage.local.get(urls);
+    // lets message the background script to do it
+
+    // reverse the bookmarks if settings.defaultSort === "first")
+    // todo: gotta reposition the new dial button
+    if (settings.defaultSort === "first") {
+        bookmarks = bookmarks.reverse();
+    }
+    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
+
+    
+    //let thumbnails = await browser.storage.local.get(urls);
 
     // Process bookmarks
     for (let bookmark of bookmarks) {
         if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
 
         if (bookmark.url?.startsWith("http")) {
-            let images = thumbnails[bookmark.url] || {};
-            let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
-            let thumbBg = images.bgColor || null;
+            //let images = thumbnails[bookmark.url] || {};
+            //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
+            //let thumbBg = images.bgColor || null;
 
             let a = document.createElement('a');
             a.classList.add('tile');
@@ -612,9 +622,11 @@ async function printBookmarks(bookmarks, parentId) {
             main.classList.add('tile-main');
 
             let content = document.createElement('div');
+            content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
             content.classList.add('tile-content');
-            content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
-            content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
+            //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
+            //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
+            content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
 
             let title = document.createElement('div');
             title.classList.add('tile-title');
@@ -680,10 +692,12 @@ async function printBookmarks(bookmarks, parentId) {
         onEnd: onEndHandler
     });
 
-    // Sorting optimization
+    // Sorting optimization (this is done now?)
+    /*
     if (settings.defaultSort === "first") {
         Array.from(fragment.childNodes).reverse().forEach(node => fragment.appendChild(node));
     }
+        */
 
     // Optimize container update using batch insert
     folderContainerEl.textContent = ''; // Clears old content efficiently
@@ -2696,6 +2710,33 @@ function getSpeedDialId() {
     });
 }
 
+// Preload the image before setting the background
+function preloadImage(url) {
+    const img = new Image();
+    img.src = url;
+    return new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+    });
+}
+
+function setBackgroundImage(thumb) {
+    requestAnimationFrame(async () => {
+        let id = thumb.parentId + "-" + thumb.id;
+        let element = document.getElementById(id);
+
+        if (element) {
+            try {
+                await preloadImage(thumb.thumbnail);
+                element.style.backgroundImage = `url(${thumb.thumbnail})`;
+                element.style.backgroundColor = thumb.bgColor;
+            } catch (error) {
+                console.error('Error preloading image:', error);
+            }
+        }
+    });
+}
+
 function handleMessages(message) {
     //console.log(message);
     if (!message.target === 'newtab') {
@@ -2705,6 +2746,13 @@ function handleMessages(message) {
     if (message.data.refresh) {
         hideToast();
         processRefresh();
+    } else if(message.type === 'thumb') {
+        // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
+        // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
+        //console.log(message.data);
+        // todo: background not working?
+        setBackgroundImage(message.data.thumb);
+        
     }
 }
 

@@ -43,9 +43,40 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
+		case 'getThumbs':
+			handleGetThumbs(message.data);
+			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
+			break;
 	}
+}
+
+async function handleGetThumbs(data) {
+    let bookmarks = data;
+
+    if (bookmarks && bookmarks.length) {
+        for (let bookmark of bookmarks) {
+            if (bookmark.url?.startsWith("http")) {
+                let result = await chrome.storage.local.get(bookmark.url);
+                if (result[bookmark.url]) {
+                    let thumb = {
+                        id: bookmark.id,
+                        parentId: bookmark.parentId,
+                        url: bookmark.url,
+                        thumbnail: result[bookmark.url].thumbnails[bookmark.thumbIndex || 0],
+                        bgColor: result[bookmark.url].bgColor
+                    };
+
+                    chrome.runtime.sendMessage({
+                        target: 'newtab',
+                        type: 'thumb',
+                        data: { thumb }
+                    });
+                }
+            }
+        }
+    }
 }
 
 async function handleBookmarkChanged(id, info) {

@@ -12,6 +12,13 @@
 
 }
 
+/* Apply a smooth transition for the background image */
+.thumb {
+    transition: background-image 0.5s ease-in-out, background-color 0.5s ease-in-out;
+    background-size: cover;
+    background-position: center;
+  }
+
 .buttonContainer {
     display: flex;
     justify-content: space-between;
