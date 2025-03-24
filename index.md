@@ -4,6 +4,9 @@ If your question is not answered below or you wish to file a bug report, please 
 
 ## FAQ
 
+### How do I add a Speed Dial?
+Just bookmark/favorite a site to your *Speed Dial* folder -- from the browser toolbar, a page context menu, or keyboard shortcut (usually Ctrl+D). You can also add a site directly from the new tab page. YASD will fetch thumbnails for it automatically if it can.
+
 ### How do I make changes to a Speed Dial?
 Right-click the dial and select Edit to change the image, title, or URL.
 
