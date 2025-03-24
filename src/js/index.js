@@ -587,64 +587,7 @@ async function printNewSetup() {
     bookmarksContainerParent.scrollTop = scrollPos;
 }
 
-async function printBookmarks(bookmarks, parentId) {
-    if (!bookmarks) return;
-
-    let fragment = document.createDocumentFragment();
-    
-    // Collect URLs for batch thumbnail fetching
-    //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
-    
-    // lets message the background script to do it
-
-    // reverse the bookmarks if settings.defaultSort === "first")
-    // todo: gotta reposition the new dial button
-    if (settings.defaultSort === "first") {
-        bookmarks = bookmarks.reverse();
-    }
-    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
-
-    
-    //let thumbnails = await browser.storage.local.get(urls);
-
-    // Process bookmarks
-    for (let bookmark of bookmarks) {
-        if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
-
-        if (bookmark.url?.startsWith("http")) {
-            //let images = thumbnails[bookmark.url] || {};
-            //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
-            //let thumbBg = images.bgColor || null;
-
-            let a = document.createElement('a');
-            a.classList.add('tile');
-            a.href = bookmark.url;
-            a.setAttribute('data-id', bookmark.id);
-
-            let main = document.createElement('div');
-            main.classList.add('tile-main');
-
-            let content = document.createElement('div');
-            content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
-            content.classList.add('tile-content');
-            //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
-            //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
-            content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
-
-            let title = document.createElement('div');
-            title.classList.add('tile-title');
-            if (!settings.showTitles) {
-                title.classList.add('hide');
-            }
-            title.textContent = bookmark.title;
-
-            main.append(content, title);
-            a.appendChild(main);
-            fragment.appendChild(a);
-        }
-    }
-
-    // Create "New Dial" button
+function createNewDialButton(parentId) {
     let aNewDial = document.createElement('a');
     aNewDial.classList.add('tile', 'createDial');
     aNewDial.onclick = () => {
@@ -660,7 +603,71 @@ async function printBookmarks(bookmarks, parentId) {
     content.classList.add('tile-content', 'createDial-content');
     main.appendChild(content);
     aNewDial.appendChild(main);
-    fragment.appendChild(aNewDial);
+
+    return aNewDial;
+}
+
+async function printBookmarks(bookmarks, parentId) {
+    let fragment = document.createDocumentFragment();
+
+    // Collect URLs for batch thumbnail fetching
+    //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
+
+    // lets message the background script to do it  
+    
+    // reverse the bookmarks if settings.defaultSort === "first")
+    if (settings.defaultSort === "first") {
+        bookmarks = bookmarks.reverse();
+    }
+    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
+    //let thumbnails = await browser.storage.local.get(urls);
+
+    // Process bookmarks
+    if (bookmarks) {
+        for (let bookmark of bookmarks) {
+            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
+
+            if (bookmark.url?.startsWith("http")) {
+                //let images = thumbnails[bookmark.url] || {};
+                //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
+                //let thumbBg = images.bgColor || null;
+
+                let a = document.createElement('a');
+                a.classList.add('tile');
+                a.href = bookmark.url;
+                a.setAttribute('data-id', bookmark.id);
+
+                let main = document.createElement('div');
+                main.classList.add('tile-main');
+
+                let content = document.createElement('div');
+                content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
+                content.classList.add('tile-content');
+                //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
+                //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
+                content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
+
+                let title = document.createElement('div');
+                title.classList.add('tile-title');
+                if (!settings.showTitles) {
+                    title.classList.add('hide');
+                }
+                title.textContent = bookmark.title;
+
+                main.append(content, title);
+                a.appendChild(main);
+                fragment.appendChild(a);
+            }
+        }
+    }
+
+    let newDialButton = createNewDialButton(parentId);
+
+    if (settings.defaultSort !== "first") {
+        fragment.appendChild(newDialButton);
+    } else {
+        fragment.insertBefore(newDialButton, fragment.firstChild);
+    }
 
     // Ensure the container exists
     let folderContainerEl = document.getElementById(parentId);
