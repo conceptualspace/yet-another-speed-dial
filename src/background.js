@@ -155,6 +155,9 @@ async function handleBookmarkRemoved(id, info) {
 		await chrome.storage.local.remove(info.node.url).catch((err) => {
 			console.log(err)
 		});
+	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
+		// folder removed, refresh the tab?
+		//refreshOpen()
 	}
 	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
 	//refreshOpen();

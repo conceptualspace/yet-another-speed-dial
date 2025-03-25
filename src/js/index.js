@@ -467,10 +467,11 @@ function refreshThumbnails(url) {
 function removeFolder() {
     browser.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
-        targetFolderLink.remove();
+        targetFolderLink?.remove();
         folders.splice(folders.indexOf(targetFolder), 1);
         if (!folders.length) {
-            document.getElementById('homeFolderLink').remove();
+            //document.getElementById('homeFolderLink').remove();
+            // todo: better manager this state
         }
 
         if (currentFolder === targetFolder) {
@@ -480,6 +481,9 @@ function removeFolder() {
             settings.currentFolder = speedDialId;
             browser.storage.local.set({ settings })
         }
+
+        // todo: clean up this node or do it on refresh
+        // document.getElementById(targetFolder).remove();
     });
 }
 
