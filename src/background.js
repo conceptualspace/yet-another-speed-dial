@@ -230,7 +230,7 @@ async function handleRefreshAll(data) {
 				}
 			}
 		} else {
-			refreshOpen();
+			//refreshOpen(); // not needed here it happens when thumbnails are saved
 		}
 	}
 

@@ -712,7 +712,7 @@ async function printBookmarks(bookmarks, parentId) {
         */
 
     // Optimize container update using batch insert
-    folderContainerEl.textContent = ''; // Clears old content efficiently
+    folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
     batchInsert(folderContainerEl, fragment, 50)
 
     bookmarksContainerParent.scrollTop = scrollPos;
