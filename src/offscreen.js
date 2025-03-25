@@ -337,12 +337,13 @@ async function fetchImages(url, quickRefresh) {
         "twitter.com"
     ];
 
-    const hostname = new URL(url).hostname;
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
 
     let images = [];
 
     // default favicons
-    images.push(new URL(url).origin + "/favicon.ico")
+    images.push(urlObj.origin + "/favicon.ico")
     // amazon hack
     if (hostname.includes('amazon')) {
         images.push('img/amazon.com.png');
@@ -351,22 +352,26 @@ async function fetchImages(url, quickRefresh) {
             return(images);
         }
     } else {
-        images.push('https://logo.clearbit.com/' + new URL(url).hostname + '?size=256');
+        images.push('https://logo.clearbit.com/' + hostname + '?size=256');
     }
 
     // avoid duplicates and preserve the precedence of images
     function insert(imageUrl) {
         let existingIndex = images.indexOf(imageUrl);
-        if (existingIndex === -1) {
-            images.unshift(imageUrl);
-        } else {
-            images.unshift(images.splice(existingIndex, 1)[0])
+        if (existingIndex !== -1) {
+            images.splice(existingIndex, 1);
         }
+        images.unshift(imageUrl);
     }
 
     if (whitelist.includes(hostname)) {
         return(['img/' + hostname + '.png']);
     } else {
+
+         // Set up fetch timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        
         try {
             const response = await fetch(url, {
                 method: 'GET',
@@ -374,8 +379,11 @@ async function fetchImages(url, quickRefresh) {
                     'Content-Type': 'text/html'
                 },
                 mode: 'cors',
-                credentials: 'same-origin'
+                credentials: 'same-origin',
+                signal: controller.signal
             });
+
+            clearTimeout(timeoutId); // Clear timeout if fetch completes in time
 
             if (!response.ok) {
                 return(images);
@@ -459,6 +467,7 @@ async function fetchImages(url, quickRefresh) {
                 for (const sheetUrl of stylesheetLinks) {
                     try {
                         const cssResponse = await fetch(sheetUrl);
+                        if (!cssResponse.ok) throw new Error(`failed to fetch css`);
                         const cssText = await cssResponse.text();
                         const cssImages = extractBackgroundImages(cssText)
                             .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
@@ -479,7 +488,13 @@ async function fetchImages(url, quickRefresh) {
             return images;
 
         } catch (error) {
-            console.log(error);
+            if (error.name === 'AbortError') {
+                //console.log('fetch timeout');
+            } else {
+                //console.log('fetch error: ', error);
+            }
+        } finally {
+            clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
         }
     }
 }
