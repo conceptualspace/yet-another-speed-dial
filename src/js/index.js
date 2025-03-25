@@ -401,8 +401,6 @@ function folderLink(title, id) {
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
-        console.log("clicked link")
-        console.log("going to show folder: ", id);
         showFolder(id);
         currentFolder = id;
         scrollPos = 0;
