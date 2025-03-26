@@ -1840,7 +1840,7 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
-    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'createDialModalURL')) {
+    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL')) {
         return;
     }
     e.preventDefault();
