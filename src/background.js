@@ -32,6 +32,12 @@ async function handleMessages(message) {
   
 	// Dispatch the message to an appropriate handler.
 	switch (message.type) {
+		case 'captureScreenshot':
+			handleCaptureScreenshot(message.data);
+			break;
+		case 'requestScreenshot':
+			handleRequestScreenshot(message.data);
+			break;
 		case 'refreshThumbs':
 			handleManualRefresh(message.data);
 			break;
@@ -193,7 +199,7 @@ function toggleBookmarkCreatedListener(data) {
 }
 
 async function handleOffscreenFetchDone(data) {
-	//console.log(data);
+	console.log(data);
 	saveThumbnails(data.url, data.thumbs, data.bgColor)
 }
 
@@ -205,6 +211,67 @@ function handleManualRefresh(data) {
             })
         })
     }
+}
+
+// todo: screenshot not always appended (if redirects? cloudflare); sometimes all thumbnails seem to be refetched.
+
+async function handleRequestScreenshot(data) {
+	if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
+		
+		let tempWindow = await chrome.windows.create({
+			url: data.url, // todo: follow redirects
+			type: "popup",
+			width: 800,
+			height: 450
+		});
+		chrome.scripting.executeScript({
+			target: { tabId: tempWindow.tabs[0].id },
+			files: ['content-script.js']
+		})
+		// ensure the window is closed if its stuck
+		setTimeout(() => {
+			// check if window exists
+			chrome.windows.get(tempWindow.id).then((window) => {
+				if (window) {
+					chrome.windows.remove(tempWindow.id);
+				}
+			}).catch((err) => {
+				console.log(err)
+			});
+		}, 5000);
+	}
+}
+
+function normalizeURL(url) {
+	try {
+		let parsedUrl = new URL(url);
+		return parsedUrl.href; // Return the normalized URL
+		// remove trailing slash
+	//return parsedUrl.href.replace(/\/$/, ""); // Return the normalized URL without trailing slash
+	} catch (error) {
+		console.error(`Invalid URL: ${url}`, error);
+		return null; // Return null for invalid URLs
+	}
+}
+
+async function handleCaptureScreenshot(data) {
+	let screenshot = await chrome.tabs.captureVisibleTab()
+
+	if (screenshot) {
+		await setupOffscreenDocument('offscreen.html');
+
+		let url = normalizeURL(data?.url)
+		console.log(url)
+
+		chrome.runtime.sendMessage({
+			target: 'offscreen',
+			data: {
+				type: 'resize',
+				url,
+				screenshot
+			}
+		});
+	}
 }
 
 async function handleRefreshAll(data) {
@@ -331,6 +398,7 @@ async function saveThumbnails(url, images, bgColor) {
 		}
 		thumbnails.push(images);
 		thumbnails = thumbnails.flat();
+		console.log(thumbnails);
 		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
 	}
 	refreshOpen()

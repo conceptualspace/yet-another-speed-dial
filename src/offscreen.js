@@ -15,56 +15,74 @@ function offscreenCanvasShim(w=1, h=1) {
 }
 
 async function handleMessages(message) {
+    console.log(message);
     if (message.target !== 'offscreen') {
         return;
       }
+    if (message.type === 'resize') {
+        
+        let resizedScreenshot = await resizeImage(screenshot, true).catch(err => {
+            console.log(err);
+        });
 
-    let screenshot = message.data.screenshot;
-    let quickRefresh = message.data.quickRefresh;
-    let resizedImages = [];
-    let thumbs = [];
-    let bgColor = null;
-    let title = null;
+        bgColor = await getBgColor(resizedScreenshot).catch(err => {
+            console.log(err);
+        });
 
-    let url = message.data.url;
+        let thumbs = [];
+        thumbs.push(resizedScreenshot);
+        console.log(thumbs);
 
-    let images = await fetchImages(url, quickRefresh).catch(err => {
-        console.log(err);
-    })
+        chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
 
-    if (images && images.length) {
-        resizedImages = await Promise.all(images.map(async (image) => {
-            const result = await resizeImage(image).catch(err => {
-                console.log(err);
-            });
-            return result
-        }))
+    } else {
+        let screenshot = message.data.screenshot;
+        let quickRefresh = message.data.quickRefresh;
+        let resizedImages = [];
+        let thumbs = [];
+        let bgColor = null;
+        let title = null;
 
-        if (screenshot) {
-            // screenshot is handled separately to remove scrollbars
-            let result = await resizeImage(screenshot, true).catch(err => {
-                console.log(err);
-            });
-            if (result) {
-                resizedImages.push(result);
+        let url = message.data.url;
+
+        let images = await fetchImages(url, quickRefresh).catch(err => {
+            console.log(err);
+        })
+
+        if (images && images.length) {
+            resizedImages = await Promise.all(images.map(async (image) => {
+                const result = await resizeImage(image).catch(err => {
+                    console.log(err);
+                });
+                return result
+            }))
+
+            if (screenshot) {
+                // screenshot is handled separately to remove scrollbars
+                let result = await resizeImage(screenshot, true).catch(err => {
+                    console.log(err);
+                });
+                if (result) {
+                    resizedImages.push(result);
+                }
             }
         }
+
+        if (resizedImages && resizedImages.length) {
+            thumbs = resizedImages.filter(item => item).slice(0,5)
+        }
+
+        if (thumbs.length) {
+            bgColor = await getBgColor(thumbs[0])
+            
+            //await saveThumbnails(url, thumbs, bgColor)
+        }
+
+        chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
+        //return title; //todo: why did i do this?
+
+        //chrome.runtime.sendMessage(images);
     }
-
-    if (resizedImages && resizedImages.length) {
-        thumbs = resizedImages.filter(item => item).slice(0,5)
-    }
-
-    if (thumbs.length) {
-        bgColor = await getBgColor(thumbs[0])
-        
-        //await saveThumbnails(url, thumbs, bgColor)
-    }
-
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
-    //return title; //todo: why did i do this?
-
-      //chrome.runtime.sendMessage(images);
 }
 
 

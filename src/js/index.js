@@ -462,6 +462,10 @@ function refreshThumbnails(url) {
     chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url } });
 }
 
+function handleRequestScreenshot(url) {
+    chrome.runtime.sendMessage({ target: 'background', type: 'requestScreenshot', data: { url } });
+}
+
 function removeFolder() {
     browser.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
@@ -1942,6 +1946,9 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'refresh':
                     refreshThumbnails(targetTileHref);
+                    break;
+                case 'screenshot':
+                    handleRequestScreenshot(targetTileHref)
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);

@@ -17,6 +17,7 @@
     "bookmarks",
     "contextMenus",
     "offscreen",
+    "scripting",
     "storage",
     "tabs",
     "unlimitedStorage"
