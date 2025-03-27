@@ -21,6 +21,9 @@ async function handleMessages(message) {
 
     let screenshot = message.data.screenshot;
     let quickRefresh = message.data.quickRefresh;
+    let forcePageReload = message.data.forcePageReload;
+    let id = message.data.id;
+    let parentId = message.data.parentId;
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
@@ -61,7 +64,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, thumbs, bgColor}});
+    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
     //return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);

@@ -106,6 +106,7 @@ let settings = null;
 let speedDialId = null;
 let sortable = null;
 let targetTileHref = null;
+let targetTileId = null;
 let targetTileTitle = null;
 let targetNode = null;
 let targetFolder = null;
@@ -123,6 +124,7 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+let isToastVisible = false;
 
 let folderIds = [];
 
@@ -229,6 +231,42 @@ async function buildDialPages(speedDialId, currentFolderId) {
             }
         }
     }
+}
+
+async function buildFolderPages(speedDialId) {
+    async function getChildren(folderId) {
+        return await browser.bookmarks.getChildren(folderId);
+    }
+
+    const children = await getChildren(speedDialId);
+    if (!children.length) {
+        // new install
+        addFolderButton.style.display = 'none';
+        printNewSetup();
+        return;
+    }
+
+    const folders = children.filter(folder => !folder.url);
+
+    // Include speedDial folder
+    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
+
+    // sort folders
+    folders.sort((a, b) => {
+        return (a.index || 0) - (b.index || 0);
+    });
+
+    // clear any existing data so we can refresh
+    foldersContainer.innerHTML = '';
+
+    // Build folder header links
+    if (folders && folders.length > 1) {
+        for (let folder of folders) {
+            folderLink(folder.title, folder.id);
+        }
+    }
+
+    return
 }
 
 
@@ -454,12 +492,14 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url) {
+function refreshThumbnails(url, tileid) {
     //tabMessagePort.postMessage({refreshThumbs: true, url});
+    // the div id is "folderid-boookmarkid"
+    let parentId = tileid.split("-")[0];
+    let id = tileid.split("-")[1];
 
-    toastContent.innerText = ` Capturing images...`;
-    toast.style.transform = "translateX(0%)";
-    chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url } });
+    showToast(' Capturing images...')
+    chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
 }
 
 function removeFolder() {
@@ -494,7 +534,7 @@ function getChildren(folderId) {
 }
 
 function refreshAllThumbnails() {
-    let urls = [];
+    let bookmarks = [];
     let parent = currentFolder ? currentFolder : speedDialId;
 
     hideModals();
@@ -503,13 +543,14 @@ function refreshAllThumbnails() {
         if (children && children.length) {
             for (let child of children) {
                 if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
-                    urls.push(child.url);
+                    //urls.push(child.url);
+                    // push an object with the url and the id
+                    bookmarks.push({ url: child.url, id: child.id, parentId: child.parentId });
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
-            chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { urls } });
-            toastContent.innerText = ` Capturing images...`;
-            toast.style.transform = "translateX(0%)";
+            chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
+            showToast(' Capturing images...')
         }
     }).catch(err => {
         console.log(err);
@@ -994,8 +1035,19 @@ function modalShowEffect(contentEl, modalEl) {
 }
 
 function hideToast() {
-    toast.style.transform = "translateX(100%)";
-    toastContent.innerText = '';
+    if (isToastVisible) {
+        toast.style.transform = "translateX(100%)";
+        toastContent.innerText = '';
+        isToastVisible = false;
+    }
+}
+
+function showToast(message) {
+    if (!isToastVisible) {
+        toastContent.innerText = message;
+        toast.style.transform = "translateX(0%)";
+        isToastVisible = true;
+    }
 }
 
 function buildCreateDialModal(parentId) {
@@ -1156,8 +1208,7 @@ function createDial() {
         parentId: createDialModalURL.parentId
     }).then(node => {
         hideModals();
-        toastContent.innerText = ` Capturing images for ${url}...`;
-        toast.style.transform = "translateX(0%)";
+        showToast(' Capturing images...')
     });
 }
 
@@ -1443,8 +1494,7 @@ function saveBookmarkSettings() {
                     }
 
                     if (url !== newUrl && toastContent.innerText === '') {
-                        toastContent.innerText = ` Capturing images for ${newUrl}...`;
-                        toast.style.transform = "translateX(0%)";
+                        showToast(' Capturing images...')
                     }
                 }
             })
@@ -1852,6 +1902,7 @@ document.addEventListener("contextmenu", function (e) {
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
+        targetTileId = e.target.id;
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
@@ -1941,7 +1992,7 @@ window.addEventListener("mousedown", e => {
                     });
                     break;
                 case 'refresh':
-                    refreshThumbnails(targetTileHref);
+                    refreshThumbnails(targetTileHref, targetTileId);
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
@@ -2674,18 +2725,21 @@ function onEndHandler(evt) {
     }
 }
 
-const processRefresh = debounce(() => {
-    // prevent page scroll on refresh
-    // react where are you...
-    scrollPos = bookmarksContainerParent.scrollTop;
-    //noBookmarks.style.display = 'none';
-    addFolderButton.style.display = 'inline';
+const processRefresh = debounce(({ foldersOnly = false } = {}) => {
+    if (foldersOnly) {
+        buildFolderPages(speedDialId)
+    } else {
+        // prevent page scroll on refresh
+        // react where are you...
+        scrollPos = bookmarksContainerParent.scrollTop;
+        //noBookmarks.style.display = 'none';
+        addFolderButton.style.display = 'inline';
 
-    //bookmarksContainer.style.opacity = "0";
+        //bookmarksContainer.style.opacity = "0";
 
-    // todo: this still work with the refactor?
-    //getBookmarks(speedDialId)
-    buildDialPages(speedDialId, currentFolder)
+        //getBookmarks(speedDialId)
+        buildDialPages(speedDialId, currentFolder)
+    }
 }, 650, true);
 
 function getSpeedDialId() {
@@ -2829,13 +2883,17 @@ function handleMessages(message) {
     if (message.data.refresh) {
         hideToast();
         processRefresh();
+    } else if(message.data.reloadFolders) {
+        hideToast();
+        processRefresh({ foldersOnly: true });
+
     } else if(message.type === 'thumbBatch') {
         // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
         //console.log(message.data);
         // todo: background not working?
         setBackgroundImages(message.data);
-        
+        hideToast();
     }
 }
 

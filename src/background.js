@@ -39,7 +39,7 @@ async function handleMessages(message) {
 			handleRefreshAll(message.data);
 			break;
 		case 'saveThumbnails':
-			handleOffscreenFetchDone(message.data);
+			handleOffscreenFetchDone(message.data, message.forcePageReload);
 			break;
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
@@ -111,15 +111,16 @@ async function handleBookmarkChanged(id, info) {
 
     if (bookmark[0].url) {
     	const bookmarkUrl = bookmark[0].url
+		const bookmarkId = bookmark[0].id
+		const parentId = bookmark[0].parentId
     	if (bookmarkUrl !== "data:" && bookmarkUrl !== "about:blank") {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
-    			// todo: improve the ghetto local storage -- this implementation doesnt allow same site to have separate images in 2 folders.. who cares
     			refreshOpen();
     		} else {
-    			// this bookmark needs images
-    			getThumbnails(bookmarkUrl)
+    			// new bookmark needs images
+    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
     		}
     	}
     } else {
@@ -129,7 +130,8 @@ async function handleBookmarkChanged(id, info) {
             return
     	} else if (info && info.title && Object.keys(info).length === 1) {
 	        // folder is just being renamed
-	        refreshOpen()
+			//refreshOpen()
+			reloadFolders()
 	        return
         } else {
         	// folderIds.push(id); todo: chrome.storage.local.set({ folderIds });
@@ -141,7 +143,7 @@ async function handleBookmarkChanged(id, info) {
         			handleBookmarkChanged(child.id)
         		}
         	} else {
-        		refreshOpen()
+        		reloadFolders()
         	}
         }
     }
@@ -192,15 +194,15 @@ function toggleBookmarkCreatedListener(data) {
     }
 }
 
-async function handleOffscreenFetchDone(data) {
+async function handleOffscreenFetchDone(data, forcePageReload) {
 	//console.log(data);
-	saveThumbnails(data.url, data.thumbs, data.bgColor)
+	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
 }
 
 function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
         chrome.storage.local.remove(data.url).then(() => {
-            getThumbnails(data.url, {forceScreenshot: true}).then(() => {
+            getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true}).then(() => {
                 //refreshOpen()
             })
         })
@@ -208,38 +210,38 @@ function handleManualRefresh(data) {
 }
 
 async function handleRefreshAll(data) {
-	async function refreshBatch(urls, index = 0, retries = 2) {
-		const batchSize = 200;
-		const delay = 10000;
-		const batch = urls.slice(index, index + batchSize);
-	
-		if (batch.length) {
-			try {
-				await Promise.all(batch.map(url => getThumbnails(url, { quickRefresh: true })));
-				// todo show progress in UI
+    async function refreshBatch(bookmarks, index = 0, retries = 2) {
+        const batchSize = 200;
+        const delay = 10000;
+        const batch = bookmarks.slice(index, index + batchSize);
+    
+        if (batch.length) {
+            try {
+                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, { quickRefresh: true })));
+                // todo show progress in UI
                 // todo: we might need to refactor this to promises or timers so the worker doesnt kill the process with a batch scheduled
-				setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
-			} catch (err) {
-				console.log(err);
-				if (retries > 0) {
-					//console.log(`Retrying batch at index ${index}...`);
-					setTimeout(() => refreshBatch(urls, index, retries - 1), delay);
-				} else {
-					//console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
-					setTimeout(() => refreshBatch(urls, index + batchSize, retries), delay);
-				}
-			}
-		} else {
-			//refreshOpen(); // not needed here it happens when thumbnails are saved
-		}
-	}
+                setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
+            } catch (err) {
+                console.log(err);
+                if (retries > 0) {
+                    //console.log(`Retrying batch at index ${index}...`);
+                    setTimeout(() => refreshBatch(bookmarks, index, retries - 1), delay);
+                } else {
+                    //console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
+                    setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
+                }
+            }
+        } else {
+            //refreshOpen(); // not needed here it happens when thumbnails are saved
+        }
+    }
 
-	for (let url of data.urls) {
-        await chrome.storage.local.remove(url).catch((err) => {
-            console.log(err)
+    for (let bookmark of data.bookmarks) {
+        await chrome.storage.local.remove(bookmark.url).catch((err) => {
+            console.log(err);
         });
     }
-	refreshBatch(data.urls)
+    refreshBatch(data.bookmarks);
 }
 
 async function createBookmarkFromContextMenu(tab) {
@@ -299,8 +301,12 @@ function handleInstalled(details) {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnails(url, options = {quickRefresh: false, forceScreenshot: false}) {
+async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
 
+	if(!url || !id) {
+		console.log("getThumbnails: missing url or id")
+		return
+	}
     // take screenshot if applicable
     let screenshot = null;
 	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
@@ -309,20 +315,25 @@ async function getThumbnails(url, options = {quickRefresh: false, forceScreensho
 		screenshot = await chrome.tabs.captureVisibleTab()
 	}
 
-	// cant fetch/parse/format images in service worker: delegate to offscreen document
+	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
+
+	//todo: if forcePageReload
 
 	chrome.runtime.sendMessage({
 		target: 'offscreen',
 		data: {
             url,
+			id,
+			parentId,
             screenshot,
 			quickRefresh: options.quickRefresh,
+			forcePageReload: options.forcePageReload,
         }
 	});
 }
 
-async function saveThumbnails(url, images, bgColor) {
+async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
 	if (images && images.length) {
 		let thumbnails = [];
 		let result = await chrome.storage.local.get(url)
@@ -333,13 +344,37 @@ async function saveThumbnails(url, images, bgColor) {
 		thumbnails = thumbnails.flat();
 		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
 	}
-	refreshOpen()
+	// refresh open new tab page
+	if (forcePageReload) {
+		// we have new sites, reload the page
+		refreshOpen();
+	} else {
+		// just update existing images
+		chrome.runtime.sendMessage({
+			target: 'newtab',
+			type: 'thumbBatch',
+			data: [{
+				id,
+				parentId,
+				url,
+				thumbnail: images[0],
+				bgColor
+			}]
+		});
+	}
 }
 
 function refreshOpen() {
     chrome.runtime.sendMessage({
 		target: 'newtab',
 		data: {refresh:true}
+	});
+}
+
+function reloadFolders() {
+	chrome.runtime.sendMessage({
+		target: 'newtab',
+		data: {reloadFolders:true}
 	});
 }
 
