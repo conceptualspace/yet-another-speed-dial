@@ -1,0 +1,173 @@
+{
+    "addFolderButton": {
+      "message": "폴더 추가 버튼"
+    },
+    "address": {
+      "message": "주소"
+    },
+    "addSiteButton": {
+      "message": "사이트 추가 버튼"
+    },
+    "addTo": {
+      "message": "스피드 다이얼에 추가"
+    },
+    "backgroundColor": {
+      "message": "배경색"
+    },
+    "bgColor": {
+      "message": "배경 색상"
+    },
+    "browse": {
+      "message": "찾아보기..."
+    },
+    "cancel": {
+      "message": "취소"
+    },
+    "captureMessage": {
+      "message": "이미지를 캡처하기 위해 사이트를 새 탭에서 일시적으로 엽니다"
+    },
+    "clock": {
+      "message": "시계"
+    },
+    "confirmDelete": {
+      "message": "이 폴더를 영구적으로 삭제하시겠습니까?"
+    },
+    "createFolder": {
+      "message": "폴더 만들기"
+    },
+    "defaultSort": {
+      "message": "기본 정렬"
+    },
+    "delete": {
+      "message": "삭제"
+    },
+    "dialRatio": {
+      "message": "다이얼 형식"
+    },
+    "dialSize": {
+      "message": "다이얼 크기"
+    },
+    "edit": {
+      "message": "편집"
+    },
+    "editFolder": {
+      "message": "폴더 편집..."
+    },
+    "export": {
+      "message": "설정 내보내기..."
+    },
+    "extensionDescription": {
+      "description": "description of the app, displayed in store",
+      "message": "Chrome, Edge, Firefox용 최신 스피드 다이얼"
+    },
+    "extensionName": {
+      "description": "title of the app, displayed in store",
+      "message": "Yet Another Speed Dial"
+    },
+    "help": {
+      "message": "도움말"
+    },
+    "home": {
+      "message": "홈"
+    },
+    "image": {
+      "message": "이미지"
+    },
+    "imageURL": {
+      "message": "이미지 URL"
+    },
+    "import": {
+      "message": "설정 가져오기..."
+    },
+    "importExport": {
+      "message": "YASD 설정 및 썸네일을 백업하거나 복원합니다.\n\n브라우저 북마크는 북마크 관리자 또는 동기화를 통해 별도로 백업하세요. 가져오기를 하면 현재 설정이 덮어씌워집니다!\n\nYASD는 Speed Dial 2 및 FVD 백업 파일에서 가져오기를 시도할 수도 있습니다 (실험적 기능)"
+    },
+    "importExportLink": {
+      "message": "가져오기 및 내보내기..."
+    },
+    "labels": {
+      "message": "라벨"
+    },
+    "largeTiles": {
+      "message": "큰 타일"
+    },
+    "maxColumns": {
+      "message": "최대 열 수"
+    },
+    "name": {
+      "message": "이름"
+    },
+    "newBackgroundTab": {
+      "message": "새 백그라운드 탭에서 열기"
+    },
+    "newDial": {
+      "message": "새로운 스피드 다이얼..."
+    },
+    "newFolder": {
+      "message": "새로운 폴더..."
+    },
+    "newInstall1": {
+      "message": "Yet Another Speed Dial 시작하기!"
+    },
+    "newInstall2": {
+      "message": "⭐ 북마크를 스피드 다이얼 폴더에 추가하면 여기에 나타납니다"
+    },
+    "newInstall3": {
+      "message": "✨ 북마크를 하위 폴더로 정리할 수 있습니다"
+    },
+    "newInstall4": {
+      "message": "✨ 다이얼을 오른쪽 클릭하여 편집하세요. 드래그 앤 드롭으로 정렬할 수도 있습니다"
+    },
+    "newPrivate": {
+      "message": "새로운 시크릿 창에서 열기"
+    },
+    "newTab": {
+      "message": "새 탭에서 열기"
+    },
+    "newWin": {
+      "message": "새 창에서 열기"
+    },
+    "refresh": {
+      "message": "썸네일 새로고침"
+    },
+    "remember": {
+      "message": "마지막 폴더 기억"
+    },
+    "remove": {
+      "message": "제거"
+    },
+    "save": {
+      "message": "저장"
+    },
+    "saveToast": {
+      "message": "설정이 저장되었습니다!"
+    },
+    "scaleImages": {
+      "message": "이미지 크기 조정"
+    },
+    "settings": {
+      "message": "설정..."
+    },
+    "settingsButton": {
+      "message": "설정 버튼"
+    },
+    "settingsTitle": {
+      "message": "설정"
+    },
+    "textColor": {
+      "message": "텍스트 색상"
+    },
+    "tileTitle": {
+      "message": "제목"
+    },
+    "title": {
+      "message": "스피드 다이얼"
+    },
+    "uploadImage": {
+      "message": "이미지 추가..."
+    },
+    "wallpaper": {
+      "message": "배경화면"
+    }
+  }
+  
