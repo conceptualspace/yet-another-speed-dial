@@ -318,8 +318,6 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
 
-	//todo: if forcePageReload
-
 	chrome.runtime.sendMessage({
 		target: 'offscreen',
 		data: {
