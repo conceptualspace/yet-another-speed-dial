@@ -1,0 +1,172 @@
+{
+  "addFolderButton": {
+    "message": "フォルダ追加ボタン"
+  },
+  "address": {
+    "message": "アドレス"
+  },
+  "addSiteButton": {
+    "message": "サイト追加ボタン"
+  },
+  "addTo": {
+    "message": "スピードダイヤルに追加"
+  },
+  "backgroundColor": {
+    "message": "背景色"
+  },
+  "bgColor": {
+    "message": "BGカラー"
+  },
+  "browse": {
+    "message": "参照..."
+  },
+  "cancel": {
+    "message": "キャンセル"
+  },
+  "captureMessage": {
+    "message": "画像を取得するために一時的に新しいタブでサイトを開きます"
+  },
+  "clock": {
+    "message": "時計"
+  },
+  "confirmDelete": {
+    "message": "このフォルダを完全に削除してもよろしいですか？"
+  },
+  "createFolder": {
+    "message": "フォルダを作成"
+  },
+  "defaultSort": {
+    "message": "デフォルトの並び順"
+  },
+  "delete": {
+    "message": "削除"
+  },
+  "dialRatio": {
+    "message": "ダイヤルフォーマット"
+  },
+  "dialSize": {
+    "message": "ダイヤルサイズ"
+  },
+  "edit": {
+    "message": "編集"
+  },
+  "editFolder": {
+    "message": "フォルダを編集..."
+  },
+  "export": {
+    "message": "設定をエクスポート..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "Chrome、Edge、Firefox向けの最新スピードダイヤル"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
+  },
+  "help": {
+    "message": "ヘルプ"
+  },
+  "home": {
+    "message": "ホーム"
+  },
+  "image": {
+    "message": "画像"
+  },
+  "imageURL": {
+    "message": "画像URL"
+  },
+  "import": {
+    "message": "設定をインポート..."
+  },
+  "importExport": {
+    "message": "YASDの設定とサムネイルをバックアップまたは復元します。\n\nブラウザのブックマークは、ブックマークマネージャーまたは同期機能を使用して別途バックアップしてください。インポートすると現在の設定が上書きされます！\n\nYASDは、Speed Dial 2やFVDのバックアップファイルからのインポートも試みることができます（現在は実験的機能）"
+  },
+  "importExportLink": {
+    "message": "インポートとエクスポート..."
+  },
+  "labels": {
+    "message": "ラベル"
+  },
+  "largeTiles": {
+    "message": "大きなタイル"
+  },
+  "maxColumns": {
+    "message": "最大列数"
+  },
+  "name": {
+    "message": "名前"
+  },
+  "newBackgroundTab": {
+    "message": "バックグラウンドタブで開く"
+  },
+  "newDial": {
+    "message": "新しいスピードダイヤル..."
+  },
+  "newFolder": {
+    "message": "新しいフォルダ..."
+  },
+  "newInstall1": {
+    "message": "Yet Another Speed Dialを始めましょう！"
+  },
+  "newInstall2": {
+    "message": "⭐ スピードダイヤルフォルダにブックマークを追加するだけで、ここに表示されます"
+  },
+  "newInstall3": {
+    "message": "✨ ブックマークをサブフォルダに整理できます"
+  },
+  "newInstall4": {
+    "message": "✨ ダイヤルを右クリックすると編集できます。ドラッグ＆ドロップで並べ替えることも可能です"
+  },
+  "newPrivate": {
+    "message": "新しいプライベートウィンドウで開く"
+  },
+  "newTab": {
+    "message": "新しいタブで開く"
+  },
+  "newWin": {
+    "message": "新しいウィンドウで開く"
+  },
+  "refresh": {
+    "message": "サムネイルを更新"
+  },
+  "remember": {
+    "message": "最後のフォルダを記憶"
+  },
+  "remove": {
+    "message": "削除"
+  },
+  "save": {
+    "message": "保存"
+  },
+  "saveToast": {
+    "message": "設定を保存しました！"
+  },
+  "scaleImages": {
+    "message": "画像をスケール"
+  },
+  "settings": {
+    "message": "設定..."
+  },
+  "settingsButton": {
+    "message": "設定ボタン"
+  },
+  "settingsTitle": {
+    "message": "設定"
+  },
+  "textColor": {
+    "message": "テキストカラー"
+  },
+  "tileTitle": {
+    "message": "タイトル"
+  },
+  "title": {
+    "message": "スピードダイヤル"
+  },
+  "uploadImage": {
+    "message": "画像を追加..."
+  },
+  "wallpaper": {
+    "message": "壁紙"
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "addFolderButton": {
+    "message": "添加文件夹按钮"
+  },
+  "address": {
+    "message": "地址"
+  },
+  "addSiteButton": {
+    "message": "添加网站按钮"
+  },
+  "addTo": {
+    "message": "添加到快速拨号"
+  },
+  "backgroundColor": {
+    "message": "背景颜色"
+  },
+  "bgColor": {
+    "message": "背景色"
+  },
+  "browse": {
+    "message": "浏览..."
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "captureMessage": {
+    "message": "这将临时在新标签页中打开网站以捕获图像"
+  },
+  "clock": {
+    "message": "时钟"
+  },
+  "confirmDelete": {
+    "message": "您确定要永久删除此文件夹吗？"
+  },
+  "createFolder": {
+    "message": "创建文件夹"
+  },
+  "defaultSort": {
+    "message": "默认排序"
+  },
+  "delete": {
+    "message": "删除"
+  },
+  "dialRatio": {
+    "message": "拨号格式"
+  },
+  "dialSize": {
+    "message": "拨号大小"
+  },
+  "edit": {
+    "message": "编辑"
+  },
+  "editFolder": {
+    "message": "编辑文件夹..."
+  },
+  "export": {
+    "message": "导出设置..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "适用于 Chrome、Edge 和 Firefox 的现代快速拨号"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
+  },
+  "help": {
+    "message": "帮助"
+  },
+  "home": {
+    "message": "主页"
+  },
+  "image": {
+    "message": "图片"
+  },
+  "imageURL": {
+    "message": "图片URL"
+  },
+  "import": {
+    "message": "导入设置..."
+  },
+  "importExport": {
+    "message": "这将备份或恢复 YASD 设置和缩略图。\n\n请确保您的浏览器书签已通过书签管理器或同步功能单独备份。请注意，导入将替换您当前的设置！\n\nYASD 还可以尝试从 Speed Dial 2 和 FVD 备份文件导入（目前为实验功能）"
+  },
+  "importExportLink": {
+    "message": "导入和导出..."
+  },
+  "labels": {
+    "message": "标签"
+  },
+  "largeTiles": {
+    "message": "大图块"
+  },
+  "maxColumns": {
+    "message": "最大列数"
+  },
+  "name": {
+    "message": "名称"
+  },
+  "newBackgroundTab": {
+    "message": "在后台标签页打开"
+  },
+  "newDial": {
+    "message": "新建快速拨号..."
+  },
+  "newFolder": {
+    "message": "新建文件夹..."
+  },
+  "newInstall1": {
+    "message": "开始使用 Yet Another Speed Dial！"
+  },
+  "newInstall2": {
+    "message": "⭐ 只需将书签添加到快速拨号文件夹，它们就会出现在这里"
+  },
+  "newInstall3": {
+    "message": "✨ 您可以将书签整理到子文件夹中"
+  },
+  "newInstall4": {
+    "message": "✨ 右键单击拨号以编辑它。您还可以拖放以重新排列"
+  },
+  "newPrivate": {
+    "message": "在新的无痕窗口中打开"
+  },
+  "newTab": {
+    "message": "在新标签页中打开"
+  },
+  "newWin": {
+    "message": "在新窗口中打开"
+  },
+  "refresh": {
+    "message": "刷新缩略图"
+  },
+  "remember": {
+    "message": "记住上次文件夹"
+  },
+  "remove": {
+    "message": "移除"
+  },
+  "save": {
+    "message": "保存"
+  },
+  "saveToast": {
+    "message": "设置已保存！"
+  },
+  "scaleImages": {
+    "message": "缩放图片"
+  },
+  "settings": {
+    "message": "设置..."
+  },
+  "settingsButton": {
+    "message": "设置按钮"
+  },
+  "settingsTitle": {
+    "message": "设置"
+  },
+  "textColor": {
+    "message": "文本颜色"
+  },
+  "tileTitle": {
+    "message": "标题"
+  },
+  "title": {
+    "message": "快速拨号"
+  },
+  "uploadImage": {
+    "message": "添加图片..."
+  },
+  "wallpaper": {
+    "message": "壁纸"
+  }
+}
