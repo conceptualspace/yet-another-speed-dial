@@ -9,7 +9,7 @@
     --image-scaling: contain;
     --dial-width: 220px;
     --dial-height: 142px;
-
+    --dial-margin: 18px;
 }
 
 /* Apply a smooth transition for the background image */
@@ -204,8 +204,9 @@ h1 {
     width: var(--dial-width);
     height: var(--dial-height);
     border-radius: 7px;
-    margin: 12px;
+    margin: var(--dial-margin);
     will-change: transform;
+    /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
 }
 
 .tile:hover {
@@ -243,7 +244,7 @@ h1 {
     width: var(--dial-width);
     height: var(--dial-height);
     border-radius: 12px;
-    margin: 12px;
+    margin: var(--dial-margin);
     display: var(--create-dial-display);
     z-index: 1;
 }
