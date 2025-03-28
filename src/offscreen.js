@@ -491,11 +491,9 @@ async function fetchImages(url, quickRefresh) {
             return images;
 
         } catch (error) {
-            if (error.name === 'AbortError') {
-                //console.log('fetch timeout');
-            } else {
-                //console.log('fetch error: ', error);
-            }
+            //console.log("fetch error: ", error)
+            // return the images we have:
+            return images;
         } finally {
             clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
         }
