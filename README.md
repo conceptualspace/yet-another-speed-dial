@@ -26,7 +26,3 @@ https://conceptualspace.github.io/yet-another-speed-dial/
 
 #### Why isn't the address bar focused (active) by default on the new tab / home page?
 This is a bug in Firefox: https://bugzilla.mozilla.org/show_bug.cgi?id=1411209
-
-## Building
-
-chrome: remove `chrome_settings_overrides` and `browser_specific_settings` manifest keys
