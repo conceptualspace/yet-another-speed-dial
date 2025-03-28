@@ -336,6 +336,7 @@ async function fetchImages(url, quickRefresh) {
     const whitelist = [
         "mail.google.com",
         "gmail.com",
+        "chromewebstore.google.com",
         "www.facebook.com",
         "twitter.com"
     ];
