@@ -168,5 +168,8 @@
   },
   "wallpaper": {
     "message": "Wallpaper"
+  },
+  "newTabTitle": {
+    "message": "New Tab"
   }
 }

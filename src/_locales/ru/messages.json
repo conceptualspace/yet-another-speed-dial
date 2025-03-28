@@ -168,5 +168,8 @@
   },
   "wallpaper": {
     "message": "Фоновое изображение\n"
+  },
+  "newTabTitle": {
+    "message": "Новая вкладка"
   }
 }
