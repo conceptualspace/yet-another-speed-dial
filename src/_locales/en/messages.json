@@ -58,7 +58,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "a modern speed dial for chrome, edge, and firefox"
+    "message": "a modern speed dial for edge"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",

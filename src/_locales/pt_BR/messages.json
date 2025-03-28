@@ -58,7 +58,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "uma nova guia moderna para chrome, edge e firefox"
+    "message": "uma nova guia moderna para edge"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",

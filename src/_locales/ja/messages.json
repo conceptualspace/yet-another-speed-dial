@@ -58,7 +58,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "Chrome、Edge、Firefox向けの最新スピードダイヤル"
+    "message": "Edge向けの最新スピードダイヤル"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",

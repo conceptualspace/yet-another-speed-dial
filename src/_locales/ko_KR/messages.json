@@ -58,7 +58,7 @@
     },
     "extensionDescription": {
       "description": "description of the app, displayed in store",
-      "message": "Chrome, Edge, Firefox용 최신 스피드 다이얼"
+      "message": "Edge용 최신 스피드 다이얼"
     },
     "extensionName": {
       "description": "title of the app, displayed in store",

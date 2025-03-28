@@ -58,7 +58,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "适用于 Chrome、Edge 和 Firefox 的现代快速拨号"
+    "message": "适用于 Edge 的现代快速拨号"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
