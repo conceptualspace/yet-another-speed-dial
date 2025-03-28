@@ -247,11 +247,16 @@ async function handleRefreshAll(data) {
 async function createBookmarkFromContextMenu(tab) {
 	// get the speed dial folder id
 	let speedDialId = null;
-	const bookmarks = await chrome.bookmarks.search("Speed Dial");
-	if (bookmarks.length) {
-		speedDialId = bookmarks[0].id;
+	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' })
+	if (bookmarks && bookmarks.length) {
+		for (let bookmark of bookmarks) {
+			if (!bookmark.url) {
+				speedDialId = bookmark.id;
+				break;
+			}
+		}
 	}
-	// check if the bookmark already exists
+
     // check for doopz
 	if (speedDialId) {
 		let match = false;
