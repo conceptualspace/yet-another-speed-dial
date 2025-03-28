@@ -156,7 +156,7 @@ h1 {
     align-items: center;
     justify-content: center;
     margin-top: 40px;
-    font-weight: 300;
+    font-weight: 400;
     opacity: 0.8;
 }
 
@@ -172,7 +172,7 @@ h1 {
 
 .cta-container {
     display: flex;
-    gap: 30px; /* Adjust the gap between buttons as needed */
+    gap: 40px;
     justify-content: center;
     align-items: center;
 }

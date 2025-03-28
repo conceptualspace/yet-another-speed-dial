@@ -1939,18 +1939,19 @@ window.addEventListener("mousedown", e => {
         openSettings();
         return;
     }
-    if (e.target.id === 'splashAddDial') {
+    if (e.target.closest('#splashAddDial')) {
         e.preventDefault();
         buildCreateDialModal(currentFolder);
         modalShowEffect(createDialModalContent, createDialModal);
         return;
     }
-    if (e.target.id === 'splashImport') {
+    if (e.target.closest('#splashImport')) {
         e.preventDefault();
         modalShowEffect(importExportModalContent, importExportModal);
         //importFileInput.click();
         return;
     }
+
     switch (e.target.className) {
         // todo: invert this
         case 'default-content':
