@@ -17,7 +17,7 @@ function offscreenCanvasShim(w=1, h=1) {
 async function handleMessages(message) {
     if (message.target !== 'offscreen') {
         return;
-      }
+    }
 
     let screenshot = message.data.screenshot;
     let quickRefresh = message.data.quickRefresh;
@@ -42,20 +42,20 @@ async function handleMessages(message) {
             });
             return result
         }))
+    }
 
-        if (screenshot) {
-            // screenshot is handled separately to remove scrollbars
-            let result = await resizeImage(screenshot, true).catch(err => {
-                console.log(err);
-            });
-            if (result) {
-                resizedImages.push(result);
-            }
+    if (screenshot) {
+        // screenshot is handled separately to remove scrollbars
+        let result = await resizeImage(screenshot, true).catch(err => {
+            console.log(err);
+        });
+        if (result) {
+            resizedImages.push(result);
         }
     }
 
     if (resizedImages && resizedImages.length) {
-        thumbs = resizedImages.filter(item => item).slice(0,5)
+        thumbs = resizedImages.filter(item => item).slice(0,5) // only keep 5 -- todo: this will exclude the screenshot if there are many other images
     }
 
     if (thumbs.length) {
