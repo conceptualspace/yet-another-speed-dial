@@ -1422,7 +1422,7 @@ function saveBookmarkSettings() {
     } else {
         for (let node of imageNodes) {
             // div with order "2" is the one being displayed by the carousel
-            if (node.style.order === '2') {
+            if (node.style.order === '2' || imageNodes.length === 1) {
                 // sometimes the carousel puts images inside a <figure class="fc-image"> elem
                 if (node.children[0].className === "fc-image") {
                     selectedImageSrc = node.children[0].children[0].src;
@@ -1631,10 +1631,11 @@ function resizeBackground(dataURI) {
     })
 }
 
+// todo: completely offload this shit to the worker
 function resizeThumb(dataURI) {
     return new Promise(function (resolve, reject) {
         let img = new Image();
-        img.onload = function () {
+        img.onload = async function () {
             if (this.height > 256 && this.width > 256) {
                 // when im less lazy check use optimal w/h based on image
                 // set height to 256 and scale
@@ -1647,9 +1648,16 @@ function resizeThumb(dataURI) {
                 ctx.imageSmoothingEnabled = true;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                // webp encoding falls back to png on firefox
-                const newDataURI = canvas.toDataURL('image/webp', 0.8);
-                resolve(newDataURI);
+                // Use convertToBlob instead of toDataURL
+                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    resolve(e.target.result); // Resolve with the data URI
+                };
+                reader.onerror = function (err) {
+                    reject(err);
+                };
+                reader.readAsDataURL(blob)
             } else {
                 resolve(dataURI);
             }
@@ -2787,6 +2795,8 @@ function preloadImage(url) {
     });
 }
 
+/*
+// replaced by setBackgroundImages()
 function setBackgroundImage(thumb) {
     const setImage = async (element) => {
         if (element) {
@@ -2824,6 +2834,7 @@ function setBackgroundImage(thumb) {
         });
     }
 }
+*/
 
 function setBackgroundImages(thumbnails) {
     const elementsToUpdate = [];
@@ -2869,8 +2880,8 @@ function setBackgroundImages(thumbnails) {
 function batchApplyImages(elements) {
     requestAnimationFrame(() => {
         elements.forEach(({ element, thumb }) => {
-            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
             element.style.backgroundColor = "unset";
+            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
         });
     });
 }
