@@ -2430,7 +2430,7 @@ function filterDials(searchTerm) {
 }
 
 document.addEventListener('keydown', (event) => {
-    if (event.ctrlKey && event.shiftKey && event.key === 'F') {
+    if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
         searchContainer.classList.toggle('active');
         // focus it
