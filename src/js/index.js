@@ -2048,6 +2048,11 @@ window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
         hideMenus();
         hideModals();
+    } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault(); // Prevent the default browser behavior
+        searchContainer.classList.toggle('active');
+        // focus it
+        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
     }
 });
 
@@ -2429,14 +2434,6 @@ function filterDials(searchTerm) {
     animate();
 }
 
-document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
-        event.preventDefault(); // Prevent the default browser behavior
-        searchContainer.classList.toggle('active');
-        // focus it
-        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
-    }
-});
 
 document.getElementById('closeSearch').addEventListener('click', () => {
     const searchInput = document.getElementById('searchInput');
