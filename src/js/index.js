@@ -1033,6 +1033,7 @@ function hideModals() {
     searchInput.value = '';
     searchInput.blur();
     searchContainer.classList.remove('active');
+    filterDials('');
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -2443,6 +2444,7 @@ document.getElementById('closeSearch').addEventListener('click', () => {
     
     searchInput.value = ''; // Clear the search input
     searchContainer.classList.remove('active'); // Hide the search container
+    filterDials('');
 });
 
 
