@@ -653,6 +653,56 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     filter: opacity(1);
 }
 
+#searchContainer {
+    position: absolute;
+    right: 112px;
+    top: 12px;
+    visibility: hidden;
+    opacity: 0;
+    transform: scale(0.8);
+
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+
+    z-index: 1000;
+    transition: all 0.160s ease-in-out;
+
+    transform: translateY(-20px);
+}
+
+#searchContainer.active {
+    opacity: 1;
+    visibility: visible;
+    /*transform: scale(1)*/
+    transform: translateY(0);
+}
+
+#searchInput {
+    width: 380px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 1);
+    padding: 10px;
+
+    color: var(--color);
+}
+
+.close-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: default;
+    font-size: 18px;
+    color: #ccc;
+    transition: color 0.2s ease;
+}
+
+.close-icon:hover {
+    color: #fff;
+}
+
 #clock {
     position: absolute;
     display: var(--clock);
