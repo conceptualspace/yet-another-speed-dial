@@ -92,6 +92,9 @@ const helpBtn = document.getElementById("help");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 
+const searchInput = document.getElementById('searchInput');
+const searchContainer = document.getElementById('searchContainer');
+
 // clock
 const clock = document.getElementById('clock');
 
@@ -1025,6 +1028,11 @@ function hideModals() {
     // Reset modalBtnContainer and imageUrlContainer
     document.getElementById('modalBtnContainer').style.display = 'flex';
     document.getElementById('imageUrlContainer').style.display = 'none';
+
+    // hide search
+    searchInput.value = '';
+    searchInput.blur();
+    searchContainer.classList.remove('active');
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -2382,6 +2390,61 @@ function parseJson(event) {
         return null;
     }
 }
+
+// Add event listener for search input
+searchInput.addEventListener('input', function (e) {
+    const searchTerm = e.target.value.toLowerCase();
+    filterDials(searchTerm);
+});
+
+function filterDials(searchTerm) {
+    const currentParent = currentFolder;
+    const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
+
+    dials.forEach(dial => {
+        const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
+        const url = dial.href.toLowerCase();
+
+        if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
+            // Fade-in and scale-up for matching thumbnails
+            TweenMax.to(dial, 0.3, { 
+                opacity: 1, 
+                scale: 1, 
+                display: 'block', 
+                ease: Power2.easeOut 
+            });
+        } else {
+            // Fade-out and scale-down for non-matching thumbnails
+            TweenMax.to(dial, 0.3, { 
+                opacity: 0, 
+                scale: 0.8, 
+                display: 'none', 
+                ease: Power2.easeIn 
+            });
+        }
+    });
+
+    // Recalculate layout after filtering
+    animate();
+}
+
+document.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.shiftKey && event.key === 'F') {
+        event.preventDefault(); // Prevent the default browser behavior
+        searchContainer.classList.toggle('active');
+        // focus it
+        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
+    }
+});
+
+document.getElementById('closeSearch').addEventListener('click', () => {
+    const searchInput = document.getElementById('searchInput');
+    const searchContainer = document.getElementById('searchContainer');
+    
+    searchInput.value = ''; // Clear the search input
+    searchContainer.classList.remove('active'); // Hide the search container
+});
+
 
 importFileInput.onchange = function (event) {
     let filereader = new FileReader();
