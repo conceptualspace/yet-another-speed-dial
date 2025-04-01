@@ -655,7 +655,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 #searchContainer {
     position: absolute;
-    right: 112px;
+    right: 182px;
     top: 12px;
     visibility: hidden;
     opacity: 0;
