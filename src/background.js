@@ -281,26 +281,33 @@ async function createBookmarkFromContextMenu(tab) {
 
 // LIFECYCLE METHODS //
 
-function handleInstalled(details) {
+async function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
-		if (details.previousVersion < '3.3') {
-			const url = chrome.runtime.getURL("updated.html");
-        	chrome.tabs.create({ url });
-		}
+        if (details.previousVersion < '3.3') {
+            const url = chrome.runtime.getURL("updated.html");
+            chrome.tabs.create({ url });
+        }
         // perform any migrations here...
     }
-    // create context menu
-    chrome.contextMenus.create({
-        "title": "Add to Speed Dial",
-        "contexts": ['page'],
-        "documentUrlPatterns": ['https://*/*', 'http://*/*'],
-        "id": "addToSpeedDial"
-    });
 
+    try {
+        // remove existing menus to avoid issues with previous versions
+        await chrome.contextMenus.removeAll();
+
+        // create context menu
+         chrome.contextMenus.create({
+            title: "Add to Speed Dial",
+            contexts: ["page"],
+            documentUrlPatterns: ["https://*/*", "http://*/*"],
+            id: "addToSpeedDial",
+        });
+    } catch (error) {
+        console.log("Error managing context menus:", error.message);
+    }
 }
 
 
