@@ -1753,12 +1753,22 @@ function applySettings() {
         }
         */
 
+        // Calculate maxcols based on dial width and container width
+        const computedStyles = getComputedStyle(document.documentElement);
+
+        const dialWidth = parseInt(computedStyles.getPropertyValue('--dial-width'), 10) || 220;
+        const dialMargin = parseInt(computedStyles.getPropertyValue('--dial-margin'), 10) || 16;
+        const effectiveDialWidth = dialWidth + dialMargin * 2;
+
+        // calculate max columns based on container width
+        const containerWidth = bookmarksContainerParent.clientWidth;
+        const calculatedMaxCols = Math.floor(containerWidth / effectiveDialWidth);
+
         if (settings.maxCols && settings.maxCols !== "100") {
-            document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
-            layout();
+            const maxCols = Math.min(calculatedMaxCols, parseInt(settings.maxCols, 10));
+            document.documentElement.style.setProperty('--columns', maxCols * effectiveDialWidth + "px");
         } else {
-            document.documentElement.style.setProperty('--columns', '100%')
-            layout();
+            document.documentElement.style.setProperty('--columns', '100%');
         }
 
         if (settings.dialSize && settings.dialSize !== "medium") {
@@ -1828,7 +1838,7 @@ function applySettings() {
             document.documentElement.style.setProperty('--create-dial-display', 'block');
         }
 
-
+        layout();
         resolve();
 
         // populate settings nav
