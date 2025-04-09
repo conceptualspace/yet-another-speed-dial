@@ -119,13 +119,37 @@ h1 {
 }
 
 #tileContainer {
-    padding: 0 60px;
+    padding: 0 10px;
     height: calc(100vh - 79px);
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
     scrollbar-width: thin;
+}
+
+@media (max-width: 768px) {
+    #tileContainer {
+        padding: 0 2px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1920px) {
+    #tileContainer {
+        padding: 0 10px;
+    }
+}
+
+@media (min-width: 1921px) and (max-width: 2560px) {
+    #tileContainer {
+        padding: 0 20px;
+    }
+}
+
+@media (min-width: 2561px) {
+    #tileContainer {
+        padding: 0 40px;
+    }
 }
 
 .container {
