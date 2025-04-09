@@ -1030,10 +1030,14 @@ function hideModals() {
     document.getElementById('imageUrlContainer').style.display = 'none';
 
     // hide search
-    searchInput.value = '';
     searchInput.blur();
     searchContainer.classList.remove('active');
-    filterDials('');
+
+    if (searchInput.value) {
+        searchInput.value = ''; // Clear the search input
+        filterDials(''); // Only call if there was a search term
+    }
+
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -2408,6 +2412,11 @@ function filterDials(searchTerm) {
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
     dials.forEach(dial => {
+        if (!settings.showAddSite && dial.classList.contains('createDial')) {
+            // dont show the create dial button
+            return;
+        }
+
         const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
         const url = dial.href.toLowerCase();
 
