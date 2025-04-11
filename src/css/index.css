@@ -559,10 +559,25 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     transform-origin:  50% 50%;
 }
 
+.inputCloseBtn {
+    position: absolute;
+    right: 64px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #999;
+    cursor: default;
+}
+
+.inputCloseBtn:hover {
+    color: #ccc;
+}
+
 #imageUrlContainer {
     display: none;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 #fetchImageButton {

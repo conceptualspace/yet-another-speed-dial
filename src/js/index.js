@@ -55,6 +55,7 @@ const modalImgInput = document.getElementById("modalImgFile");
 const modalImgBtn = document.getElementById("modalImgBtn");
 const modalImgUrlBtn = document.getElementById("modalImgUrlBtn");
 const modalImageURLInput = document.getElementById("modalImageURLInput");
+const closeImgUrlBtn = document.getElementById("closeImgUrlBtn");
 const fetchImageButton = document.getElementById("fetchImageButton");
 const modalBgColorPickerInput = document.getElementById("modalBgColorPickerInput");
 const modalBgColorPickerBtn = document.getElementById("modalBgColorPickerBtn");
@@ -1028,6 +1029,7 @@ function hideModals() {
     // Reset modalBtnContainer and imageUrlContainer
     document.getElementById('modalBtnContainer').style.display = 'flex';
     document.getElementById('imageUrlContainer').style.display = 'none';
+    modalImageURLInput.value = '';
 
     // hide search
     searchInput.blur();
@@ -2208,6 +2210,13 @@ modalImgUrlBtn.addEventListener('click', function (event) {
     document.getElementById('modalBtnContainer').style.display = 'none';
     document.getElementById('imageUrlContainer').style.display = 'flex';
     modalImageURLInput.focus();
+});
+
+closeImgUrlBtn.addEventListener('click', function (event) {
+    event.preventDefault();
+    document.getElementById('modalBtnContainer').style.display = 'flex';
+    document.getElementById('imageUrlContainer').style.display = 'none';
+    modalImageURLInput.value = '';
 });
 
 // fetch the image from the url
