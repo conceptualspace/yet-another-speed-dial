@@ -1756,10 +1756,29 @@ function applySettings() {
         */
 
         if (settings.maxCols && settings.maxCols !== "100") {
-            document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
+            //todo cleanup - fixed values
+            let dialWidth = 220;
+            let dialMargin = 18 * 2; // 18px on each side
+
+            switch (settings.dialSize) {
+                case "large":
+                    dialWidth = 256;
+                    break;
+                case "small":
+                    dialWidth = 178;
+                    break;
+                case "x-small":
+                    dialWidth = 130;
+                    break;
+                default:
+                    dialWidth = 220;
+            }
+        
+            const containerWidth = settings.maxCols * (dialWidth + dialMargin);
+            document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
             layout();
         } else {
-            document.documentElement.style.setProperty('--columns', '100%')
+            document.documentElement.style.setProperty('--columns', '100%');
             layout();
         }
 
