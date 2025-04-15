@@ -43,7 +43,7 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "yet_another_speed_dial@conceptualspace.net",
-      "strict_min_version": "59.0"
+      "strict_min_version": "109.0"
     }
   }
 }
