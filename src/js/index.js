@@ -1954,7 +1954,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderName = e.target.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
+    } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
