@@ -55,6 +55,7 @@ const modalImgInput = document.getElementById("modalImgFile");
 const modalImgBtn = document.getElementById("modalImgBtn");
 const modalImgUrlBtn = document.getElementById("modalImgUrlBtn");
 const modalImageURLInput = document.getElementById("modalImageURLInput");
+const closeImgUrlBtn = document.getElementById("closeImgUrlBtn");
 const fetchImageButton = document.getElementById("fetchImageButton");
 const modalBgColorPickerInput = document.getElementById("modalBgColorPickerInput");
 const modalBgColorPickerBtn = document.getElementById("modalBgColorPickerBtn");
@@ -91,6 +92,9 @@ const importFileLabel = document.getElementById("importFileLabel");
 const helpBtn = document.getElementById("help");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
+
+const searchInput = document.getElementById('searchInput');
+const searchContainer = document.getElementById('searchContainer');
 
 // clock
 const clock = document.getElementById('clock');
@@ -1025,6 +1029,17 @@ function hideModals() {
     // Reset modalBtnContainer and imageUrlContainer
     document.getElementById('modalBtnContainer').style.display = 'flex';
     document.getElementById('imageUrlContainer').style.display = 'none';
+    modalImageURLInput.value = '';
+
+    // hide search
+    searchInput.blur();
+    searchContainer.classList.remove('active');
+
+    if (searchInput.value) {
+        searchInput.value = ''; // Clear the search input
+        filterDials(''); // Only call if there was a search term
+    }
+
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -1741,10 +1756,29 @@ function applySettings() {
         */
 
         if (settings.maxCols && settings.maxCols !== "100") {
-            document.documentElement.style.setProperty('--columns', settings.maxCols * 220 + "px")
+            //todo cleanup - fixed values
+            let dialWidth = 220;
+            let dialMargin = 18 * 2; // 18px on each side
+
+            switch (settings.dialSize) {
+                case "large":
+                    dialWidth = 256;
+                    break;
+                case "small":
+                    dialWidth = 178;
+                    break;
+                case "x-small":
+                    dialWidth = 130;
+                    break;
+                default:
+                    dialWidth = 220;
+            }
+        
+            const containerWidth = settings.maxCols * (dialWidth + dialMargin);
+            document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
             layout();
         } else {
-            document.documentElement.style.setProperty('--columns', '100%')
+            document.documentElement.style.setProperty('--columns', '100%');
             layout();
         }
 
@@ -1920,7 +1954,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderName = e.target.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
+    } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
@@ -2039,6 +2073,11 @@ window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
         hideMenus();
         hideModals();
+    } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
+        event.preventDefault(); // Prevent the default browser behavior
+        searchContainer.classList.toggle('active');
+        // focus it
+        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
     }
 });
 
@@ -2180,6 +2219,13 @@ modalImgUrlBtn.addEventListener('click', function (event) {
     document.getElementById('modalBtnContainer').style.display = 'none';
     document.getElementById('imageUrlContainer').style.display = 'flex';
     modalImageURLInput.focus();
+});
+
+closeImgUrlBtn.addEventListener('click', function (event) {
+    event.preventDefault();
+    document.getElementById('modalBtnContainer').style.display = 'flex';
+    document.getElementById('imageUrlContainer').style.display = 'none';
+    modalImageURLInput.value = '';
 });
 
 // fetch the image from the url
@@ -2382,6 +2428,59 @@ function parseJson(event) {
         return null;
     }
 }
+
+// Add event listener for search input
+searchInput.addEventListener('input', function (e) {
+    const searchTerm = e.target.value.toLowerCase();
+    filterDials(searchTerm);
+});
+
+function filterDials(searchTerm) {
+    const currentParent = currentFolder;
+    const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
+
+    dials.forEach(dial => {
+        if (!settings.showAddSite && dial.classList.contains('createDial')) {
+            // dont show the create dial button
+            return;
+        }
+
+        const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
+        const url = dial.href.toLowerCase();
+
+        if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
+            // Fade-in and scale-up for matching thumbnails
+            TweenMax.to(dial, 0.3, { 
+                opacity: 1, 
+                scale: 1, 
+                display: 'block', 
+                ease: Power2.easeOut 
+            });
+        } else {
+            // Fade-out and scale-down for non-matching thumbnails
+            TweenMax.to(dial, 0.3, { 
+                opacity: 0, 
+                scale: 0.8, 
+                display: 'none', 
+                ease: Power2.easeIn 
+            });
+        }
+    });
+
+    // Recalculate layout after filtering
+    animate();
+}
+
+
+document.getElementById('closeSearch').addEventListener('click', () => {
+    const searchInput = document.getElementById('searchInput');
+    const searchContainer = document.getElementById('searchContainer');
+    
+    searchInput.value = ''; // Clear the search input
+    searchContainer.classList.remove('active'); // Hide the search container
+    filterDials('');
+});
+
 
 importFileInput.onchange = function (event) {
     let filereader = new FileReader();

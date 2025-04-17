@@ -12,17 +12,14 @@ Yet Another Speed Dial
 A better new tab page and bookmark manager (speed dial) that respects your privacy, inspired by Opera
 
 - Automatically fetches site thumbnails using open graph standard
-- Supports custom images, sorting, and folders
+- Supports custom images, sorting, searching, and folders
 - Uses the native bookmarks library so speed dials can be synced by the browser
 - Supports limited importing from other browser extensions
-- Available for Chrome, Edge and Firefox
-- Simple and fast UI: no ads, trackers, or bs
+- Available for Brave, Chrome, Edge and Firefox (including Android)
+- Lightning fast UI: no ads, trackers, or bs
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
 
 ## FAQ:
 
 https://conceptualspace.github.io/yet-another-speed-dial/
-
-#### Why isn't the address bar focused (active) by default on the new tab / home page?
-This is a bug in Firefox: https://bugzilla.mozilla.org/show_bug.cgi?id=1411209

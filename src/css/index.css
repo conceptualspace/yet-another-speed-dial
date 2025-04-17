@@ -119,13 +119,37 @@ h1 {
 }
 
 #tileContainer {
-    padding: 0 60px;
+    padding: 0 10px;
     height: calc(100vh - 79px);
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
     scrollbar-width: thin;
+}
+
+@media (max-width: 768px) {
+    #tileContainer {
+        padding: 0 2px;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1920px) {
+    #tileContainer {
+        padding: 0 10px;
+    }
+}
+
+@media (min-width: 1921px) and (max-width: 2560px) {
+    #tileContainer {
+        padding: 0 20px;
+    }
+}
+
+@media (min-width: 2561px) {
+    #tileContainer {
+        padding: 0 40px;
+    }
 }
 
 .container {
@@ -535,10 +559,25 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     transform-origin:  50% 50%;
 }
 
+.inputCloseBtn {
+    position: absolute;
+    right: 64px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: #999;
+    cursor: default;
+}
+
+.inputCloseBtn:hover {
+    color: #ccc;
+}
+
 #imageUrlContainer {
     display: none;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 #fetchImageButton {
@@ -651,6 +690,56 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 .settingsIcon svg:hover {
     filter: opacity(1);
+}
+
+#searchContainer {
+    position: absolute;
+    right: 182px;
+    top: 12px;
+    visibility: hidden;
+    opacity: 0;
+    transform: scale(0.8);
+
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+
+    z-index: 1000;
+    transition: all 0.160s ease-in-out;
+
+    transform: translateY(-20px);
+}
+
+#searchContainer.active {
+    opacity: 1;
+    visibility: visible;
+    /*transform: scale(1)*/
+    transform: translateY(0);
+}
+
+#searchInput {
+    width: 380px;
+    padding: 5px;
+    border: 1px solid black;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 1);
+    padding: 10px;
+
+    color: var(--color);
+}
+
+.searchCloseBtn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: default;
+    font-size: 20px;
+    color: #ccc;
+    transition: color 0.2s ease;
+}
+
+.searchCloseBtn:hover {
+    color: #fff;
 }
 
 #clock {
