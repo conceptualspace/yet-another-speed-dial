@@ -645,14 +645,17 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     min-height: 78px;
     margin-right: 140px;
     margin-left: 30px;
+    margin-left: 140px;
     display: flex;
     align-items: center;
+    justify-content: center;
 }
 
 #folders {
     display: flex;
     flex-wrap: wrap;
-    align-items: baseline;
+    align-items: center;
+    justify-content: center;
 }
 
 #addFolderIcon {
