@@ -655,6 +655,17 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     align-items: baseline;
 }
 
+#addFolderButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: 12px;
+    margin-right: 12px;
+    opacity: 0.8;
+    transition: 360ms ease;
+}
+
 #addFolderIcon {
     display: var(--show-folders);
     height: 1.2rem;
@@ -665,7 +676,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     transition: 360ms ease;
     fill: var(--color);
 }
-#addFolderIcon:hover {
+#addFolderButton:hover {
     opacity: 1;
 }
 
