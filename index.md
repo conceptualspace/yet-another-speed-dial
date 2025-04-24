@@ -35,7 +35,7 @@ Yes, just use Command + Click or Middle Click (depending on your OS).
 Yes, just use Shift + Right-click on the speed dial to access the default context menu.
 
 ### Can I use YASD in a Chrome Incognito window?
-Unfortunately, Google Chrome does not allow extensions to change the new tab page of Incognito windows. If you are a heavy user of Incognito mode, I would suggest trying Firefox, which does not have the limitation.
+Unfortunately, Google Chrome does not allow extensions to change the new tab page of Incognito windows (which is a questionable restriction since every other extension API is enabled). If you are a heavy user of Incognito mode, I would suggest trying Firefox, which does not have the limitation.
 
 ### Does YASD support Zen Browser?
 Yes, but you need to override the new tab popup for YASD to work: open `about:config` and search for `zen.urlbar.replace-newtab` and set it to `false`
