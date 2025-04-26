@@ -15,7 +15,7 @@ A better new tab page and bookmark manager (speed dial) that respects your priva
 - Supports custom images, sorting, searching, and folders
 - Uses the native bookmarks library so speed dials can be synced by the browser
 - Supports limited importing from other browser extensions
-- Available for Brave, Chrome, Edge and Firefox (including Android)
+- Available for Brave, Chrome, Edge, Firefox (~~including Android~~) and Vivaldi
 - Lightning fast UI: no ads, trackers, or bs
 
 ![alt tag](https://github.com/conceptualspace/yet-another-speed-dial/raw/master/assets/screenshot.png)
