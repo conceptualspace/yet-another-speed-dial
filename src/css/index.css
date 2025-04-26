@@ -9,7 +9,7 @@
     --image-scaling: contain;
     --dial-width: 220px;
     --dial-height: 142px;
-    --dial-margin: 18px; /*todo: oops accidentally bumped this from 12 to 18 */
+    --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
 }
 
 /* Apply a smooth transition for the background image */
