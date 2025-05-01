@@ -32,6 +32,27 @@
     padding: 0.3em 0;
 }
 
+.sidenav .closeBtn {
+    all: unset;
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #aaa;
+    cursor: default;
+    transition: all 200ms ease;
+}
+
+.sidenav .closeBtn:hover {
+    color: #ccc;
+    background-color: transparent;
+}
+.sidenav .closeBtn:focus {
+    outline: none;
+}
+
 .sidenav a {
     text-decoration: none;
     color: white;

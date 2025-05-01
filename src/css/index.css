@@ -71,6 +71,8 @@ html, body {
     width: 100%;
     height: 100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 body {
@@ -119,8 +121,10 @@ h1 {
 }
 
 #tileContainer {
-    padding: 0 10px;
-    height: calc(100vh - 79px);
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
@@ -642,11 +646,11 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #foldersContainer {
-    min-height: 78px;
-    margin-right: 140px;
+    padding: 20px 0; /*todo: nuke this when no folders are present so visually the dials appear centered */
+    margin-right: 160px;
     margin-left: 30px;
     display: flex;
-    align-items: center;
+    align-items: baseline;
 }
 
 #folders {

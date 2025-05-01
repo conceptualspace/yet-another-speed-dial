@@ -2270,6 +2270,10 @@ function setInputValue(inputElement, value) {
     inputElement.dispatchEvent(new Event('input'));
 }
 
+document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+    hideSettings();
+});
+
 
 function prepareExportV1() {
     browser.storage.local.get(null).then(function (items) {

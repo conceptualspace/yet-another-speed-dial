@@ -18,7 +18,7 @@
 <!--
 <div id="foldersContainer" style="position:absolute; top:0; left:0"><span id="folders"></span><a title="Add Folder" class="tile folderTitle" style="padding-left: 12px; font-size: large; transform: matrix(1, 0, 0, 1, 0, 0);">+</a></div>
 -->
-<div class="folders" id="foldersContainer"><div id="folders"></div><a id="addFolderButton" title="Add Folder">
+<div class="folders" id="foldersContainer"><div id="folders" class="folders"></div><a id="addFolderButton" title="Add Folder">
     <svg height="24" id="addFolderIcon" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg">
         <path d="M20 6h-8l-2-2H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm0 12H4V6h5.17l2 2H20v10zm-8-4h2v2h2v-2h2v-2h-2v-2h-2v2h-2z"></path>
     </svg>
@@ -264,6 +264,8 @@
 <div class="sidenav" id="sidenav">
     <div class="settings" id="settingsDiv">
         <h1 data-locale="settingsTitle">Settings</h1>
+
+        <button id="closeSettingsBtn" class="closeBtn" title="Close Settings">&times;</button>
 
         <div class='row'>
             <div class='column'>
