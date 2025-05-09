@@ -119,7 +119,7 @@ let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
-let homeFolderTitle = browser.i18n.getMessage('home');
+let homeFolderTitle = chrome.i18n.getMessage('home');
 let windowSize = null;
 let containerSize = null;
 let layoutFolder = false;
@@ -177,7 +177,7 @@ function displayClock() {
 displayClock();
 
 function getBookmarks(folderId) {
-    browser.bookmarks.getChildren(folderId).then(result => {
+    chrome.bookmarks.getChildren(folderId).then(result => {
         if (folderId === speedDialId && !result.length && settings.showFolders) {
             //noBookmarks.style.display = 'block';
             addFolderButton.style.display = 'none';
@@ -190,7 +190,7 @@ function getBookmarks(folderId) {
 
 async function buildDialPages(speedDialId, currentFolderId) {
     async function getChildren(folderId) {
-        return await browser.bookmarks.getChildren(folderId);
+        return await chrome.bookmarks.getChildren(folderId);
     }
 
     const children = await getChildren(speedDialId);
@@ -239,7 +239,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
 async function buildFolderPages(speedDialId) {
     async function getChildren(folderId) {
-        return await browser.bookmarks.getChildren(folderId);
+        return await chrome.bookmarks.getChildren(folderId);
     }
 
     const children = await getChildren(speedDialId);
@@ -276,7 +276,7 @@ async function buildFolderPages(speedDialId) {
 
 function removeBookmark(url) {
     let currentParent = currentFolder ? currentFolder : speedDialId
-    browser.bookmarks.search({ url })
+    chrome.bookmarks.search({ url })
         .then(bookmarks => {
             let cleanup = bookmarks.length < 2;
             for (let bookmark of bookmarks) {
@@ -286,10 +286,10 @@ function removeBookmark(url) {
                     layout(true);
                     // remove dial
                     targetNode.remove();
-                    browser.bookmarks.remove(bookmark.id);
+                    chrome.bookmarks.remove(bookmark.id);
                     // if we have duplicates (ex in other folders), keep the image cache, otherwise purge it
                     if (cleanup) {
-                        browser.storage.local.remove(url);
+                        chrome.storage.local.remove(url);
                     }
                 }
             }
@@ -300,7 +300,7 @@ function moveFolder(id, oldIndex, newIndex, newSiblingId) {
     let options = {};
 
     function move(id, options) {
-        browser.bookmarks.move(id, options).then(result => {
+        chrome.bookmarks.move(id, options).then(result => {
             tabMessagePort.postMessage({ refreshInactive: true })
         }).catch(err => {
             console.log(err);
@@ -308,13 +308,13 @@ function moveFolder(id, oldIndex, newIndex, newSiblingId) {
     }
 
     if (newSiblingId && newSiblingId !== -1) {
-        browser.bookmarks.get(newSiblingId).then(result => {
+        chrome.bookmarks.get(newSiblingId).then(result => {
             if (oldIndex >= newIndex) {
                 options.index = Math.max(0, result[0].index);
             } else {
                 options.index = Math.max(0, result[0].index - 1);
                 // chrome-only off by 1 bug when moving a bookmark forward
-                if (!browser.runtime.getBrowserInfo) {
+                if (!chrome.runtime.getBrowserInfo) {
                     options.index++;
                 }
             }
@@ -331,7 +331,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     let options = {}
 
     function move(id, options) {
-        browser.bookmarks.move(id, options).then(result => {
+        chrome.bookmarks.move(id, options).then(result => {
             tabMessagePort.postMessage({ refreshInactive: true });
         }).catch(err => {
             console.log(err);
@@ -345,11 +345,11 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
     // todo: refactor
     if (settings.defaultSort === "first") {
         if (newSiblingId && newSiblingId !== -1) {
-            browser.bookmarks.get(newSiblingId).then(result => {
+            chrome.bookmarks.get(newSiblingId).then(result => {
                 if (toParentId === fromParentId && oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
                     // chrome-only off by 1 bug when moving a bookmark forward
-                    if (!browser.runtime.getBrowserInfo) {
+                    if (!chrome.runtime.getBrowserInfo) {
                         options.index++;
                     }
                 } else {
@@ -367,13 +367,13 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
         }
     } else {
         if (newSiblingId && newSiblingId !== -1) {
-            browser.bookmarks.get(newSiblingId).then(result => {
+            chrome.bookmarks.get(newSiblingId).then(result => {
                 if (toParentId !== fromParentId || oldIndex >= newIndex) {
                     options.index = Math.max(0, result[0].index);
                 } else {
                     options.index = Math.max(0, result[0].index - 1);
                     // chrome-only off by 1 bug when moving a bookmark forward
-                    if (!browser.runtime.getBrowserInfo) {
+                    if (!chrome.runtime.getBrowserInfo) {
                         options.index++;
                     }
                 }
@@ -417,7 +417,7 @@ function showFolder(id) {
 }
 
 function getThumbs(bookmarkUrl) {
-    return browser.storage.local.get(bookmarkUrl)
+    return chrome.storage.local.get(bookmarkUrl)
         .then(result => {
             if (result[bookmarkUrl]) {
                 return result[bookmarkUrl];
@@ -449,7 +449,7 @@ function folderLink(title, id) {
         bookmarksContainerParent.scrollTop = scrollPos;
 
         settings.currentFolder = id;
-        browser.storage.local.set({ settings });
+        chrome.storage.local.set({ settings });
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
@@ -474,7 +474,7 @@ function saveFolder() {
     let name = createFolderModalName.value.trim();
 
     if (name.length) {
-        browser.bookmarks.create({
+        chrome.bookmarks.create({
             title: name,
             parentId: speedDialId
         }).then(node => {
@@ -487,7 +487,7 @@ function saveFolder() {
 
 function editFolder() {
     let title = editFolderModalName.value.trim();
-    browser.bookmarks.update(targetFolder, {
+    chrome.bookmarks.update(targetFolder, {
         title
     }).then(node => {
         hideModals();
@@ -507,7 +507,7 @@ function refreshThumbnails(url, tileid) {
 }
 
 function removeFolder() {
-    browser.bookmarks.removeTree(targetFolder).then(() => {
+    chrome.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
         targetFolderLink?.remove();
         folders.splice(folders.indexOf(targetFolder), 1);
@@ -521,7 +521,7 @@ function removeFolder() {
             bookmarksContainerParent.scrollTop = scrollPos;
             showFolder(speedDialId);
             settings.currentFolder = speedDialId;
-            browser.storage.local.set({ settings })
+            chrome.storage.local.set({ settings })
         }
 
         // todo: clean up this node or do it on refresh
@@ -531,7 +531,7 @@ function removeFolder() {
 
 function getChildren(folderId) {
     return new Promise((resolve, reject) => {
-        browser.bookmarks.getChildren(folderId).then(children => {
+        chrome.bookmarks.getChildren(folderId).then(children => {
             resolve(children);
         });
     });
@@ -543,7 +543,7 @@ function refreshAllThumbnails() {
 
     hideModals();
 
-    browser.bookmarks.getChildren(parent).then(children => {
+    chrome.bookmarks.getChildren(parent).then(children => {
         if (children && children.length) {
             for (let child of children) {
                 if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
@@ -610,10 +610,10 @@ async function printNewSetup() {
     noBookmarksDiv.className = 'default-content';
     noBookmarksDiv.id = 'noBookmarks';
     noBookmarksDiv.innerHTML = `
-        <h1 class="default-content" data-locale="newInstall1">${browser.i18n.getMessage('newInstall1')}</h1>
-        <p class="default-content helpText" data-locale="newInstall2">${browser.i18n.getMessage('newInstall2')}</p>
-        <p class="default-content helpText" data-locale="newInstall3">${browser.i18n.getMessage('newInstall3')}</p>
-        <p class="default-content helpText" data-locale="newInstall4">${browser.i18n.getMessage('newInstall4')}</p>
+        <h1 class="default-content" data-locale="newInstall1">${chrome.i18n.getMessage('newInstall1')}</h1>
+        <p class="default-content helpText" data-locale="newInstall2">${chrome.i18n.getMessage('newInstall2')}</p>
+        <p class="default-content helpText" data-locale="newInstall3">${chrome.i18n.getMessage('newInstall3')}</p>
+        <p class="default-content helpText" data-locale="newInstall4">${chrome.i18n.getMessage('newInstall4')}</p>
         <div class="cta-container">
         <p id="splashImport" class="default-content helpText cta" >
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
@@ -667,7 +667,7 @@ async function printBookmarks(bookmarks, parentId) {
         bookmarks = bookmarks.reverse();
     }
     chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
-    //let thumbnails = await browser.storage.local.get(urls);
+    //let thumbnails = await chrome.storage.local.get(urls);
 
     // Process bookmarks
     if (bookmarks) {
@@ -877,10 +877,10 @@ async function printBookmarksOld(bookmarks, parentId) {
             noBookmarksDiv.className = 'default-content';
             noBookmarksDiv.id = 'noBookmarks';
             noBookmarksDiv.innerHTML = `
-                <h1 class="default-content" data-locale="newInstall1">${browser.i18n.getMessage('newInstall1')}</h1>
-                <p class="default-content helpText" data-locale="newInstall2">${browser.i18n.getMessage('newInstall2')}</p>
-                <p class="default-content helpText" data-locale="newInstall3">${browser.i18n.getMessage('newInstall3')}</p>
-                <p class="default-content helpText" data-locale="newInstall4">${browser.i18n.getMessage('newInstall4')}</p>
+                <h1 class="default-content" data-locale="newInstall1">${chrome.i18n.getMessage('newInstall1')}</h1>
+                <p class="default-content helpText" data-locale="newInstall2">${chrome.i18n.getMessage('newInstall2')}</p>
+                <p class="default-content helpText" data-locale="newInstall3">${chrome.i18n.getMessage('newInstall3')}</p>
+                <p class="default-content helpText" data-locale="newInstall4">${chrome.i18n.getMessage('newInstall4')}</p>
                 <div class="cta-container">
                 <p id="splashImport" class="default-content helpText cta" >
                     <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
@@ -1217,7 +1217,7 @@ function rectifyUrl(url) {
 function createDial() {
     let url = rectifyUrl(createDialModalURL.value.trim());
 
-    browser.bookmarks.create({
+    chrome.bookmarks.create({
         title: url,
         url: url,
         parentId: createDialModalURL.parentId
@@ -1235,7 +1235,7 @@ function openAllTabs() {
 
         dials?.forEach(dial => {
             if (dial.href) {
-                browser.tabs.create({
+                chrome.tabs.create({
                     url: dial.href,
                     active: false
                 });
@@ -1416,7 +1416,7 @@ function saveBookmarkSettings() {
         }
         targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
         //targetNode.children[0].children[0].style.backgroundColor = bgColor;
-        browser.storage.local.get(url)
+        chrome.storage.local.get(url)
             .then(result => {
                 let thumbnails = [];
                 if (result[url]) {
@@ -1427,7 +1427,7 @@ function saveBookmarkSettings() {
                     thumbnails.push(selectedImageSrc);
                     thumbIndex = 0;
                 }
-                browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
+                chrome.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
                     //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                     if (title !== targetTileTitle) {
                         updateTitle()
@@ -1460,13 +1460,13 @@ function saveBookmarkSettings() {
             }
         }
 
-        browser.storage.local.get(url)
+        chrome.storage.local.get(url)
             .then(result => {
                 if (result[url]) {
                     let thumbnails = result[url].thumbnails;
                     thumbIndex = thumbnails.indexOf(selectedImageSrc);
                     if (thumbIndex >= 0) {
-                        browser.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
+                        chrome.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
                             //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
                             if (title !== targetTileTitle || url !== newUrl) {
                                 updateTitle()
@@ -1491,18 +1491,18 @@ function saveBookmarkSettings() {
         //targetNode.children[0].children[1].textContent = title;
         // sortable ids changed so rewrite to storage
         //let order = sortable.toArray();
-        //browser.storage.local.set({"sort":order});
+        //chrome.storage.local.set({"sort":order});
         // todo: temp hack to match all until we start using bookmark ids
-        browser.bookmarks.search({ url })
+        chrome.bookmarks.search({ url })
             .then(bookmarks => {
                 if (bookmarks.length <= 1 && (url !== newUrl)) {
                     // cleanup unused thumbnails
-                    browser.storage.local.remove(url)
+                    chrome.storage.local.remove(url)
                 }
                 for (let bookmark of bookmarks) {
                     let currentParent = currentFolder ? currentFolder : speedDialId
                     if (bookmark.parentId === currentParent) {
-                        browser.bookmarks.update(bookmark.id, {
+                        chrome.bookmarks.update(bookmark.id, {
                             title,
                             url: newUrl
                         });
@@ -1631,7 +1631,7 @@ function resizeBackground(dataURI) {
                 ctx.drawImage(this, 0, 0, width, height);
 
                 // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
-                if (browser.runtime.getBrowserInfo) {
+                if (chrome.runtime.getBrowserInfo) {
                     const newDataURI = canvas.toDataURL('image/jpeg', 0.8);
                     resolve(newDataURI);
                 } else {
@@ -1890,7 +1890,7 @@ function applySettings() {
                 // reset to default on error with user image
                 settings.wallpaperSrc = 'img/bg.jpg';
                 imgPreview.setAttribute('src', settings.wallpaperSrc);
-                browser.storage.local.set({ settings });
+                chrome.storage.local.set({ settings });
             }
         }
 
@@ -1917,7 +1917,7 @@ function saveSettings() {
 
     applySettings();
 
-    browser.storage.local.set({ settings })
+    chrome.storage.local.set({ settings })
         .then(() => {
             /*
             settingsToast.style.opacity = "1";
@@ -2015,16 +2015,16 @@ window.addEventListener("mousedown", e => {
                     openSettings();
                     break;
                 case 'newTab':
-                    browser.tabs.create({ url: targetTileHref });
+                    chrome.tabs.create({ url: targetTileHref });
                     break;
                 case 'newBackgroundTab':
-                    browser.tabs.create({ url: targetTileHref, active: false });
+                    chrome.tabs.create({ url: targetTileHref, active: false });
                     break;
                 case 'newWin':
-                    browser.windows.create({ "url": targetTileHref });
+                    chrome.windows.create({ "url": targetTileHref });
                     break;
                 case 'newPrivate':
-                    browser.windows.create({ "url": targetTileHref, "incognito": true });
+                    chrome.windows.create({ "url": targetTileHref, "incognito": true });
                     break;
                 case 'openAll':
                     openAllTabs();
@@ -2276,7 +2276,7 @@ document.getElementById('closeSettingsBtn').addEventListener('click', () => {
 
 
 function prepareExportV1() {
-    browser.storage.local.get(null).then(function (items) {
+    chrome.storage.local.get(null).then(function (items) {
         // filter out unused thumbnails to keep exported file efficient
         let filteredItems = {};
         for (const [key, value] of Object.entries(items)) {
@@ -2349,7 +2349,7 @@ function prepareExport() {
     };
 
     // Get bookmarks and folders within the speed dial folder
-    browser.bookmarks.getSubTree(speedDialId).then(bookmarkTreeNodes => {
+    chrome.bookmarks.getSubTree(speedDialId).then(bookmarkTreeNodes => {
         function traverseBookmarks(nodes, parentId = null) {
             nodes.forEach(node => {
                 if (node.url) {
@@ -2375,7 +2375,7 @@ function prepareExport() {
         traverseBookmarks(bookmarkTreeNodes[0].children);
 
         // Get YASD settings and thumbnails from storage
-        browser.storage.local.get(null).then(items => {
+        chrome.storage.local.get(null).then(items => {
             for (const [key, value] of Object.entries(items)) {
                 if (key.startsWith('settings')) {
                     yasdJson.yasd.settings[key] = value;
@@ -2416,7 +2416,7 @@ importExportBtn.onclick = function () {
 }
 
 helpBtn.onclick = function () {
-    browser.tabs.create({ url: helpUrl });
+    chrome.tabs.create({ url: helpUrl });
 }
 
 importFileLabel.onclick = function () {
@@ -2643,27 +2643,27 @@ function importFromYASD(json) {
     let yasdData = json.yasd;
         
     // Clear previous settings and import new data
-    browser.storage.local.clear().then(() => {
+    chrome.storage.local.clear().then(() => {
         // Store settings
         if (yasdData.settings) {
-            browser.storage.local.set({ settings: yasdData.settings });
+            chrome.storage.local.set({ settings: yasdData.settings });
         }
 
         // Store dials
         let dialPromises = yasdData.dials.map(dial => {
             let url = Object.keys(dial)[0];
             let dialData = dial[url];
-            return browser.storage.local.set({ [url]: dialData });
+            return chrome.storage.local.set({ [url]: dialData });
         });
 
         // Create folders and get their IDs
         let folderPromises = yasdData.folders.sort((a, b) => a.index - b.index).map(folder => {
-            return browser.bookmarks.search({ title: folder.title }).then(existingFolders => {
+            return chrome.bookmarks.search({ title: folder.title }).then(existingFolders => {
                 const matchingFolders = existingFolders.filter(f => f.parentId === speedDialId);
                 if (matchingFolders.length > 0) {
                     return { oldId: folder.id, newId: matchingFolders[0].id };
                 } else {
-                    return browser.bookmarks.create({
+                    return chrome.bookmarks.create({
                         title: folder.title,
                         parentId: speedDialId
                     }).then(node => {
@@ -2682,10 +2682,10 @@ function importFromYASD(json) {
             // Create bookmarks using the new folder IDs
             let bookmarkPromises = yasdData.bookmarks.map(bookmark => {
                 let parentId = folderIdMap[bookmark.folderid] || speedDialId;
-                return browser.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                     let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                     if (!existsInFolder) {
-                        return browser.bookmarks.create({
+                        return chrome.bookmarks.create({
                             title: bookmark.title,
                             url: bookmark.url,
                             parentId: parentId
@@ -2714,8 +2714,8 @@ function importFromYASD(json) {
 
 function importFromOldYASD(json) {
     // import from old yasd format
-    browser.storage.local.clear().then(() => {
-        browser.storage.local.set(json).then(result => {
+    chrome.storage.local.clear().then(() => {
+        chrome.storage.local.set(json).then(result => {
             hideModals();
             // refresh page
             //tabMessagePort.postMessage({handleImport: true});
@@ -3025,7 +3025,7 @@ function onResize() {
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
-        elem.innerText = browser.i18n.getMessage(elem.dataset.locale)
+        elem.innerText = chrome.i18n.getMessage(elem.dataset.locale)
     })
 
     // init what used to be background work"
