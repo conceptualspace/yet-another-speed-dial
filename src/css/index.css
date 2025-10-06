@@ -647,11 +647,15 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #foldersContainer {
-    padding: 20px 0; /*todo: nuke this when no folders are present so visually the dials appear centered */
-    margin-right: 160px;
-    margin-left: 30px;
+    padding: 20px 30px; /*todo: nuke this when no folders are present so visually the dials appear centered */
     display: flex;
-    align-items: baseline;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.folders-left {
+    display: flex;
+    align-items: center;
 }
 
 #folders {
@@ -676,13 +680,9 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 /* Header controls container */
 .header-controls {
-    position: absolute;
-    top: 26px;
-    right: 30px;
     display: flex;
     align-items: center;
     gap: 20px;
-    z-index: 1;
 }
 
 .header-controls > * {
@@ -826,6 +826,9 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     white-space: nowrap;
     line-height: 1;
     align-self: center;
+
+    font-weight: 200;
+    transition: 160ms ease;
 }
 
 #toast {
