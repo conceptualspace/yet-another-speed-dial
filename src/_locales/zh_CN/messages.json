@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "缩放图片"
   },
+  "searchButton": {
+    "message": "搜索按钮"
+  },
+  "searchPlaceholder": {
+    "message": "搜索..."
+  },
   "settings": {
     "message": "设置..."
   },

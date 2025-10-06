@@ -1,0 +1,178 @@
+{
+  "addFolderButton": {
+    "message": "Przycisk dodaj folder"
+  },
+  "address": {
+    "message": "Adres"
+  },
+  "addSiteButton": {
+    "message": "Przycisk dodaj stronę"
+  },
+  "addTo": {
+    "message": "Dodaj do szybkiego wybierania"
+  },
+  "backgroundColor": {
+    "message": "Kolor tła"
+  },
+  "bgColor": {
+    "message": "Kolor tła"
+  },
+  "browse": {
+    "message": "Przeglądaj..."
+  },
+  "cancel": {
+    "message": "Anuluj"
+  },
+  "captureMessage": {
+    "message": "To tymczasowo otworzy stronę w nowej karcie, aby przechwycić obraz"
+  },
+  "clock": {
+    "message": "Zegar"
+  },
+  "confirmDelete": {
+    "message": "Czy na pewno chcesz trwale usunąć ten folder?"
+  },
+  "createFolder": {
+    "message": "Utwórz folder"
+  },
+  "defaultSort": {
+    "message": "Domyślne sortowanie"
+  },
+  "delete": {
+    "message": "Usuń"
+  },
+  "dialRatio": {
+    "message": "Format wybierania"
+  },
+  "dialSize": {
+    "message": "Rozmiar wybierania"
+  },
+  "edit": {
+    "message": "Edytuj"
+  },
+  "editFolder": {
+    "message": "Edytuj folder..."
+  },
+  "export": {
+    "message": "Eksportuj ustawienia..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "nowoczesne szybkie wybieranie dla chrome, edge i firefox"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "kolejne szybkie wybieranie"
+  },
+  "help": {
+    "message": "Pomoc"
+  },
+  "home": {
+    "message": "Strona główna"
+  },
+  "image": {
+    "message": "Obraz"
+  },
+  "imageURL": {
+    "message": "URL obrazu"
+  },
+  "import": {
+    "message": "Importuj ustawienia..."
+  },
+  "importExport": {
+    "message": "To utworzy kopię zapasową lub przywróci ustawienia YASD i miniatury.\n\nUpewnij się, że zakładki przeglądarki są oddzielnie zabezpieczone przez menedżera zakładek lub synchronizację. Uwaga: import zastąpi bieżące ustawienia!\n\nYASD może również spróbować importować z plików kopii zapasowych Speed Dial 2 i FVD (obecnie eksperymentalne)"
+  },
+  "importExportLink": {
+    "message": "Import i eksport..."
+  },
+  "labels": {
+    "message": "Etykiety"
+  },
+  "largeTiles": {
+    "message": "Duże kafelki"
+  },
+  "maxColumns": {
+    "message": "Maksymalna liczba kolumn"
+  },
+  "name": {
+    "message": "Nazwa"
+  },
+  "newBackgroundTab": {
+    "message": "Otwórz w karcie w tle"
+  },
+  "newDial": {
+    "message": "Nowe szybkie wybieranie..."
+  },
+  "newFolder": {
+    "message": "Nowy folder..."
+  },
+  "newInstall1": {
+    "message": "Zacznij korzystać z Yet Another Speed Dial!"
+  },
+  "newInstall2": {
+    "message": "⭐ Po prostu dodaj zakładki do folderu Szybkie wybieranie, a pojawią się tutaj"
+  },
+  "newInstall3": {
+    "message": "✨ Możesz organizować zakładki w podfoldery"
+  },
+  "newInstall4": {
+    "message": "✨ Kliknij prawym przyciskiem myszy na wybieranie, aby je edytować. Możesz również przeciągać i upuszczać, aby je układać"
+  },
+  "newPrivate": {
+    "message": "Otwórz w nowym oknie prywatnym"
+  },
+  "newTab": {
+    "message": "Otwórz w nowej karcie"
+  },
+  "newWin": {
+    "message": "Otwórz w nowym oknie"
+  },
+  "refresh": {
+    "message": "Odśwież miniatury"
+  },
+  "remember": {
+    "message": "Zapamiętaj ostatni folder"
+  },
+  "remove": {
+    "message": "Usuń"
+  },
+  "save": {
+    "message": "Zapisz"
+  },
+  "saveToast": {
+    "message": "Ustawienia zapisane!"
+  },
+  "scaleImages": {
+    "message": "Skaluj obrazy"
+  },
+  "searchButton": {
+    "message": "Przycisk wyszukiwania"
+  },
+  "searchPlaceholder": {
+    "message": "Szukaj..."
+  },
+  "settings": {
+    "message": "Ustawienia..."
+  },
+  "settingsButton": {
+    "message": "Przycisk ustawień"
+  },
+  "settingsTitle": {
+    "message": "Ustawienia"
+  },
+  "textColor": {
+    "message": "Kolor tekstu"
+  },
+  "tileTitle": {
+    "message": "Tytuł"
+  },
+  "title": {
+    "message": "Szybkie wybieranie"
+  },
+  "uploadImage": {
+    "message": "Dodaj obraz..."
+  },
+  "wallpaper": {
+    "message": "Tapeta"
+  }
+}

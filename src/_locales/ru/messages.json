@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "Подогнать изображения"
   },
+  "searchButton": {
+    "message": "Кнопка поиска"
+  },
+  "searchPlaceholder": {
+    "message": "Поиск..."
+  },
   "settings": {
     "message": "Настройки..."
   },

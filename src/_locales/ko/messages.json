@@ -145,6 +145,12 @@
     "scaleImages": {
       "message": "이미지 크기 조정"
     },
+    "searchButton": {
+      "message": "검색 버튼"
+    },
+    "searchPlaceholder": {
+      "message": "검색..."
+    },
     "settings": {
       "message": "설정..."
     },

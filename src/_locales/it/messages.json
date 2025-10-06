@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "Immagini in scala"
   },
+  "searchButton": {
+    "message": "Pulsante di ricerca"
+  },
+  "searchPlaceholder": {
+    "message": "Cerca..."
+  },
   "settings": {
     "message": "Impostazioni..."
   },

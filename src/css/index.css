@@ -5,6 +5,8 @@
     --create-dial-display: block;
     --clock: none;
     --settings: none;
+    --search: block;
+    --search-position: 30px;
     --columns: 100%;
     --image-scaling: contain;
     --dial-width: 220px;
@@ -633,7 +635,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     width: 320px; /* 0 width - change this with JavaScript */
     position: fixed; /* Stay in place */
     transform: translateX(100%);
-    z-index: 2; /* Stay on top */
+    z-index: 3; /* Stay on top */
     top: 0; /* Stay at the top */
     right: 0;
     background: rgba(0,0,0,1);
@@ -696,54 +698,110 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     filter: opacity(1);
 }
 
-#searchContainer {
-    position: absolute;
-    right: 182px;
-    top: 12px;
-    visibility: hidden;
-    opacity: 0;
-    transform: scale(0.8);
-
-    background-color: rgba(0, 0, 0, 0);
-    border: none;
-
-    z-index: 1000;
-    transition: all 0.160s ease-in-out;
-
-    transform: translateY(-20px);
+.searchIcon {
+    display: var(--search);
 }
 
-#searchContainer.active {
+.searchIcon svg {
+    height: 24px;
+    width: 24px;
+    position: absolute;
+    right: var(--search-position);
+    top: 30px;
+    fill: var(--color);
+    filter: opacity(0.7);
+    /* transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); */
+    /* transform-origin: center; */
+}
+
+.searchIcon svg:hover {
+    filter: opacity(1);
+}
+
+/* Hide the floating search icon when search is active */
+.search-active .searchIcon {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Hide folders when search is active */
+.search-active #foldersContainer {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Expandable search container */
+.expandable-search {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    right: 30px;
+    /* right: var(--search-position); */
+    height: 40px;
+    z-index: 2;
+    
+    display: flex;
+    align-items: center;
+    
+    background-color: transparent;
+    
+    /* Initially hidden */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.expandable-search.active {
     opacity: 1;
     visibility: visible;
-    /*transform: scale(1)*/
     transform: translateY(0);
+    background-color: color-mix(in srgb, var(--color) 10%, transparent);
+    border-radius: 8px;
+    padding: 8px 20px;
+    backdrop-filter: blur(18px);
+}
+
+.search-icon-container {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.search-icon-expanded {
+    height: 22px;
+    width: 22px;
+    fill: var(--color);
+    opacity: 0.8;
 }
 
 #searchInput {
-    width: 380px;
-    padding: 5px;
-    border: 1px solid black;
-    border-radius: 4px;
-    background-color: rgba(0, 0, 0, 1);
-    padding: 10px;
-
+    flex: 1;
+    border: none;
+    background: transparent;
     color: var(--color);
+    font-size: 16px;
+    outline: none;
+    padding: 0;
+}
+
+#searchInput::placeholder {
+    color: rgba(255, 255, 255, 0.6);
 }
 
 .searchCloseBtn {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: default;
-    font-size: 20px;
-    color: #ccc;
+    margin-left: 15px;
+    font-size: 22px;
+    color: rgba(255, 255, 255, 0.6);
     transition: color 0.2s ease;
+    flex-shrink: 0;
+    line-height: 1;
+    user-select: none;
 }
 
 .searchCloseBtn:hover {
-    color: #fff;
+    color: var(--color);
 }
 
 #clock {

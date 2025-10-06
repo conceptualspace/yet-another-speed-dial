@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "画像をスケール"
   },
+  "searchButton": {
+    "message": "検索ボタン"
+  },
+  "searchPlaceholder": {
+    "message": "検索..."
+  },
   "settings": {
     "message": "設定..."
   },

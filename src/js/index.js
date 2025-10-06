@@ -82,6 +82,7 @@ const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
+const showSearchBtnInput = document.getElementById("showSearchBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
@@ -95,6 +96,7 @@ const dialRatioInput = document.getElementById("dialRatio");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
+const searchBtn = document.getElementById('searchBtn');
 
 // clock
 const clock = document.getElementById('clock');
@@ -142,7 +144,8 @@ let defaults = {
     showAddSite: true,
     showFolders: true,
     showSettingsBtn: true,
-    showClock: true,
+    showClock: false,
+    showSearchBtn: true,
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
@@ -164,6 +167,21 @@ const debounce = (func, delay = 500, immediate = false) => {
             inDebounce = setTimeout(() => func.apply(context, args), delay)
         }
     }
+}
+
+function updateSearchIconPosition() {
+    let position;
+    if (settings.showClock) {
+        // Left of clock (clock is at right: 60px and takes ~80px width, so search icon should be at ~150px)
+        position = '170px';
+    } else if (settings.showSettingsBtn) {
+        // Left of settings icon (settings is at right: 30px, so search icon should be at ~60px)
+        position = '60px';
+    } else {
+        // Top right when both are hidden
+        position = '30px';
+    }
+    document.documentElement.style.setProperty('--search-position', position);
 }
 
 // detect clock settings
@@ -1837,6 +1855,15 @@ function applySettings() {
             settingsBtn.style.setProperty('--settings', 'none');
         }
 
+        if (settings.showSearchBtn) {
+            searchBtn.style.setProperty('--search', 'block');
+        } else {
+            searchBtn.style.setProperty('--search', 'none');
+        }
+
+        // Position search icon based on what's visible
+        updateSearchIconPosition();
+
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
         } else {
@@ -1864,6 +1891,7 @@ function applySettings() {
         showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
+        showSearchBtnInput.checked = settings.showSearchBtn;
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
@@ -1908,6 +1936,7 @@ function saveSettings() {
     settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
+    settings.showSearchBtn = showSearchBtnInput.checked;
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
@@ -2071,13 +2100,17 @@ window.addEventListener("mousedown", e => {
 
 window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
+        // Close search if it's active (prioritize this over other actions)
+        if (searchContainer.classList.contains('active')) {
+            event.preventDefault();
+            deactivateExpandableSearch();
+            return;
+        }
         hideMenus();
         hideModals();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
-        searchContainer.classList.toggle('active');
-        // focus it
-        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
+        activateExpandableSearch();
     }
 });
 
@@ -2088,6 +2121,24 @@ createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
 refreshAllModalSave.addEventListener("click", refreshAllThumbnails);
+searchBtn.addEventListener("click", function() {
+    activateExpandableSearch();
+});
+
+function activateExpandableSearch() {
+    document.body.classList.add('search-active');
+    searchContainer.classList.add('active');
+    setTimeout(() => searchInput.focus(), 300);
+}
+
+function deactivateExpandableSearch() {
+    document.body.classList.remove('search-active');
+    searchContainer.classList.remove('active');
+    searchInput.value = '';
+    searchInput.blur();
+    // Clear search results
+    filterDials('');
+}
 
 for (let button of closeModal) {
     button.onclick = function (e) {
@@ -2186,6 +2237,10 @@ rememberFolderInput.oninput = function (e) {
 }
 
 showSettingsBtnInput.oninput = function (e) {
+    saveSettings()
+}
+
+showSearchBtnInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -2477,14 +2532,8 @@ function filterDials(searchTerm) {
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
-    const searchInput = document.getElementById('searchInput');
-    const searchContainer = document.getElementById('searchContainer');
-    
-    searchInput.value = ''; // Clear the search input
-    searchContainer.classList.remove('active'); // Hide the search container
-    filterDials('');
+    deactivateExpandableSearch();
 });
-
 
 importFileInput.onchange = function (event) {
     let filereader = new FileReader();
@@ -3026,6 +3075,11 @@ function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = chrome.i18n.getMessage(elem.dataset.locale)
+    })
+
+    // Handle placeholder translations separately
+    document.querySelectorAll('[data-locale-placeholder]').forEach(elem => {
+        elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
     })
 
     // init what used to be background work"

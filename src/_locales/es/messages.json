@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "Imágenes de fit"
   },
+  "searchButton": {
+    "message": "Botón de búsqueda"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar..."
+  },
   "settings": {
     "message": "Ajustes..."
   },
