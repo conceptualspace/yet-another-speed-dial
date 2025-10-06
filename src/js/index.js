@@ -170,18 +170,8 @@ const debounce = (func, delay = 500, immediate = false) => {
 }
 
 function updateSearchIconPosition() {
-    let position;
-    if (settings.showClock) {
-        // Left of clock (clock is at right: 60px and takes ~80px width, so search icon should be at ~150px)
-        position = '170px';
-    } else if (settings.showSettingsBtn) {
-        // Left of settings icon (settings is at right: 30px, so search icon should be at ~60px)
-        position = '60px';
-    } else {
-        // Top right when both are hidden
-        position = '30px';
-    }
-    document.documentElement.style.setProperty('--search-position', position);
+    // No longer needed - flexbox handles positioning automatically
+    // This function is kept for compatibility in case it's called elsewhere
 }
 
 // detect clock settings

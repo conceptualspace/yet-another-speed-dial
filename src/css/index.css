@@ -6,7 +6,6 @@
     --clock: none;
     --settings: none;
     --search: block;
-    --search-position: 30px;
     --columns: 100%;
     --image-scaling: contain;
     --dial-width: 220px;
@@ -675,8 +674,24 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     opacity: 1;
 }
 
+/* Header controls container */
+.header-controls {
+    position: absolute;
+    top: 26px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    z-index: 1;
+}
+
+.header-controls > * {
+    flex-shrink: 0;
+}
+
 #settingsBtn {
     display: var(--settings);
+    line-height: 1;
 }
 
 .right-align {
@@ -686,12 +701,11 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 .settingsIcon svg {
     height: 24px;
     width: 24px;
-    position: absolute;
-    right: 30px;
-    top: 30px;
     fill: var(--color);
     filter: opacity(0.7);
     transition: opacity 160ms ease;
+    cursor: pointer;
+    display: block;
 }
 
 .settingsIcon svg:hover {
@@ -700,18 +714,16 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 .searchIcon {
     display: var(--search);
+    line-height: 1;
 }
 
 .searchIcon svg {
     height: 24px;
     width: 24px;
-    position: absolute;
-    right: var(--search-position);
-    top: 30px;
     fill: var(--color);
     filter: opacity(0.7);
-    /* transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); */
-    /* transform-origin: center; */
+    cursor: pointer;
+    display: block;
 }
 
 .searchIcon svg:hover {
@@ -805,15 +817,15 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #clock {
-    position: absolute;
     display: var(--clock);
-    right: 60px;
-    top: 26px;
     color: var(--color);
     opacity: 0.85;
     font-size: x-large;
     font-weight: 200;
     transition: 160ms ease;
+    white-space: nowrap;
+    line-height: 1;
+    align-self: center;
 }
 
 #toast {
