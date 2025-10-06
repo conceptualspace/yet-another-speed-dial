@@ -710,7 +710,6 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     fill: var(--color);
     filter: opacity(0.7);
     transition: opacity 160ms ease;
-    cursor: pointer;
     display: block;
 }
 
@@ -728,7 +727,6 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     width: 24px;
     fill: var(--color);
     filter: opacity(0.7);
-    cursor: pointer;
     display: block;
 }
 
