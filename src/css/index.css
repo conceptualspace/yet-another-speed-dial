@@ -649,13 +649,13 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 #foldersContainer {
     padding: 20px 30px; /*todo: nuke this when no folders are present so visually the dials appear centered */
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
 }
 
 .folders-left {
     display: flex;
-    align-items: center;
+    align-items: first baseline;
 }
 
 #folders {
@@ -683,10 +683,16 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     display: flex;
     align-items: center;
     gap: 20px;
+    /* Match the exact height and spacing of folder items */
+    margin: 12px; /* Same margin as .folderTitle */
+    font-weight: bold; /* Same font-weight as .folderTitle */
+    line-height: normal; /* Ensure consistent line height */
 }
 
 .header-controls > * {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 
 #settingsBtn {
