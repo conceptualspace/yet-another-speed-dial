@@ -1042,6 +1042,7 @@ function hideModals() {
     // hide search
     searchInput.blur();
     searchContainer.classList.remove('active');
+    document.body.classList.remove('search-active');
 
     if (searchInput.value) {
         searchInput.value = ''; // Clear the search input
