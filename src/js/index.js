@@ -1040,14 +1040,7 @@ function hideModals() {
     modalImageURLInput.value = '';
 
     // hide search
-    searchInput.blur();
-    searchContainer.classList.remove('active');
-    document.body.classList.remove('search-active');
-
-    if (searchInput.value) {
-        searchInput.value = ''; // Clear the search input
-        filterDials(''); // Only call if there was a search term
-    }
+    hideSearch();
 
 }
 
@@ -2094,7 +2087,7 @@ window.addEventListener("keydown", event => {
         // Close search if it's active (prioritize this over other actions)
         if (searchContainer.classList.contains('active')) {
             event.preventDefault();
-            deactivateExpandableSearch();
+            hideSearch();
             return;
         }
         hideMenus();
@@ -2122,13 +2115,15 @@ function activateExpandableSearch() {
     setTimeout(() => searchInput.focus(), 300);
 }
 
-function deactivateExpandableSearch() {
+function hideSearch() {
     document.body.classList.remove('search-active');
     searchContainer.classList.remove('active');
-    searchInput.value = '';
     searchInput.blur();
-    // Clear search results
-    filterDials('');
+    
+    if (searchInput.value) {
+        searchInput.value = '';
+        filterDials(''); // Clear search results only if there was a search term
+    }
 }
 
 for (let button of closeModal) {
@@ -2523,7 +2518,7 @@ function filterDials(searchTerm) {
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
-    deactivateExpandableSearch();
+    hideSearch();
 });
 
 importFileInput.onchange = function (event) {
