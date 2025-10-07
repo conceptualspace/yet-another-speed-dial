@@ -205,6 +205,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -254,6 +255,7 @@ async function buildFolderPages(speedDialId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -2881,6 +2883,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         scrollPos = bookmarksContainerParent.scrollTop;
         //noBookmarks.style.display = 'none';
         addFolderButton.style.display = 'inline';
+        searchBtn.style.display = '';
 
         //bookmarksContainer.style.opacity = "0";
 
