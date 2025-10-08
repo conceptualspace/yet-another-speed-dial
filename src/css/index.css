@@ -649,20 +649,19 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 #foldersContainer {
     padding: 20px 30px; /*todo: nuke this when no folders are present so visually the dials appear centered */
     display: flex;
-    align-items: flex-start;
     justify-content: space-between;
+    align-items: start;
+    gap: 20px;
 }
 
-.folders-left {
+.folders-content {
     display: flex;
-    align-items: first baseline;
-    min-height: 42px;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 #folders {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
+    display: contents;
 }
 
 #addFolderIcon {
@@ -676,7 +675,15 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 #addFolderButton {
     display: var(--show-folders);
     line-height: 1;
-    margin: 0 12px;
+    margin: 12px;
+    /* Match folderTitle styling */
+    opacity: 0.85;
+    font-weight: bold;
+    transition: opacity 160ms ease;
+}
+
+#addFolderButton:hover {
+    opacity: 1;
 }
 
 #addFolderButton:hover #addFolderIcon {
@@ -693,6 +700,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     font-weight: bold; /* Same font-weight as .folderTitle */
     line-height: normal; /* Ensure consistent line height */
     height: 42px;
+    justify-self: end;
 }
 
 .header-controls > * {
