@@ -676,10 +676,6 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     display: var(--show-folders);
     line-height: 1;
     margin: 12px;
-    /* Match folderTitle styling */
-    opacity: 0.85;
-    font-weight: bold;
-    transition: opacity 160ms ease;
 }
 
 #addFolderButton:hover {
