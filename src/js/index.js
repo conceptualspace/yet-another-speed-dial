@@ -170,18 +170,8 @@ const debounce = (func, delay = 500, immediate = false) => {
 }
 
 function updateSearchIconPosition() {
-    let position;
-    if (settings.showClock) {
-        // Left of clock (clock is at right: 60px and takes ~80px width, so search icon should be at ~150px)
-        position = '170px';
-    } else if (settings.showSettingsBtn) {
-        // Left of settings icon (settings is at right: 30px, so search icon should be at ~60px)
-        position = '60px';
-    } else {
-        // Top right when both are hidden
-        position = '30px';
-    }
-    document.documentElement.style.setProperty('--search-position', position);
+    // No longer needed - flexbox handles positioning automatically
+    // This function is kept for compatibility in case it's called elsewhere
 }
 
 // detect clock settings
@@ -215,6 +205,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -264,6 +255,7 @@ async function buildFolderPages(speedDialId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -1050,13 +1042,7 @@ function hideModals() {
     modalImageURLInput.value = '';
 
     // hide search
-    searchInput.blur();
-    searchContainer.classList.remove('active');
-
-    if (searchInput.value) {
-        searchInput.value = ''; // Clear the search input
-        filterDials(''); // Only call if there was a search term
-    }
+    hideSearch();
 
 }
 
@@ -2103,7 +2089,7 @@ window.addEventListener("keydown", event => {
         // Close search if it's active (prioritize this over other actions)
         if (searchContainer.classList.contains('active')) {
             event.preventDefault();
-            deactivateExpandableSearch();
+            hideSearch();
             return;
         }
         hideMenus();
@@ -2131,13 +2117,15 @@ function activateExpandableSearch() {
     setTimeout(() => searchInput.focus(), 300);
 }
 
-function deactivateExpandableSearch() {
+function hideSearch() {
     document.body.classList.remove('search-active');
     searchContainer.classList.remove('active');
-    searchInput.value = '';
     searchInput.blur();
-    // Clear search results
-    filterDials('');
+    
+    if (searchInput.value) {
+        searchInput.value = '';
+        filterDials(''); // Clear search results only if there was a search term
+    }
 }
 
 for (let button of closeModal) {
@@ -2532,7 +2520,7 @@ function filterDials(searchTerm) {
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
-    deactivateExpandableSearch();
+    hideSearch();
 });
 
 importFileInput.onchange = function (event) {
@@ -2895,6 +2883,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         scrollPos = bookmarksContainerParent.scrollTop;
         //noBookmarks.style.display = 'none';
         addFolderButton.style.display = 'inline';
+        searchBtn.style.display = '';
 
         //bookmarksContainer.style.opacity = "0";
 

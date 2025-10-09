@@ -6,7 +6,6 @@
     --clock: none;
     --settings: none;
     --search: block;
-    --search-position: 30px;
     --columns: 100%;
     --image-scaling: contain;
     --dial-width: 220px;
@@ -648,35 +647,67 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #foldersContainer {
-    padding: 20px 0; /*todo: nuke this when no folders are present so visually the dials appear centered */
-    margin-right: 160px;
-    margin-left: 30px;
+    padding: 20px 30px; /*todo: nuke this when no folders are present so visually the dials appear centered */
     display: flex;
-    align-items: baseline;
+    justify-content: space-between;
+    align-items: start;
+    gap: 20px;
+}
+
+.folders-content {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
 }
 
 #folders {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
+    display: contents;
 }
 
 #addFolderIcon {
-    display: var(--show-folders);
     height: 1.2rem;
-    vertical-align: middle;
     opacity: 0.7;
-    margin-left: 12px;
-    margin-right: 12px;
     transition: 360ms ease;
     fill: var(--color);
+    vertical-align: middle;
 }
-#addFolderIcon:hover {
+
+#addFolderButton {
+    display: var(--show-folders);
+    line-height: 1;
+    margin: 12px;
+}
+
+#addFolderButton:hover {
     opacity: 1;
+}
+
+#addFolderButton:hover #addFolderIcon {
+    opacity: 1;
+}
+
+/* Header controls container */
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    /* Match the exact height and spacing of folder items */
+    margin: 0 12px; /* Same margin as .folderTitle */
+    font-weight: bold; /* Same font-weight as .folderTitle */
+    line-height: normal; /* Ensure consistent line height */
+    height: 42px;
+    justify-self: end;
+}
+
+.header-controls > * {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
 }
 
 #settingsBtn {
     display: var(--settings);
+    line-height: 1;
 }
 
 .right-align {
@@ -686,12 +717,10 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 .settingsIcon svg {
     height: 24px;
     width: 24px;
-    position: absolute;
-    right: 30px;
-    top: 30px;
     fill: var(--color);
     filter: opacity(0.7);
     transition: opacity 160ms ease;
+    display: block;
 }
 
 .settingsIcon svg:hover {
@@ -700,18 +729,15 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 
 .searchIcon {
     display: var(--search);
+    line-height: 1;
 }
 
 .searchIcon svg {
     height: 24px;
     width: 24px;
-    position: absolute;
-    right: var(--search-position);
-    top: 30px;
     fill: var(--color);
     filter: opacity(0.7);
-    /* transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); */
-    /* transform-origin: center; */
+    display: block;
 }
 
 .searchIcon svg:hover {
@@ -805,13 +831,16 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #clock {
-    position: absolute;
     display: var(--clock);
-    right: 60px;
-    top: 26px;
     color: var(--color);
     opacity: 0.85;
     font-size: x-large;
+    font-weight: 200;
+    transition: 160ms ease;
+    white-space: nowrap;
+    line-height: 1;
+    align-self: center;
+
     font-weight: 200;
     transition: 160ms ease;
 }
