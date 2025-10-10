@@ -22,7 +22,6 @@ chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
-console.log('[YASD] Registering tab listeners for new tab redirection');
 chrome.tabs.onCreated.addListener(handleTabCreated);
 chrome.tabs.onUpdated.addListener(handleTabUpdated);
 
@@ -408,18 +407,12 @@ async function handleInstalled(details) {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
-        
-        // Check if we need to enable tab redirection fallback
-        await checkAndEnableTabRedirection();
     } else if (details.reason === 'update') {
         if (details.previousVersion < '3.3') {
             const url = chrome.runtime.getURL("updated.html");
             chrome.tabs.create({ url });
         }
         // perform any migrations here...
-        
-        // Check if we need to enable tab redirection fallback
-        await checkAndEnableTabRedirection();
     }
 
     try {
@@ -526,122 +519,48 @@ function reloadFolders() {
 
 // UTILS
 
-// Handle new tab creation for browsers that don't support chrome_url_overrides
+// Handle new tab creation for Opera browser
 async function handleTabCreated(tab) {
-    console.log('[YASD] Tab created:', tab.id, 'URL:', tab.url);
-    
-    const settings = await chrome.storage.local.get('useTabRedirection');
-    console.log('[YASD] Tab redirection setting:', settings.useTabRedirection);
-    
-    if (!settings.useTabRedirection) {
-        console.log('[YASD] Tab redirection disabled, skipping');
-        return;
-    }
-    
-    const isNewTab = isNewTabPage(tab.url);
-    const hasExtensionId = tab.url && tab.url.includes(chrome.runtime.id);
-    
-    console.log('[YASD] Is new tab page:', isNewTab);
-    console.log('[YASD] Has extension ID:', hasExtensionId);
+    if (!isOpera()) return;
     
     // Check if this is a new tab (empty or default new tab page)
-    if (isNewTab && !hasExtensionId) {
-        console.log('[YASD] Redirecting tab', tab.id, 'to speed dial');
+    if (isNewTabPage(tab.url) && !tab.url.includes(chrome.runtime.id)) {
         // Small delay to let the tab initialize
         setTimeout(() => {
             chrome.tabs.update(tab.id, {
                 url: chrome.runtime.getURL('index.html')
-            }).then(() => {
-                console.log('[YASD] Tab redirect successful');
-            }).catch(err => {
-                console.error('[YASD] Tab redirect failed:', err);
             });
         }, 100);
-    } else {
-        console.log('[YASD] Not redirecting tab - not a new tab page or already our extension');
     }
 }
 
 async function handleTabUpdated(tabId, changeInfo, tab) {
-    console.log('[YASD] Tab updated:', tabId, 'changeInfo:', changeInfo);
-    
-    const settings = await chrome.storage.local.get('useTabRedirection');
-    console.log('[YASD] Tab redirection setting:', settings.useTabRedirection);
-    
-    if (!settings.useTabRedirection) {
-        console.log('[YASD] Tab redirection disabled, skipping update');
-        return;
-    }
+    if (!isOpera()) return;
     
     // Only act on URL changes
-    if (changeInfo.url) {
-        const isNewTab = isNewTabPage(changeInfo.url);
-        const hasExtensionId = changeInfo.url.includes(chrome.runtime.id);
-        
-        console.log('[YASD] URL changed to:', changeInfo.url);
-        console.log('[YASD] Is new tab page:', isNewTab);
-        console.log('[YASD] Has extension ID:', hasExtensionId);
-        
-        if (isNewTab && !hasExtensionId) {
-            console.log('[YASD] Redirecting updated tab', tabId, 'to speed dial');
-            chrome.tabs.update(tabId, {
-                url: chrome.runtime.getURL('index.html')
-            }).then(() => {
-                console.log('[YASD] Tab update redirect successful');
-            }).catch(err => {
-                console.error('[YASD] Tab update redirect failed:', err);
-            });
-        } else {
-            console.log('[YASD] Not redirecting updated tab - not a new tab page or already our extension');
-        }
+    if (changeInfo.url && isNewTabPage(changeInfo.url) && !changeInfo.url.includes(chrome.runtime.id)) {
+        chrome.tabs.update(tabId, {
+            url: chrome.runtime.getURL('index.html')
+        });
     }
 }
 
 function isNewTabPage(url) {
-    console.log('[YASD] Checking if new tab page:', url);
-    
-    if (!url) {
-        console.log('[YASD] No URL provided');
-        return false;
-    }
+    if (!url) return false;
     
     // Common new tab page URLs for different browsers
     const newTabPatterns = [
         'chrome://newtab/',
-        'chrome-search://local-ntp/',
-        'chrome://startpageshared/',  // Opera new tab page
-        'opera://startpage/',
-        'about:newtab',
-        'about:blank',
-        'edge://newtab/',
-        'browser://newtab/'
+        'chrome://startpageshared/',
+        'opera://startpage/'
     ];
     
-    const isMatch = newTabPatterns.some(pattern => {
-        const matches = url.startsWith(pattern);
-        if (matches) {
-            console.log('[YASD] Matched pattern:', pattern);
-        }
-        return matches;
-    });
-    
-    console.log('[YASD] Is new tab page result:', isMatch);
-    return isMatch;
+    return newTabPatterns.some(pattern => url.startsWith(pattern));
 }
 
-async function checkAndEnableTabRedirection() {
-    console.log('[YASD] Checking and enabling tab redirection');
-    
-    // Store in local storage whether we should use tab redirection
-    // You could make this more sophisticated by testing if chrome_url_overrides works
-    const settings = await chrome.storage.local.get('useTabRedirection');
-    console.log('[YASD] Current tab redirection setting:', settings.useTabRedirection);
-    
-    if (settings.useTabRedirection === undefined) {
-        console.log('[YASD] Setting tab redirection to true (default)');
-        // Default to true for now - you could add browser detection here
-        await chrome.storage.local.set({ useTabRedirection: true });
-    }
+function isOpera() {
+    // Check if running in Opera browser
+    return navigator.userAgent.includes('OPR/') || navigator.userAgent.includes('Opera/');
 }
 
 // offscreen document setup
