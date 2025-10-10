@@ -202,11 +202,11 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
         await chrome.storage.local.remove(data.url);
-        await capturePopupScreenshot(data.url, data.id, data.parentId);
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
 }
 
-async function capturePopupScreenshot(url, id, parentId) {
+async function capturePopupScreenshot(url) {
     console.log('Starting popup screenshot capture for:', url);
     
     // Calculate popup dimensions to match thumbnail aspect ratio (256x144)
@@ -273,8 +273,7 @@ async function capturePopupScreenshot(url, id, parentId) {
         await chrome.windows.remove(popup.id);
         popup = null; // Clear reference so cleanup doesn't try again
         
-        // Process the thumbnail with the captured screenshot
-        await getThumbnailsWithScreenshot(url, id, parentId, screenshot);
+        return screenshot;
         
     } catch (error) {
         console.error('Error capturing popup screenshot:', error);
@@ -288,9 +287,8 @@ async function capturePopupScreenshot(url, id, parentId) {
             }
         }
         
-        console.log('Falling back to original method...');
-        // Fallback to original method if popup fails
-        await getThumbnails(url, id, parentId, {forceScreenshot: true});
+        // Return null to indicate failure - caller can handle fallback
+        return null;
     }
 }
 
@@ -432,52 +430,26 @@ async function handleInstalled(details) {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnailsWithScreenshot(url, id, parentId, screenshot) {
-    console.log('getThumbnailsWithScreenshot called for:', url, 'with screenshot:', !!screenshot);
-    
-    if(!url || !id) {
-        console.log("getThumbnailsWithScreenshot: missing url or id")
-        return
-    }
-    
-    if (!screenshot) {
-        console.error("getThumbnailsWithScreenshot: screenshot is null/undefined");
-        return;
-    }
-    
-    // cant parse images from dom in service worker: delegate to offscreen document
-    console.log('Setting up offscreen document...');
-    await setupOffscreenDocument('offscreen.html');
-
-    console.log('Sending message to offscreen document...');
-    chrome.runtime.sendMessage({
-        target: 'offscreen',
-        data: {
-            url,
-            id,
-            parentId,
-            screenshot,
-            quickRefresh: false,
-            forcePageReload: false,
-        }
-    });
-    
-    console.log('Message sent to offscreen document');
-}
-
 async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
 		return
 	}
-    // take screenshot if applicable
+    
     let screenshot = null;
-	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-	
-	if (tabs && tabs.length && tabs[0].url === url) {
-		screenshot = await chrome.tabs.captureVisibleTab()
-	}
+    
+    if (options.forceScreenshot) {
+        // Force popup screenshot for manual refresh
+        screenshot = await capturePopupScreenshot(url);
+    } else {
+        // take screenshot if applicable (current active tab)
+        const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
+        
+        if (tabs && tabs.length && tabs[0].url === url) {
+            screenshot = await chrome.tabs.captureVisibleTab()
+        }
+    }
 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
