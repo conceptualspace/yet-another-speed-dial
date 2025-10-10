@@ -44,18 +44,26 @@ async function handleMessages(message) {
         }))
     }
 
+    let processedScreenshot = null;
     if (screenshot) {
         // screenshot is handled separately to remove scrollbars
-        let result = await resizeImage(screenshot, true).catch(err => {
+        processedScreenshot = await resizeImage(screenshot, true).catch(err => {
             console.log(err);
         });
-        if (result) {
-            resizedImages.push(result);
-        }
     }
 
     if (resizedImages && resizedImages.length) {
-        thumbs = resizedImages.filter(item => item).slice(0,5) // only keep 5 -- todo: this will exclude the screenshot if there are many other images
+        // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
+        const maxWebpageImages = processedScreenshot ? 4 : 5;
+        thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
+        
+        // Always add the screenshot as the last image if available
+        if (processedScreenshot) {
+            thumbs.push(processedScreenshot);
+        }
+    } else if (processedScreenshot) {
+        // No webpage images, but we have a screenshot
+        thumbs = [processedScreenshot];
     }
 
     if (thumbs.length) {

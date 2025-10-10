@@ -199,14 +199,131 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
 }
 
-function handleManualRefresh(data) {
+async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
-        chrome.storage.local.remove(data.url).then(() => {
-            getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true}).then(() => {
-                //refreshOpen()
-            })
-        })
+        await chrome.storage.local.remove(data.url);
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
+}
+
+async function capturePopupScreenshot(url) {
+    console.log('Starting popup screenshot capture for:', url);
+    
+    // Calculate popup dimensions to match thumbnail aspect ratio (256x144)
+    const thumbnailWidth = 256;
+    const thumbnailHeight = 144;
+    const aspectRatio = thumbnailWidth / thumbnailHeight;
+    
+    const contentWidth = 1024; // 4x thumbnail width
+    const contentHeight = Math.round(contentWidth / aspectRatio);
+    const windowWidth = contentWidth;
+    const windowHeight = contentHeight + 80; // Add space for window decorations
+    
+    let popup = null;
+    
+    try {
+        // Create popup window
+        //console.log('Creating popup window...');
+        popup = await chrome.windows.create({
+            url: url,
+            type: 'popup',
+            width: windowWidth,
+            height: windowHeight,
+            focused: false // Don't steal focus from user
+        });
+        
+        if (!popup || !popup.tabs || !popup.tabs[0]) {
+            throw new Error('Failed to create popup window');
+        }
+        
+        //console.log('Popup created, waiting for page load...');
+        await waitForPageLoad(popup.tabs[0].id);
+        
+        // Give a bit more time for page content to render
+        await new Promise(resolve => setTimeout(resolve, 2500));
+        
+        //console.log('Attempting to capture screenshot...');
+        
+        // Check if tab is still valid before capture
+        try {
+            const tab = await chrome.tabs.get(popup.tabs[0].id);
+            if (!tab || tab.status !== 'complete') {
+                console.warn('Tab not ready for screenshot, status:', tab?.status);
+            }
+        } catch (tabError) {
+            console.warn('Could not verify tab status:', tabError.message);
+        }
+        
+        // Capture screenshot with additional error handling
+        const screenshot = await chrome.tabs.captureVisibleTab(popup.id, {
+            format: 'png'
+        });
+        
+        if (!screenshot) {
+            throw new Error('Screenshot capture returned null/undefined');
+        }
+        
+        if (typeof screenshot !== 'string' || !screenshot.startsWith('data:image/')) {
+            throw new Error('Invalid screenshot format received');
+        }
+        
+        //console.log('Screenshot captured successfully, processing thumbnails...');
+        
+        // Close the popup
+        await chrome.windows.remove(popup.id);
+        popup = null; // Clear reference so cleanup doesn't try again
+        
+        return screenshot;
+        
+    } catch (error) {
+        console.error('Error capturing popup screenshot:', error);
+        
+        // Clean up popup if it was created but there was an error
+        if (popup && popup.id) {
+            try {
+                await chrome.windows.remove(popup.id);
+            } catch (cleanupError) {
+                console.error('Error cleaning up popup window:', cleanupError);
+            }
+        }
+        
+        // Return null to indicate failure - caller can handle fallback
+        return null;
+    }
+}
+
+function waitForPageLoad(tabId) {
+    return new Promise((resolve) => {
+        let timeoutId;
+        let resolved = false;
+        
+        const resolveOnce = () => {
+            if (!resolved) {
+                resolved = true;
+                resolve();
+            }
+        };
+        
+        const cleanupAndResolve = () => {
+            chrome.tabs.onUpdated.removeListener(statusListener);
+            if (timeoutId) clearTimeout(timeoutId);
+            resolveOnce();
+        };
+        
+        // Listen for tab status changes
+        const statusListener = (updatedTabId, changeInfo) => {
+            if (updatedTabId === tabId && changeInfo.status === 'complete') {
+                cleanupAndResolve();
+            }
+        };
+        chrome.tabs.onUpdated.addListener(statusListener);
+        
+        // Fallback timeout in case nothing else works
+        timeoutId = setTimeout(() => {
+            console.log('Page load timeout reached, proceeding with screenshot');
+            cleanupAndResolve();
+        }, 5000);
+    });
 }
 
 async function handleRefreshAll(data) {
@@ -319,13 +436,20 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 		console.log("getThumbnails: missing url or id")
 		return
 	}
-    // take screenshot if applicable
+    
     let screenshot = null;
-	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-	
-	if (tabs && tabs.length && tabs[0].url === url) {
-		screenshot = await chrome.tabs.captureVisibleTab()
-	}
+    
+    if (options.forceScreenshot) {
+        // Force popup screenshot for manual refresh
+        screenshot = await capturePopupScreenshot(url);
+    } else {
+        // take screenshot if applicable (current active tab)
+        const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
+        
+        if (tabs && tabs.length && tabs[0].url === url) {
+            screenshot = await chrome.tabs.captureVisibleTab()
+        }
+    }
 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
