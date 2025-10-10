@@ -277,9 +277,17 @@ function resizeImage(image, screenshot = false) {
 
                 let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
 
-                // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
-                // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
-                if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
+                if (screenshot) {
+                    if (sRatio > targetRatio) {
+                        // Wider than target, crop sides
+                        const newWidth = sHeight * targetRatio;
+                        sX = (sWidth - newWidth) / 2;
+                        sWidth = newWidth;
+                    } else {
+                        // Taller than target, crop from top (by adjusting sHeight)
+                        sHeight = sWidth / targetRatio;
+                    }
+                } else if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
                     // Aspect is narrower, crop top and bottom
                     let naturalHeight = targetWidth / sRatio;
                     let crop = (naturalHeight - targetHeight) / 2;
