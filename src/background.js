@@ -524,13 +524,10 @@ async function handleTabCreated(tab) {
     if (!isOpera()) return;
     
     // Check if this is a new tab (empty or default new tab page)
-    if (isNewTabPage(tab.url) && !tab.url.includes(chrome.runtime.id)) {
-        // Small delay to let the tab initialize
-        setTimeout(() => {
-            chrome.tabs.update(tab.id, {
-                url: chrome.runtime.getURL('index.html')
-            });
-        }, 100);
+    if (isNewTabPage(tab.url)) {
+        chrome.tabs.update(tab.id, {
+            url: chrome.runtime.getURL('index.html')
+        });
     }
 }
 
@@ -538,7 +535,7 @@ async function handleTabUpdated(tabId, changeInfo, tab) {
     if (!isOpera()) return;
     
     // Only act on URL changes
-    if (changeInfo.url && isNewTabPage(changeInfo.url) && !changeInfo.url.includes(chrome.runtime.id)) {
+    if (changeInfo.url && isNewTabPage(changeInfo.url)) {
         chrome.tabs.update(tabId, {
             url: chrome.runtime.getURL('index.html')
         });
