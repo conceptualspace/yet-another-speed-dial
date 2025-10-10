@@ -1736,12 +1736,19 @@ function applySettings() {
         if (settings.wallpaper && settings.wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (settings.wallpaperSrc.length < 65) {
-                document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
+                // Remove any existing background styles and add the animated gradient class
+                document.body.style.background = '';
+                document.body.style.backgroundSize = '';
+                document.body.classList.add('gradientBackground');
             } else {
+                // Remove the gradient class and apply custom background
+                document.body.classList.remove('gradientBackground');
                 document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
+            // Remove the gradient class and apply solid background color
+            document.body.classList.remove('gradientBackground');
             document.body.style.background = settings.backgroundColor;
         }
 
