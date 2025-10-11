@@ -22,8 +22,7 @@ chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
-chrome.tabs.onCreated.addListener(handleTabCreated);
-chrome.tabs.onUpdated.addListener(handleTabUpdated);
+if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 
 // EVENT HANDLERS //
@@ -519,10 +518,6 @@ function reloadFolders() {
 
 // UTILS
 
-async function handleTabUpdated(tabId, changeInfo, tab) {
-    console.log('Tab updated:', tabId, changeInfo, tab);
-}
-
 // Handle new tab creation for Opera browser
 async function handleTabCreated(tab) {
     console.log('Tab created:', tab);
@@ -544,8 +539,8 @@ async function handleTabCreated(tab) {
 }
 
 function isOpera() {
-    // Check if running in Opera browser
-    return navigator.userAgent.includes('OPR/') || navigator.userAgent.includes('Opera/');
+    // navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
+    return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
 }
 
 // offscreen document setup
