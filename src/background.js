@@ -21,6 +21,9 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
+// Add tab listeners for Opera and browsers that don't support chrome_url_overrides
+if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
+
 
 // EVENT HANDLERS //
 
@@ -514,6 +517,24 @@ function reloadFolders() {
 
 
 // UTILS
+
+// Handle new tab creation for Opera browser
+async function handleTabCreated(tab) {
+    if (tab && tab.pendingUrl && tab.pendingUrl.startsWith('chrome://startpageshared/')) {
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
+        });
+    } else if (tab && tab.url && tab.url.startsWith('opera://startpageshared/')) {
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
+        });
+    }
+}
+
+function isOpera() {
+    // navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
+    return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
+}
 
 // offscreen document setup
 let creating; // A global promise to avoid concurrency issues
