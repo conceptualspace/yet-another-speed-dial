@@ -408,8 +408,22 @@ async function handleInstalled(details) {
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
         if (details.previousVersion < '3.3') {
-            const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url });
+            // Check if user wants to see release notes
+            try {
+                const result = await chrome.storage.sync.get('showReleaseNotes');
+                // Default to true if setting doesn't exist (first time users)
+                const shouldShowReleaseNotes = result.showReleaseNotes !== false;
+                
+                if (shouldShowReleaseNotes) {
+                    const url = chrome.runtime.getURL("updated.html");
+                    chrome.tabs.create({ url });
+                }
+            } catch (error) {
+                console.error('Error checking showReleaseNotes setting:', error);
+                // Default behavior: show the page if there's an error
+                const url = chrome.runtime.getURL("updated.html");
+                chrome.tabs.create({ url });
+            }
         }
         // perform any migrations here...
     }
