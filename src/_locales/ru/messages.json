@@ -174,5 +174,38 @@
   },
   "wallpaper": {
     "message": "Фоновое изображение\n"
+  },
+  "optionSquare": {
+    "message": "Квадрат"
+  },
+  "optionWide": {
+    "message": "Широкий"
+  },
+  "optionXXSmall": {
+    "message": "Очень малый"
+  },
+  "optionXSmall": {
+    "message": "Малый"
+  },
+  "optionSmall": {
+    "message": "Небольшой"
+  },
+  "optionMedium": {
+    "message": "Средний"
+  },
+  "optionLarge": {
+    "message": "Большой"
+  },
+  "optionXLarge": {
+    "message": "Очень большой"
+  },
+  "optionUnlimited": {
+    "message": "Неограниченно"
+  },
+  "optionNewDialsLast": {
+    "message": "Новые в конце"
+  },
+  "optionNewDialsFirst": {
+    "message": "Новые в начале"
   }
 }

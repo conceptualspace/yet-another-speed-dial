@@ -174,5 +174,38 @@
   },
   "wallpaper": {
     "message": "壁纸"
+  },
+  "optionSquare": {
+    "message": "正方形"
+  },
+  "optionWide": {
+    "message": "宽屏"
+  },
+  "optionXXSmall": {
+    "message": "极小"
+  },
+  "optionXSmall": {
+    "message": "超小"
+  },
+  "optionSmall": {
+    "message": "小"
+  },
+  "optionMedium": {
+    "message": "中"
+  },
+  "optionLarge": {
+    "message": "大"
+  },
+  "optionXLarge": {
+    "message": "超大"
+  },
+  "optionUnlimited": {
+    "message": "无限制"
+  },
+  "optionNewDialsLast": {
+    "message": "新建在末尾"
+  },
+  "optionNewDialsFirst": {
+    "message": "新建在开头"
   }
 }

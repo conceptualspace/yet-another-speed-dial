@@ -174,5 +174,38 @@
   },
   "wallpaper": {
     "message": "Hintergrund"
+  },
+  "optionSquare": {
+    "message": "Quadratisch"
+  },
+  "optionWide": {
+    "message": "Breit"
+  },
+  "optionXXSmall": {
+    "message": "XX-Klein"
+  },
+  "optionXSmall": {
+    "message": "X-Klein"
+  },
+  "optionSmall": {
+    "message": "Klein"
+  },
+  "optionMedium": {
+    "message": "Mittel"
+  },
+  "optionLarge": {
+    "message": "Groß"
+  },
+  "optionXLarge": {
+    "message": "X-Groß"
+  },
+  "optionUnlimited": {
+    "message": "Unbegrenzt"
+  },
+  "optionNewDialsLast": {
+    "message": "Neue zuletzt"
+  },
+  "optionNewDialsFirst": {
+    "message": "Neue zuerst"
   }
 }
