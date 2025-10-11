@@ -519,40 +519,28 @@ function reloadFolders() {
 
 // UTILS
 
+async function handleTabUpdated(tabId, changeInfo, tab) {
+    console.log('Tab updated:', tabId, changeInfo, tab);
+}
+
 // Handle new tab creation for Opera browser
 async function handleTabCreated(tab) {
-    if (!isOpera()) return;
-    
-    // Check if this is a new tab (empty or default new tab page)
-    if (isNewTabPage(tab.url)) {
-        chrome.tabs.update(tab.id, {
-            url: chrome.runtime.getURL('index.html')
+    console.log('Tab created:', tab);
+    //if (!isOpera()) return;
+
+    //console.log(tab.pendingUrl)
+
+    if (tab && tab.pendingUrl && tab.pendingUrl.startsWith('chrome://startpageshared/')) {
+        //console.log('New tab detected, redirecting to speed dial...');
+        // Update the URL instead of creating new tab and removing old one
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
+        });
+    } else if (tab && tab.url && tab.url.startsWith('opera://startpageshared/')) {
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
         });
     }
-}
-
-async function handleTabUpdated(tabId, changeInfo, tab) {
-    if (!isOpera()) return;
-    
-    // Only act on URL changes
-    if (changeInfo.url && isNewTabPage(changeInfo.url)) {
-        chrome.tabs.update(tabId, {
-            url: chrome.runtime.getURL('index.html')
-        });
-    }
-}
-
-function isNewTabPage(url) {
-    if (!url) return false;
-    
-    // Common new tab page URLs for different browsers
-    const newTabPatterns = [
-        'chrome://newtab/',
-        'chrome://startpageshared/',
-        'opera://startpage/'
-    ];
-    
-    return newTabPatterns.some(pattern => url.startsWith(pattern));
 }
 
 function isOpera() {
