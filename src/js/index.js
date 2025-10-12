@@ -1822,14 +1822,14 @@ function applySettings() {
                     break;
                 case "x-small":
                     dialWidth = '130px';
-                    dialHeight = settings.dialRatio === "square" ? '148px' : '100px';
-                    dialContentHeight = settings.dialRatio === "square" ? '130px' : '82px';
+                    dialHeight = settings.dialRatio === "square" ? '148px' : '91px';
+                    dialContentHeight = settings.dialRatio === "square" ? '130px' : '73px';
                     dialMargin = '14px';
                     break;
                 case "xx-small":
                     dialWidth = '100px';
-                    dialHeight = settings.dialRatio === "square" ? '118px' : '78px';
-                    dialContentHeight = settings.dialRatio === "square" ? '100px' : '60px';
+                    dialHeight = settings.dialRatio === "square" ? '118px' : '74px';
+                    dialContentHeight = settings.dialRatio === "square" ? '100px' : '56px';
                     dialMargin = '12px';
                     break;
                 default:
