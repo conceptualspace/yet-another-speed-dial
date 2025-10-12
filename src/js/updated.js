@@ -25,6 +25,29 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (copyButton) {
     copyButton.addEventListener('click', copyToClipboard);
   }
+
+  // Add event listener for share link
+  const shareLink = document.getElementById('shareLink');
+  if (shareLink) {
+    shareLink.addEventListener('click', async (event) => {
+      event.preventDefault();
+      const shareData = {
+        title: 'Yet Another Speed Dial',
+        text: 'Yet Another Speed Dial - an open source customizable new tab page for Chrome and Firefox.',
+        url: 'https://www.yetanotherspeeddial.com'
+      };
+      if (navigator.share && navigator.canShare(shareData)) {
+        try {
+          await navigator.share(shareData);
+        } catch (err) {
+          console.error('Error sharing:', err);
+        }
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        window.open(shareLink.href, '_blank');
+      }
+    });
+  }
 });
 
 // Copy to clipboard function for share buttons
