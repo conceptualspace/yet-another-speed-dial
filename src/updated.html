@@ -31,6 +31,35 @@
     button.btn {
       color: #007bff;
     }
+
+    /* Tooltip styles */
+    .copy-tooltip {
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .copy-tooltip.show {
+      opacity: 1;
+    }
+    
+    .copy-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+    }
   
     @media (prefers-color-scheme: dark) {
       html {
@@ -59,6 +88,14 @@
       }
       button.btn:hover {
         color: white; 
+      }
+      
+      .copy-tooltip {
+        background-color: #555;
+      }
+      
+      .copy-tooltip::after {
+        border-top-color: #555;
       }
     }
   </style>

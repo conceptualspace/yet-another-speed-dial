@@ -30,21 +30,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Copy to clipboard function for share buttons
 function copyToClipboard() {
   const url = 'www.yetanotherspeeddial.com';
+  const button = document.getElementById('copyButton');
+  
   navigator.clipboard.writeText(url).then(function() {
-    const button = document.getElementById('copyButton');
-    const originalText = button.textContent;
-    const svgElement = button.querySelector('svg');
-    const originalSvg = svgElement.outerHTML;
-    
-    // Replace with checkmark icon
-    svgElement.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>';
-    button.textContent = 'Copied!';
-    // Re-add the SVG since textContent overwrites everything
-    button.innerHTML = '<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copy';
-    
-    setTimeout(function() {
-      button.innerHTML = originalSvg + ' Copy';
-    }, 2000);
+    showTooltip(button, 'Copied!');
   }).catch(function(err) {
     console.error('Could not copy text: ', err);
     // Fallback for older browsers
@@ -54,17 +43,35 @@ function copyToClipboard() {
     textArea.select();
     document.execCommand('copy');
     document.body.removeChild(textArea);
-    
-    const button = document.getElementById('copyButton');
-    const originalText = button.textContent;
-    const svgElement = button.querySelector('svg');
-    const originalSvg = svgElement.outerHTML;
-    
-    // Replace with checkmark icon
-    button.innerHTML = '<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copy';
-    
-    setTimeout(function() {
-      button.innerHTML = originalSvg + ' Copy';
-    }, 2000);
+    showTooltip(button, 'Copied!');
   });
+}
+
+// Show tooltip function
+function showTooltip(element, message) {
+  // Remove any existing tooltip
+  const existingTooltip = document.querySelector('.copy-tooltip');
+  if (existingTooltip) {
+    existingTooltip.remove();
+  }
+  
+  // Create tooltip
+  const tooltip = document.createElement('div');
+  tooltip.className = 'copy-tooltip';
+  tooltip.textContent = message;
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip
+  const rect = element.getBoundingClientRect();
+  tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+  tooltip.style.top = (rect.top - 40) + 'px';
+  
+  // Show tooltip
+  setTimeout(() => tooltip.classList.add('show'), 10);
+  
+  // Hide tooltip after 2 seconds
+  setTimeout(() => {
+    tooltip.classList.remove('show');
+    setTimeout(() => tooltip.remove(), 300);
+  }, 2000);
 }
