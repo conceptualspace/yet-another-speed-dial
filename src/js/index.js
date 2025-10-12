@@ -527,7 +527,7 @@ function removeFolder() {
         }
 
         if (currentFolder === targetFolder) {
-            currentFolder = speedDialId;;
+            currentFolder = speedDialId;
             bookmarksContainerParent.scrollTop = scrollPos;
             showFolder(speedDialId);
             settings.currentFolder = speedDialId;
