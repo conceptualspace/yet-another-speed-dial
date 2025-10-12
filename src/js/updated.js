@@ -40,10 +40,10 @@ function copyToClipboard() {
     svgElement.innerHTML = '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>';
     button.textContent = 'Copied!';
     // Re-add the SVG since textContent overwrites everything
-    button.innerHTML = '<svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Copied!';
+    button.innerHTML = '<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copy';
     
     setTimeout(function() {
-      button.innerHTML = originalSvg + 'Copy Link';
+      button.innerHTML = originalSvg + ' Copy';
     }, 2000);
   }).catch(function(err) {
     console.error('Could not copy text: ', err);
@@ -61,10 +61,10 @@ function copyToClipboard() {
     const originalSvg = svgElement.outerHTML;
     
     // Replace with checkmark icon
-    button.innerHTML = '<svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>Copied!';
+    button.innerHTML = '<svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 6px;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> Copy';
     
     setTimeout(function() {
-      button.innerHTML = originalSvg + 'Copy Link';
+      button.innerHTML = originalSvg + ' Copy';
     }, 2000);
   });
 }
