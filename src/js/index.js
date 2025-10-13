@@ -10,6 +10,7 @@ const bookmarksContainer = bookmarksContainerParent
 const foldersContainer = document.getElementById('folders');
 const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
+const moveFolderSubmenu = document.getElementById('moveFolderSubmenu');
 const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const modal = document.getElementById('tileModal');
@@ -980,6 +981,11 @@ async function printBookmarksOld(bookmarks, parentId) {
 */
 
 function showContextMenu(el, top, left) {
+    // Populate folder submenu if showing the main context menu
+    if (el === menu) {
+        populateFolderSubmenu();
+    }
+    
     if ((document.body.clientWidth - left) < (el.clientWidth + 30)) {
         el.style.left = (left - el.clientWidth) + 'px';
     } else {
@@ -992,6 +998,97 @@ function showContextMenu(el, top, left) {
     }
     el.style.visibility = "visible";
     el.style.opacity = "1";
+}
+
+async function populateFolderSubmenu() {
+    const submenuOptions = moveFolderSubmenu.querySelector('.menu-options');
+    submenuOptions.innerHTML = '';
+    
+    try {
+        // Get the Speed Dial folder
+        const speedDialBookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' });
+        if (!speedDialBookmarks || !speedDialBookmarks.length) return;
+        
+        const speedDialId = speedDialBookmarks[0].id;
+        const children = await chrome.bookmarks.getChildren(speedDialId);
+        const folders = children.filter(child => !child.url);
+        
+        // Add Speed Dial (home) folder
+        const homeOption = document.createElement('li');
+        homeOption.className = 'menu-option';
+        homeOption.setAttribute('data-folder-id', speedDialId);
+        homeOption.textContent = homeFolderTitle;
+        homeOption.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moveBookmarkToFolder(speedDialId);
+            hideMenus();
+        });
+        submenuOptions.appendChild(homeOption);
+        
+        // Add other folders
+        folders.forEach(folder => {
+            // Don't show the current folder as an option
+            if (folder.id !== currentFolder) {
+                const option = document.createElement('li');
+                option.className = 'menu-option';
+                option.setAttribute('data-folder-id', folder.id);
+                option.textContent = folder.title;
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    moveBookmarkToFolder(folder.id);
+                    hideMenus();
+                });
+                submenuOptions.appendChild(option);
+            }
+        });
+        
+        // If no folders to move to, show a disabled message
+        if (submenuOptions.children.length === 0) {
+            const noOption = document.createElement('li');
+            noOption.className = 'menu-option';
+            noOption.style.opacity = '0.5';
+            noOption.style.cursor = 'default';
+            noOption.textContent = 'No other folders available';
+            submenuOptions.appendChild(noOption);
+        }
+    } catch (error) {
+        console.error('Error populating folder submenu:', error);
+    }
+}
+
+async function moveBookmarkToFolder(targetFolderId) {
+    if (!targetTileId) {
+        console.error('No target tile selected');
+        return;
+    }
+    
+    try {
+        // Get the bookmark ID from the data-id attribute
+        const bookmarkId = targetNode.getAttribute('data-id');
+        if (!bookmarkId) {
+            console.error('Could not find bookmark ID');
+            return;
+        }
+        
+        // Move the bookmark to the target folder
+        await chrome.bookmarks.move(bookmarkId, {
+            parentId: targetFolderId
+        });
+        
+        // Refresh the current view
+        if (tabMessagePort) {
+            tabMessagePort.postMessage({ refreshInactive: true });
+        }
+        
+        // Remove the tile from the current view immediately for better UX
+        if (targetNode && targetNode.parentNode) {
+            targetNode.parentNode.removeChild(targetNode);
+        }
+        
+        console.log(`Moved bookmark to folder: ${targetFolderId}`);
+    } catch (error) {
+        console.error('Error moving bookmark to folder:', error);
+    }
 }
 
 function hideMenus() {
@@ -1990,7 +2087,7 @@ document.addEventListener("contextmenu", function (e) {
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
-        targetTileId = e.target.id;
+        targetTileId = targetNode.getAttribute('data-id'); // Get bookmark ID from data-id attribute
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
