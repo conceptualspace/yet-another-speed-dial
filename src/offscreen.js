@@ -36,7 +36,7 @@ async function handleMessages(message) {
     })
 
     if (images && images.length) {
-        resizedImages = await Promise.all(images.map(async (image) => {
+        resizedImages = await Promise.all(images.map(async (image, index) => {
             const result = await resizeImage(image).catch(err => {
                 console.log(err);
             });
@@ -249,6 +249,38 @@ function resizeImage(image, screenshot = false) {
         const targetRatio = targetWidth / targetHeight;
         const tolerance = 0.25;
 
+        // Special handling for SVG data URLs
+        if (image.startsWith('data:image/svg+xml')) {
+            const img = new Image();
+            
+            img.onerror = (event) => {
+                console.error(`[resizeImage] SVG load error:`, event);
+                resolve();
+            };
+            
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                
+                // Set canvas to target size for SVGs
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                // Draw SVG centered and scaled to fit
+                let scale = Math.min(targetWidth / this.width, targetHeight / this.height);
+                let x = (targetWidth - this.width * scale) / 2;
+                let y = (targetHeight - this.height * scale) / 2;
+                
+                ctx.drawImage(this, x, y, this.width * scale, this.height * scale);
+                
+                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                resolve(newDataURI);
+            };
+            
+            img.src = image;
+            return;
+        }
+
         const img = new Image();
 
         img.onerror = (event) => {
@@ -345,7 +377,6 @@ async function fetchImages(url, quickRefresh) {
         "mail.google.com",
         "gmail.com",
         "chromewebstore.google.com",
-        "www.facebook.com",
         "twitter.com"
     ];
 
@@ -356,6 +387,7 @@ async function fetchImages(url, quickRefresh) {
 
     // default favicons
     images.push(urlObj.origin + "/favicon.ico")
+    
     // amazon hack
     if (hostname.includes('amazon')) {
         images.push('img/amazon.com.png');
@@ -385,17 +417,27 @@ async function fetchImages(url, quickRefresh) {
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         
         try {
+            // allows for og images to work for facebook links. with creds they are behind js
+            const credentials = hostname.includes('facebook.com') ? 'omit' : 'same-origin';
+            
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'text/html'
                 },
                 mode: 'cors',
-                credentials: 'same-origin',
+                credentials,
                 signal: controller.signal
             });
 
             clearTimeout(timeoutId); // Clear timeout if fetch completes in time
+            
+            // Update URL to the final redirected URL for proper relative URL resolution
+            const finalUrl = response.url;
+            if (finalUrl !== url) {
+                //console.log(`[fetchImages] URL redirected from ${url} to ${finalUrl}`);
+                url = finalUrl; // Update the base URL for relative URL conversion
+            }
 
             if (!response.ok) {
                 return(images);
@@ -404,6 +446,27 @@ async function fetchImages(url, quickRefresh) {
             const text = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
+
+            // check for svg logo and convert to data url
+            let svgElements = doc.querySelectorAll('svg');
+            for (let svg of svgElements) {
+                // heuristic to find relevant svg (logo class or large size)
+                let isLogo = svg.getAttribute('aria-label')?.toLowerCase().includes(hostname.split('.')[0]) ||
+                        svg.getAttribute('class')?.toLowerCase().includes('logo') ||
+                        svg.id?.toLowerCase().includes('logo') ||
+                        (svg.getAttribute('role') === 'img' && svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
+                if (isLogo) { 
+                    try {
+                        // Convert SVG to data URL
+                        let svgString = new XMLSerializer().serializeToString(svg);
+                        let svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+                        images.push(svgDataUrl);
+                        break; // take the first svg logo we find
+                    } catch (svgError) {
+                        console.warn(`[fetchImages] Error processing SVG:`, svgError);
+                    }
+                }
+            }
 
             // get first image from page
             let firstImage = doc.querySelector('img');
@@ -430,6 +493,16 @@ async function fetchImages(url, quickRefresh) {
                 }
             }
 
+            // icon sizes
+            let sizes = [
+                "512x512",
+                "256x256",
+                "192x192",
+                "180x180",
+                "144x144",
+                "96x96"
+            ];
+
             // get apple touch icon
             let appleIcon = doc.querySelector('link[rel="apple-touch-icon"]');
             if (appleIcon && appleIcon.getAttribute('href')) {
@@ -444,21 +517,33 @@ async function fetchImages(url, quickRefresh) {
                 insert(imageUrl);
             }
             
-            // get large icons
-            let sizes = [
-                "512x512",
-                "256x256",
-                "192x192",
-                "180x180",
-                "144x144",
-                "96x96"
-            ];
+            // get large apple touch icon
+            for (let size of sizes) {
+                let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
+                if (appleIcon && appleIcon.getAttribute('href')) {
+                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                    insert(imageUrl);
+                    break;
+                }
+            }
+
+            // get large x-icon
             for (let size of sizes) {
                 let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
                 if (icon && icon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
                     insert(imageUrl);
                     break;
+                }
+            }
+
+            // get structured data images (schema.org microdata)
+            let structuredImages = doc.querySelectorAll('meta[itemprop="image"]');
+            for (let meta of structuredImages) {
+                let content = meta.getAttribute('content');
+                if (content) {
+                    let imageUrl = convertUrlToAbsolute(url, content);
+                    insert(imageUrl);
                 }
             }
 
