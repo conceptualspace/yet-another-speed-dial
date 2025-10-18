@@ -556,8 +556,42 @@ async function fetchImages(url, quickRefresh) {
                 }
             }
 
-            // if we havent had much luck with images, lets check the style sheets
+            // if we havent had much luck with images, lets check the manifest and style sheets
+            // we dont do so during a quick refresh to avoid fetching extra resources
             if (images.length < 4 && !quickRefresh) {
+                // web application manifest icon
+                let manifestLink = doc.querySelector('link[rel="manifest"]');
+                if (manifestLink && manifestLink.getAttribute('href')) {
+                    try {
+                        let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
+                        const manifestResponse = await fetch(manifestUrl);
+                        if (manifestResponse.ok) {
+                            const manifest = await manifestResponse.json();
+                            if (manifest.icons && Array.isArray(manifest.icons)) {
+                                // Sort icons by size (largest first) and get the best ones
+                                const sortedIcons = manifest.icons
+                                    .filter(icon => icon.src) // Only icons with src
+                                    .sort((a, b) => {
+                                        // Extract numeric size for comparison
+                                        const getSizeValue = (sizes) => {
+                                            if (!sizes) return 0;
+                                            const match = sizes.match(/(\d+)x(\d+)/);
+                                            return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
+                                        };
+                                        return getSizeValue(b.sizes) - getSizeValue(a.sizes);
+                                    });
+                                // take the largest
+                                if (sortedIcons.length > 0) {
+                                    let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
+                                    images.push(iconUrl);
+                                }
+                            }
+                        }
+                    } catch (manifestError) {
+                        console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
+                    }
+                }
+
                 const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
                 .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
             
