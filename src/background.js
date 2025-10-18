@@ -426,6 +426,7 @@ async function handleInstalled(details) {
             }
         }
         // perform any migrations here...
+        // await migrateDialSizes();
     }
 
     try {
@@ -441,6 +442,36 @@ async function handleInstalled(details) {
         });
     } catch (error) {
         console.log("Error managing context menus:", error.message);
+    }
+}
+
+
+// MIGRATION FUNCTIONS //
+
+async function migrateDialSizes() {
+    try {
+        const result = await chrome.storage.local.get('settings');
+        
+        if (result.settings && result.settings.dialSize) {
+            const dialSizeMigrationMap = {
+                'xxx-small': 'xx-small',
+                'xx-small': 'x-small',
+                'x-small': 'small',
+                'small': 'medium',
+                'medium': 'large',
+                'large': 'x-large',
+                'x-large': 'xx-large'
+            };
+            
+            if (dialSizeMigrationMap[result.settings.dialSize]) {
+                console.log(`Migrating dial size from '${result.settings.dialSize}' to '${dialSizeMigrationMap[result.settings.dialSize]}' (v3.11.0)`);
+                result.settings.dialSize = dialSizeMigrationMap[result.settings.dialSize];
+                result.settings.migrationVersion = '3.11.0';
+                await chrome.storage.local.set({ settings: result.settings });
+            }
+        }
+    } catch (error) {
+        console.error('Error during dial size migration:', error);
     }
 }
 

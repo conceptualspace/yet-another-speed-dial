@@ -149,7 +149,7 @@ let defaults = {
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
-    dialSize: 'medium',
+    dialSize: 'large',
     dialRatio: 'wide',
     currentFolder: null,
 };
@@ -1768,24 +1768,31 @@ function applySettings() {
 
         if (settings.maxCols && settings.maxCols !== "100") {
             //todo cleanup - fixed values
+            // todo: busted with mall sizes because they have a smaller margin
             let dialWidth = 220;
             let dialMargin = 18 * 2; // 18px on each side
 
             switch (settings.dialSize) {
-                case "x-large":
+                case "xx-large":
                     dialWidth = 300;
                     break;
-                case "large":
+                case "x-large":
                     dialWidth = 256;
                     break;
-                case "small":
+                case "large":
+                    dialWidth = 220;
+                    break;
+                case "medium":
                     dialWidth = 178;
                     break;
-                case "x-small":
+                case "small":
                     dialWidth = 130;
                     break;
-                case "xx-small":
+                case "x-small":
                     dialWidth = 100;
+                    break;
+                case "xx-small":
+                    dialWidth = 80;
                     break;
                 default:
                     dialWidth = 220;
@@ -1799,38 +1806,44 @@ function applySettings() {
             layout();
         }
 
-        if (settings.dialSize && settings.dialSize !== "medium") {
+        if (settings.dialSize && settings.dialSize !== "large") {
             let dialWidth, dialHeight, dialContentHeight, dialMargin;
             switch (settings.dialSize) {
-                case "x-large":
+                case "xx-large":
                     dialWidth = '300px';
                     dialHeight = settings.dialRatio === "square" ? '318px' : '189px';
                     dialContentHeight = settings.dialRatio === "square" ? '300px' : '171px';
                     dialMargin = '14px';
                     break;
-                case "large":
+                case "x-large":
                     dialWidth = '256px';
                     dialHeight = settings.dialRatio === "square" ? '274px' : '162px';
                     dialContentHeight = settings.dialRatio === "square" ? '256px' : '144px';
                     dialMargin = '14px';
                     break;
-                case "small":
+                case "medium":
                     dialWidth = '178px';
                     dialHeight = settings.dialRatio === "square" ? '196px' : '118px';
                     dialContentHeight = settings.dialRatio === "square" ? '178px' : '100px';
                     dialMargin = '14px';
                     break;
-                case "x-small":
+                case "small":
                     dialWidth = '130px';
                     dialHeight = settings.dialRatio === "square" ? '148px' : '91px';
                     dialContentHeight = settings.dialRatio === "square" ? '130px' : '73px';
                     dialMargin = '14px';
                     break;
-                case "xx-small":
+                case "x-small":
                     dialWidth = '100px';
                     dialHeight = settings.dialRatio === "square" ? '118px' : '74px';
                     dialContentHeight = settings.dialRatio === "square" ? '100px' : '56px';
                     dialMargin = '12px';
+                    break;
+                case "xx-small":
+                    dialWidth = '80px';
+                    dialHeight = settings.dialRatio === "square" ? '98px' : '63px';
+                    dialContentHeight = settings.dialRatio === "square" ? '80px' : '45px';
+                    dialMargin = '8px';
                     break;
                 default:
                     dialWidth = '220px';

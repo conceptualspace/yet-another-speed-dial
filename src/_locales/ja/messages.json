@@ -199,6 +199,9 @@
   "optionXLarge": {
     "message": "最大"
   },
+  "optionXXLarge": {
+    "message": "超最大"
+  },
   "optionUnlimited": {
     "message": "無制限"
   },
