@@ -1768,9 +1768,8 @@ function applySettings() {
 
         if (settings.maxCols && settings.maxCols !== "100") {
             //todo cleanup - fixed values
-            // todo: busted with mall sizes because they have a smaller margin
             let dialWidth = 220;
-            let dialMargin = 18 * 2; // 18px on each side
+            let dialMargin = 14 * 2; // 18px on each side
 
             switch (settings.dialSize) {
                 case "xx-large":
@@ -1790,9 +1789,11 @@ function applySettings() {
                     break;
                 case "x-small":
                     dialWidth = 100;
+                    dialMargin = 12 * 2;
                     break;
                 case "xx-small":
                     dialWidth = 80;
+                    dialMargin = 8 * 2;
                     break;
                 default:
                     dialWidth = 220;
