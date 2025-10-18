@@ -463,6 +463,11 @@ async function handleInstalled(details) {
 async function migrateDialSizes() {
     try {
         const result = await chrome.storage.local.get('settings');
+
+         if (result.settings && result.settings.migrationVersion && 
+            !isPreviousVersion(result.settings.migrationVersion, '3.11.0')) {
+            return;
+        }
         
         if (result.settings && result.settings.dialSize) {
             const dialSizeMigrationMap = {
