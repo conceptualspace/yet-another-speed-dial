@@ -401,13 +401,27 @@ async function createBookmarkFromContextMenu(tab) {
 
 // LIFECYCLE METHODS //
 
+function isPreviousVersion(a, b) {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const na = pa[i] || 0;
+        const nb = pb[i] || 0;
+        if (na !== nb) return na < nb;
+    }
+    return false;
+}
+
 async function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
-        if (details.previousVersion < '3.3') {
+        if (isPreviousVersion(details.previousVersion, '3.11')) {
+            // perform any migrations here...
+            await migrateDialSizes();
+
             // Check if user wants to see release notes
             try {
                 const result = await chrome.storage.sync.get('showReleaseNotes');
@@ -425,7 +439,6 @@ async function handleInstalled(details) {
                 chrome.tabs.create({ url });
             }
         }
-        // perform any migrations here...
     }
 
     try {
@@ -441,6 +454,36 @@ async function handleInstalled(details) {
         });
     } catch (error) {
         console.log("Error managing context menus:", error.message);
+    }
+}
+
+
+// MIGRATION FUNCTIONS //
+
+async function migrateDialSizes() {
+    try {
+        const result = await chrome.storage.local.get('settings');
+        
+        if (result.settings && result.settings.dialSize) {
+            const dialSizeMigrationMap = {
+                'xxx-small': 'xx-small',
+                'xx-small': 'x-small',
+                'x-small': 'small',
+                'small': 'medium',
+                'medium': 'large',
+                'large': 'x-large',
+                'x-large': 'xx-large'
+            };
+            
+            if (dialSizeMigrationMap[result.settings.dialSize]) {
+                console.log(`Migrating dial size from '${result.settings.dialSize}' to '${dialSizeMigrationMap[result.settings.dialSize]}' (v3.11.0)`);
+                result.settings.dialSize = dialSizeMigrationMap[result.settings.dialSize];
+                result.settings.migrationVersion = '3.11.0';
+                await chrome.storage.local.set({ settings: result.settings });
+            }
+        }
+    } catch (error) {
+        console.error('Error during dial size migration:', error);
     }
 }
 

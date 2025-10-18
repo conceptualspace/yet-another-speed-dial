@@ -199,6 +199,9 @@
   "optionXLarge": {
     "message": "X-Groß"
   },
+  "optionXXLarge": {
+    "message": "XX-Groß"
+  },
   "optionUnlimited": {
     "message": "Unbegrenzt"
   },

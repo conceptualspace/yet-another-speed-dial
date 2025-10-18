@@ -8,8 +8,8 @@
     --search: block;
     --columns: 100%;
     --image-scaling: contain;
-    --dial-width: 220px;
-    --dial-height: 142px;
+    --dial-width: 178px;
+    --dial-height: 118px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
 }
 
