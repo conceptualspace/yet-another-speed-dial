@@ -417,8 +417,9 @@ async function fetchImages(url, quickRefresh) {
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         
         try {
-            // allows for og images to work for facebook links. with creds they are behind js
-            const credentials = hostname.includes('facebook.com') ? 'omit' : 'same-origin';
+            // allows og images to work, with creds they are behind js
+            const omitDomains = ['facebook.com', 'github.com'];
+            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin';
             
             const response = await fetch(url, {
                 method: 'GET',
