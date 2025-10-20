@@ -210,12 +210,11 @@ async function handleManualRefresh(data) {
 }
 
 const captureInBackground = (url) => {
-  const EMPTY_IMAGE = null;
   
   return new Promise((resolve, reject) => {
     chrome.windows.create({
         url: url,
-        focused: !1,
+        focused: false,
         width: 1,
         height: 1,
         left: 0,
@@ -229,12 +228,12 @@ const captureInBackground = (url) => {
 
         const tabId = popup.tabs[0].id
         let loadingInterval;
-
+        
         chrome.tabs.update(tabId, {
-          muted: !0
+          muted: true
         })
         chrome.windows.update(popup.id, {
-          focused: !1,
+          focused: false,
           width: 1280,
           height: 720,
           left: 0,
@@ -244,7 +243,7 @@ const captureInBackground = (url) => {
         const timeout = setTimeout(() => {
           clearInterval(loadingInterval);
           chrome.windows.remove(popup.id)
-          resolve(EMPTY_IMAGE)
+          resolve(null)
         }, 10000)
 
         loadingInterval = setInterval(() => {
@@ -257,12 +256,12 @@ const captureInBackground = (url) => {
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
                     chrome.windows.remove(popup.id).then(() => {
-                      screenshot ? resolve(screenshot) : resolve(EMPTY_IMAGE)
+                      screenshot ? resolve(screenshot) : resolve(null)
                     })
                   })
                   .catch(() => {
                     chrome.windows.remove(popup.id).then(() => {
-                      resolve(EMPTY_IMAGE)
+                      resolve(null)
                     })
                   })
               }, 2500))
