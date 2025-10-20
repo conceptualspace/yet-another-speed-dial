@@ -228,9 +228,12 @@ const captureInBackground = (url) => {
 
         const tabId = popup.tabs[0].id
         let loadingInterval;
+        let hasScreenshot = false;
+        let windowFocused = false;
         
         chrome.tabs.update(tabId, {
-          muted: true
+          muted: true,
+          active: true
         })
         chrome.windows.update(popup.id, {
           focused: false,
@@ -246,6 +249,14 @@ const captureInBackground = (url) => {
           resolve(null)
         }, 10000)
 
+        // Focus window after 5s if we don't have a screenshot yet
+        const focusTimeout = setTimeout(() => {
+          if (!hasScreenshot) {
+            windowFocused = true;
+            chrome.windows.update(popup.id, { focused: true });
+          }
+        }, 5000);
+
         loadingInterval = setInterval(() => {
           chrome.tabs.get(tabId).then((tab) => {
             'complete' === tab.status &&
@@ -255,11 +266,14 @@ const captureInBackground = (url) => {
                 chrome.tabs
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
+                    hasScreenshot = true;
+                    clearTimeout(focusTimeout)
                     chrome.windows.remove(popup.id).then(() => {
                       screenshot ? resolve(screenshot) : resolve(null)
                     })
                   })
                   .catch(() => {
+                    clearTimeout(focusTimeout)
                     chrome.windows.remove(popup.id).then(() => {
                       resolve(null)
                     })
