@@ -213,8 +213,7 @@ const captureInBackground = (url) => {
   const EMPTY_IMAGE = null;
   
   return new Promise((resolve, reject) => {
-    chrome.windows
-      .create({
+    chrome.windows.create({
         url: url,
         focused: !1,
         width: 1,
@@ -222,20 +221,19 @@ const captureInBackground = (url) => {
         left: 0,
         top: 0,
         type: 'popup'
-      })
-      .then((a) => {
-        if (!a.tabs || !a.tabs.length) {
-          chrome.windows.remove(a.id)
+      }).then((popup) => {
+        if (!popup.tabs || !popup.tabs.length) {
+          chrome.windows.remove(popup.id)
           return reject(null)
         }
 
-        const c = a.tabs[0].id
-        let d
+        const tabId = popup.tabs[0].id
+        let loadingInterval;
 
-        chrome.tabs.update(c, {
+        chrome.tabs.update(tabId, {
           muted: !0
         })
-        chrome.windows.update(a.id, {
+        chrome.windows.update(popup.id, {
           focused: !1,
           width: 1280,
           height: 720,
@@ -243,27 +241,27 @@ const captureInBackground = (url) => {
           top: 0
         })
 
-        const e = setTimeout(() => {
-          clearInterval(d)
-          chrome.windows.remove(a.id)
+        const timeout = setTimeout(() => {
+          clearInterval(loadingInterval);
+          chrome.windows.remove(popup.id)
           resolve(EMPTY_IMAGE)
         }, 10000)
 
-        d = setInterval(() => {
-          chrome.tabs.get(c).then((c) => {
-            'complete' === c.status &&
-              (clearInterval(d),
+        loadingInterval = setInterval(() => {
+          chrome.tabs.get(tabId).then((tab) => {
+            'complete' === tab.status &&
+              (clearInterval(loadingInterval),
               setTimeout(() => {
-                clearTimeout(e)
+                clearTimeout(timeout)
                 chrome.tabs
-                  .captureVisibleTab(a.id)
-                  .then((c) => {
-                    chrome.windows.remove(a.id).then(() => {
-                      c ? resolve(c) : resolve(EMPTY_IMAGE)
+                  .captureVisibleTab(popup.id)
+                  .then((screenshot) => {
+                    chrome.windows.remove(popup.id).then(() => {
+                      screenshot ? resolve(screenshot) : resolve(EMPTY_IMAGE)
                     })
                   })
                   .catch(() => {
-                    chrome.windows.remove(a.id).then(() => {
+                    chrome.windows.remove(popup.id).then(() => {
                       resolve(EMPTY_IMAGE)
                     })
                   })
