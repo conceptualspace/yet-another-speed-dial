@@ -209,124 +209,69 @@ async function handleManualRefresh(data) {
     }
 }
 
-async function capturePopupScreenshot(url) {
-    console.log('Starting popup screenshot capture for:', url);
-    
-    // Calculate popup dimensions to match thumbnail aspect ratio (256x144)
-    const thumbnailWidth = 256;
-    const thumbnailHeight = 144;
-    const aspectRatio = thumbnailWidth / thumbnailHeight;
-    
-    const contentWidth = 1024; // 4x thumbnail width
-    const contentHeight = Math.round(contentWidth / aspectRatio);
-    const windowWidth = contentWidth;
-    const windowHeight = contentHeight + 80; // Add space for window decorations
-    
-    let popup = null;
-    
-    try {
-        // Create popup window
-        //console.log('Creating popup window...');
-        popup = await chrome.windows.create({
-            url: url,
-            type: 'popup',
-            width: windowWidth,
-            height: windowHeight,
-            focused: false // Don't steal focus from user
-        });
-        
-        if (!popup || !popup.tabs || !popup.tabs[0]) {
-            throw new Error('Failed to create popup window');
+const captureInBackground = (url) => {
+  const EMPTY_IMAGE = null;
+  
+  return new Promise((resolve, reject) => {
+    chrome.windows
+      .create({
+        url: url,
+        focused: !1,
+        width: 1,
+        height: 1,
+        left: 0,
+        top: 0,
+        type: 'popup'
+      })
+      .then((a) => {
+        if (!a.tabs || !a.tabs.length) {
+          chrome.windows.remove(a.id)
+          return reject(null)
         }
-        
-        //console.log('Popup created, waiting for page load...');
-        await waitForPageLoad(popup.tabs[0].id);
-        
-        // Give a bit more time for page content to render
-        await new Promise(resolve => setTimeout(resolve, 2500));
-        
-        //console.log('Attempting to capture screenshot...');
-        
-        // Check if tab is still valid before capture
-        try {
-            const tab = await chrome.tabs.get(popup.tabs[0].id);
-            if (!tab || tab.status !== 'complete') {
-                console.warn('Tab not ready for screenshot, status:', tab?.status);
-            }
-        } catch (tabError) {
-            console.warn('Could not verify tab status:', tabError.message);
-        }
-        
-        // Capture screenshot with additional error handling
-        const screenshot = await chrome.tabs.captureVisibleTab(popup.id, {
-            format: 'png'
-        });
-        
-        if (!screenshot) {
-            throw new Error('Screenshot capture returned null/undefined');
-        }
-        
-        if (typeof screenshot !== 'string' || !screenshot.startsWith('data:image/')) {
-            throw new Error('Invalid screenshot format received');
-        }
-        
-        //console.log('Screenshot captured successfully, processing thumbnails...');
-        
-        // Close the popup
-        await chrome.windows.remove(popup.id);
-        popup = null; // Clear reference so cleanup doesn't try again
-        
-        return screenshot;
-        
-    } catch (error) {
-        console.error('Error capturing popup screenshot:', error);
-        
-        // Clean up popup if it was created but there was an error
-        if (popup && popup.id) {
-            try {
-                await chrome.windows.remove(popup.id);
-            } catch (cleanupError) {
-                console.error('Error cleaning up popup window:', cleanupError);
-            }
-        }
-        
-        // Return null to indicate failure - caller can handle fallback
-        return null;
-    }
-}
 
-function waitForPageLoad(tabId) {
-    return new Promise((resolve) => {
-        let timeoutId;
-        let resolved = false;
-        
-        const resolveOnce = () => {
-            if (!resolved) {
-                resolved = true;
-                resolve();
-            }
-        };
-        
-        const cleanupAndResolve = () => {
-            chrome.tabs.onUpdated.removeListener(statusListener);
-            if (timeoutId) clearTimeout(timeoutId);
-            resolveOnce();
-        };
-        
-        // Listen for tab status changes
-        const statusListener = (updatedTabId, changeInfo) => {
-            if (updatedTabId === tabId && changeInfo.status === 'complete') {
-                cleanupAndResolve();
-            }
-        };
-        chrome.tabs.onUpdated.addListener(statusListener);
-        
-        // Fallback timeout in case nothing else works
-        timeoutId = setTimeout(() => {
-            console.log('Page load timeout reached, proceeding with screenshot');
-            cleanupAndResolve();
-        }, 5000);
-    });
+        const c = a.tabs[0].id
+        let d
+
+        chrome.tabs.update(c, {
+          muted: !0
+        })
+        chrome.windows.update(a.id, {
+          focused: !1,
+          width: 1280,
+          height: 720,
+          left: 0,
+          top: 0
+        })
+
+        const e = setTimeout(() => {
+          clearInterval(d)
+          chrome.windows.remove(a.id)
+          resolve(EMPTY_IMAGE)
+        }, 10000)
+
+        d = setInterval(() => {
+          chrome.tabs.get(c).then((c) => {
+            'complete' === c.status &&
+              (clearInterval(d),
+              setTimeout(() => {
+                clearTimeout(e)
+                chrome.tabs
+                  .captureVisibleTab(a.id)
+                  .then((c) => {
+                    chrome.windows.remove(a.id).then(() => {
+                      c ? resolve(c) : resolve(EMPTY_IMAGE)
+                    })
+                  })
+                  .catch(() => {
+                    chrome.windows.remove(a.id).then(() => {
+                      resolve(EMPTY_IMAGE)
+                    })
+                  })
+              }, 2500))
+          })
+        }, 200)
+      })
+  })
 }
 
 async function handleRefreshAll(data) {
@@ -506,7 +451,7 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
     
     if (options.forceScreenshot) {
         // Force popup screenshot for manual refresh
-        screenshot = await capturePopupScreenshot(url);
+        screenshot = await captureInBackground(url);
     } else {
         // take screenshot if applicable (current active tab)
         const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
