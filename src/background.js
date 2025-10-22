@@ -245,6 +245,7 @@ const captureInBackground = (url) => {
 
         const timeout = setTimeout(() => {
           clearInterval(loadingInterval);
+          clearTimeout(focusTimeout);
           chrome.windows.remove(popup.id)
           resolve(null)
         }, 10000)
@@ -253,7 +254,7 @@ const captureInBackground = (url) => {
         const focusTimeout = setTimeout(() => {
           if (!hasScreenshot) {
             windowFocused = true;
-            chrome.windows.update(popup.id, { focused: true });
+            //chrome.windows.update(popup.id, { focused: true });
           }
         }, 5000);
 
@@ -262,18 +263,20 @@ const captureInBackground = (url) => {
             'complete' === tab.status &&
               (clearInterval(loadingInterval),
               setTimeout(() => {
-                clearTimeout(timeout)
+                
                 chrome.tabs
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
                     hasScreenshot = true;
                     clearTimeout(focusTimeout)
+                    clearTimeout(timeout)
                     chrome.windows.remove(popup.id).then(() => {
                       screenshot ? resolve(screenshot) : resolve(null)
                     })
                   })
                   .catch(() => {
                     clearTimeout(focusTimeout)
+                    clearTimeout(timeout)
                     chrome.windows.remove(popup.id).then(() => {
                       resolve(null)
                     })
