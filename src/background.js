@@ -261,7 +261,6 @@ const captureInBackground = (url) => {
 
         // Focus window after 5s if we don't have a screenshot yet
         const focusTimeout = setTimeout(() => {
-        console.log("Focusing window for screenshot");
           if (!hasScreenshot && !finished) {
             chrome.windows.update(popup.id, { focused: true });
           }
