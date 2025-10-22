@@ -246,12 +246,14 @@ const captureInBackground = (url) => {
         const timeout = setTimeout(() => {
           clearInterval(loadingInterval);
           clearTimeout(focusTimeout);
+          console.log("Screenshot 10s timeout, closing popup window");
           chrome.windows.remove(popup.id)
           resolve(null)
         }, 10000)
 
         // Focus window after 5s if we don't have a screenshot yet
         const focusTimeout = setTimeout(() => {
+        console.log("Focusing window for screenshot");
           if (!hasScreenshot) {
             windowFocused = true;
             //chrome.windows.update(popup.id, { focused: true });
@@ -259,27 +261,31 @@ const captureInBackground = (url) => {
         }, 5000);
 
         loadingInterval = setInterval(() => {
+            console.log("Checking loading status of tab...");
           chrome.tabs.get(tabId).then((tab) => {
             'complete' === tab.status &&
               (clearInterval(loadingInterval),
               setTimeout(() => {
-                
+                console.log("Capturing screenshot...");
                 chrome.tabs
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
+                    console.log("Screenshot captured");
                     hasScreenshot = true;
                     clearTimeout(focusTimeout)
                     clearTimeout(timeout)
+                    console.log("Closing popup window");
                     chrome.windows.remove(popup.id).then(() => {
                       screenshot ? resolve(screenshot) : resolve(null)
                     })
                   })
                   .catch(() => {
-                    clearTimeout(focusTimeout)
-                    clearTimeout(timeout)
-                    chrome.windows.remove(popup.id).then(() => {
-                      resolve(null)
-                    })
+                    //clearTimeout(focusTimeout)
+                    //clearTimeout(timeout)
+                    console.log("Error capturing screenshot, closing popup window");
+                    //chrome.windows.remove(popup.id).then(() => {
+                    //  resolve(null)
+                    //})
                   })
               }, 2500))
           })
