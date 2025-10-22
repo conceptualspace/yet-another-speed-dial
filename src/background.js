@@ -209,84 +209,84 @@ async function handleManualRefresh(data) {
     }
 }
 
-const captureInBackground = (url) => {
-  
-  return new Promise((resolve, reject) => {
-    let finished = false;
-    chrome.windows.create({
-        url: url,
-        focused: false,
-        width: 1,
-        height: 1,
-        left: 0,
-        top: 0,
-        type: 'popup'
-      }).then((popup) => {
-        if (!popup.tabs || !popup.tabs.length) {
-          chrome.windows.remove(popup.id)
-          return resolve(null)
+const captureInBackground = async (url) => {
+    return new Promise(async (resolve) => {
+        let finished = false;
+        try {
+            const popup = await chrome.windows.create({
+                url,
+                focused: false,
+                width: 1,
+                height: 1,
+                left: 0,
+                top: 0,
+                type: 'popup',
+            });
+            const [tab] = popup.tabs ?? [];
+            if (!tab) {
+                await chrome.windows.remove(popup.id);
+                return resolve(null);
+            }
+            const tabId = tab.id;
+            let loadingInterval;
+            let hasScreenshot = false;
+
+            const cleanup = async (result = null) => {
+                if (finished) return;
+                finished = true;
+                clearInterval(loadingInterval);
+                clearTimeout(focusTimeout);
+                clearTimeout(timeout);
+                try {
+                    await chrome.windows.remove(popup.id);
+                } catch {}
+                resolve(result);
+            };
+
+            await chrome.tabs.update(tabId, {
+                muted: true,
+                active: true,
+            });
+            await chrome.windows.update(popup.id, {
+                focused: false,
+                width: 1280,
+                height: 720,
+                left: 0,
+                top: 0,
+            });
+
+            const timeout = setTimeout(() => {
+                cleanup();
+            }, 10000);
+
+            // Focus window after 5s if we don't have a screenshot yet
+            const focusTimeout = setTimeout(() => {
+                if (!hasScreenshot && !finished) {
+                    chrome.windows.update(popup.id, { focused: true });
+                }
+            }, 5000);
+
+            loadingInterval = setInterval(async () => {
+                const tab = await chrome.tabs.get(tabId);
+                if (tab.status === 'complete') {
+                    clearInterval(loadingInterval);
+                    setTimeout(async () => {
+                        try {
+                            // delay to let page render
+                            const screenshot = await chrome.tabs.captureVisibleTab(popup.id);
+                            hasScreenshot = true;
+                            cleanup(screenshot);
+                        } catch {
+                            console.log('Error capturing screenshot');
+                            cleanup();
+                        }
+                    }, 2000);
+                }
+            }, 200);
+        } catch (err) {
+            resolve(null);
         }
-
-        const tabId = popup.tabs[0].id
-        let loadingInterval;
-        let hasScreenshot = false;
-
-        const cleanup = (result = null) => {
-            if (finished) return;
-            finished = true;
-
-            clearInterval(loadingInterval);
-            clearTimeout(focusTimeout);
-            clearTimeout(timeout);
-
-            chrome.windows.remove(popup.id).catch(() => {});
-            resolve(result);
-        };
-        
-        chrome.tabs.update(tabId, {
-          muted: true,
-          active: true
-        })
-        chrome.windows.update(popup.id, {
-          focused: false,
-          width: 1280,
-          height: 720,
-          left: 0,
-          top: 0
-        })
-
-        const timeout = setTimeout(() => {
-          cleanup();
-        }, 10000)
-
-        // Focus window after 5s if we don't have a screenshot yet
-        const focusTimeout = setTimeout(() => {
-          if (!hasScreenshot && !finished) {
-            chrome.windows.update(popup.id, { focused: true });
-          }
-        }, 5000);
-
-        loadingInterval = setInterval(() => {
-          chrome.tabs.get(tabId).then((tab) => {
-            'complete' === tab.status &&
-              (clearInterval(loadingInterval),
-              setTimeout(() => {
-                // delay to let page render
-                chrome.tabs
-                  .captureVisibleTab(popup.id)
-                  .then((screenshot) => {
-                    hasScreenshot = true;
-                    cleanup(screenshot);
-                  })
-                  .catch(() => {
-                    console.log("Error capturing screenshot");
-                    cleanup();
-                  })
-              }, 2000))
-          })
-        }, 200)
-      })
-  })
+    });
 }
 
 async function handleRefreshAll(data) {
