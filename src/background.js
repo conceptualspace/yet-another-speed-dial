@@ -259,26 +259,40 @@ const captureInBackground = (url) => {
 
         loadingInterval = setInterval(() => {
           chrome.tabs.get(tabId).then((tab) => {
-            'complete' === tab.status &&
-              (clearInterval(loadingInterval),
+            if (tab.status === 'complete') {
+              clearInterval(loadingInterval);
               setTimeout(() => {
-                clearTimeout(timeout)
+                clearTimeout(timeout);
+                
+                // Add a timeout wrapper for captureVisibleTab
+                const captureTimeout = setTimeout(() => {
+                  console.log('captureVisibleTab timed out');
+                  clearTimeout(focusTimeout);
+                  chrome.windows.remove(popup.id).then(() => {
+                    resolve(null);
+                  });
+                }, 5000); // 5 second timeout for capture
+                
                 chrome.tabs
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
+                    clearTimeout(captureTimeout);
                     hasScreenshot = true;
-                    clearTimeout(focusTimeout)
+                    clearTimeout(focusTimeout);
                     chrome.windows.remove(popup.id).then(() => {
-                      screenshot ? resolve(screenshot) : resolve(null)
-                    })
+                      screenshot ? resolve(screenshot) : resolve(null);
+                    });
                   })
-                  .catch(() => {
-                    clearTimeout(focusTimeout)
+                  .catch((error) => {
+                    console.log('captureVisibleTab failed:', error);
+                    clearTimeout(captureTimeout);
+                    clearTimeout(focusTimeout);
                     chrome.windows.remove(popup.id).then(() => {
-                      resolve(null)
-                    })
-                  })
-              }, 2500))
+                      resolve(null);
+                    });
+                  });
+              }, 2500);
+            }
           })
         }, 200)
       })
