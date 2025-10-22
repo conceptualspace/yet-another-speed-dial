@@ -268,17 +268,14 @@ const captureInBackground = (url) => {
         }, 5000);
 
         loadingInterval = setInterval(() => {
-            console.log("Checking loading status of tab...");
           chrome.tabs.get(tabId).then((tab) => {
             'complete' === tab.status &&
               (clearInterval(loadingInterval),
               setTimeout(() => {
                 // delay to let page render
-                console.log("Capturing screenshot...");
                 chrome.tabs
                   .captureVisibleTab(popup.id)
                   .then((screenshot) => {
-                    console.log("Screenshot captured");
                     hasScreenshot = true;
                     cleanup(screenshot);
                   })
