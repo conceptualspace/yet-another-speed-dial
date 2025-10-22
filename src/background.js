@@ -210,90 +210,77 @@ async function handleManualRefresh(data) {
 }
 
 const captureInBackground = async (url) => {
-    return new Promise(async (resolve) => {
+    let finished = false;
+    let loadingInterval, timeout, focusTimeout;
+    let popup, tabId;
+    let hasScreenshot = false;
 
-        let finished = false;
-        let loadingInterval, timeout, focusTimeout;
-        let popup, tabId;
-        let hasScreenshot = false;
-
-        const cleanup = async (result = null) => {
-            if (finished) return;
-            
-            finished = true;
-
-            clearInterval(loadingInterval);
-            clearTimeout(focusTimeout);
-            clearTimeout(timeout);
-
-            try {
-                await chrome.windows.remove(popup.id);
-            } catch {}
-            
-            resolve(result);
-        };
-
+    const cleanup = async (result = null) => {
+        if (finished) return result;
+        finished = true;
+        clearInterval(loadingInterval);
+        clearTimeout(focusTimeout);
+        clearTimeout(timeout);
         try {
-            popup = await chrome.windows.create({
-                url,
-                focused: false,
-                width: 1,
-                height: 1,
-                left: 0,
-                top: 0,
-                type: 'popup',
-            });
+            await chrome.windows.remove(popup.id);
+        } catch {}
+        return result;
+    };
 
-            const [tab] = popup.tabs ?? [];
-            if (!tab) {
-                await cleanup();
-                return;
+    try {
+        popup = await chrome.windows.create({
+            url,
+            focused: false,
+            width: 1,
+            height: 1,
+            left: 0,
+            top: 0,
+            type: 'popup',
+        });
+
+        const [tab] = popup.tabs ?? [];
+        if (!tab) return await cleanup();
+
+        tabId = tab.id;
+
+        await chrome.tabs.update(tabId, { muted: true, active: true });
+        await chrome.windows.update(popup.id, {
+            focused: false,
+            width: 1280,
+            height: 720,
+            left: 0,
+            top: 0,
+        });
+
+        timeout = setTimeout(() => cleanup(), 10000);
+
+        focusTimeout = setTimeout(() => {
+            if (!hasScreenshot && !finished) {
+                chrome.windows.update(popup.id, { focused: true });
             }
-            tabId = tab.id;
+        }, 5000);
 
-            // Prepare tab and window for screenshot
-            await chrome.tabs.update(tabId, { muted: true, active: true });
-            await chrome.windows.update(popup.id, {
-                focused: false,
-                width: 1280,
-                height: 720,
-                left: 0,
-                top: 0,
-            });
-
-            // 10s timeout
-            timeout = setTimeout(() => cleanup(), 10000);
-
-            // try focusing window after 5s if screenshot not taken
-            focusTimeout = setTimeout(() => {
-                if (!hasScreenshot && !finished) {
-                    chrome.windows.update(popup.id, { focused: true });
-                }
-            }, 5000);
-
-            // poll tab status until page is loaded
+        return await new Promise((resolve) => {
             loadingInterval = setInterval(async () => {
                 const tab = await chrome.tabs.get(tabId);
                 if (tab.status === 'complete') {
                     clearInterval(loadingInterval);
                     setTimeout(async () => {
-                        // let page render
                         try {
                             const screenshot = await chrome.tabs.captureVisibleTab(popup.id);
                             hasScreenshot = true;
-                            await cleanup(screenshot);
+                            resolve(await cleanup(screenshot));
                         } catch {
                             console.log('Error capturing screenshot');
-                            await cleanup();
+                            resolve(await cleanup());
                         }
                     }, 2000);
                 }
             }, 200);
-
-        } catch (err) {
-            await cleanup();
-        }
-    });
+        });
+    } catch (err) {
+        return await cleanup();
+    }
 }
 
 async function handleRefreshAll(data) {
