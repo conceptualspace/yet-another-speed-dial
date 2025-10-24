@@ -316,11 +316,10 @@ async function handleRefreshAll(data) {
         }
     }
 
-    for (let bookmark of data.bookmarks) {
-        await chrome.storage.local.remove(bookmark.url).catch((err) => {
-            console.log(err);
-        });
-    }
+    const urlsToRemove = data.bookmarks.map(bookmark => bookmark.url);
+    await chrome.storage.local.remove(urlsToRemove).catch((err) => {
+        console.log(err);
+    });
     refreshBatch(data.bookmarks);
 }
 
