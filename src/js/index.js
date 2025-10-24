@@ -178,7 +178,7 @@ function updateSearchIconPosition() {
 hourCycle = Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle;
 
 function displayClock() {
-    clock.textContent = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
+    clock.textContent = new Date().toLocaleString(locale, { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
     setTimeout(displayClock, 10000);
 }
 
