@@ -1655,10 +1655,11 @@ function resizeThumb(dataURI) {
     return new Promise(function (resolve, reject) {
         let img = new Image();
         img.onload = async function () {
-            if (this.height > 256 && this.width > 256) {
+            if (this.height > 256 || this.width > 256) {
                 // when im less lazy check use optimal w/h based on image
                 // set height to 256 and scale
-                let height = 256;
+                //let height = 256;
+                let height = 144;
                 let ratio = height / this.height;
                 let width = Math.round(this.width * ratio);
 
@@ -1668,7 +1669,7 @@ function resizeThumb(dataURI) {
                 ctx.drawImage(this, 0, 0, width, height);
 
                 // Use convertToBlob instead of toDataURL
-                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.86 });
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     resolve(e.target.result); // Resolve with the data URI
