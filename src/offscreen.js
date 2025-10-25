@@ -249,8 +249,13 @@ function resizeImage(image, screenshot = false) {
         const targetRatio = targetWidth / targetHeight;
         const tolerance = 0.25;
 
-        // Special handling for SVG data URLs
+        // we dont need to resize svgs
         if (image.startsWith('data:image/svg+xml')) {
+            return resolve(image);
+        }
+        
+        // if we only have a reference, store as image. todo: just fetch the svg instead
+        if (image.endsWith('.svg')) {
             const img = new Image();
             
             img.onerror = (event) => {
