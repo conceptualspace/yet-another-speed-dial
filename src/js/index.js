@@ -1102,6 +1102,10 @@ async function buildModal(url, title) {
         let img = document.createElement('img');
         img.crossOrigin = 'Anonymous';
         img.setAttribute('src', images.thumbnails[index]);
+        img.style.width = 'auto';
+        img.style.height = '144px';
+        img.style.objectFit = 'contain';
+        img.style.maxWidth = '260px';
         img.onerror = function () {
             img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
         };
@@ -1123,6 +1127,10 @@ async function buildModal(url, title) {
                 let img = document.createElement('img');
                 img.crossOrigin = 'Anonymous';
                 img.setAttribute('src', image);
+                img.style.width = 'auto';
+                img.style.height = '144px';
+                img.style.objectFit = 'contain';
+                img.style.maxWidth = '260px';
                 img.onerror = function () {
                     img.setAttribute('src', 'img/default.png'); // todo: cleanup
                 };
