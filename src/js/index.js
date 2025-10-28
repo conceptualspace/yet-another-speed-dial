@@ -1930,6 +1930,26 @@ window.addEventListener("mousedown", e => {
                     e.preventDefault();
                     createFolder();
                     break;
+                case 'bgColorTransparent':
+                    // TODO: Implement transparent background functionality
+                    console.log('Transparent background selected');
+                    break;
+                case 'bgColorPicker':
+                    // Original color picker functionality
+                    // todo: support alpha
+                    // eyedropper currently chrome on windows/mac only
+                    if ('EyeDropper' in window) {
+                        const eyeDropper = new EyeDropper();
+                        eyeDropper.open().then(result => {
+                            const color = result.sRGBHex;
+                            setInputValue(modalBgColorPickerInput, color);
+                        }).catch(error => {
+                            console.log('Error opening color picker:', error);
+                        });
+                    } else {
+                        document.getElementById('modalBgColorPickerInput').click();
+                    }
+                    break;
             }
             break;
         default:
@@ -2161,31 +2181,6 @@ function setInputValue(inputElement, value) {
     inputElement.value = value;
     inputElement.dispatchEvent(new Event('input'));
 }
-
-// Background color menu event handlers
-document.getElementById('bgColorTransparent').addEventListener('click', function () {
-    hideMenus();
-    // TODO: Implement transparent background functionality
-    console.log('Transparent background selected');
-});
-
-document.getElementById('bgColorPicker').addEventListener('click', function () {
-    hideMenus();
-    // Original color picker functionality
-    // todo: support alpha
-    // eyedropper currently chrome on windows/mac only
-    if ('EyeDropper' in window) {
-        const eyeDropper = new EyeDropper();
-        eyeDropper.open().then(result => {
-            const color = result.sRGBHex;
-            setInputValue(modalBgColorPickerInput, color);
-        }).catch(error => {
-            console.log('Error opening color picker:', error);
-        });
-    } else {
-        document.getElementById('modalBgColorPickerInput').click();
-    }
-});
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     hideSettings();
