@@ -12,6 +12,7 @@ const addFolderButton = document.getElementById('addFolderButton');
 const menu = document.getElementById('contextMenu');
 const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
+const bgColorMenu = document.getElementById('bgColorMenu');
 const modal = document.getElementById('tileModal');
 const modalContent = document.getElementById('tileModalContent');
 
@@ -789,7 +790,7 @@ function showContextMenu(el, top, left) {
 }
 
 function hideMenus() {
-    let menus = [menu, settingsMenu, folderMenu]
+    let menus = [menu, settingsMenu, folderMenu, bgColorMenu]
     for (let el of menus) {
         el.style.visibility = "hidden";
         el.style.opacity = "0";
@@ -809,6 +810,9 @@ function hideSettings() {
 function hideModals() {
     let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
     let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+
+    // Hide any open menus when modals are hidden
+    hideMenus();
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -2134,7 +2138,40 @@ fetchImageButton.addEventListener('click', function (event) {
     }
 });
 
-modalBgColorPickerBtn.addEventListener('click', function () {
+modalBgColorPickerBtn.addEventListener('click', function (event) {
+    event.preventDefault();
+    hideMenus();
+    
+    // Calculate position for the menu relative to the button
+    const rect = this.getBoundingClientRect();
+    const left = rect.left;
+    const top = rect.bottom + 5; // Show below the button with small gap
+    
+    showContextMenu(bgColorMenu, top, left);
+});
+
+modalBgColorPickerInput.addEventListener('input', function () {
+    const color = this.value; // in hex
+    // set the our button color to match
+    modalBgColorPreview.style.fill = color;
+});
+
+// helper function for when we set the color picker value programmatically to update our button
+function setInputValue(inputElement, value) {
+    inputElement.value = value;
+    inputElement.dispatchEvent(new Event('input'));
+}
+
+// Background color menu event handlers
+document.getElementById('bgColorTransparent').addEventListener('click', function () {
+    hideMenus();
+    // TODO: Implement transparent background functionality
+    console.log('Transparent background selected');
+});
+
+document.getElementById('bgColorPicker').addEventListener('click', function () {
+    hideMenus();
+    // Original color picker functionality
     // todo: support alpha
     // eyedropper currently chrome on windows/mac only
     if ('EyeDropper' in window) {
@@ -2149,18 +2186,6 @@ modalBgColorPickerBtn.addEventListener('click', function () {
         document.getElementById('modalBgColorPickerInput').click();
     }
 });
-
-modalBgColorPickerInput.addEventListener('input', function () {
-    const color = this.value; // in hex
-    // set the our button color to match
-    modalBgColorPreview.style.fill = color;
-});
-
-// helper function for when we set the color picker value programmatically to update our button
-function setInputValue(inputElement, value) {
-    inputElement.value = value;
-    inputElement.dispatchEvent(new Event('input'));
-}
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     hideSettings();

@@ -510,6 +510,10 @@ a {
     border: none;
 }
 
+#bgColorMenu {
+    z-index: 4;
+}
+
 .formItem > .action::after {
     content: '';
     display: block;
