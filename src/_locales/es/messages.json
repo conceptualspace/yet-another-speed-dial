@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "Imágenes de fit"
   },
+  "searchButton": {
+    "message": "Botón de búsqueda"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar..."
+  },
   "settings": {
     "message": "Ajustes..."
   },
@@ -168,5 +174,41 @@
   },
   "wallpaper": {
     "message": "Fondo"
+  },
+  "optionSquare": {
+    "message": "Cuadrado"
+  },
+  "optionWide": {
+    "message": "Amplio"
+  },
+  "optionXXSmall": {
+    "message": "XX-Pequeño"
+  },
+  "optionXSmall": {
+    "message": "X-Pequeño"
+  },
+  "optionSmall": {
+    "message": "Pequeño"
+  },
+  "optionMedium": {
+    "message": "Mediano"
+  },
+  "optionLarge": {
+    "message": "Grande"
+  },
+  "optionXLarge": {
+    "message": "X-Grande"
+  },
+  "optionXXLarge": {
+    "message": "XX-Grande"
+  },
+  "optionUnlimited": {
+    "message": "Ilimitado"
+  },
+  "optionNewDialsLast": {
+    "message": "Nuevos al final"
+  },
+  "optionNewDialsFirst": {
+    "message": "Nuevos al inicio"
   }
 }

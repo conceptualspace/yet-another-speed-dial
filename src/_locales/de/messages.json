@@ -39,7 +39,7 @@
     "message": "Standardsortierung"
   },
   "delete": {
-    "message": "Unterdrücken"
+    "message": "Löschen"
   },
   "dialRatio": {
     "message": "Dial Format"
@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "Bilder passen"
   },
+   "searchButton": {
+    "message": "Suchschaltfläche"
+  },
+  "searchPlaceholder": {
+    "message": "Suchen..."
+  },
   "settings": {
     "message": "Einstellungen..."
   },
@@ -168,5 +174,41 @@
   },
   "wallpaper": {
     "message": "Hintergrund"
+  },
+  "optionSquare": {
+    "message": "Quadratisch"
+  },
+  "optionWide": {
+    "message": "Breit"
+  },
+  "optionXXSmall": {
+    "message": "XX-Klein"
+  },
+  "optionXSmall": {
+    "message": "X-Klein"
+  },
+  "optionSmall": {
+    "message": "Klein"
+  },
+  "optionMedium": {
+    "message": "Mittel"
+  },
+  "optionLarge": {
+    "message": "Groß"
+  },
+  "optionXLarge": {
+    "message": "X-Groß"
+  },
+  "optionXXLarge": {
+    "message": "XX-Groß"
+  },
+  "optionUnlimited": {
+    "message": "Unbegrenzt"
+  },
+  "optionNewDialsLast": {
+    "message": "Neue zuletzt"
+  },
+  "optionNewDialsFirst": {
+    "message": "Neue zuerst"
   }
 }

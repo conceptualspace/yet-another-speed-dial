@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "画像をスケール"
   },
+  "searchButton": {
+    "message": "検索ボタン"
+  },
+  "searchPlaceholder": {
+    "message": "検索..."
+  },
   "settings": {
     "message": "設定..."
   },
@@ -168,5 +174,41 @@
   },
   "wallpaper": {
     "message": "壁紙"
+  },
+  "optionSquare": {
+    "message": "正方形"
+  },
+  "optionWide": {
+    "message": "横長"
+  },
+  "optionXXSmall": {
+    "message": "極小"
+  },
+  "optionXSmall": {
+    "message": "最小"
+  },
+  "optionSmall": {
+    "message": "小"
+  },
+  "optionMedium": {
+    "message": "中"
+  },
+  "optionLarge": {
+    "message": "大"
+  },
+  "optionXLarge": {
+    "message": "最大"
+  },
+  "optionXXLarge": {
+    "message": "超最大"
+  },
+  "optionUnlimited": {
+    "message": "無制限"
+  },
+  "optionNewDialsLast": {
+    "message": "新規を最後"
+  },
+  "optionNewDialsFirst": {
+    "message": "新規を最初"
   }
 }

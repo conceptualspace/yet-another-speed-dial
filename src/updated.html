@@ -27,6 +27,44 @@
       padding: 0 15px 0 145px;
       background: url("icons/icon128.png") no-repeat;
     }
+
+    button.btn {
+      color: #007bff;
+    }
+    
+    button.btn:focus {
+      outline: none;
+      box-shadow: none;
+    }
+
+    /* Tooltip styles */
+    .copy-tooltip {
+      position: absolute;
+      background-color: #333;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 14px;
+      transform: translateX(-50%);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    
+    .copy-tooltip.show {
+      opacity: 1;
+    }
+    
+    .copy-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 5px solid transparent;
+      border-top-color: #333;
+    }
   
     @media (prefers-color-scheme: dark) {
       html {
@@ -44,6 +82,26 @@
       a:hover {
         color: #0DD7FC;
       }
+      button.btn {
+        color: lightgray;
+      }
+      a.btn {
+        color: lightgray;
+      }
+      a.btn:hover {
+        color: white; 
+      }
+      button.btn:hover {
+        color: white; 
+      }
+      
+      .copy-tooltip {
+        background-color: #555;
+      }
+      
+      .copy-tooltip::after {
+        border-top-color: #555;
+      }
     }
   </style>
 
@@ -53,18 +111,48 @@
 
 <!-- Begin page content -->
 <main role="main" class="container">
-  <h2 class="mt-5">Yet Another Speed Dial has been updated to version 3!</h2>
+  <h2 class="mt-5">Yet Another Speed Dial has been updated!</h2>
 
 
   
-  <p class="lead"><br />Did you know that YASD is 100% free and <a href="https://github.com/conceptualspace/yet-another-speed-dial" target="_blank">open source</a>? It is entirely supported by the community -- that's why YASD will never have ads, sell your data, or lock features behind a subscription.
-  </p>
-  <p class="lead">But we need your help to keep it up!</p>
-  <p class="lead">If you find YASD useful, please consider <a href="https://chromewebstore.google.com/detail/yet-another-speed-dial/imohnlganmafcmidafklgkgfgaagiohn/reviews" target="_blank">leaving a review</a>, <a href="https://github.com/sponsors/conceptualspace" target="_blank">sponsoring the project</a>, or <a href="https://github.com/conceptualspace/yet-another-speed-dial/tree/master/src/_locales" target="_blank">contributing a translation</a> ❤</p>
-  <p class="lead">Email me anytime with questions or comments at: <a href="mailto:dev@conceptualspace.net">dev@conceptualspace.net</a></p>
-  <p class="lead">Thank you!</p>
+  <p class="lead">
+    <p class="lead">YASD exists thanks to your support. If you find it useful, please consider <a href="https://github.com/sponsors/conceptualspace" target="_blank">contributing</a>, leaving a <a href="https://chromewebstore.google.com/detail/yet-another-speed-dial/imohnlganmafcmidafklgkgfgaagiohn/reviews" target="_blank">review</a>, 
+      or sharing it with others. ❤
+
+  <div class="lead" style="display: flex; align-items: center;">
+    <a href="https://www.yetanotherspeeddial.com" target="_blank">yetanotherspeeddial.com</a>
+    <button type="button" 
+            class="btn" 
+            id="copyButton">
+      <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+      </svg>
+    </button>
+  </div>
+ 
+
+
+  <div class="form-check mt-3">
+    <input class="form-check-input" type="checkbox" id="showReleaseNotes" checked>
+    <label class="form-check-label" for="showReleaseNotes">
+      Show this page after major updates
+    </label>
+  </div>
+  <hr>
+  
+  <h3>v3.10.0</h3>
+  <ul>
+    <li>Add search functionality</li>
+    <li>Add more dial sizes</li>
+    <li>Include screenshot when refreshing thumbnails</li>
+    <li>Support Opera browser</li>  
+    <li>Add setting to show release notes</li>
+    <li>Add Polish translation</li>
+  </ul>
 
 </main>
+
+<script src="js/updated.js"></script>
 
 </body>
 </html>

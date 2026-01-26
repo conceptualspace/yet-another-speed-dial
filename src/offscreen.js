@@ -36,7 +36,7 @@ async function handleMessages(message) {
     })
 
     if (images && images.length) {
-        resizedImages = await Promise.all(images.map(async (image) => {
+        resizedImages = await Promise.all(images.map(async (image, index) => {
             const result = await resizeImage(image).catch(err => {
                 console.log(err);
             });
@@ -44,18 +44,26 @@ async function handleMessages(message) {
         }))
     }
 
+    let processedScreenshot = null;
     if (screenshot) {
         // screenshot is handled separately to remove scrollbars
-        let result = await resizeImage(screenshot, true).catch(err => {
+        processedScreenshot = await resizeImage(screenshot, true).catch(err => {
             console.log(err);
         });
-        if (result) {
-            resizedImages.push(result);
-        }
     }
 
     if (resizedImages && resizedImages.length) {
-        thumbs = resizedImages.filter(item => item).slice(0,5) // only keep 5 -- todo: this will exclude the screenshot if there are many other images
+        // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
+        const maxWebpageImages = processedScreenshot ? 4 : 5;
+        thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
+        
+        // Always add the screenshot as the last image if available
+        if (processedScreenshot) {
+            thumbs.push(processedScreenshot);
+        }
+    } else if (processedScreenshot) {
+        // No webpage images, but we have a screenshot
+        thumbs = [processedScreenshot];
     }
 
     if (thumbs.length) {
@@ -241,6 +249,43 @@ function resizeImage(image, screenshot = false) {
         const targetRatio = targetWidth / targetHeight;
         const tolerance = 0.25;
 
+        // we dont need to resize svgs
+        if (image.startsWith('data:image/svg+xml')) {
+            return resolve(image);
+        }
+        
+        // if we only have a reference, store as image. todo: just fetch the svg instead
+        if (image.endsWith('.svg')) {
+            const img = new Image();
+            
+            img.onerror = (event) => {
+                console.error(`[resizeImage] SVG load error:`, event);
+                resolve();
+            };
+            
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                
+                // Set canvas to target size for SVGs
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                
+                // Draw SVG centered and scaled to fit
+                let scale = Math.min(targetWidth / this.width, targetHeight / this.height);
+                let x = (targetWidth - this.width * scale) / 2;
+                let y = (targetHeight - this.height * scale) / 2;
+                
+                ctx.drawImage(this, x, y, this.width * scale, this.height * scale);
+                
+                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                resolve(newDataURI);
+            };
+            
+            img.src = image;
+            return;
+        }
+
         const img = new Image();
 
         img.onerror = (event) => {
@@ -269,9 +314,20 @@ function resizeImage(image, screenshot = false) {
 
                 let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
 
-                // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
-                // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
-                if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
+                if (screenshot) {
+                    if (sRatio > targetRatio) {
+                        // Wider than target, crop sides
+                        const newWidth = sHeight * targetRatio;
+                        sX = (sWidth - newWidth) / 2;
+                        sWidth = newWidth;
+                    } else {
+                        // Taller than target, crop from top (by adjusting sHeight)
+                        sHeight = sWidth / targetRatio;
+                    }
+                } else if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
+                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                    // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
+
                     // Aspect is narrower, crop top and bottom
                     let naturalHeight = targetWidth / sRatio;
                     let crop = (naturalHeight - targetHeight) / 2;
@@ -337,7 +393,6 @@ async function fetchImages(url, quickRefresh) {
         "mail.google.com",
         "gmail.com",
         "chromewebstore.google.com",
-        "www.facebook.com",
         "twitter.com"
     ];
 
@@ -348,6 +403,7 @@ async function fetchImages(url, quickRefresh) {
 
     // default favicons
     images.push(urlObj.origin + "/favicon.ico")
+    
     // amazon hack
     if (hostname.includes('amazon')) {
         images.push('img/amazon.com.png');
@@ -377,17 +433,28 @@ async function fetchImages(url, quickRefresh) {
         const timeoutId = setTimeout(() => controller.abort(), 3000);
         
         try {
+            // allows og images to work, with creds they are behind js
+            const omitDomains = ['facebook.com', 'github.com'];
+            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin';
+            
             const response = await fetch(url, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'text/html'
                 },
                 mode: 'cors',
-                credentials: 'same-origin',
+                credentials,
                 signal: controller.signal
             });
 
             clearTimeout(timeoutId); // Clear timeout if fetch completes in time
+            
+            // Update URL to the final redirected URL for proper relative URL resolution
+            const finalUrl = response.url;
+            if (finalUrl !== url) {
+                //console.log(`[fetchImages] URL redirected from ${url} to ${finalUrl}`);
+                url = finalUrl; // Update the base URL for relative URL conversion
+            }
 
             if (!response.ok) {
                 return(images);
@@ -396,6 +463,27 @@ async function fetchImages(url, quickRefresh) {
             const text = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
+
+            // check for svg logo and convert to data url
+            let svgElements = doc.querySelectorAll('svg');
+            for (let svg of svgElements) {
+                // heuristic to find relevant svg (logo class or large size)
+                let isLogo = svg.getAttribute('aria-label')?.toLowerCase().includes(hostname.split('.')[0]) ||
+                        svg.getAttribute('class')?.toLowerCase().includes('logo') ||
+                        svg.id?.toLowerCase().includes('logo') ||
+                        (svg.getAttribute('role') === 'img' && svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
+                if (isLogo) { 
+                    try {
+                        // Convert SVG to data URL
+                        let svgString = new XMLSerializer().serializeToString(svg);
+                        let svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+                        images.push(svgDataUrl);
+                        break; // take the first svg logo we find
+                    } catch (svgError) {
+                        console.warn(`[fetchImages] Error processing SVG:`, svgError);
+                    }
+                }
+            }
 
             // get first image from page
             let firstImage = doc.querySelector('img');
@@ -422,6 +510,16 @@ async function fetchImages(url, quickRefresh) {
                 }
             }
 
+            // icon sizes
+            let sizes = [
+                "512x512",
+                "256x256",
+                "192x192",
+                "180x180",
+                "144x144",
+                "96x96"
+            ];
+
             // get apple touch icon
             let appleIcon = doc.querySelector('link[rel="apple-touch-icon"]');
             if (appleIcon && appleIcon.getAttribute('href')) {
@@ -436,21 +534,33 @@ async function fetchImages(url, quickRefresh) {
                 insert(imageUrl);
             }
             
-            // get large icons
-            let sizes = [
-                "512x512",
-                "256x256",
-                "192x192",
-                "180x180",
-                "144x144",
-                "96x96"
-            ];
+            // get large apple touch icon
+            for (let size of sizes) {
+                let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
+                if (appleIcon && appleIcon.getAttribute('href')) {
+                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                    insert(imageUrl);
+                    break;
+                }
+            }
+
+            // get large x-icon
             for (let size of sizes) {
                 let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
                 if (icon && icon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
                     insert(imageUrl);
                     break;
+                }
+            }
+
+            // get structured data images (schema.org microdata)
+            let structuredImages = doc.querySelectorAll('meta[itemprop="image"]');
+            for (let meta of structuredImages) {
+                let content = meta.getAttribute('content');
+                if (content) {
+                    let imageUrl = convertUrlToAbsolute(url, content);
+                    insert(imageUrl);
                 }
             }
 
@@ -463,8 +573,42 @@ async function fetchImages(url, quickRefresh) {
                 }
             }
 
-            // if we havent had much luck with images, lets check the style sheets
+            // if we havent had much luck with images, lets check the manifest and style sheets
+            // we dont do so during a quick refresh to avoid fetching extra resources
             if (images.length < 4 && !quickRefresh) {
+                // web application manifest icon
+                let manifestLink = doc.querySelector('link[rel="manifest"]');
+                if (manifestLink && manifestLink.getAttribute('href')) {
+                    try {
+                        let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
+                        const manifestResponse = await fetch(manifestUrl);
+                        if (manifestResponse.ok) {
+                            const manifest = await manifestResponse.json();
+                            if (manifest.icons && Array.isArray(manifest.icons)) {
+                                // Sort icons by size (largest first) and get the best ones
+                                const sortedIcons = manifest.icons
+                                    .filter(icon => icon.src) // Only icons with src
+                                    .sort((a, b) => {
+                                        // Extract numeric size for comparison
+                                        const getSizeValue = (sizes) => {
+                                            if (!sizes) return 0;
+                                            const match = sizes.match(/(\d+)x(\d+)/);
+                                            return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
+                                        };
+                                        return getSizeValue(b.sizes) - getSizeValue(a.sizes);
+                                    });
+                                // take the largest
+                                if (sortedIcons.length > 0) {
+                                    let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
+                                    images.push(iconUrl);
+                                }
+                            }
+                        }
+                    } catch (manifestError) {
+                        console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
+                    }
+                }
+
                 const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
                 .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
             

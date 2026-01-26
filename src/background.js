@@ -21,6 +21,9 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
+// Add tab listeners for Opera and browsers that don't support chrome_url_overrides
+if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
+
 
 // EVENT HANDLERS //
 
@@ -199,14 +202,91 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
 }
 
-function handleManualRefresh(data) {
+async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
-        chrome.storage.local.remove(data.url).then(() => {
-            getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true}).then(() => {
-                //refreshOpen()
-            })
-        })
+        await chrome.storage.local.remove(data.url);
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
+}
+
+const capturePopupScreenshot = (url) => {
+  
+  return new Promise((resolve, reject) => {
+    let finished = false;
+    chrome.windows.create({
+        url: url,
+        focused: false,
+        width: 1,
+        height: 1,
+        left: 0,
+        top: 0,
+        type: 'popup'
+      }).then((popup) => {
+        if (!popup.tabs || !popup.tabs.length) {
+          chrome.windows.remove(popup.id)
+          return resolve(null)
+        }
+
+        const tabId = popup.tabs[0].id
+        let loadingInterval;
+        let hasScreenshot = false;
+
+        const cleanup = (result = null) => {
+            if (finished) return;
+            finished = true;
+
+            clearInterval(loadingInterval);
+            clearTimeout(focusTimeout);
+            clearTimeout(timeout);
+
+            chrome.windows.remove(popup.id).catch(() => {});
+            resolve(result);
+        };
+        
+        chrome.tabs.update(tabId, {
+          muted: true,
+          active: true
+        })
+        chrome.windows.update(popup.id, {
+          focused: false,
+          width: 1280,
+          height: 720,
+          left: 0,
+          top: 0
+        })
+
+        const timeout = setTimeout(() => {
+          cleanup();
+        }, 10000)
+
+        // Focus window after 5s if we don't have a screenshot yet
+        const focusTimeout = setTimeout(() => {
+          if (!hasScreenshot && !finished) {
+            chrome.windows.update(popup.id, { focused: true });
+          }
+        }, 5000);
+
+        loadingInterval = setInterval(() => {
+          chrome.tabs.get(tabId).then((tab) => {
+            'complete' === tab.status &&
+              (clearInterval(loadingInterval),
+              setTimeout(() => {
+                // delay to let page render
+                chrome.tabs
+                  .captureVisibleTab(popup.id)
+                  .then((screenshot) => {
+                    hasScreenshot = true;
+                    cleanup(screenshot);
+                  })
+                  .catch(() => {
+                    console.log("Error capturing screenshot");
+                    cleanup();
+                  })
+              }, 2000))
+          })
+        }, 200)
+      })
+  })
 }
 
 async function handleRefreshAll(data) {
@@ -236,11 +316,10 @@ async function handleRefreshAll(data) {
         }
     }
 
-    for (let bookmark of data.bookmarks) {
-        await chrome.storage.local.remove(bookmark.url).catch((err) => {
-            console.log(err);
-        });
-    }
+    const urlsToRemove = data.bookmarks.map(bookmark => bookmark.url);
+    await chrome.storage.local.remove(urlsToRemove).catch((err) => {
+        console.log(err);
+    });
     refreshBatch(data.bookmarks);
 }
 
@@ -281,17 +360,44 @@ async function createBookmarkFromContextMenu(tab) {
 
 // LIFECYCLE METHODS //
 
+function isPreviousVersion(a, b) {
+    const pa = a.split('.').map(Number);
+    const pb = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const na = pa[i] || 0;
+        const nb = pb[i] || 0;
+        if (na !== nb) return na < nb;
+    }
+    return false;
+}
+
 async function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
-        if (details.previousVersion < '3.3') {
-            const url = chrome.runtime.getURL("updated.html");
-            chrome.tabs.create({ url });
+        if (isPreviousVersion(details.previousVersion, '3.11')) {
+            // perform any migrations here...
+            await migrateDialSizes();
+
+            // Check if user wants to see release notes
+            try {
+                const result = await chrome.storage.sync.get('showReleaseNotes');
+                // Default to true if setting doesn't exist (first time users)
+                const shouldShowReleaseNotes = result.showReleaseNotes !== false;
+                
+                if (shouldShowReleaseNotes) {
+                    const url = chrome.runtime.getURL("updated.html");
+                    chrome.tabs.create({ url });
+                }
+            } catch (error) {
+                console.error('Error checking showReleaseNotes setting:', error);
+                // Default behavior: show the page if there's an error
+                const url = chrome.runtime.getURL("updated.html");
+                chrome.tabs.create({ url });
+            }
         }
-        // perform any migrations here...
     }
 
     try {
@@ -311,6 +417,41 @@ async function handleInstalled(details) {
 }
 
 
+// MIGRATION FUNCTIONS //
+
+async function migrateDialSizes() {
+    try {
+        const result = await chrome.storage.local.get('settings');
+
+         if (result.settings && result.settings.migrationVersion && 
+            !isPreviousVersion(result.settings.migrationVersion, '3.11.0')) {
+            return;
+        }
+        
+        if (result.settings && result.settings.dialSize) {
+            const dialSizeMigrationMap = {
+                'xxx-small': 'xx-small',
+                'xx-small': 'x-small',
+                'x-small': 'small',
+                'small': 'medium',
+                'medium': 'large',
+                'large': 'x-large',
+                'x-large': 'xx-large'
+            };
+            
+            if (dialSizeMigrationMap[result.settings.dialSize]) {
+                console.log(`Migrating dial size from '${result.settings.dialSize}' to '${dialSizeMigrationMap[result.settings.dialSize]}' (v3.11.0)`);
+                result.settings.dialSize = dialSizeMigrationMap[result.settings.dialSize];
+                result.settings.migrationVersion = '3.11.0';
+                await chrome.storage.local.set({ settings: result.settings });
+            }
+        }
+    } catch (error) {
+        console.error('Error during dial size migration:', error);
+    }
+}
+
+
 // THUMBNAIL FUNCTIONS //
 
 async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
@@ -319,13 +460,20 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 		console.log("getThumbnails: missing url or id")
 		return
 	}
-    // take screenshot if applicable
+    
     let screenshot = null;
-	const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-	
-	if (tabs && tabs.length && tabs[0].url === url) {
-		screenshot = await chrome.tabs.captureVisibleTab()
-	}
+    
+    if (options.forceScreenshot) {
+        // Force popup screenshot for manual refresh
+        screenshot = await capturePopupScreenshot(url);
+    } else {
+        // take screenshot if applicable (current active tab)
+        const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
+        
+        if (tabs && tabs.length && tabs[0].url === url) {
+            screenshot = await chrome.tabs.captureVisibleTab()
+        }
+    }
 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
@@ -390,6 +538,24 @@ function reloadFolders() {
 
 
 // UTILS
+
+// Handle new tab creation for Opera browser
+async function handleTabCreated(tab) {
+    if (tab && tab.pendingUrl && tab.pendingUrl.startsWith('chrome://startpageshared/')) {
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
+        });
+    } else if (tab && tab.url && tab.url.startsWith('opera://startpageshared/')) {
+        chrome.tabs.update(tab.id, { 
+            url: chrome.runtime.getURL('index.html') 
+        });
+    }
+}
+
+function isOpera() {
+    // navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
+    return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
+}
 
 // offscreen document setup
 let creating; // A global promise to avoid concurrency issues

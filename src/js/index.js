@@ -82,6 +82,7 @@ const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
+const showSearchBtnInput = document.getElementById("showSearchBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
@@ -95,6 +96,7 @@ const dialRatioInput = document.getElementById("dialRatio");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
+const searchBtn = document.getElementById('searchBtn');
 
 // clock
 const clock = document.getElementById('clock');
@@ -142,11 +144,12 @@ let defaults = {
     showAddSite: true,
     showFolders: true,
     showSettingsBtn: true,
-    showClock: true,
+    showClock: false,
+    showSearchBtn: true,
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
-    dialSize: 'medium',
+    dialSize: 'large',
     dialRatio: 'wide',
     currentFolder: null,
 };
@@ -166,11 +169,16 @@ const debounce = (func, delay = 500, immediate = false) => {
     }
 }
 
+function updateSearchIconPosition() {
+    // No longer needed - flexbox handles positioning automatically
+    // This function is kept for compatibility in case it's called elsewhere
+}
+
 // detect clock settings
 hourCycle = Intl.DateTimeFormat(locale, { hour: 'numeric' }).resolvedOptions().hourCycle;
 
 function displayClock() {
-    clock.textContent = new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
+    clock.textContent = new Date().toLocaleString(locale, { hour: 'numeric', minute: 'numeric', hourCycle: hourCycle });
     setTimeout(displayClock, 10000);
 }
 
@@ -197,6 +205,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -246,6 +255,7 @@ async function buildFolderPages(speedDialId) {
     if (!children.length) {
         // new install
         addFolderButton.style.display = 'none';
+        searchBtn.style.display = 'none';
         printNewSetup();
         return;
     }
@@ -763,212 +773,6 @@ async function printBookmarks(bookmarks, parentId) {
     bookmarksContainerParent.scrollTop = scrollPos;
 }
 
-
-/*
-// assumes 'bookmarks' param is content of a folder (from getBookmarks)
-async function printBookmarksOld(bookmarks, parentId) {
-    let fragment = document.createDocumentFragment();
-
-    //let folderContainer = document.createElement('div');
-    //folderContainer.id = parentId;
-    //document.body.append(div)
-
-    if (bookmarks) {
-        for (let bookmark of bookmarks) {
-            // folders
-            // ignore subfolders for now
-            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) {
-                // setup "tabs" folder header links
-                if (!folders.length) {
-                    folderLink(homeFolderTitle, speedDialId)
-                }
-                if (folders.indexOf(bookmark.id) === -1) {
-                    folders.push(bookmark.id);
-                    folderLink(bookmark.title, bookmark.id)
-                } else {
-                    let el = document.querySelector(`[folderid="${bookmark.id}"]`);
-                    if (el) { el.innerText = bookmark.title }
-                }
-
-            } else if (bookmark.url && bookmark.url.startsWith("http")) {
-                // restricted to valid url schemes for security reasons -- http and https. see #26
-                // in ff bookmark "separators" can be created that have "data:" as the url.
-                let thumbBg, thumbUrl = null;
-                if (cache[bookmark.url]) {
-                    // if the image is a blob:
-                    //iconURL = URL.createObjectURL(result.icon);
-                    //iconURL = result.icon;
-                    thumbUrl = cache[bookmark.url][0];
-                    thumbBg = cache[bookmark.url][1]
-                } else {
-                    let images = await getThumbs(bookmark.url);
-                    //console.log(images);
-                    if (images) {
-                        thumbUrl = images.thumbnails[0];
-                        thumbBg = images.bgColor;
-                        cache[bookmark.url] = [thumbUrl, thumbBg];
-                    }
-                }
-                let a = document.createElement('a');
-                a.classList.add('tile');
-                a.href = bookmark.url;
-                a.setAttribute('data-id', bookmark.id);
-
-                let main = document.createElement('div');
-                main.classList.add('tile-main');
-
-                let content = document.createElement('div');
-                content.classList.add('tile-content');
-                if (thumbBg) {
-                    content.style.backgroundImage = `url('${thumbUrl}'), ${thumbBg}`;
-                } else {
-                    // no image, use default
-                    content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-                }
-
-                let title = document.createElement('div');
-                title.classList.add('tile-title');
-                if (!settings.showTitles) {
-                    title.classList.add('hide');
-                }
-                title.textContent = bookmark.title;
-
-                main.appendChild(content);
-                main.appendChild(title);
-                a.appendChild(main);
-                fragment.appendChild(a);
-            }
-        }
-    }
-
-    // new dial button
-    let aNewDial = document.createElement('a');
-    aNewDial.classList.add('tile', 'createDial');
-    aNewDial.onclick = function () {
-        hideSettings();
-        buildCreateDialModal(parentId);
-        modalShowEffect(createDialModalContent, createDialModal);
-    };
-    let main = document.createElement('div');
-    main.classList.add('tile-main');
-    let content = document.createElement('div');
-    content.classList.add('tile-content', 'createDial-content');
-    main.appendChild(content);
-    aNewDial.appendChild(main);
-
-    // root speed dial dir
-    if (parentId === speedDialId) {
-        // populate folders divs
-        if (folders.length) {
-            printFolderBookmarks();
-        }
-
-        if (settings.defaultSort === "first") {
-            let i = fragment.childNodes.length;
-            while (i--)
-                fragment.appendChild(fragment.childNodes[i]);
-        }
-
-        if (bookmarks.length) {
-            fragment.appendChild(aNewDial);
-        } else {
-            // new install splash screen
-            const noBookmarksDiv = document.createElement('div');
-            noBookmarksDiv.className = 'default-content';
-            noBookmarksDiv.id = 'noBookmarks';
-            noBookmarksDiv.innerHTML = `
-                <h1 class="default-content" data-locale="newInstall1">${chrome.i18n.getMessage('newInstall1')}</h1>
-                <p class="default-content helpText" data-locale="newInstall2">${chrome.i18n.getMessage('newInstall2')}</p>
-                <p class="default-content helpText" data-locale="newInstall3">${chrome.i18n.getMessage('newInstall3')}</p>
-                <p class="default-content helpText" data-locale="newInstall4">${chrome.i18n.getMessage('newInstall4')}</p>
-                <div class="cta-container">
-                <p id="splashImport" class="default-content helpText cta" >
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
-                    Import
-                </p>
-                <p id="splashAddDial" class="default-content helpText cta" >
-                    <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-                Add Site
-                </p>
-                </div>
-            `;
-            fragment.appendChild(noBookmarksDiv);
-        }
-        bookmarksContainer.innerHTML = "";
-        bookmarksContainer.appendChild(fragment);
-
-        if (settings.rememberFolder && currentFolder && currentFolder !== speedDialId) {
-            bookmarksContainer.style.opacity = "1";
-            bookmarksContainer.style.display = "none";
-        } else {
-            //bookmarksContainer.style.display = "flex";
-        }
-        bookmarksContainer.style.opacity = "1";
-        bookmarksContainerParent.scrollTop = scrollPos;
-        animate();
-        // we take care of this as part of "sort" fn now..
-        //bookmarksContainer.style.opacity = "1";
-
-    } else {
-        // build a folder "tab"
-        if (!document.getElementById(parentId)) {
-            let folderContainer = document.createElement('div');
-            folderContainer.id = parentId;
-            folderContainer.classList.add('container');
-            if (settings.rememberFolder && currentFolder === parentId) {
-                folderContainer.style.display = 'flex';
-                folderContainer.style.opacity = "0";
-                setTimeout(function () {
-                    //layoutFolder = id;
-                    folderContainer.style.opacity = "1";
-                    animate()
-                }, 20);
-                let titleEl = document.querySelectorAll(`[folderid="${currentFolder}"]`)[0];
-                if (titleEl) {
-                    titleEl.classList.add('activeFolder');
-                }
-            } else {
-                folderContainer.style.display = 'none';
-                folderContainer.style.opacity = "1";
-            }
-            //document.body.append(folderContainer);
-            bookmarksContainerParent.append(folderContainer);
-        }
-
-        let folderContainerEl = document.getElementById(parentId);
-
-        // todo: this is fubar
-        let sortable = new Sortable(folderContainerEl, {
-            group: 'shared',
-            animation: 160,
-            ghostClass: 'selected',
-            dragClass: 'dragging',
-            filter: ".createDial",
-            delay: 500, // fixes #40
-            delayOnTouchOnly: true,
-            onMove: onMoveHandler,
-            onEnd: onEndHandler
-        });
-
-        if (settings.defaultSort === "first") {
-            let i = fragment.childNodes.length;
-            while (i--)
-                fragment.appendChild(fragment.childNodes[i]);
-        }
-
-        fragment.appendChild(aNewDial);
-
-        // append bookmarks to container
-        folderContainerEl.innerHTML = "";
-        folderContainerEl.appendChild(fragment);
-
-        //animate();
-        bookmarksContainerParent.scrollTop = scrollPos;
-        //
-    }
-}
-*/
-
 function showContextMenu(el, top, left) {
     if ((document.body.clientWidth - left) < (el.clientWidth + 30)) {
         el.style.left = (left - el.clientWidth) + 'px';
@@ -1032,13 +836,7 @@ function hideModals() {
     modalImageURLInput.value = '';
 
     // hide search
-    searchInput.blur();
-    searchContainer.classList.remove('active');
-
-    if (searchInput.value) {
-        searchInput.value = ''; // Clear the search input
-        filterDials(''); // Only call if there was a search term
-    }
+    hideSearch();
 
 }
 
@@ -1098,6 +896,10 @@ async function buildModal(url, title) {
         let img = document.createElement('img');
         img.crossOrigin = 'Anonymous';
         img.setAttribute('src', images.thumbnails[index]);
+        img.style.width = 'auto';
+        img.style.height = '144px';
+        img.style.objectFit = 'contain';
+        img.style.maxWidth = '260px';
         img.onerror = function () {
             img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
         };
@@ -1119,6 +921,10 @@ async function buildModal(url, title) {
                 let img = document.createElement('img');
                 img.crossOrigin = 'Anonymous';
                 img.setAttribute('src', image);
+                img.style.width = 'auto';
+                img.style.height = '144px';
+                img.style.objectFit = 'contain';
+                img.style.maxWidth = '260px';
                 img.onerror = function () {
                     img.setAttribute('src', 'img/default.png'); // todo: cleanup
                 };
@@ -1651,10 +1457,11 @@ function resizeThumb(dataURI) {
     return new Promise(function (resolve, reject) {
         let img = new Image();
         img.onload = async function () {
-            if (this.height > 256 && this.width > 256) {
+            if (this.height > 256 || this.width > 256) {
                 // when im less lazy check use optimal w/h based on image
                 // set height to 256 and scale
-                let height = 256;
+                //let height = 256;
+                let height = 144;
                 let ratio = height / this.height;
                 let width = Math.round(this.width * ratio);
 
@@ -1664,7 +1471,7 @@ function resizeThumb(dataURI) {
                 ctx.drawImage(this, 0, 0, width, height);
 
                 // Use convertToBlob instead of toDataURL
-                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.85 });
+                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.86 });
                 const reader = new FileReader();
                 reader.onload = function (e) {
                     resolve(e.target.result); // Resolve with the data URI
@@ -1732,12 +1539,19 @@ function applySettings() {
         if (settings.wallpaper && settings.wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (settings.wallpaperSrc.length < 65) {
-                document.body.style.background = `linear-gradient(135deg, #4387a2, #5b268d)`;
+                // Remove any existing background styles and add the animated gradient class
+                document.body.style.background = '';
+                document.body.style.backgroundSize = '';
+                document.body.classList.add('gradientBackground');
             } else {
+                // Remove the gradient class and apply custom background
+                document.body.classList.remove('gradientBackground');
                 document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
+            // Remove the gradient class and apply solid background color
+            document.body.classList.remove('gradientBackground');
             document.body.style.background = settings.backgroundColor;
         }
 
@@ -1758,17 +1572,31 @@ function applySettings() {
         if (settings.maxCols && settings.maxCols !== "100") {
             //todo cleanup - fixed values
             let dialWidth = 220;
-            let dialMargin = 18 * 2; // 18px on each side
+            let dialMargin = 14 * 2; // 18px on each side
 
             switch (settings.dialSize) {
-                case "large":
+                case "xx-large":
+                    dialWidth = 300;
+                    break;
+                case "x-large":
                     dialWidth = 256;
                     break;
-                case "small":
+                case "large":
+                    dialWidth = 220;
+                    break;
+                case "medium":
                     dialWidth = 178;
                     break;
-                case "x-small":
+                case "small":
                     dialWidth = 130;
+                    break;
+                case "x-small":
+                    dialWidth = 100;
+                    dialMargin = 12 * 2;
+                    break;
+                case "xx-small":
+                    dialWidth = 80;
+                    dialMargin = 8 * 2;
                     break;
                 default:
                     dialWidth = 220;
@@ -1782,34 +1610,58 @@ function applySettings() {
             layout();
         }
 
-        if (settings.dialSize && settings.dialSize !== "medium") {
-            let dialWidth, dialHeight, dialContentHeight;
+        if (settings.dialSize && settings.dialSize !== "large") {
+            let dialWidth, dialHeight, dialContentHeight, dialMargin;
             switch (settings.dialSize) {
-                case "large":
+                case "xx-large":
+                    dialWidth = '300px';
+                    dialHeight = settings.dialRatio === "square" ? '318px' : '189px';
+                    dialContentHeight = settings.dialRatio === "square" ? '300px' : '171px';
+                    dialMargin = '14px';
+                    break;
+                case "x-large":
                     dialWidth = '256px';
                     dialHeight = settings.dialRatio === "square" ? '274px' : '162px';
                     dialContentHeight = settings.dialRatio === "square" ? '256px' : '144px';
+                    dialMargin = '14px';
                     break;
-                case "small":
+                case "medium":
                     dialWidth = '178px';
                     dialHeight = settings.dialRatio === "square" ? '196px' : '118px';
                     dialContentHeight = settings.dialRatio === "square" ? '178px' : '100px';
+                    dialMargin = '14px';
+                    break;
+                case "small":
+                    dialWidth = '130px';
+                    dialHeight = settings.dialRatio === "square" ? '148px' : '91px';
+                    dialContentHeight = settings.dialRatio === "square" ? '130px' : '73px';
+                    dialMargin = '14px';
                     break;
                 case "x-small":
-                    dialWidth = '130px';
-                    dialHeight = settings.dialRatio === "square" ? '148px' : '100px';
-                    dialContentHeight = settings.dialRatio === "square" ? '130px' : '82px';
+                    dialWidth = '100px';
+                    dialHeight = settings.dialRatio === "square" ? '118px' : '74px';
+                    dialContentHeight = settings.dialRatio === "square" ? '100px' : '56px';
+                    dialMargin = '12px';
+                    break;
+                case "xx-small":
+                    dialWidth = '80px';
+                    dialHeight = settings.dialRatio === "square" ? '98px' : '63px';
+                    dialContentHeight = settings.dialRatio === "square" ? '80px' : '45px';
+                    dialMargin = '8px';
                     break;
                 default:
                     dialWidth = '220px';
                     dialHeight = settings.dialRatio === "square" ? '238px' : '142px';
                     dialContentHeight = settings.dialRatio === "square" ? '220px' : '124px';
+                    dialMargin = '14px';
             }
             document.documentElement.style.setProperty('--dial-width', dialWidth);
             document.documentElement.style.setProperty('--dial-height', dialHeight);
             document.documentElement.style.setProperty('--dial-content-height', dialContentHeight);
+            document.documentElement.style.setProperty('--dial-margin', dialMargin);
         } else {
             document.documentElement.style.setProperty('--dial-width', '220px');
+            document.documentElement.style.setProperty('--dial-margin', '14px');
             if (settings.dialRatio === "square") {
                 document.documentElement.style.setProperty('--dial-height', '238px');
                 document.documentElement.style.setProperty('--dial-content-height', '220px');
@@ -1836,6 +1688,15 @@ function applySettings() {
         } else {
             settingsBtn.style.setProperty('--settings', 'none');
         }
+
+        if (settings.showSearchBtn) {
+            searchBtn.style.setProperty('--search', 'block');
+        } else {
+            searchBtn.style.setProperty('--search', 'none');
+        }
+
+        // Position search icon based on what's visible
+        updateSearchIconPosition();
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
@@ -1864,6 +1725,7 @@ function applySettings() {
         showFoldersInput.checked = settings.showFolders;
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
+        showSearchBtnInput.checked = settings.showSearchBtn;
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
@@ -1908,6 +1770,7 @@ function saveSettings() {
     settings.showFolders = showFoldersInput.checked;
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
+    settings.showSearchBtn = showSearchBtnInput.checked;
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
@@ -1954,7 +1817,7 @@ document.addEventListener("contextmenu", function (e) {
         targetFolderName = e.target.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
-    } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
+    } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'folders-content' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {
         showContextMenu(settingsMenu, e.pageY, e.pageX);
         return false;
     }
@@ -2003,6 +1866,7 @@ window.addEventListener("mousedown", e => {
         case 'container':
         case 'tileContainer':
         case 'cta-container':
+        case 'folders-content':
         case 'folders':
             hideSettings();
             break;
@@ -2071,13 +1935,17 @@ window.addEventListener("mousedown", e => {
 
 window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
+        // Close search if it's active (prioritize this over other actions)
+        if (searchContainer.classList.contains('active')) {
+            event.preventDefault();
+            hideSearch();
+            return;
+        }
         hideMenus();
         hideModals();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
-        searchContainer.classList.toggle('active');
-        // focus it
-        setTimeout(() => searchInput.focus(), 200); // cant focus it immediate with the transition, Delay focus to ensure visibility
+        activateExpandableSearch();
     }
 });
 
@@ -2088,6 +1956,26 @@ createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
 refreshAllModalSave.addEventListener("click", refreshAllThumbnails);
+searchBtn.addEventListener("click", function() {
+    activateExpandableSearch();
+});
+
+function activateExpandableSearch() {
+    document.body.classList.add('search-active');
+    searchContainer.classList.add('active');
+    setTimeout(() => searchInput.focus(), 300);
+}
+
+function hideSearch() {
+    document.body.classList.remove('search-active');
+    searchContainer.classList.remove('active');
+    searchInput.blur();
+    
+    if (searchInput.value) {
+        searchInput.value = '';
+        filterDials(''); // Clear search results only if there was a search term
+    }
+}
 
 for (let button of closeModal) {
     button.onclick = function (e) {
@@ -2186,6 +2074,10 @@ rememberFolderInput.oninput = function (e) {
 }
 
 showSettingsBtnInput.oninput = function (e) {
+    saveSettings()
+}
+
+showSearchBtnInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -2477,14 +2369,8 @@ function filterDials(searchTerm) {
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
-    const searchInput = document.getElementById('searchInput');
-    const searchContainer = document.getElementById('searchContainer');
-    
-    searchInput.value = ''; // Clear the search input
-    searchContainer.classList.remove('active'); // Hide the search container
-    filterDials('');
+    hideSearch();
 });
-
 
 importFileInput.onchange = function (event) {
     let filereader = new FileReader();
@@ -2846,6 +2732,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         scrollPos = bookmarksContainerParent.scrollTop;
         //noBookmarks.style.display = 'none';
         addFolderButton.style.display = 'inline';
+        searchBtn.style.display = '';
 
         //bookmarksContainer.style.opacity = "0";
 
@@ -3026,6 +2913,11 @@ function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
         elem.innerText = chrome.i18n.getMessage(elem.dataset.locale)
+    })
+
+    // Handle placeholder translations separately
+    document.querySelectorAll('[data-locale-placeholder]').forEach(elem => {
+        elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
     })
 
     // init what used to be background work"

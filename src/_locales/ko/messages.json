@@ -145,6 +145,12 @@
     "scaleImages": {
       "message": "이미지 크기 조정"
     },
+    "searchButton": {
+      "message": "검색 버튼"
+    },
+    "searchPlaceholder": {
+      "message": "검색..."
+    },
     "settings": {
       "message": "설정..."
     },
@@ -168,6 +174,42 @@
     },
     "wallpaper": {
       "message": "배경화면"
+    },
+    "optionSquare": {
+      "message": "정사각형"
+    },
+    "optionWide": {
+      "message": "가로형"
+    },
+    "optionXXSmall": {
+      "message": "극소"
+    },
+    "optionXSmall": {
+      "message": "최소"
+    },
+    "optionSmall": {
+      "message": "소"
+    },
+    "optionMedium": {
+      "message": "중"
+    },
+    "optionLarge": {
+      "message": "대"
+    },
+    "optionXLarge": {
+      "message": "최대"
+    },
+    "optionXXLarge": {
+      "message": "초대형"
+    },
+    "optionUnlimited": {
+      "message": "무제한"
+    },
+    "optionNewDialsLast": {
+      "message": "새 항목 뒤에"
+    },
+    "optionNewDialsFirst": {
+      "message": "새 항목 앞에"
     }
   }
   

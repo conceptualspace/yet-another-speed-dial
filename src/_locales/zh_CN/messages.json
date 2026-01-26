@@ -145,6 +145,12 @@
   "scaleImages": {
     "message": "缩放图片"
   },
+  "searchButton": {
+    "message": "搜索按钮"
+  },
+  "searchPlaceholder": {
+    "message": "搜索..."
+  },
   "settings": {
     "message": "设置..."
   },
@@ -168,5 +174,41 @@
   },
   "wallpaper": {
     "message": "壁纸"
+  },
+  "optionSquare": {
+    "message": "正方形"
+  },
+  "optionWide": {
+    "message": "宽屏"
+  },
+  "optionXXSmall": {
+    "message": "极小"
+  },
+  "optionXSmall": {
+    "message": "超小"
+  },
+  "optionSmall": {
+    "message": "小"
+  },
+  "optionMedium": {
+    "message": "中"
+  },
+  "optionLarge": {
+    "message": "大"
+  },
+  "optionXLarge": {
+    "message": "超大"
+  },
+  "optionXXLarge": {
+    "message": "特大"
+  },
+  "optionUnlimited": {
+    "message": "无限制"
+  },
+  "optionNewDialsLast": {
+    "message": "新建在末尾"
+  },
+  "optionNewDialsFirst": {
+    "message": "新建在开头"
   }
 }
