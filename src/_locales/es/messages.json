@@ -133,6 +133,9 @@
   "remember": {
     "message": "Recordar última carpeta"
   },
+  "resetSettings": {
+    "message": "Restablecer ajustes"
+  },
   "remove": {
     "message": "Eliminar"
   },

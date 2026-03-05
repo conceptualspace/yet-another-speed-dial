@@ -136,6 +136,9 @@
   "remember": {
     "message": "Запомнить последнюю папку"
   },
+  "resetSettings": {
+    "message": "Сбросить настройки"
+  },
   "save": {
     "message": "Сохранить"
   },

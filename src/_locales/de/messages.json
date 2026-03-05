@@ -133,6 +133,9 @@
   "remember": {
     "message": "Ordner merken"
   },
+  "resetSettings": {
+    "message": "Einstellungen zurücksetzen"
+  },
   "remove": {
     "message": "Entfernen"
   },

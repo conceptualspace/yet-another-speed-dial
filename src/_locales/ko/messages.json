@@ -133,6 +133,9 @@
     "remember": {
       "message": "마지막 폴더 기억"
     },
+    "resetSettings": {
+      "message": "설정 초기화"
+    },
     "remove": {
       "message": "제거"
     },

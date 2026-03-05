@@ -133,6 +133,9 @@
   "remember": {
     "message": "记住上次文件夹"
   },
+  "resetSettings": {
+    "message": "重置设置"
+  },
   "remove": {
     "message": "移除"
   },

@@ -133,6 +133,9 @@
   "remember": {
     "message": "最後のフォルダを記憶"
   },
+  "resetSettings": {
+    "message": "設定をリセット"
+  },
   "remove": {
     "message": "削除"
   },

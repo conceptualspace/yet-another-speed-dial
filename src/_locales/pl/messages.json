@@ -133,6 +133,9 @@
   "remember": {
     "message": "Zapamiętaj ostatni folder"
   },
+  "resetSettings": {
+    "message": "Resetuj ustawienia"
+  },
   "remove": {
     "message": "Usuń"
   },

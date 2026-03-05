@@ -133,6 +133,9 @@
   "remember": {
     "message": "Mémoriser les derniers dossiers"
   },
+  "resetSettings": {
+    "message": "Réinitialiser les paramètres"
+  },
   "remove": {
     "message": "Retirer"
   },
