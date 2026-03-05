@@ -15,7 +15,7 @@
     "message": "Background Color"
   },
   "bgColor": {
-    "message": "BG Color"
+    "message": "Background"
   },
   "browse": {
     "message": "Browse..."
@@ -71,7 +71,7 @@
     "message": "Home"
   },
   "image": {
-    "message": "Image"
+    "message": "Image File"
   },
   "imageURL": {
     "message": "Image URL"
