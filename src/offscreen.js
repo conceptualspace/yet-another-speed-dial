@@ -54,7 +54,7 @@ async function handleMessages(message) {
 
     if (resizedImages && resizedImages.length) {
         // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
-        const maxWebpageImages = processedScreenshot ? 4 : 5;
+        const maxWebpageImages = processedScreenshot ? 5 : 6;
         thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
         
         // Always add the screenshot as the last image if available
@@ -259,7 +259,7 @@ function resizeImage(image, screenshot = false) {
             const img = new Image();
             
             img.onerror = (event) => {
-                console.error(`[resizeImage] SVG load error:`, event);
+                //console.error(`[resizeImage] SVG load error:`, event);
                 resolve();
             };
             
@@ -412,7 +412,8 @@ async function fetchImages(url, quickRefresh) {
             return(images);
         }
     } else {
-        images.push('https://logo.clearbit.com/' + hostname + '?size=256');
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/logo/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/icon/fallback/404/?c=key`);
     }
 
     // avoid duplicates and preserve the precedence of images
