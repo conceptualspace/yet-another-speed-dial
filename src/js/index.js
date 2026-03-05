@@ -91,6 +91,7 @@ const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabel = document.getElementById("importFileLabel");
 const helpBtn = document.getElementById("help");
+const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 
@@ -2309,6 +2310,15 @@ importExportBtn.onclick = function () {
 
 helpBtn.onclick = function () {
     chrome.tabs.create({ url: helpUrl });
+}
+
+resetSettingsBtn.onclick = function () {
+    if (confirm('Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails.')) {
+        settings = JSON.parse(JSON.stringify(defaults));
+        chrome.storage.local.set({ settings }).then(() => {
+            applySettings();
+        });
+    }
 }
 
 importFileLabel.onclick = function () {

@@ -255,6 +255,14 @@
     color: #ccc;
 }
 
+.settingsLinkDanger {
+    color: #cc6666;
+}
+
+.settingsLinkDanger:hover {
+    color: #ff6666;
+}
+
 .sidenav #settingsToast {
     display: flex;
     justify-content: center;
