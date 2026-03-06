@@ -2747,7 +2747,10 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         //bookmarksContainer.style.opacity = "0";
 
         //getBookmarks(speedDialId)
-        buildDialPages(speedDialId, currentFolder)
+        buildDialPages(speedDialId, currentFolder).then(() => {
+            // rebuild boxes[] with the new dom nodes for the layout animations
+            animate();
+        });
     }
 }, 650, true);
 
