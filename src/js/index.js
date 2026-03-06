@@ -1874,8 +1874,10 @@ window.addEventListener("mousedown", e => {
         case 'modal':
             hideModals();
             break;
-        case 'menu-option':
-            switch (e.target.id) {
+        default: {
+            const menuOption = e.target.closest('.menu-option');
+            if (menuOption) {
+            switch (menuOption.id) {
                 case 'openSettings':
                     openSettings();
                     break;
@@ -1928,9 +1930,11 @@ window.addEventListener("mousedown", e => {
                     createFolder();
                     break;
             }
+            } else {
+                e.preventDefault();
+            }
             break;
-        default:
-            e.preventDefault();
+        }
     }
 });
 
