@@ -576,7 +576,7 @@ async function fetchImages(url, quickRefresh) {
 
             // if we havent had much luck with images, lets check the manifest and style sheets
             // we dont do so during a quick refresh to avoid fetching extra resources
-            if (images.length < 4 && !quickRefresh) {
+            if (images.length < 5 && !quickRefresh) {
                 // web application manifest icon
                 let manifestLink = doc.querySelector('link[rel="manifest"]');
                 if (manifestLink && manifestLink.getAttribute('href')) {
