@@ -1364,7 +1364,11 @@ function layout(force = false) {
         // a resize occurs the animation will start from the right position
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.7;
-            TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+            if (duration === 0) {
+                TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
+            } else {
+                TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+            }
         }
 
         layoutFolder = false;
