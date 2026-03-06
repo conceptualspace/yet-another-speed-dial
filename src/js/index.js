@@ -183,6 +183,14 @@ function displayClock() {
     setTimeout(displayClock, 10000);
 }
 
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (typeof TweenMax !== 'undefined') TweenMax.ticker.sleep();
+    } else {
+        if (typeof TweenMax !== 'undefined') TweenMax.ticker.wake();
+    }
+});
+
 displayClock();
 
 function getBookmarks(folderId) {
