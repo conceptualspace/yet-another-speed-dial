@@ -330,7 +330,7 @@ a {
     background-color: #111111;
     color: #ffffff;
     border: none;
-    border-radius: 3px;
+    border-radius: 8px;
     box-shadow: 0 0 10px 0 rgba(0,0,0,0.2);
     transition: visibility 0s, opacity 160ms ease;
 }
