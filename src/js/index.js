@@ -1364,7 +1364,7 @@ function layout(force = false) {
         // a resize occurs the animation will start from the right position
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.7;
-            gsap.to(nodesToAnimate, { duration: duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease: ease });
+            gsap.to(nodesToAnimate, { duration: duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease: ease, overwrite: true });
         }
 
         layoutFolder = false;
@@ -1383,7 +1383,6 @@ function ease(progress) {
 }
 
 const animate = debounce(() => {
-    requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
     let currentParent;
     if (currentFolder) {
         currentParent = currentFolder
@@ -1392,7 +1391,6 @@ const animate = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    gsap.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
@@ -1413,8 +1411,6 @@ const animate = debounce(() => {
     }
 
     layout();
-
-    });
 }, 300)
 
 function readURL(input) {
@@ -2364,7 +2360,8 @@ function filterDials(searchTerm) {
                 opacity: 1, 
                 scale: 1, 
                 display: 'block', 
-                ease: "power2.out" 
+                ease: "power2.out",
+                overwrite: true 
             });
         } else {
             // Fade-out and scale-down for non-matching thumbnails
@@ -2373,7 +2370,8 @@ function filterDials(searchTerm) {
                 opacity: 0, 
                 scale: 0.8, 
                 display: 'none', 
-                ease: "power2.in" 
+                ease: "power2.in",
+                overwrite: true 
             });
         }
     });
