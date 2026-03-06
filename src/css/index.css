@@ -327,7 +327,9 @@ a {
     opacity: 0;
     position: fixed;
     z-index: 2;
-    background-color: #111111;
+    background-color: rgba(17, 17, 17, 0.9);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     color: #ffffff;
     border: none;
     border-radius: 8px;
@@ -668,7 +670,9 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     z-index: 3; /* Stay on top */
     top: 0; /* Stay at the top */
     right: 0;
-    background: rgba(0,0,0,1);
+    background: rgba(0, 0, 0, 0.85);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
     box-shadow: none;
     overflow-x: hidden; /* Disable horizontal scroll */
     transition: 360ms; /* 0.5 second transition effect to slide in the sidenav */
