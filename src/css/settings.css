@@ -202,12 +202,15 @@
     border-radius: 50%;
 }
 
-.sidenav input[type="color"] {
-    opacity: 0;
-    display: block;
+.sidenav input[data-coloris] {
     width: 50px;
     height: 24px;
     border: none;
+    background: transparent;
+    color: transparent;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0;
 }
 
 .sidenav #color-picker-wrapper {

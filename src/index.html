@@ -10,6 +10,7 @@
     <meta content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width"
           name="viewport">
     <link href="css/flexCarousel.min.css" rel="stylesheet" type="text/css">
+    <link href="css/coloris.min.css" rel="stylesheet" type="text/css">
     <link href="css/index.css" rel="stylesheet" type="text/css">
     <link href="css/settings.css" rel="stylesheet" type="text/css">
 </head>
@@ -125,7 +126,7 @@
                 <div class="formItem">
                     <button class="action" id="modalBgColorPickerBtn" >
                         <svg id="modalBgColorPreview" xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="100 -860 760 760" width="24px" fill="#FFFFFF"><path stroke="#888888" stroke-width="30" d="M480-200q-117 0-198.5-81.5T200-480q0-117 81.5-198.5T480-760q117 0 198.5 81.5T760-480q0 117-81.5 198.5T480-200Z"/></svg>
-                        <input class="settingsCtl" id="modalBgColorPickerInput" type="color" >
+                        <input class="settingsCtl" id="modalBgColorPickerInput" type="text" data-coloris value="#FFFFFF">
                     <span data-locale="bgColor">BG Color</span>
                     </button>
                     
@@ -310,7 +311,7 @@
                 </div>
                 <div class='column controls'>
                     <div id="color-picker-wrapper">
-                        <input class="settingsCtl" id="color-picker" type="color">
+                        <input class="settingsCtl" id="color-picker" type="text" data-coloris>
                     </div>
                 </div>
             </div>
@@ -320,7 +321,7 @@
                 </div>
                 <div class='column controls'>
                     <div id="textColor-picker-wrapper">
-                        <input class="settingsCtl" id="textColor-picker" type="color">
+                        <input class="settingsCtl" id="textColor-picker" type="text" data-coloris>
                     </div>
                 </div>
             </div>
@@ -503,5 +504,6 @@
 <script src="js/lib/TweenMax.min.js"></script>
 <script src="js/lib/jquery-3.6.0.slim.min.js"></script>
 <script src="js/lib/flexCarousel.min.js"></script>
+<script src="js/lib/coloris.min.js"></script>
 <script src="js/index.js"></script>
 </body>

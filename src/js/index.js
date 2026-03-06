@@ -4,6 +4,19 @@
 
 'use strict';
 
+// initialize Coloris color picker
+// outputs hex #RRGGBBAA
+Coloris({
+    theme: 'polaroid',
+    themeMode: 'dark',
+    alpha: true,
+    forceAlpha: true,
+    formatToggle: false,
+    showInput: false,
+    closeButton: true,
+    closeLabel: 'OK'
+});
+
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
@@ -2042,17 +2055,17 @@ wallPaperEnabled.oninput = function (e) {
     saveSettings()
 }
 
-color_picker.onchange = function () {
+color_picker.addEventListener('input', function () {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
-    saveSettings()
-};
+    saveSettings();
+});
 
-textColor_picker.onchange = function () {
+textColor_picker.addEventListener('input', function () {
     textColor_picker_wrapper.style.backgroundColor = textColor_picker.value;
     if (settings.textColor !== textColor_picker.value) {
-        saveSettings()
+        saveSettings();
     }
-};
+});
 
 showTitlesInput.oninput = function (e) {
     saveSettings()
@@ -2136,24 +2149,11 @@ fetchImageButton.addEventListener('click', function (event) {
 });
 
 modalBgColorPickerBtn.addEventListener('click', function () {
-    // todo: support alpha
-    // eyedropper currently chrome on windows/mac only
-    if ('EyeDropper' in window) {
-        const eyeDropper = new EyeDropper();
-        eyeDropper.open().then(result => {
-            const color = result.sRGBHex;
-            setInputValue(modalBgColorPickerInput, color);
-        }).catch(error => {
-            console.log('Error opening color picker:', error);
-        });
-    } else {
-        document.getElementById('modalBgColorPickerInput').click();
-    }
+    modalBgColorPickerInput.dispatchEvent(new Event('click', { bubbles: true }));
 });
 
 modalBgColorPickerInput.addEventListener('input', function () {
-    const color = this.value; // in hex
-    // set the our button color to match
+    const color = this.value;
     modalBgColorPreview.style.fill = color;
 });
 
