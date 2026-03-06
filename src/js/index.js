@@ -183,14 +183,6 @@ function displayClock() {
     setTimeout(displayClock, 10000);
 }
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        if (typeof TweenMax !== 'undefined') TweenMax.ticker.sleep();
-    } else {
-        if (typeof TweenMax !== 'undefined') TweenMax.ticker.wake();
-    }
-});
-
 displayClock();
 
 function getBookmarks(folderId) {
@@ -1361,7 +1353,7 @@ function layout(force = false) {
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
                 const x = boxes[i].transform.x + box.lastX - box.x;
                 const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
+                gsap.set(box.node, { x, y });
                 nodesToAnimate.push(box.node);
             }
             boxes[i].x = box.x;
@@ -1372,7 +1364,7 @@ function layout(force = false) {
         // a resize occurs the animation will start from the right position
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.7;
-            TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+            gsap.to(nodesToAnimate, { duration: duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease: ease });
         }
 
         layoutFolder = false;
@@ -1400,14 +1392,17 @@ const animate = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
+    gsap.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         nodePositions.push({
             node,
-            transform: node._gsTransform,
+            transform: {
+                x: gsap.getProperty(node, "x") || 0,
+                y: gsap.getProperty(node, "y") || 0
+            },
             x: node.offsetLeft,
             y: node.offsetTop
         });
@@ -2364,19 +2359,21 @@ function filterDials(searchTerm) {
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
             // Fade-in and scale-up for matching thumbnails
-            TweenMax.to(dial, 0.3, { 
+            gsap.to(dial, { 
+                duration: 0.3,
                 opacity: 1, 
                 scale: 1, 
                 display: 'block', 
-                ease: Power2.easeOut 
+                ease: "power2.out" 
             });
         } else {
             // Fade-out and scale-down for non-matching thumbnails
-            TweenMax.to(dial, 0.3, { 
+            gsap.to(dial, { 
+                duration: 0.3,
                 opacity: 0, 
                 scale: 0.8, 
                 display: 'none', 
-                ease: Power2.easeIn 
+                ease: "power2.in" 
             });
         }
     });
