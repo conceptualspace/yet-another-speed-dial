@@ -1351,8 +1351,10 @@ function layout(force = false) {
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                const x = boxes[i].transform.x + box.lastX - box.x;
-                const y = boxes[i].transform.y + box.lastY - box.y;
+                const currentTransformX = gsap.getProperty(box.node, "x") || 0;
+                const currentTransformY = gsap.getProperty(box.node, "y") || 0;
+                const x = currentTransformX + box.lastX - box.x;
+                const y = currentTransformY + box.lastY - box.y;
                 gsap.set(box.node, { x, y });
                 nodesToAnimate.push(box.node);
             }
@@ -1390,25 +1392,23 @@ const animate = debounce(() => {
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
     const total = nodes.length;
 
-    if (!nodes.length) return;
+    if (!nodes.length) {
+        boxes = [];
+        return;
+    }
 
-    const nodePositions = [];
+    const newBoxes = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
-        nodePositions.push({
+        let oldBox = boxes.find(b => b.node === node);
+        newBoxes.push({
             node,
-            transform: {
-                x: gsap.getProperty(node, "x") || 0,
-                y: gsap.getProperty(node, "y") || 0
-            },
-            x: node.offsetLeft,
-            y: node.offsetTop
+            x: oldBox ? oldBox.x : node.offsetLeft,
+            y: oldBox ? oldBox.y : node.offsetTop
         });
     }
 
-    for (let i = 0; i < total; i++) {
-        boxes[i] = nodePositions[i];
-    }
+    boxes = newBoxes;
 
     layout();
 }, 300)
