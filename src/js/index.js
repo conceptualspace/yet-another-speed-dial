@@ -1351,6 +1351,7 @@ function layout(force = false) {
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
+                TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
                 const x = boxes[i].transform.x + box.lastX - box.x;
                 const y = boxes[i].transform.y + box.lastY - box.y;
                 TweenMax.set(box.node, { x, y });
