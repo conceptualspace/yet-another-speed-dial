@@ -1367,7 +1367,11 @@ function layout(force = false) {
             if (duration === 0) {
                 TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
-                TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+                if (nodesToAnimate.length < 150) {
+                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.3 }, ease });
+                } else {
+                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+                }
             }
         }
 
