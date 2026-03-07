@@ -253,6 +253,7 @@ h1 {
     border-radius: 7px;
     margin: var(--dial-margin);
     will-change: transform;
+    contain: layout paint;
     /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
 }
 
