@@ -330,7 +330,7 @@ a {
     background-color: #111111;
     color: #ffffff;
     border: none;
-    border-radius: 3px;
+    border-radius: 8px;
     box-shadow: 0 0 10px 0 rgba(0,0,0,0.2);
     transition: visibility 0s, opacity 160ms ease;
 }
@@ -344,7 +344,20 @@ a {
 }
 .menu-option {
     cursor: default;
-    padding: 5px 25px;
+    padding: 5px 25px 5px 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+}
+.menu-option svg {
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+.menu-icon-spacer {
+    display: inline-block;
+    width: 18px;
+    flex-shrink: 0;
 }
 .menu-option:hover {
     background-color: #333333;
