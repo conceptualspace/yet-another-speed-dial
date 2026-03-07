@@ -124,13 +124,18 @@ let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 let windowSize = null;
-let containerSize = null;
+let containerSizeChanged = false;
 let layoutFolder = false;
 let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+
+const containerObserver = new ResizeObserver(() => {
+    containerSizeChanged = true;
+});
+containerObserver.observe(bookmarksContainer);
 let isToastVisible = false;
 
 let folderIds = [];
@@ -1327,9 +1332,9 @@ function saveBookmarkSettings() {
 
 // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
 function layout(force = false) {
-    if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
+    if (force || layoutFolder || containerSizeChanged || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
-        containerSize = getComputedStyle(bookmarksContainer).maxWidth;
+        containerSizeChanged = false;
 
         let nodesToAnimate = [];
         let positions = [];
@@ -1350,10 +1355,10 @@ function layout(force = false) {
         // batch writes
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
-            if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                const x = boxes[i].transform.x + box.lastX - box.x;
-                const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
+            const x = boxes[i].transform.x + box.lastX - box.x;
+            const y = boxes[i].transform.y + box.lastY - box.y;
+            if (x !== 0 || y !== 0) {
+                TweenMax.set(box.node, { x, y, force3D: true });
                 nodesToAnimate.push(box.node);
             }
             boxes[i].x = box.x;
@@ -1362,15 +1367,42 @@ function layout(force = false) {
 
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
-        if (nodesToAnimate.length > 0 || force) {
+        if (nodesToAnimate.length > 0) {
             let duration = layoutFolder ? 0 : 0.7;
             if (duration === 0) {
                 TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
                 if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, force3D: true, ease });
                 } else {
-                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+                    // Single proxy tween instead of N individual tweens
+                    const nodes = nodesToAnimate;
+                    const startPositions = nodes.map(node => {
+                        const t = node._gsTransform || { x: 0, y: 0 };
+                        return { x: t.x, y: t.y };
+                    });
+                    const proxy = { progress: 1 };
+                    TweenMax.to(proxy, duration, {
+                        progress: 0,
+                        ease,
+                        onUpdate: () => {
+                            const p = proxy.progress;
+                            for (let i = 0; i < nodes.length; i++) {
+                                const x = startPositions[i].x * p;
+                                const y = startPositions[i].y * p;
+                                nodes[i].style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                                const gsT = nodes[i]._gsTransform;
+                                if (gsT) { gsT.x = x; gsT.y = y; }
+                            }
+                        },
+                        onComplete: () => {
+                            for (let i = 0; i < nodes.length; i++) {
+                                nodes[i].style.transform = '';
+                                const gsT = nodes[i]._gsTransform;
+                                if (gsT) { gsT.x = 0; gsT.y = 0; }
+                            }
+                        }
+                    });
                 }
             }
         }
@@ -1400,14 +1432,13 @@ const animate = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         nodePositions.push({
             node,
-            transform: node._gsTransform,
+            transform: node._gsTransform || { x: 0, y: 0 },
             x: node.offsetLeft,
             y: node.offsetTop
         });
