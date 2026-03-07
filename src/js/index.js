@@ -2926,14 +2926,7 @@ function onResize() {
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
-        const text = chrome.i18n.getMessage(elem.dataset.locale);
-        const spans = elem.querySelectorAll('span:not(.menu-icon-spacer)');
-        const span = spans.length ? spans[spans.length - 1] : null;
-        if (span) {
-            span.innerText = text;
-        } else {
-            elem.innerText = text;
-        }
+        elem.textContent = chrome.i18n.getMessage(elem.dataset.locale);
     })
 
     // Handle placeholder translations separately
