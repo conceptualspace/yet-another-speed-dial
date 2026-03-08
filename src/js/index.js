@@ -12,9 +12,7 @@ Coloris({
     alpha: true,
     forceAlpha: true,
     formatToggle: false,
-    showInput: false,
-    closeButton: true,
-    closeLabel: 'OK'
+    showInput: false
 });
 
 // speed dial
@@ -1177,20 +1175,29 @@ function getBgColor(img) {
 }
 
 function rgbToHex(rgbArray) {
-    // todo: support alpha value
-    // Convert RGB values to hex color
+    // Convert RGBA values to hex color (#RRGGBB or #RRGGBBAA)
     let r = Math.round(rgbArray[0]);
     let g = Math.round(rgbArray[1]);
     let b = Math.round(rgbArray[2]);
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    let hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    // Append alpha if present and not fully opaque
+    if (rgbArray.length > 3) {
+        let a = rgbArray[3];
+        // alpha could be 0-1 float (from gradient) or 0-255 int
+        let alpha = a <= 1 ? Math.round(a * 255) : Math.round(a);
+        if (alpha < 255) {
+            hex += alpha.toString(16).padStart(2, '0');
+        }
+    }
+    return hex;
 }
 
 function hexToRgba(hex) {
-    // Convert hex color to RGBA values
+    // Convert hex color to RGBA values (supports #RRGGBB and #RRGGBBAA)
     let r = parseInt(hex.slice(1, 3), 16);
     let g = parseInt(hex.slice(3, 5), 16);
     let b = parseInt(hex.slice(5, 7), 16);
-    let a = 1; // Default alpha value
+    let a = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
     return [r, g, b, a];
 }
 
