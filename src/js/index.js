@@ -166,6 +166,19 @@ let defaults = {
     currentFolder: null,
 };
 
+// Create an invisible overlay to absorb outside clicks when Coloris is open
+const colorisOverlay = document.createElement('div');
+colorisOverlay.className = 'coloris-overlay';
+colorisOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;display:none;';
+document.body.appendChild(colorisOverlay);
+
+document.querySelectorAll('.settingsCtl[data-coloris]').forEach(picker => {
+    picker.addEventListener('open', () => colorisOverlay.style.display = 'block');
+    // Using a timeout so the overlay stays for the full click cycle (mouseup/click)
+    // before disappearing, absorbing the entire pointer interaction.
+    picker.addEventListener('close', () => setTimeout(() => colorisOverlay.style.display = 'none', 100));
+});
+
 const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
     return function () {
