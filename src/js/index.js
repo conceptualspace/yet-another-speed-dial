@@ -2168,7 +2168,8 @@ fetchImageButton.addEventListener('click', function (event) {
     }
 });
 
-modalBgColorPickerBtn.addEventListener('click', function () {
+modalBgColorPickerBtn.addEventListener('click', function (e) {
+    if (e.target === modalBgColorPickerInput) return;
     modalBgColorPickerInput.dispatchEvent(new Event('click', { bubbles: true }));
 });
 
