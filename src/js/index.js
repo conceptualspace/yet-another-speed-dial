@@ -1364,7 +1364,7 @@ function layout(force = false) {
         // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
         // a resize occurs the animation will start from the right position
         if (nodesToAnimate.length > 0 || force) {
-            let duration = layoutFolder ? 0 : 0.7;
+            let duration = layoutFolder ? 0 : 0.6;
             if (duration === 0) {
                 TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
