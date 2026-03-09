@@ -2785,8 +2785,8 @@ function getSpeedDialId() {
                             folderIds.push(result.id);
                         }
                     }
+                    resolve()
                 })
-                resolve()
             } else {
                 chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
                     speedDialId = result.id;
@@ -2970,9 +2970,9 @@ function init() {
         }
 
         getSpeedDialId().then(() => {
-            if (settings.rememberFolder && settings.currentFolder) {
+            if (settings.rememberFolder && settings.currentFolder
+                && folderIds.includes(settings.currentFolder)) {
                 currentFolder = settings.currentFolder;
-                //todo: reset to home folder when setting turned off
             } else {
                 currentFolder = speedDialId;
             }
