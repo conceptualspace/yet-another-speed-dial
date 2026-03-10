@@ -292,14 +292,8 @@ function removeBookmark(url) {
     layout(true);
     // remove dial
     targetNode.remove();
-    chrome.bookmarks.remove(id).then(() => {
-        // if no other bookmarks share this URL, purge the image cache
-        chrome.bookmarks.search({ url }).then(bookmarks => {
-            if (bookmarks.length === 0) {
-                chrome.storage.local.remove(url);
-            }
-        });
-    }).catch(err => {
+    // nb: cache cleanup is handled by handleBookmarkRemoved in background script
+    chrome.bookmarks.remove(id).catch(err => {
         console.log(err);
     });
 }

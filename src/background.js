@@ -156,10 +156,13 @@ async function handleBookmarkRemoved(id, info) {
 	// todo: handle upsert where speed dial folder is deleted
 	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
 	if (info.node.url) {
-		// remove the thumbnail from local storage
-		await chrome.storage.local.remove(info.node.url).catch((err) => {
-			console.log(err)
-		});
+		// remove the thumbnail from local storage if no other bookmarks share this URL
+		const others = await chrome.bookmarks.search({ url: info.node.url });
+		if (others.length === 0) {
+			await chrome.storage.local.remove(info.node.url).catch((err) => {
+				console.log(err)
+			});
+		}
 	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
 		// folder removed, refresh the tab?
 		//refreshOpen()
