@@ -286,25 +286,22 @@ async function buildFolderPages(speedDialId) {
 
 
 function removeBookmark(url) {
-    let currentParent = currentFolder ? currentFolder : speedDialId
-    chrome.bookmarks.search({ url })
-        .then(bookmarks => {
-            let cleanup = bookmarks.length < 2;
-            for (let bookmark of bookmarks) {
-                if (bookmark.parentId === currentParent) {
-                    // animate removal
-                    targetNode.style.display = "none";
-                    layout(true);
-                    // remove dial
-                    targetNode.remove();
-                    chrome.bookmarks.remove(bookmark.id);
-                    // if we have duplicates (ex in other folders), keep the image cache, otherwise purge it
-                    if (cleanup) {
-                        chrome.storage.local.remove(url);
-                    }
-                }
+    let id = targetNode.dataset.id;
+    // animate removal
+    targetNode.style.display = "none";
+    layout(true);
+    // remove dial
+    targetNode.remove();
+    chrome.bookmarks.remove(id).then(() => {
+        // if no other bookmarks share this URL, purge the image cache
+        chrome.bookmarks.search({ url }).then(bookmarks => {
+            if (bookmarks.length === 0) {
+                chrome.storage.local.remove(url);
             }
-        })
+        });
+    }).catch(err => {
+        console.log(err);
+    });
 }
 
 function moveFolder(id, oldIndex, newIndex, newSiblingId) {
