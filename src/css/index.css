@@ -144,7 +144,6 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: opacity 150ms cubic-bezier(0.22, 1, 0.36, 1);
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
@@ -191,10 +190,6 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-    #tileContainer {
-        transition: none;
-    }
-
     .container {
         transition: none;
         transform: none;
