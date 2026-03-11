@@ -443,7 +443,7 @@ async function fetchImages(url, quickRefresh) {
         try {
             // allows og images to work, with creds they are behind js
             const omitDomains = ['facebook.com', 'github.com'];
-            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin';
+            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -586,7 +586,9 @@ async function fetchImages(url, quickRefresh) {
                 if (manifestLink && manifestLink.getAttribute('href')) {
                     try {
                         let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
-                        const manifestResponse = await fetch(manifestUrl);
+                        const manifestResponse = await fetch(manifestUrl, {
+                            signal: controller.signal
+                        });
                         if (manifestResponse.ok) {
                             const manifest = await manifestResponse.json();
                             if (manifest.icons && Array.isArray(manifest.icons)) {
@@ -619,7 +621,9 @@ async function fetchImages(url, quickRefresh) {
             
                 for (const sheetUrl of stylesheetLinks) {
                     try {
-                        const cssResponse = await fetch(sheetUrl);
+                        const cssResponse = await fetch(sheetUrl, {
+                            signal: controller.signal
+                        });
                         if (!cssResponse.ok) throw new Error(`failed to fetch css`);
                         const cssText = await cssResponse.text();
                         const cssImages = extractBackgroundImages(cssText)
