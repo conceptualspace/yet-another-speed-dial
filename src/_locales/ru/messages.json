@@ -42,10 +42,10 @@
     "message": "Удалить"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Формат закладок"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Размер закладок"
   },
   "edit": {
     "message": "Редактировать"
@@ -176,7 +176,7 @@
     "message": "Загрузить изображение..."
   },
   "wallpaper": {
-    "message": "Фоновое изображение\n"
+    "message": "Фоновое изображение"
   },
   "optionSquare": {
     "message": "Квадрат"
