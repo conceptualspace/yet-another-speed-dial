@@ -398,6 +398,7 @@ function showFolder(id) {
         if (folder.id === id) {
             folder.style.display = "flex";
             folder.style.opacity = "0";
+            folder.style.transform = "translateY(4px)";
             layoutFolder = true;
             
             // Wait for the browser to calculate the current frame...
@@ -405,6 +406,7 @@ function showFolder(id) {
                 // ...and apply the transition state in the next frame
                 requestAnimationFrame(() => {
                     folder.style.opacity = "1";
+                    folder.style.transform = "translateY(0)";
                     animate();
                 });
             });
