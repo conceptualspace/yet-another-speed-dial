@@ -398,7 +398,7 @@ function showFolder(id) {
         if (folder.id === id) {
             folder.style.display = "flex";
             folder.style.opacity = "0";
-            folder.style.transform = "translateY(10px)";
+            folder.style.transform = "translateY(8px)";
             layoutFolder = true;
             
             // Wait for the browser to calculate the current frame...
