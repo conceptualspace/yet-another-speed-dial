@@ -265,12 +265,14 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     // Process the rest of the folders, if there are more. exclude the current folder
     if (folders.length > 1) {
+        requestIdleCallback(async () => {
         for (let folder of folders) {
             if (folder.id !== currentFolderId) {
                 const children = await getChildren(folder.id);
                 await printBookmarks(children, folder.id);
             }
         }
+        }, {timeout: 1000});
     }
 }
 
