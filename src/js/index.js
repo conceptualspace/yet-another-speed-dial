@@ -2484,6 +2484,7 @@ function importFromSD2(json) {
             hideModals();
             // refresh page
             processRefresh();
+            //chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err)
             importExportStatus.innerText = "SD2 import error! Unable to create folders."
@@ -2546,6 +2547,7 @@ function importFromFVD(json) {
             hideModals();
             // refresh page
             processRefresh();
+            //chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err);
             importExportStatus.innerText = "FVD import error! Unable to create folders.";
@@ -2617,6 +2619,7 @@ function importFromYASD(json) {
                 hideModals();
                 // Refresh page
                 processRefresh();
+                chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
             }).catch(err => {
                 console.log(err);
                 importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
@@ -2639,6 +2642,7 @@ function importFromOldYASD(json) {
             // refresh page
             //tabMessagePort.postMessage({handleImport: true});
             processRefresh();
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err)
             importExportStatus.innerText = "Error! Unable to parse file."
