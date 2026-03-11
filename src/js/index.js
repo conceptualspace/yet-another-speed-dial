@@ -570,7 +570,7 @@ function refreshAllThumbnails() {
 
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
-function batchInsert(parent, fragment, batchSize = 50, onComplete) {
+function batchInsert(parent, fragment, batchSize = 100, onComplete) {
     const nodes = Array.from(fragment.childNodes);
     let index = 0;
 
