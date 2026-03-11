@@ -362,7 +362,13 @@ function resizeImage(image, screenshot = false) {
                 const newDataURI = canvas.toDataURL('image/webp', 0.9);
                 resolve(newDataURI);
             } else if (sHeight >= 96 || sWidth >= 96) {
-                resolve(image);
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+                canvas.width = sWidth;
+                canvas.height = sHeight;
+                ctx.drawImage(this, 0, 0);
+                const newDataURI = canvas.toDataURL('image/webp', 0.86);
+                resolve(newDataURI);
             } else {
                 // discard images < 96px
                 resolve();
