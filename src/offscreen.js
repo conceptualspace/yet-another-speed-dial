@@ -447,9 +447,6 @@ async function fetchImages(url, quickRefresh) {
             
             const response = await fetch(url, {
                 method: 'GET',
-                headers: {
-                    'Content-Type': 'text/html'
-                },
                 mode: 'cors',
                 credentials,
                 signal: controller.signal
