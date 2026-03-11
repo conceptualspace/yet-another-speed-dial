@@ -57,7 +57,7 @@ async function handleMessages(message) {
 }
 
 async function handleGetThumbs(data, batchSize = 50) {
-    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http"));
+    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
 
     if (!bookmarks.length) return;
 
@@ -179,7 +179,7 @@ function handleContextMenuClick(info, tab) {
 
 function handleBrowserAction(tab) {
 	// if tab is a web page bookmark it to speed dial
-	if (tab.url && (tab.url.startsWith('https://') || tab.url.startsWith('http://'))) {
+	if (tab.url && (tab.url.startsWith('https://') || tab.url.startsWith('http://') || tab.url.startsWith('file://') || tab.url.startsWith('chrome://'))) {
 		createBookmarkFromContextMenu(tab);
 		chrome.action.setBadgeText({text:"✔", tabId:tab.id})
 		chrome.action.setBadgeBackgroundColor({ color: '#13ac4e' }); // Green color
@@ -206,7 +206,7 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 }
 
 async function handleManualRefresh(data) {
-    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://'))) {
+    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(data.url);
         await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
@@ -411,7 +411,7 @@ async function handleInstalled(details) {
          chrome.contextMenus.create({
             title: "Add to Speed Dial",
             contexts: ["page"],
-            documentUrlPatterns: ["https://*/*", "http://*/*"],
+            documentUrlPatterns: ["https://*/*", "http://*/*", "file://*/*", "chrome://*/*"],
             id: "addToSpeedDial",
         });
     } catch (error) {

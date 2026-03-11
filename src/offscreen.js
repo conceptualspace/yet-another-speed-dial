@@ -389,6 +389,13 @@ function extractBackgroundImages(cssText) {
 
 async function fetchImages(url, quickRefresh) {
 
+    if (url.startsWith('file://')) {
+        return ['img/file.png'];
+    }
+    if (url.startsWith('chrome://')) {
+        return ['img/widget.png'];
+    }
+
     const whitelist = [
         "mail.google.com",
         "gmail.com",

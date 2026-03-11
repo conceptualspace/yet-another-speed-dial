@@ -548,7 +548,7 @@ function refreshAllThumbnails() {
     chrome.bookmarks.getChildren(parent).then(children => {
         if (children && children.length) {
             for (let child of children) {
-                if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://'))) {
+                if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://') || child.url.startsWith('file://') || child.url.startsWith('chrome://'))) {
                     //urls.push(child.url);
                     // push an object with the url and the id
                     bookmarks.push({ url: child.url, id: child.id, parentId: child.parentId });
@@ -676,7 +676,7 @@ async function printBookmarks(bookmarks, parentId) {
         for (let bookmark of bookmarks) {
             if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
 
-            if (bookmark.url?.startsWith("http")) {
+            if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
                 //let images = thumbnails[bookmark.url] || {};
                 //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
                 //let thumbBg = images.bgColor || null;
@@ -1005,7 +1005,7 @@ async function buildModal(url, title) {
 }
 
 function rectifyUrl(url) {
-    if (url && !url.startsWith('https://') && !url.startsWith('http://')) {
+    if (url && !url.startsWith('https://') && !url.startsWith('http://') && !url.startsWith('file://') && !url.startsWith('chrome://')) {
         return 'https://' + url;
     } else {
         return url;
@@ -1830,9 +1830,28 @@ window.addEventListener("click", e => {
         return;
     }
     if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
+        let tile = e.target.closest('.tile');
+        if (tile && (tile.href.startsWith('chrome:') || tile.href.startsWith('file:'))) {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) {
+                chrome.tabs.create({ url: tile.href, active: false });
+            } else {
+                chrome.tabs.update({ url: tile.href });
+            }
+        }
         return;
     }
     e.preventDefault();
+});
+
+window.addEventListener("auxclick", e => {
+    if (e.button === 1 && (e.target.className === 'tile-content' || e.target.className === 'tile-title')) {
+        let tile = e.target.closest('.tile');
+        if (tile && (tile.href.startsWith('chrome:') || tile.href.startsWith('file:'))) {
+            e.preventDefault();
+            chrome.tabs.create({ url: tile.href, active: false });
+        }
+    }
 });
 
 // listen for menu item
@@ -2177,7 +2196,7 @@ function prepareExportV1() {
         // filter out unused thumbnails to keep exported file efficient
         let filteredItems = {};
         for (const [key, value] of Object.entries(items)) {
-            if (key.startsWith('http')) {
+            if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                 let thumbnails = [];
                 let thumbIndex = 0;
                 let bgColor = null;
@@ -2276,7 +2295,7 @@ function prepareExport() {
             for (const [key, value] of Object.entries(items)) {
                 if (key.startsWith('settings')) {
                     yasdJson.yasd.settings[key] = value;
-                } else if (key.startsWith('http')) {
+                } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
                     if (value.thumbnails && value.thumbnails.length) {
                         thumbnails.push(value.thumbnails[value.thumbIndex]);
