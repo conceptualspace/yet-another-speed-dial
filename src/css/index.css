@@ -185,7 +185,7 @@ h1 {
     max-width: var(--columns);
     margin: auto;
     opacity: 0;
-    transition: opacity 240ms;
+    transition: opacity 200ms;
 }
 
 #noBookmarks {
