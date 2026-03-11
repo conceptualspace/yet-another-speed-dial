@@ -259,7 +259,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     }
 
     // Process the current folder's children first
-    const currentChildren = await getChildren(currentFolderId);
+    const currentChildren = (currentFolderId === speedDialId) ? children : await getChildren(currentFolderId);
     await printBookmarks(currentChildren, currentFolderId);
 
 
