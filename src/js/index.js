@@ -760,10 +760,11 @@ async function printBookmarks(bookmarks, parentId) {
         folderContainerEl.style.opacity = "0";
 
         if (currentFolder === parentId) {
-            setTimeout(() => {
-                folderContainerEl.style.opacity = "1";
-                animate();
-            }, 20);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    folderContainerEl.style.opacity = "1";
+                });
+            });
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
         }
         bookmarksContainerParent.append(folderContainerEl);
