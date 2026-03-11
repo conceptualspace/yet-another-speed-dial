@@ -2467,12 +2467,12 @@ function importFromSD2(json) {
         });
 
         Promise.all(groupPromises).then(groupIds => {
-            bookmarks.forEach(bookmark => {
+            let bookmarkPromises = bookmarks.map(bookmark => {
                 let parentId = groupIds[bookmark.idgroup];
-                chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                     let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                     if (!existsInFolder) {
-                        chrome.bookmarks.create({
+                        return chrome.bookmarks.create({
                             title: bookmark.title,
                             url: bookmark.url,
                             parentId: parentId
@@ -2481,10 +2481,12 @@ function importFromSD2(json) {
                 });
             });
 
+            return Promise.all(bookmarkPromises);
+        }).then(() => {
             hideModals();
             // refresh page
             processRefresh();
-            //chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err)
             importExportStatus.innerText = "SD2 import error! Unable to create folders."
@@ -2530,12 +2532,12 @@ function importFromFVD(json) {
         });
 
         Promise.all(groupPromises).then(groupIds => {
-            bookmarks.forEach(bookmark => {
+            let bookmarkPromises = bookmarks.map(bookmark => {
                 let parentId = groupIds[bookmark.groupId];
-                chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
+                return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
                     let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
                     if (!existsInFolder) {
-                        chrome.bookmarks.create({
+                        return chrome.bookmarks.create({
                             title: bookmark.title,
                             url: bookmark.url,
                             parentId: parentId
@@ -2544,10 +2546,12 @@ function importFromFVD(json) {
                 });
             });
 
+            return Promise.all(bookmarkPromises);
+        }).then(() => {
             hideModals();
             // refresh page
             processRefresh();
-            //chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }).catch(err => {
             console.log(err);
             importExportStatus.innerText = "FVD import error! Unable to create folders.";
