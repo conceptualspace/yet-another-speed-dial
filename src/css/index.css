@@ -186,6 +186,7 @@ h1 {
     margin: auto;
     opacity: 0;
     transition: opacity 200ms;
+    will-change: opacity;
 }
 
 #noBookmarks {
