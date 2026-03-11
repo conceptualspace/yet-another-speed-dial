@@ -423,15 +423,18 @@ function showFolder(id) {
     let folders = document.getElementsByClassName('container');
     for (let folder of folders) {
         if (folder.id === id) {
-            folder.style.display = "flex"
+            folder.style.display = "flex";
             folder.style.opacity = "0";
             layoutFolder = true;
-            // transition between folders. todo more elegant solution
-            setTimeout(function () {
-                //layoutFolder = id;
-                folder.style.opacity = "1";
-                animate()
-            }, 20);
+            
+            // Wait for the browser to calculate the current frame...
+            requestAnimationFrame(() => {
+                // ...and apply the transition state in the next frame
+                requestAnimationFrame(() => {
+                    folder.style.opacity = "1";
+                    animate();
+                });
+            });
         } else {
             folder.style.display = "none";
         }
