@@ -438,7 +438,7 @@ async function fetchImages(url, quickRefresh) {
 
          // Set up fetch timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
+        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
         
         try {
             // allows og images to work, with creds they are behind js
