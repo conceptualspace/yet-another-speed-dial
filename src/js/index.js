@@ -2683,13 +2683,33 @@ function importFromOldYASD(json) {
 }
 
 // native handlers for folder tab target
+// container-level handlers to expand/collapse all folder titles
+function folderContainerDragEnter(ev) {
+    ev.preventDefault();
+    this.classList.add('folders-drag-active');
+}
+
+function folderContainerDragLeave(ev) {
+    // only collapse when truly leaving the container (not entering a child)
+    if (this.contains(ev.relatedTarget)) return;
+    this.classList.remove('folders-drag-active');
+    clearTimeout(folderNavTimeout);
+    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+}
+
+function folderContainerDragOver(ev) {
+    ev.preventDefault();
+    ev.dataTransfer.dropEffect = "move";
+}
+
+// individual folder title handlers for highlight + navigation
 function dragenterHandler(ev) {
     ev.preventDefault();
     const el = ev.currentTarget;
     if (!el.classList.contains("folderTitle")) return;
 
-    // expand all folder titles when any is entered
-    foldersContainer.closest('#foldersContainer').classList.add('folders-drag-active');
+    // clear hover from siblings, highlight this one
+    document.querySelectorAll('.folderTitle.drag-hover').forEach(t => t.classList.remove('drag-hover'));
     el.classList.add("drag-hover");
 
     const folderId = el.getAttribute("folderid");
@@ -2709,11 +2729,9 @@ function dragleaveHandler(ev) {
 
     el.classList.remove("drag-hover");
 
-    // only clear the nav timeout and container state if we're leaving the folder area entirely
-    // (not just moving to another folder title, whose dragenter already set a new timeout)
+    // only clear nav timeout if we're not entering another folder title
     if (!foldersContainer.querySelector('.folderTitle.drag-hover')) {
         clearTimeout(folderNavTimeout);
-        foldersContainer.closest('#foldersContainer').classList.remove('folders-drag-active');
     }
 }
 
@@ -3031,6 +3049,12 @@ function init() {
 
 
     sidenav.style.display = "flex";
+
+    // container-level drag listeners for expanding folder titles
+    const foldersContainerEl = document.getElementById('foldersContainer');
+    foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
+    foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
+    foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
 
     new Sortable(foldersContainer, {
         animation: 150,
