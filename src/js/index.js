@@ -2792,18 +2792,23 @@ function onEndHandler(evt) {
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
 
+        // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires)
+        let dropTarget = evt.originalEvent.target;
+        let folderTitleEl = dropTarget.closest ? dropTarget.closest('.folderTitle') : null;
+        let droppedOnFolderId = folderTitleEl ? folderTitleEl.getAttribute('folderid') : null;
+
         // todo: test if this is needed
         if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
-            // for example directly on the folder name, or directly onto the new dial button. so use the currentFolder as the target
-            toParentId = currentFolder ? currentFolder : speedDialId;
+            // for example directly on the folder name, or directly onto the new dial button. so use the folder target if available or else currentFolder
+            toParentId = droppedOnFolderId || currentFolder || speedDialId;
         }
 
         if (fromParentId === toParentId && fromParentId !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            toParentId = currentFolder ? currentFolder : speedDialId;
+            toParentId = droppedOnFolderId || currentFolder || speedDialId;
         }
 
         // if the sibling's parent doesnt match the parent we are moving to discard this sibling
