@@ -272,7 +272,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
                 await printBookmarks(children, folder.id);
             }
         }
-        }, {timeout: 1000});
+        }, {timeout: 350});
     }
 }
 
