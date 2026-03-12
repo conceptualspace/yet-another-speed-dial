@@ -2718,7 +2718,7 @@ function dragenterHandler(ev) {
         folderNavTimeout = setTimeout(() => {
             currentFolder = folderId;
             showFolder(currentFolder);
-        }, 300);
+        }, 350);
     }
 }
 
