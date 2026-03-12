@@ -330,7 +330,7 @@ function moveFolder(id, oldIndex, newIndex, newSiblingId) {
 
     function move(id, options) {
         chrome.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({ refreshInactive: true })
+            //tabMessagePort.postMessage({ refreshInactive: true })
         }).catch(err => {
             console.log(err);
         })
@@ -361,7 +361,7 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
 
     function move(id, options) {
         chrome.bookmarks.move(id, options).then(result => {
-            tabMessagePort.postMessage({ refreshInactive: true });
+            //tabMessagePort.postMessage({ refreshInactive: true });
         }).catch(err => {
             console.log(err);
         });
