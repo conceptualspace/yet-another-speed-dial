@@ -2728,8 +2728,8 @@ function dragenterHandler(ev) {
     el.classList.add("drag-hover");
 
     const folderId = el.getAttribute("folderid");
+    clearTimeout(folderNavTimeout);
     if (currentFolder !== folderId) {
-        clearTimeout(folderNavTimeout);
         folderNavTimeout = setTimeout(() => {
             currentFolder = folderId;
             showFolder(currentFolder);
