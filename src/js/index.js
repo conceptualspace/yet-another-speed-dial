@@ -2726,6 +2726,10 @@ function dragenterHandler(ev) {
         folderNavTimeout = setTimeout(() => {
             currentFolder = folderId;
             showFolder(currentFolder);
+            scrollPos = 0;
+            bookmarksContainerParent.scrollTop = scrollPos;
+            settings.currentFolder = folderId;
+            chrome.storage.local.set({ settings });
         }, 350);
     }
 }
