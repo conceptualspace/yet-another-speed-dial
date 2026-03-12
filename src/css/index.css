@@ -232,7 +232,8 @@ h1 {
     opacity: 0.85;
     font-weight: bold;
     transition: padding 160ms ease, margin 160ms ease, outline 160ms ease, background 160ms ease;
-    margin: 12px;
+    padding: 4px 6px;
+    margin: 8px 6px;
 }
 
 .folderTitle:hover {
