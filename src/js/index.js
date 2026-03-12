@@ -121,6 +121,7 @@ let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
+let folderTransitionTimer = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 let windowSize = null;
@@ -393,29 +394,37 @@ function moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSibli
 
 function showFolder(id) {
     hideSettings();
-    let folders = document.getElementsByClassName('container');
-    for (let folder of folders) {
-        if (folder.id === id) {
-            folder.style.display = "flex";
-            folder.style.opacity = "0";
-            folder.style.transform = "translateY(8px)";
-            layoutFolder = true;
-            
-            // Wait for the browser to calculate the current frame...
-            requestAnimationFrame(() => {
-                // ...and apply the transition state in the next frame
-                requestAnimationFrame(() => {
-                    folder.style.opacity = "1";
-                    folder.style.transform = "translateY(0)";
-                    animate();
-                });
-            });
-        } else {
-            folder.style.display = "none";
-        }
+    let folders = Array.from(document.getElementsByClassName('container'));
+    let nextFolder = folders.find(folder => folder.id === id);
+
+    if (!nextFolder) {
+        return;
     }
-    // style the active tab
-    let folderTitles = document.getElementsByClassName('folderTitle');
+
+    const clearSlideStyles = (folder) => {
+        folder.style.position = '';
+        folder.style.inset = '';
+        folder.style.width = '';
+        folder.style.transition = '';
+        folder.style.willChange = '';
+    };
+
+    const visibleFolders = folders.filter(folder => window.getComputedStyle(folder).display !== 'none');
+    const previousFolder = visibleFolders.find(folder => folder.id !== id) || null;
+
+    const folderTitles = Array.from(document.getElementsByClassName('folderTitle'));
+    const activeTitle = folderTitles.find(title => title.classList.contains('activeFolder')) || null;
+    const fromFolderId = activeTitle ? activeTitle.getAttribute('folderid') : null;
+    const fromIndex = folderTitles.findIndex(title => title.getAttribute('folderid') === fromFolderId);
+    const toIndex = folderTitles.findIndex(title => title.getAttribute('folderid') === id);
+
+    // Move in the same direction as the selected folder tab in the header.
+    let slideDirection = -1;
+    if (fromIndex !== -1 && toIndex !== -1 && fromIndex !== toIndex) {
+        slideDirection = toIndex > fromIndex ? 1 : -1;
+    }
+
+    // Keep tab state in sync even if the user re-selects the current folder.
     for (let title of folderTitles) {
         if (title.attributes.folderid.value === id) {
             title.classList.add('activeFolder');
@@ -423,6 +432,73 @@ function showFolder(id) {
             title.classList.remove('activeFolder');
         }
     }
+
+    if (folderTransitionTimer) {
+        clearTimeout(folderTransitionTimer);
+        folderTransitionTimer = null;
+    }
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!previousFolder || prefersReducedMotion) {
+        for (let folder of folders) {
+            if (folder.id === id) {
+                folder.style.display = 'flex';
+                folder.style.opacity = '1';
+                folder.style.transform = 'translateX(0)';
+            } else {
+                folder.style.display = 'none';
+            }
+            clearSlideStyles(folder);
+        }
+        layoutFolder = true;
+        animate();
+        return;
+    }
+
+    bookmarksContainerParent.style.position = 'relative';
+
+    const durationMs = 230;
+    const easing = 'cubic-bezier(0.22, 1, 0.36, 1)';
+    const transition = `transform ${durationMs}ms ${easing}`;
+
+    const setupSlidingFolder = (folder) => {
+        folder.style.display = 'flex';
+        folder.style.opacity = '1';
+        folder.style.position = 'absolute';
+        folder.style.inset = '0';
+        folder.style.width = '100%';
+        folder.style.transition = transition;
+        folder.style.willChange = 'transform';
+    };
+
+    setupSlidingFolder(previousFolder);
+    setupSlidingFolder(nextFolder);
+
+    previousFolder.style.transform = 'translateX(0)';
+    nextFolder.style.transform = `translateX(${slideDirection * 100}%)`;
+    layoutFolder = true;
+
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            previousFolder.style.transform = `translateX(${-slideDirection * 100}%)`;
+            nextFolder.style.transform = 'translateX(0)';
+            animate();
+        });
+    });
+
+    folderTransitionTimer = setTimeout(() => {
+        for (let folder of folders) {
+            if (folder.id === id) {
+                folder.style.display = 'flex';
+                folder.style.opacity = '1';
+                folder.style.transform = 'translateX(0)';
+            } else {
+                folder.style.display = 'none';
+            }
+            clearSlideStyles(folder);
+        }
+        folderTransitionTimer = null;
+    }, durationMs + 20);
 }
 
 function getThumbs(bookmarkUrl) {
