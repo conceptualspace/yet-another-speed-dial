@@ -484,7 +484,6 @@ function folderLink(title, id) {
 
     a.ondragenter = dragenterHandler;
     a.ondragleave = dragleaveHandler;
-    a.ondragover = (ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; };
 
     foldersContainer.appendChild(a);
 }

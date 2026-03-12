@@ -249,7 +249,6 @@ h1 {
 
 /* The specific folder title being hovered gets a brighter highlight */
 .folders-drag-active .folderTitle.drag-hover {
-    outline-color: white;
     background: rgba(255, 255, 255, 0.1);
 }
 
