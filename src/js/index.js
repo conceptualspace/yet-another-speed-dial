@@ -2688,6 +2688,8 @@ function dragenterHandler(ev) {
     const el = ev.currentTarget;
     if (!el.classList.contains("folderTitle")) return;
 
+    // expand all folder titles when any is entered
+    foldersContainer.closest('#foldersContainer').classList.add('folders-drag-active');
     el.classList.add("drag-hover");
 
     const folderId = el.getAttribute("folderid");
@@ -2706,7 +2708,13 @@ function dragleaveHandler(ev) {
     if (el.contains(ev.relatedTarget)) return;
 
     el.classList.remove("drag-hover");
-    clearTimeout(folderNavTimeout);
+
+    // only clear the nav timeout and container state if we're leaving the folder area entirely
+    // (not just moving to another folder title, whose dragenter already set a new timeout)
+    if (!foldersContainer.querySelector('.folderTitle.drag-hover')) {
+        clearTimeout(folderNavTimeout);
+        foldersContainer.closest('#foldersContainer').classList.remove('folders-drag-active');
+    }
 }
 
 // Sortable helper fns
@@ -2734,6 +2742,10 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
+    // clean up folder drag-hover state
+    document.getElementById('foldersContainer').classList.remove('folders-drag-active');
+    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+
     if (evt && evt.clone.href) {
         let id = evt.clone.dataset.id;
         let fromParentId = dewrap(evt.from.id);
