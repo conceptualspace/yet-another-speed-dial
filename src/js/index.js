@@ -764,6 +764,12 @@ async function printBookmarks(bookmarks, parentId) {
         bookmarksContainerParent.append(folderContainerEl);
     }
 
+    // Destroy any previous Sortable instance to avoid duplicate event handlers after refresh
+    let existingSortable = Sortable.get(folderContainerEl);
+    if (existingSortable) {
+        existingSortable.destroy();
+    }
+
     // Sortable configuration
     new Sortable(folderContainerEl, {
         group: 'shared',
