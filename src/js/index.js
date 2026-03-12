@@ -596,7 +596,7 @@ function refreshAllThumbnails() {
 
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
-function batchInsert(parent, fragment, batchSize = 50, onComplete) {
+function batchInsert(parent, fragment, batchSize = 100, onComplete) {
     const nodes = Array.from(fragment.childNodes);
     let index = 0;
 
@@ -798,7 +798,7 @@ async function printBookmarks(bookmarks, parentId) {
 
     // Optimize container update using batch insert
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
-    batchInsert(folderContainerEl, fragment, 50)
+    batchInsert(folderContainerEl, fragment)
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
