@@ -7,12 +7,14 @@
 // initialize Coloris color picker
 // outputs hex #RRGGBBAA
 Coloris({
-    theme: 'polaroid',
     themeMode: 'dark',
     alpha: true,
     forceAlpha: true,
     formatToggle: false,
-    showInput: false
+    showInput: false,
+    cancelButton: true,
+    closeButton: true,
+    closeLabel: 'OK',
 });
 
 // speed dial
