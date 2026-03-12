@@ -125,6 +125,7 @@ let resizing = false;
 let settings = null;
 let speedDialId = null;
 let sortable = null;
+let folderNavTimeout = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileTitle = null;
@@ -481,9 +482,9 @@ function folderLink(title, id) {
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
-    // todo: allow dropping directly on folder title?
     a.ondragenter = dragenterHandler;
     a.ondragleave = dragleaveHandler;
+    a.ondragover = (ev) => { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; };
 
     foldersContainer.appendChild(a);
 }
@@ -2683,38 +2684,29 @@ function importFromOldYASD(json) {
 
 // native handlers for folder tab target
 function dragenterHandler(ev) {
-    // temporary fix for firefox < v92
-    // firefox returns a text node instead of an element
-    if (ev.target.nodeType === 3) {
-        if (ev.target.parentElement.classList.contains("folderTitle")) {
-            // avoid repaints
-            if (currentFolder !== ev.target.parentElement.attributes.folderid.value) {
-                currentFolder = ev.target.parentElement.attributes.folderid.value;
-                showFolder(currentFolder)
-            }
-        }
-    }
-    else if (ev.target.classList.contains("folderTitle")) {
-        // avoid repaints
-        // todo replace style changes with class;
-        if (currentFolder !== ev.target.attributes.folderid.value) {
-            ev.target.style.padding = "20px";
-            ev.target.style.outline = "2px dashed white";
-            currentFolder = ev.target.attributes.folderid.value;
-            showFolder(currentFolder)
-        }
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    if (!el.classList.contains("folderTitle")) return;
+
+    el.classList.add("drag-hover");
+
+    const folderId = el.getAttribute("folderid");
+    if (currentFolder !== folderId) {
+        clearTimeout(folderNavTimeout);
+        folderNavTimeout = setTimeout(() => {
+            currentFolder = folderId;
+            showFolder(currentFolder);
+        }, 300);
     }
 }
 
 function dragleaveHandler(ev) {
-    // temporary fix for firefox < v92
-    if (ev.target.nodeType === 3) {
-        return
-    }
-    else if (ev.target.classList.contains("folderTitle")) {
-        ev.target.style.padding = "0";
-        ev.target.style.outline = "none";
-    }
+    const el = ev.currentTarget;
+    // ignore if still inside the element (entering a child node)
+    if (el.contains(ev.relatedTarget)) return;
+
+    el.classList.remove("drag-hover");
+    clearTimeout(folderNavTimeout);
 }
 
 // Sortable helper fns

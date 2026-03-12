@@ -231,12 +231,19 @@ h1 {
 .folderTitle {
     opacity: 0.85;
     font-weight: bold;
-    transition: padding 160ms ease, outline 160ms ease;
+    transition: padding 160ms ease, margin 160ms ease, outline 160ms ease;
     margin: 12px;
 }
 
 .folderTitle:hover {
     opacity: 1;
+}
+
+.folderTitle.drag-hover {
+    padding: 60px;
+    margin: 0;
+    outline: 2px dashed white;
+    border-radius: 12px;
 }
 
 .activeFolder {
