@@ -231,12 +231,25 @@ h1 {
 .folderTitle {
     opacity: 0.85;
     font-weight: bold;
-    transition: padding 160ms ease, outline 160ms ease;
+    transition: padding 160ms ease, margin 160ms ease, outline 160ms ease, background 160ms ease;
     margin: 12px;
 }
 
 .folderTitle:hover {
     opacity: 1;
+}
+
+/* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
+.folders-drag-active .folderTitle {
+    padding: var(--folder-drop-padding, 60px);
+    margin: 0;
+
+    border-radius: 12px;
+}
+
+/* The specific folder title being hovered gets a brighter highlight */
+.folders-drag-active .folderTitle.drag-hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 .activeFolder {
