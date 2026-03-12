@@ -4,6 +4,19 @@
 
 'use strict';
 
+// initialize Coloris color picker
+// outputs hex #RRGGBBAA
+Coloris({
+    themeMode: 'dark',
+    alpha: true,
+    forceAlpha: true,
+    formatToggle: false,
+    showInput: false,
+    cancelButton: true,
+    closeButton: true,
+    closeLabel: 'OK',
+});
+
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
@@ -154,6 +167,19 @@ let defaults = {
     dialRatio: 'wide',
     currentFolder: null,
 };
+
+// Create an invisible overlay to absorb outside clicks when Coloris is open
+const colorisOverlay = document.createElement('div');
+colorisOverlay.className = 'coloris-overlay';
+colorisOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;display:none;';
+document.body.appendChild(colorisOverlay);
+
+document.querySelectorAll('.settingsCtl[data-coloris]').forEach(picker => {
+    picker.addEventListener('open', () => colorisOverlay.style.display = 'block');
+    // Using a timeout so the overlay stays for the full click cycle (mouseup/click)
+    // before disappearing, absorbing the entire pointer interaction.
+    picker.addEventListener('close', () => setTimeout(() => colorisOverlay.style.display = 'none', 100));
+});
 
 const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
@@ -1155,20 +1181,29 @@ function getBgColor(img) {
 }
 
 function rgbToHex(rgbArray) {
-    // todo: support alpha value
-    // Convert RGB values to hex color
+    // Convert RGBA values to hex color (#RRGGBB or #RRGGBBAA)
     let r = Math.round(rgbArray[0]);
     let g = Math.round(rgbArray[1]);
     let b = Math.round(rgbArray[2]);
-    return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    let hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    // Append alpha if present and not fully opaque
+    if (rgbArray.length > 3) {
+        let a = rgbArray[3];
+        // alpha could be 0-1 float (from gradient) or 0-255 int
+        let alpha = a <= 1 ? Math.round(a * 255) : Math.round(a);
+        if (alpha < 255) {
+            hex += alpha.toString(16).padStart(2, '0');
+        }
+    }
+    return hex;
 }
 
 function hexToRgba(hex) {
-    // Convert hex color to RGBA values
+    // Convert hex color to RGBA values (supports #RRGGBB and #RRGGBBAA)
     let r = parseInt(hex.slice(1, 3), 16);
     let g = parseInt(hex.slice(3, 5), 16);
     let b = parseInt(hex.slice(5, 7), 16);
-    let a = 1; // Default alpha value
+    let a = hex.length === 9 ? parseInt(hex.slice(7, 9), 16) / 255 : 1;
     return [r, g, b, a];
 }
 
@@ -2067,13 +2102,13 @@ wallPaperEnabled.oninput = function (e) {
 
 color_picker.onchange = function () {
     color_picker_wrapper.style.backgroundColor = color_picker.value;
-    saveSettings()
+    saveSettings();
 };
 
 textColor_picker.onchange = function () {
     textColor_picker_wrapper.style.backgroundColor = textColor_picker.value;
     if (settings.textColor !== textColor_picker.value) {
-        saveSettings()
+        saveSettings();
     }
 };
 
@@ -2158,24 +2193,13 @@ fetchImageButton.addEventListener('click', function (event) {
     }
 });
 
-modalBgColorPickerBtn.addEventListener('click', function () {
-    // todo: support alpha
-    // eyedropper currently chrome on windows/mac only
-    if ('EyeDropper' in window) {
-        const eyeDropper = new EyeDropper();
-        eyeDropper.open().then(result => {
-            const color = result.sRGBHex;
-            setInputValue(modalBgColorPickerInput, color);
-        }).catch(error => {
-            console.log('Error opening color picker:', error);
-        });
-    } else {
-        document.getElementById('modalBgColorPickerInput').click();
-    }
+modalBgColorPickerBtn.addEventListener('click', function (e) {
+    if (e.target === modalBgColorPickerInput) return;
+    modalBgColorPickerInput.dispatchEvent(new Event('click', { bubbles: true }));
 });
 
 modalBgColorPickerInput.addEventListener('input', function () {
-    const color = this.value; // in hex
+    const color = this.value;
     // set the our button color to match
     modalBgColorPreview.style.fill = color;
 });
