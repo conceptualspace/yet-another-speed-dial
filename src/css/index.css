@@ -241,7 +241,7 @@ h1 {
 
 /* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
 .folders-drag-active .folderTitle {
-    padding: 60px;
+    padding: var(--folder-drop-padding, 60px);
     margin: 0;
 
     border-radius: 12px;

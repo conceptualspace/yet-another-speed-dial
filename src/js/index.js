@@ -1648,57 +1648,66 @@ function applySettings() {
         }
 
         if (settings.dialSize && settings.dialSize !== "large") {
-            let dialWidth, dialHeight, dialContentHeight, dialMargin;
+            let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
             switch (settings.dialSize) {
                 case "xx-large":
                     dialWidth = '300px';
                     dialHeight = settings.dialRatio === "square" ? '318px' : '189px';
                     dialContentHeight = settings.dialRatio === "square" ? '300px' : '171px';
                     dialMargin = '14px';
+                    folderDropPadding = '80px';
                     break;
                 case "x-large":
                     dialWidth = '256px';
                     dialHeight = settings.dialRatio === "square" ? '274px' : '162px';
                     dialContentHeight = settings.dialRatio === "square" ? '256px' : '144px';
                     dialMargin = '14px';
+                    folderDropPadding = '70px';
                     break;
                 case "medium":
                     dialWidth = '178px';
                     dialHeight = settings.dialRatio === "square" ? '196px' : '118px';
                     dialContentHeight = settings.dialRatio === "square" ? '178px' : '100px';
                     dialMargin = '14px';
+                    folderDropPadding = '45px';
                     break;
                 case "small":
                     dialWidth = '130px';
                     dialHeight = settings.dialRatio === "square" ? '148px' : '91px';
                     dialContentHeight = settings.dialRatio === "square" ? '130px' : '73px';
                     dialMargin = '14px';
+                    folderDropPadding = '35px';
                     break;
                 case "x-small":
                     dialWidth = '100px';
                     dialHeight = settings.dialRatio === "square" ? '118px' : '74px';
                     dialContentHeight = settings.dialRatio === "square" ? '100px' : '56px';
                     dialMargin = '12px';
+                    folderDropPadding = '25px';
                     break;
                 case "xx-small":
                     dialWidth = '80px';
                     dialHeight = settings.dialRatio === "square" ? '98px' : '63px';
                     dialContentHeight = settings.dialRatio === "square" ? '80px' : '45px';
                     dialMargin = '8px';
+                    folderDropPadding = '20px';
                     break;
                 default:
                     dialWidth = '220px';
                     dialHeight = settings.dialRatio === "square" ? '238px' : '142px';
                     dialContentHeight = settings.dialRatio === "square" ? '220px' : '124px';
                     dialMargin = '14px';
+                    folderDropPadding = '60px';
             }
             document.documentElement.style.setProperty('--dial-width', dialWidth);
             document.documentElement.style.setProperty('--dial-height', dialHeight);
             document.documentElement.style.setProperty('--dial-content-height', dialContentHeight);
             document.documentElement.style.setProperty('--dial-margin', dialMargin);
+            document.documentElement.style.setProperty('--folder-drop-padding', folderDropPadding);
         } else {
             document.documentElement.style.setProperty('--dial-width', '220px');
             document.documentElement.style.setProperty('--dial-margin', '14px');
+            document.documentElement.style.setProperty('--folder-drop-padding', '60px');
             if (settings.dialRatio === "square") {
                 document.documentElement.style.setProperty('--dial-height', '238px');
                 document.documentElement.style.setProperty('--dial-content-height', '220px');
