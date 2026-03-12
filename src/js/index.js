@@ -1443,6 +1443,7 @@ const animate = debounce(() => {
     for (let i = 0; i < total; i++) {
         boxes[i] = nodePositions[i];
     }
+    boxes.length = total;
 
     layout();
 
