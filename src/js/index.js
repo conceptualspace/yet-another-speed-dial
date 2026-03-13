@@ -1405,12 +1405,12 @@ function animate(force = false) {
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.6;
             if (duration === 0) {
-                gsap.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
+                gsap.set(nodesToAnimate, { x: 0, y: 0 });
             } else {
                 if (nodesToAnimate.length < 150) {
                     gsap.to(nodesToAnimate, { duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease });
                 } else {
-                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, force3D: true, ease });
+                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, ease });
                 }
             }
         }
@@ -1440,7 +1440,6 @@ const layout = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    gsap.set(nodes, { x: "+=0" }); // force GSAP to track transforms
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
