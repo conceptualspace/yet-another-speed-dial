@@ -1365,6 +1365,14 @@ function saveBookmarkSettings() {
 }
 
 // todo: why did i debounce layout but not animate? (because we want tiles to move immediately as manually resizing window)
+/*
+animate now only does GSAP setup for tiles near the visible viewport, 
+with a large overscan window so resize still feels natural while avoiding tween work on 
+hundreds of distant nodes. Offscreen tiles still reflow to their final positions immediately,
+ so there’s no stale placeholder state to manage. In index.css:271, tiles now use
+  content-visibility: auto, which lets Chromium skip painting and layout work for tile
+   contents that are far offscreen.
+*/
 function animate(force = false) {
     if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
