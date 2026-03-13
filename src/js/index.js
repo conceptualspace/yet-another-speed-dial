@@ -1372,6 +1372,10 @@ function animate(force = false) {
 
         let nodesToAnimate = [];
         let positions = [];
+        const overscan = Math.max(bookmarksContainerParent.clientHeight, 1200);
+        const viewportTop = bookmarksContainerParent.scrollTop - overscan;
+        const viewportBottom = bookmarksContainerParent.scrollTop + bookmarksContainerParent.clientHeight + overscan;
+        const activeContainerTop = boxes[0]?.node?.offsetParent?.offsetTop || 0;
 
         // avoid layout thrashing
         // batch reads
@@ -1381,6 +1385,7 @@ function animate(force = false) {
                 node: box.node,
                 x: box.node.offsetLeft,
                 y: box.node.offsetTop,
+                height: box.node.offsetHeight,
                 lastX: box.x,
                 lastY: box.y
             };
@@ -1389,7 +1394,17 @@ function animate(force = false) {
         // batch writes
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
-            if (box.lastX !== box.x || box.lastY !== box.y || force) {
+            const currentTop = activeContainerTop + box.y;
+            const lastTop = activeContainerTop + box.lastY;
+            const isNearViewport = force || layoutFolder || (
+                currentTop <= viewportBottom &&
+                currentTop >= viewportTop - box.height
+            ) || (
+                lastTop <= viewportBottom &&
+                lastTop >= viewportTop - box.height
+            );
+
+            if ((box.lastX !== box.x || box.lastY !== box.y || force) && isNearViewport) {
                 gsap.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
                 const getter = gsap.getProperty(box.node);
                 const x = getter("x") + box.lastX - box.x;
