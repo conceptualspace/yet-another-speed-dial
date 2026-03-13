@@ -1390,10 +1390,10 @@ function animate(force = false) {
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
-                const x = boxes[i].transform.x + box.lastX - box.x;
-                const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
+                gsap.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
+                const x = gsap.getProperty(box.node, "x") + box.lastX - box.x;
+                const y = gsap.getProperty(box.node, "y") + box.lastY - box.y;
+                gsap.set(box.node, { x, y });
                 nodesToAnimate.push(box.node);
             }
             boxes[i].x = box.x;
@@ -1405,12 +1405,12 @@ function animate(force = false) {
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.6;
             if (duration === 0) {
-                TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
+                gsap.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
                 if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease });
                 } else {
-                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, force3D: true, ease });
                 }
             }
         }
@@ -1440,14 +1440,13 @@ const layout = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
+    gsap.set(nodes, { x: "+=0" }); // force GSAP to track transforms
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         nodePositions.push({
             node,
-            transform: node._gsTransform,
             x: node.offsetLeft,
             y: node.offsetTop
         });
@@ -2426,19 +2425,21 @@ function filterDials(searchTerm) {
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
             // Fade-in and scale-up for matching thumbnails
-            TweenMax.to(dial, 0.3, { 
+            gsap.to(dial, { 
+                duration: 0.3, 
                 opacity: 1, 
                 scale: 1, 
                 display: 'block', 
-                ease: Power2.easeOut 
+                ease: 'power2.out' 
             });
         } else {
             // Fade-out and scale-down for non-matching thumbnails
-            TweenMax.to(dial, 0.3, { 
+            gsap.to(dial, { 
+                duration: 0.3, 
                 opacity: 0, 
                 scale: 0.8, 
                 display: 'none', 
-                ease: Power2.easeIn 
+                ease: 'power2.in' 
             });
         }
     });
