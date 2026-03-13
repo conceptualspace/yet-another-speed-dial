@@ -1371,6 +1371,7 @@ function animate(force = false) {
         containerSize = getComputedStyle(bookmarksContainer).maxWidth;
 
         let nodesToAnimate = [];
+        let offsets = new Map();
         let positions = [];
 
         // avoid layout thrashing
@@ -1386,15 +1387,15 @@ function animate(force = false) {
             };
         }
 
-        // batch writes
+        // calculate offsets
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                gsap.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
                 const getter = gsap.getProperty(box.node);
-                const x = getter("x") + box.lastX - box.x;
-                const y = getter("y") + box.lastY - box.y;
-                gsap.set(box.node, { x, y });
+                offsets.set(box.node, {
+                    x: getter("x") + box.lastX - box.x,
+                    y: getter("y") + box.lastY - box.y
+                });
                 nodesToAnimate.push(box.node);
             }
             boxes[i].x = box.x;
@@ -1406,8 +1407,14 @@ function animate(force = false) {
         if (nodesToAnimate.length > 0 || force) {
             let duration = layoutFolder ? 0 : 0.6;
             if (duration === 0) {
-                gsap.set(nodesToAnimate, { x: 0, y: 0 });
+                gsap.set(nodesToAnimate, { x: 0, y: 0, overwrite: true });
             } else {
+                // batch set offsets in one call using function-based values; overwrite kills existing tweens
+                gsap.set(nodesToAnimate, {
+                    overwrite: true,
+                    x: (i, target) => offsets.get(target)?.x || 0,
+                    y: (i, target) => offsets.get(target)?.y || 0,
+                });
                 if (nodesToAnimate.length < 150) {
                     gsap.to(nodesToAnimate, { duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease });
                 } else {
