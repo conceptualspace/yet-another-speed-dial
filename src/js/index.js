@@ -1364,6 +1364,9 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
+// track current gsap transform per node so we never need gsap.getProperty()
+const gsapTransforms = new WeakMap();
+
 // todo: why did i debounce layout but not animate? (because we want tiles to move immediately as manually resizing window)
 function animate(force = false) {
     if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
@@ -1387,15 +1390,14 @@ function animate(force = false) {
             };
         }
 
-        // calculate offsets
+        // calculate offsets using tracked gsap x/y instead of gsap.getProperty()
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                const getter = gsap.getProperty(box.node);
-                offsets.set(box.node, {
-                    x: getter("x") + box.lastX - box.x,
-                    y: getter("y") + box.lastY - box.y
-                });
+                let tracked = gsapTransforms.get(box.node) || { x: 0, y: 0 };
+                let ox = tracked.x + box.lastX - box.x;
+                let oy = tracked.y + box.lastY - box.y;
+                offsets.set(box.node, { x: ox, y: oy });
                 nodesToAnimate.push(box.node);
             }
             boxes[i].x = box.x;
@@ -1408,6 +1410,7 @@ function animate(force = false) {
             let duration = layoutFolder ? 0 : 0.6;
             if (duration === 0) {
                 gsap.set(nodesToAnimate, { x: 0, y: 0, overwrite: true });
+                for (let node of nodesToAnimate) gsapTransforms.set(node, { x: 0, y: 0 });
             } else {
                 // batch set offsets in one call using function-based values; overwrite kills existing tweens
                 gsap.set(nodesToAnimate, {
@@ -1415,10 +1418,19 @@ function animate(force = false) {
                     x: (i, target) => offsets.get(target)?.x || 0,
                     y: (i, target) => offsets.get(target)?.y || 0,
                 });
+                // track the offsets we just set
+                for (let node of nodesToAnimate) {
+                    let o = offsets.get(node);
+                    gsapTransforms.set(node, { x: o?.x || 0, y: o?.y || 0 });
+                }
                 if (nodesToAnimate.length < 150) {
-                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, force3D: true, stagger: { amount: 0.2 }, ease,
+                        onComplete: () => { for (let node of nodesToAnimate) gsapTransforms.set(node, { x: 0, y: 0 }); }
+                    });
                 } else {
-                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, ease });
+                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, force3D: true, ease,
+                        onComplete: () => { for (let node of nodesToAnimate) gsapTransforms.set(node, { x: 0, y: 0 }); }
+                    });
                 }
             }
         }
@@ -1427,15 +1439,24 @@ function animate(force = false) {
     }
 }
 
-function ease(progress) {
+// pre-computed ease lookup table (256 samples) to avoid trig per node per frame
+const easeTable = new Float32Array(256);
+(function buildEaseTable() {
     const omega = 12;
     const zeta = 0.8;
     const beta = Math.sqrt(1.0 - zeta * zeta);
-    progress = 1 - Math.cos(progress * Math.PI / 2);
-    progress = 1 / beta *
-        Math.exp(-zeta * omega * progress) *
-        Math.sin(beta * omega * progress + Math.atan(beta / zeta));
-    return 1 - progress;
+    const atanBZ = Math.atan(beta / zeta);
+    for (let i = 0; i < 256; i++) {
+        let p = i / 255;
+        p = 1 - Math.cos(p * Math.PI / 2);
+        p = 1 / beta * Math.exp(-zeta * omega * p) * Math.sin(beta * omega * p + atanBZ);
+        easeTable[i] = 1 - p;
+    }
+})();
+
+function ease(progress) {
+    const i = (progress * 255) | 0;
+    return easeTable[i > 255 ? 255 : i];
 }
 
 const layout = debounce(() => {
