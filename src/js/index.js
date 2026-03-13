@@ -763,6 +763,7 @@ async function printBookmarks(bookmarks, parentId) {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     folderContainerEl.style.opacity = "1";
+                    animate();
                 });
             });
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
