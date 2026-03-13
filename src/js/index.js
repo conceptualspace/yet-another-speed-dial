@@ -1391,8 +1391,9 @@ function animate(force = false) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
                 gsap.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
-                const x = gsap.getProperty(box.node, "x") + box.lastX - box.x;
-                const y = gsap.getProperty(box.node, "y") + box.lastY - box.y;
+                const getter = gsap.getProperty(box.node);
+                const x = getter("x") + box.lastX - box.x;
+                const y = getter("y") + box.lastY - box.y;
                 gsap.set(box.node, { x, y });
                 nodesToAnimate.push(box.node);
             }
