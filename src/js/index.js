@@ -318,7 +318,7 @@ function removeBookmark(url) {
     let id = targetNode.dataset.id;
     // animate removal
     targetNode.style.display = "none";
-    layout(true);
+    animate(true);
     // remove dial
     targetNode.remove();
     // nb: cache cleanup is handled by handleBookmarkRemoved in background script
@@ -432,7 +432,7 @@ function showFolder(id) {
                 // ...and apply the transition state in the next frame
                 requestAnimationFrame(() => {
                     folder.style.opacity = "1";
-                    animate();
+                    layout();
                 });
             });
         } else {
@@ -632,7 +632,7 @@ async function printNewSetup() {
         if (currentFolder === speedDialId) {
             setTimeout(() => {
                 folderContainerEl.style.opacity = "1";
-                animate();
+                layout();
             }, 20);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
         }
@@ -763,7 +763,7 @@ async function printBookmarks(bookmarks, parentId) {
             requestAnimationFrame(() => {
                 requestAnimationFrame(() => {
                     folderContainerEl.style.opacity = "1";
-                    animate();
+                    layout();
                 });
             });
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
@@ -1364,8 +1364,8 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-// todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-function layout(force = false) {
+// todo: why did i debounce layout but not animate? (because we want tiles to move immediately as manually resizing window)
+function animate(force = false) {
     if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
         containerSize = getComputedStyle(bookmarksContainer).maxWidth;
@@ -1430,7 +1430,7 @@ function ease(progress) {
     return 1 - progress;
 }
 
-const animate = debounce(() => {
+const layout = debounce(() => {
     requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
     let currentParent;
     if (currentFolder) {
@@ -1458,7 +1458,7 @@ const animate = debounce(() => {
     }
     boxes.length = total;
 
-    layout();
+    animate();
 
     });
 }, 300)
@@ -1654,10 +1654,10 @@ function applySettings() {
         
             const containerWidth = settings.maxCols * (dialWidth + dialMargin);
             document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
-            layout();
+            animate();
         } else {
             document.documentElement.style.setProperty('--columns', '100%');
-            layout();
+            animate();
         }
 
         if (settings.dialSize && settings.dialSize !== "large") {
@@ -2444,7 +2444,7 @@ function filterDials(searchTerm) {
     });
 
     // Recalculate layout after filtering
-    animate();
+    layout();
 }
 
 
@@ -2857,7 +2857,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         //getBookmarks(speedDialId)
         buildDialPages(speedDialId, currentFolder).then(() => {
             // rebuild boxes[] with the new dom nodes for the layout animations
-            animate();
+            layout();
         });
     }
 }, 650, true);
@@ -3023,7 +3023,7 @@ function handleMessages(message) {
 function onResize() {
     if (!resizing) {
         requestAnimationFrame(() => {
-            layout();
+            animate();
             resizing = false;
         });
         resizing = true;
