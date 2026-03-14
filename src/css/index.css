@@ -192,7 +192,7 @@ h1 {
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 0 100px 80px 100px;
+    padding: 0 100px;
     color: #ffffff;
     width: 100%;
     z-index: 0;
@@ -698,6 +698,12 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     justify-content: space-between;
     align-items: start;
     gap: 20px;
+}
+
+/* When no folder links are present, add bottom padding to tileContainer to counterbalance
+   the header, so tile content appears visually page-centered */
+body:not(:has(.folderTitle)) #tileContainer {
+    padding-bottom: 82px; /* Match foldersContainer height: 20px padding + 42px controls + 20px padding */
 }
 
 .folders-content {
