@@ -1364,103 +1364,77 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-// todo: why did i debounce layout but not animate? (because we want tiles to move immediately as manually resizing window)
-function animate(force = false) {
-    if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
-        windowSize = window.innerWidth;
-        containerSize = getComputedStyle(bookmarksContainer).maxWidth;
+// 1. Register the plugins
+gsap.registerPlugin(Flip, CustomEase);
 
-        let nodesToAnimate = [];
-        let positions = [];
-
-        // avoid layout thrashing
-        // batch reads
-        for (let i = 0; i < boxes.length; i++) {
-            let box = boxes[i];
-            positions[i] = { 
-                node: box.node,
-                x: box.node.offsetLeft,
-                y: box.node.offsetTop,
-                lastX: box.x,
-                lastY: box.y
-            };
-        }
-
-        // batch writes
-        for (let i = 0; i < boxes.length; i++) {
-            let box = positions[i];
-            if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                gsap.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
-                const getter = gsap.getProperty(box.node);
-                const x = getter("x") + box.lastX - box.x;
-                const y = getter("y") + box.lastY - box.y;
-                gsap.set(box.node, { x, y });
-                nodesToAnimate.push(box.node);
-            }
-            boxes[i].x = box.x;
-            boxes[i].y = box.y;
-        }
-
-        // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
-        // a resize occurs the animation will start from the right position
-        if (nodesToAnimate.length > 0 || force) {
-            let duration = layoutFolder ? 0 : 0.6;
-            if (duration === 0) {
-                gsap.set(nodesToAnimate, { x: 0, y: 0 });
-            } else {
-                if (nodesToAnimate.length < 150) {
-                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, stagger: { amount: 0.2 }, ease });
-                } else {
-                    gsap.to(nodesToAnimate, { duration, x: 0, y: 0, ease });
-                }
-            }
-        }
-
-        layoutFolder = false;
-    }
-}
-
-function ease(progress) {
+function myCustomEase(progress) {
     const omega = 12;
     const zeta = 0.8;
     const beta = Math.sqrt(1.0 - zeta * zeta);
-    progress = 1 - Math.cos(progress * Math.PI / 2);
-    progress = 1 / beta *
-        Math.exp(-zeta * omega * progress) *
-        Math.sin(beta * omega * progress + Math.atan(beta / zeta));
-    return 1 - progress;
+    let p = 1 - Math.cos(progress * Math.PI / 2);
+    p = 1 / beta * Math.exp(-zeta * omega * p) * Math.sin(beta * omega * p + Math.atan(beta / zeta));
+    return 1 - p;
 }
 
-const layout = debounce(() => {
-    requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
-    let currentParent;
-    if (currentFolder) {
-        currentParent = currentFolder
+// Helper to convert your math into a GSAP-readable string
+function bakeEase(func, precision = 50) {
+    let path = "M0,0";
+    for (let i = 1; i <= precision; i++) {
+        let p = i / precision;
+        path += ` L${p.toFixed(3)},${func(p).toFixed(3)}`;
     }
+    return path;
+}
+
+// Create the ease using the baked path string
+CustomEase.create("myEase", bakeEase(myCustomEase));
+
+// Cache the last known layout state
+let lastLayoutState = null; 
+
+// 3. Helper to capture state (Call this on initial load, or when folders open/close)
+function captureLayoutState() {
+    const currentParent = currentFolder || "default-folder-id"; // fallback if currentFolder is undefined
     const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
-    const total = nodes.length;
+    if (nodes.length) {
+        lastLayoutState = Flip.getState(nodes);
+    }
+}
+
+// 4. The debounced layout & animation function
+const animate = debounce(() => {
+    const currentParent = currentFolder || "default-folder-id";
+    const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
     if (!nodes.length) return;
 
-    const nodePositions = [];
-    for (let i = 0; i < total; i++) {
-        let node = nodes[i];
-        nodePositions.push({
-            node,
-            x: node.offsetLeft,
-            y: node.offsetTop
-        });
+    // If we don't have a starting state yet, capture it and skip animating
+    if (!lastLayoutState) {
+        lastLayoutState = Flip.getState(nodes);
+        return;
     }
 
-    for (let i = 0; i < total; i++) {
-        boxes[i] = nodePositions[i];
-    }
-    boxes.length = total;
+    const duration = layoutFolder ? 0 : 0.6;
+    const staggerAmount = nodes.length < 150 ? 0.2 : 0;
 
-    animate();
-
+    // 5. Let GSAP Flip handle the heavy lifting
+    Flip.from(lastLayoutState, {
+        targets: nodes,
+        duration: duration,
+        ease: "myEase",
+        stagger: staggerAmount ? { amount: staggerAmount } : 0,
+        absolute: true, // CRITICAL FOR FPS: Pulls elements out of document flow during animation to prevent layout thrashing
+        onComplete: () => {
+            // Update our cached state for the next resize event
+            captureLayoutState();
+        }
     });
-}, 300)
+
+    layoutFolder = false;
+}, 300);
+
+// Example: Make sure to capture the initial state when the app loads
+// captureLayoutState();
 
 function readURL(input) {
     if (input.files && input.files[0]) {
