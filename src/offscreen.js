@@ -105,6 +105,23 @@ function colorsAreSimilar(color1, color2, tolerance = 2) {
            Math.abs(color1[3] - color2[3]) <= tolerance;
 }
 
+async function fetchImageAsDataURI(imageUrl) {
+    if (imageUrl.startsWith('data:')) return imageUrl;
+    try {
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error('Fetch failed');
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (err) {
+        return null;
+    }
+}
+
 function getBgColor(image) {
     // todo: ensure this is performant
     // todo: ensure our similar color counting is accurate, same as index
@@ -238,7 +255,7 @@ function getBgColor(image) {
     });
 }
 
-function resizeImage(image, screenshot = false) {
+function resizeImage(image, screenshot = false, isFallback = false) {
     return new Promise((resolve, reject) => {
         if (!image || !image.length) {
             return resolve();
@@ -258,8 +275,14 @@ function resizeImage(image, screenshot = false) {
         if (image.endsWith('.svg')) {
             const img = new Image();
             
-            img.onerror = (event) => {
-                //console.error(`[resizeImage] SVG load error:`, event);
+            img.onerror = async (event) => {
+                if (!isFallback && !image.startsWith('data:')) {
+                    const dataUri = await fetchImageAsDataURI(image).catch(() => null);
+                    if (dataUri) {
+                        const result = await resizeImage(dataUri, screenshot, true);
+                        return resolve(result);
+                    }
+                }
                 resolve();
             };
             
@@ -288,7 +311,14 @@ function resizeImage(image, screenshot = false) {
 
         const img = new Image();
 
-        img.onerror = (event) => {
+        img.onerror = async (event) => {
+            if (!isFallback && !image.startsWith('data:')) {
+                const dataUri = await fetchImageAsDataURI(image).catch(() => null);
+                if (dataUri) {
+                    const result = await resizeImage(dataUri, screenshot, true);
+                    return resolve(result);
+                }
+            }
             resolve();
         };
 
