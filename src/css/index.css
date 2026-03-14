@@ -726,7 +726,8 @@ body:not(:has(.folderTitle)) #tileContainer {
 #addFolderButton {
     display: var(--show-folders);
     line-height: 1;
-    margin: 12px;
+    padding: 4px;
+    margin: 8px;
 }
 
 #addFolderButton:hover {
