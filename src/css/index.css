@@ -87,20 +87,30 @@ body {
 }
 
 .gradientBackground {
+    position: relative;
+    overflow: hidden;
+}
+
+.gradientBackground::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    width: 200%;
+    height: 100%;
     background: linear-gradient(135deg, #0fd7fc 0%, #00a7d1 20%, #4a8bfc 40%, #4a8bfc 60%, #00a7d1 80%, #0fd7fc 100%);
-    background-size: 200% 200%;
     animation: gradient 30s ease-in-out infinite;
+    z-index: -1;
 }
 
 @keyframes gradient {
     0% {
-        background-position: 0% 50%;
+        transform: translateX(0);
     }
     50% {
-        background-position: 100% 50%;
+        transform: translateX(-50%);
     }
     100% {
-        background-position: 0% 50%;
+        transform: translateX(0);
     }
 }
 
