@@ -1410,8 +1410,18 @@ function layout(force = false) {
             } else {
                 if (nodesToAnimate.length < 150) {
                     TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
-                } else {
+                } else if (nodesToAnimate.length < 300) {
                     TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
+                } else {
+                    // for large numbers of tiles, animating all of them at once causes significant jank, so we animate in batches to allow the UI to update between batches
+                    let batchSize = 100;
+                    duration = duration / Math.ceil(nodesToAnimate.length / batchSize); // keep total duration consistent regardless of batch size
+                    for (let i = 0; i < nodesToAnimate.length; i += batchSize) {
+                        let batch = nodesToAnimate.slice(i, i + batchSize);
+                        requestIdleCallback(() => {
+                            TweenMax.to(batch, duration, { x: 0, y: 0, force3D: true, ease });
+                        });
+                    }
                 }
             }
         }
