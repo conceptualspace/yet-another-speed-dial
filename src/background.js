@@ -380,10 +380,11 @@ async function handleInstalled(details) {
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // todo: detect existing speed dial folder
     } else if (details.reason === 'update') {
-        if (isPreviousVersion(details.previousVersion, '3.11')) {
-            // perform any migrations here...
-            await migrateDialSizes();
+        // perform any migrations here...
+        await runMigrations(details.previousVersion);
 
+        // manually specify the version to show release notes for
+        if (isPreviousVersion(details.previousVersion, '3.12.3')) {
             // Check if user wants to see release notes
             try {
                 const result = await chrome.storage.sync.get('showReleaseNotes');
@@ -421,6 +422,12 @@ async function handleInstalled(details) {
 
 
 // MIGRATION FUNCTIONS //
+
+async function runMigrations(previousVersion) {
+    if (isPreviousVersion(previousVersion, '3.11')) {
+        await migrateDialSizes();
+    }
+}
 
 async function migrateDialSizes() {
     try {
