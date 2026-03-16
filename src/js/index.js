@@ -531,7 +531,10 @@ function refreshThumbnails(url, tileid) {
     let id = tileid.split("-")[1];
 
     showToast(' Capturing images...')
-    chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
+    // gives the ui time to animate before blocking the process with the bg work
+    setTimeout(() => {
+        chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
+    }, 200);
 }
 
 function removeFolder() {
@@ -581,8 +584,11 @@ function refreshAllThumbnails() {
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
-            chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
             showToast(' Capturing images...')
+            // gives the ui time to animate before blocking the process with the bg work
+            setTimeout(() => {
+                chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
+            }, 200);
         }
     }).catch(err => {
         console.log(err);
