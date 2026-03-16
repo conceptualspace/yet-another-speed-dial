@@ -923,8 +923,18 @@ body:not(:has(.folderTitle)) #tileContainer {
     z-index: 2;
 }
 
+@keyframes toast-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 #toast svg {
     vertical-align: middle;
+}
+
+#toast.visible svg path {
+    transform-origin: 25px 25px;
+    animation: toast-spin 0.8s linear infinite;
 }
 
 #toast svg path, svg rect{

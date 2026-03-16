@@ -874,6 +874,7 @@ function modalShowEffect(contentEl, modalEl) {
 function hideToast() {
     if (isToastVisible) {
         toast.style.transform = "translateX(100%)";
+        toast.classList.remove('visible');
         toastContent.innerText = '';
         isToastVisible = false;
     }
@@ -882,6 +883,7 @@ function hideToast() {
 function showToast(message) {
     if (!isToastVisible) {
         toastContent.innerText = message;
+        toast.classList.add('visible');
         toast.style.transform = "translateX(0%)";
         isToastVisible = true;
     }
