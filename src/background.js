@@ -41,9 +41,6 @@ async function handleMessages(message) {
 		case 'refreshAllThumbs':
 			handleRefreshAll(message.data);
 			break;
-		case 'saveThumbnails':
-			handleOffscreenFetchDone(message.data, message.forcePageReload);
-			break;
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
@@ -200,11 +197,6 @@ function toggleBookmarkCreatedListener(data) {
     }
 }
 
-async function handleOffscreenFetchDone(data, forcePageReload) {
-	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
-}
-
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(data.url);
@@ -213,16 +205,20 @@ async function handleManualRefresh(data) {
 }
 
 const capturePopupScreenshot = (url) => {
-  
-  return new Promise((resolve, reject) => {
+  // firefox: use tabs.captureTab to grab any tab regardless of visibility, and
+  // place the popup window off-screen so it never disrupts the user. unlike
+  // 'minimized', a normal-state offscreen window keeps rendering so the page
+  // actually paints before capture.
+
+  return new Promise((resolve) => {
     let finished = false;
     chrome.windows.create({
         url: url,
         focused: false,
-        width: 1,
-        height: 1,
-        left: 0,
-        top: 0,
+        width: 1280,
+        height: 720,
+        left: -2000,
+        top: -2000,
         type: 'popup'
       }).then((popup) => {
         if (!popup.tabs || !popup.tabs.length) {
@@ -232,42 +228,25 @@ const capturePopupScreenshot = (url) => {
 
         const tabId = popup.tabs[0].id
         let loadingInterval;
-        let hasScreenshot = false;
 
         const cleanup = (result = null) => {
             if (finished) return;
             finished = true;
 
             clearInterval(loadingInterval);
-            clearTimeout(focusTimeout);
             clearTimeout(timeout);
 
             chrome.windows.remove(popup.id).catch(() => {});
             resolve(result);
         };
-        
+
         chrome.tabs.update(tabId, {
-          muted: true,
-          active: true
-        })
-        chrome.windows.update(popup.id, {
-          focused: false,
-          width: 1280,
-          height: 720,
-          left: 0,
-          top: 0
+          muted: true
         })
 
         const timeout = setTimeout(() => {
           cleanup();
         }, 10000)
-
-        // Focus window after 5s if we don't have a screenshot yet
-        const focusTimeout = setTimeout(() => {
-          if (!hasScreenshot && !finished) {
-            chrome.windows.update(popup.id, { focused: true });
-          }
-        }, 5000);
 
         loadingInterval = setInterval(() => {
           chrome.tabs.get(tabId).then((tab) => {
@@ -276,9 +255,8 @@ const capturePopupScreenshot = (url) => {
               setTimeout(() => {
                 // delay to let page render
                 chrome.tabs
-                  .captureVisibleTab(popup.id)
+                  .captureTab(tabId)
                   .then((screenshot) => {
-                    hasScreenshot = true;
                     cleanup(screenshot);
                   })
                   .catch(() => {
@@ -485,20 +463,16 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         }
     }
 
-	// cant parse images from dom in service worker: delegate to offscreen document
-	await setupOffscreenDocument('offscreen.html');
-
-	chrome.runtime.sendMessage({
-		target: 'offscreen',
-		data: {
-            url,
-			id,
-			parentId,
-            screenshot,
-			quickRefresh: options.quickRefresh,
-			forcePageReload: options.forcePageReload,
-        }
+	// parse images from dom directly in the background page (firefox MV3)
+	const { thumbs, bgColor } = await processThumbnails({
+		url,
+		id,
+		parentId,
+		screenshot,
+		quickRefresh: options.quickRefresh,
 	});
+
+	await saveThumbnails(url, id, parentId, thumbs, bgColor, options.forcePageReload);
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
@@ -567,31 +541,669 @@ function isOpera() {
     return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
 }
 
-// offscreen document setup
-let creating; // A global promise to avoid concurrency issues
-async function setupOffscreenDocument(path) {
-  // Check all windows controlled by the service worker to see if one
-  // of them is the offscreen document with the given path
-  const offscreenUrl = chrome.runtime.getURL(path);
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-    documentUrls: [offscreenUrl]
-  });
 
-  if (existingContexts.length > 0) {
-    return;
-  }
+// THUMBNAIL PROCESSING (inlined from offscreen.js for firefox MV3) //
 
-  // create offscreen document
-  if (creating) {
-    await creating;
-  } else {
-    creating = chrome.offscreen.createDocument({
-      url: path,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'parse document for image tags to use as thumbnail'
+const imageRatio = 1.54;
+
+function offscreenCanvasShim(w=1, h=1) {
+    try {
+        return new OffscreenCanvas(w, h);
+    } catch (err) {
+        // offscreencanvas not supported in ff
+        let canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        return canvas;
+    }
+}
+
+async function processThumbnails({ url, id, parentId, screenshot, quickRefresh }) {
+    let resizedImages = [];
+    let thumbs = [];
+    let bgColor = null;
+
+    let images = await fetchImages(url, quickRefresh).catch(err => {
+        console.log(err);
     });
-    await creating;
-    creating = null;
-  }
+
+    if (images && images.length) {
+        resizedImages = await Promise.all(images.map(async (image) => {
+            const result = await resizeImage(image).catch(err => {
+                console.log(err);
+            });
+            return result;
+        }));
+    }
+
+    let processedScreenshot = null;
+    if (screenshot) {
+        // screenshot is handled separately to remove scrollbars
+        processedScreenshot = await resizeImage(screenshot, true).catch(err => {
+            console.log(err);
+        });
+    }
+
+    if (resizedImages && resizedImages.length) {
+        // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
+        const maxWebpageImages = processedScreenshot ? 5 : 6;
+        thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
+
+        // Always add the screenshot as the last image if available
+        if (processedScreenshot) {
+            thumbs.push(processedScreenshot);
+        }
+    } else if (processedScreenshot) {
+        // No webpage images, but we have a screenshot
+        thumbs = [processedScreenshot];
+    }
+
+    if (thumbs.length) {
+        bgColor = await getBgColor(thumbs[0]);
+    }
+
+    return { thumbs, bgColor };
+}
+
+function convertUrlToAbsolute(origin, path) {
+    if (path.indexOf('://') > 0) {
+        return path
+    } else if (path.indexOf('//') === 0) {
+        return 'https:' + path;
+    } else {
+        let url = new URL(origin);
+        if (path.slice(0,1) === "/") {
+            return url.origin + path;
+        } else {
+            if (url.pathname.slice(-1) !== "/") {
+                url.pathname = url.pathname + "/";
+            }
+            return new URL(path, origin).href;
+        }
+    }
+}
+
+function colorsAreSimilar(color1, color2, tolerance = 2) {
+    return Math.abs(color1[0] - color2[0]) <= tolerance &&
+           Math.abs(color1[1] - color2[1]) <= tolerance &&
+           Math.abs(color1[2] - color2[2]) <= tolerance &&
+           Math.abs(color1[3] - color2[3]) <= tolerance;
+}
+
+async function fetchImageAsDataURI(imageUrl) {
+    if (imageUrl.startsWith('data:')) return imageUrl;
+    try {
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error('Fetch failed');
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (err) {
+        return null;
+    }
+}
+
+function getBgColor(image) {
+    // todo: ensure this is performant
+    // todo: ensure our similar color counting is accurate, same as index
+    return new Promise(function(resolve, reject) {
+        let img = new Image();
+        img.onload = function () {
+            let imgWidth = img.naturalWidth;
+            let imgHeight = img.naturalHeight;
+            let canvas = offscreenCanvasShim(imgWidth, imgHeight);
+            let context = canvas.getContext('2d', {willReadFrequently:true});
+            context.drawImage(img, 0, 0);
+
+            let totalPixels = 0;
+            let avgColor = [0, 0, 0, 0];
+            let colorCounts = [];
+            let hasTransparentPixel = false;
+
+            // background color algorithm
+            // think the results are best when sampling 2 pixels deep from the edges
+            // 1px gives bad results from image artifacts, more than 2px means we average away any natural framing/background in the image
+
+            // Sample the top and bottom edges
+            for (let x = 0; x < imgWidth; x += 2) { // Sample every other pixel
+                for (let y = 0; y < 2; y++) {
+                    let pixelTop = context.getImageData(x, y, 1, 1).data;
+                    let pixelBottom = context.getImageData(x, imgHeight - 1 - y, 1, 1).data;
+                    avgColor[0] += pixelTop[0] + pixelBottom[0];
+                    avgColor[1] += pixelTop[1] + pixelBottom[1];
+                    avgColor[2] += pixelTop[2] + pixelBottom[2];
+                    avgColor[3] += pixelTop[3] + pixelBottom[3];
+                    totalPixels += 2;
+                    if (pixelTop[3] < 255 || pixelBottom[3] < 255) {
+                        hasTransparentPixel = true;
+                    }
+
+                    let found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelTop)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelTop, count: 1 });
+                    }
+
+                    found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelBottom)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelBottom, count: 1 });
+                    }
+                }
+            }
+
+            // Sample the left and right edges
+            for (let y = 2; y < imgHeight - 2; y += 2) { // Sample every other pixel
+                for (let x = 0; x < 2; x++) {
+                    let pixelLeft = context.getImageData(x, y, 1, 1).data;
+                    let pixelRight = context.getImageData(imgWidth - 1 - x, y, 1, 1).data;
+                    avgColor[0] += pixelLeft[0] + pixelRight[0];
+                    avgColor[1] += pixelLeft[1] + pixelRight[1];
+                    avgColor[2] += pixelLeft[2] + pixelRight[2];
+                    avgColor[3] += pixelLeft[3] + pixelRight[3];
+                    totalPixels += 2;
+                    if (pixelLeft[3] < 255 || pixelRight[3] < 255) {
+                        hasTransparentPixel = true;
+                    }
+
+                    let found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelLeft)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelLeft, count: 1 });
+                    }
+
+                    found = false;
+                    for (let colorCount of colorCounts) {
+                        if (colorsAreSimilar(colorCount.color, pixelRight)) {
+                            colorCount.count++;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        colorCounts.push({ color: pixelRight, count: 1 });
+                    }
+                }
+            }
+
+            avgColor = avgColor.map(color => color / totalPixels);
+            avgColor[3] = avgColor[3] / 255; // Normalize alpha value
+
+            let mostCommonColor = null;
+            let maxCount = 0;
+            for (let colorCount of colorCounts) {
+                if (colorCount.count > maxCount) {
+                    maxCount = colorCount.count;
+                    mostCommonColor = colorCount.color;
+                }
+            }
+
+            // todo: clean this up - set background and color separately
+
+            if (maxCount > totalPixels / 2) {
+                mostCommonColor[3] = mostCommonColor[3] / 255; // Normalize alpha value
+                resolve(`linear-gradient(to bottom, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%, rgba(${mostCommonColor[0]},${mostCommonColor[1]},${mostCommonColor[2]},${mostCommonColor[3]}) 50%)`);
+            } else {
+                if (hasTransparentPixel) {
+                    avgColor[3] = 0; // Make the gradient transparent if any pixel is transparent
+                }
+                resolve(`linear-gradient(to bottom, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%, rgba(${avgColor[0]},${avgColor[1]},${avgColor[2]},${avgColor[3]}) 50%)`);
+            }
+        };
+        img.onerror = function() {
+            resolve();
+        };
+        img.crossOrigin = "Anonymous";
+        img.src = image;
+    });
+}
+
+function resizeImage(image, screenshot = false, isFallback = false) {
+    return new Promise((resolve, reject) => {
+        if (!image || !image.length) {
+            return resolve();
+        }
+
+        const targetWidth = 256;
+        const targetHeight = 144;
+        const targetRatio = targetWidth / targetHeight;
+        const tolerance = 0.25;
+
+        // we dont need to resize svgs
+        if (image.startsWith('data:image/svg+xml')) {
+            return resolve(image);
+        }
+
+        // if we only have a reference, store as image. todo: just fetch the svg instead
+        if (image.endsWith('.svg')) {
+            const img = new Image();
+
+            img.onerror = async (event) => {
+                if (!isFallback && !image.startsWith('data:')) {
+                    const dataUri = await fetchImageAsDataURI(image).catch(() => null);
+                    if (dataUri) {
+                        const result = await resizeImage(dataUri, screenshot, true);
+                        return resolve(result);
+                    }
+                }
+                resolve();
+            };
+
+            img.onload = function() {
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+
+                // Set canvas to target size for SVGs
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+
+                // Draw SVG centered and scaled to fit
+                let scale = Math.min(targetWidth / this.width, targetHeight / this.height);
+                let x = (targetWidth - this.width * scale) / 2;
+                let y = (targetHeight - this.height * scale) / 2;
+
+                ctx.drawImage(this, x, y, this.width * scale, this.height * scale);
+
+                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                resolve(newDataURI);
+            };
+
+            img.src = image;
+            return;
+        }
+
+        const img = new Image();
+
+        img.onerror = async (event) => {
+            if (!isFallback && !image.startsWith('data:')) {
+                const dataUri = await fetchImageAsDataURI(image).catch(() => null);
+                if (dataUri) {
+                    const result = await resizeImage(dataUri, screenshot, true);
+                    return resolve(result);
+                }
+            }
+            resolve();
+        };
+
+        img.onload = function () {
+            let sWidth = this.naturalWidth || this.width;
+            let sHeight = this.naturalHeight || this.height;
+
+            // resize any image > target size
+            if (sWidth >= targetWidth || sHeight >= (targetHeight - 22)) {
+
+                let nocrop = false;
+
+                if (screenshot) {
+                    sWidth -= 17;
+                    sHeight -= 17;
+                }
+
+                const sRatio = sWidth / sHeight;
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
+
+                let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
+
+                if (screenshot) {
+                    if (sRatio > targetRatio) {
+                        // Wider than target, crop sides
+                        const newWidth = sHeight * targetRatio;
+                        sX = (sWidth - newWidth) / 2;
+                        sWidth = newWidth;
+                    } else {
+                        // Taller than target, crop from top (by adjusting sHeight)
+                        sHeight = sWidth / targetRatio;
+                    }
+                } else if (sRatio < targetRatio && sRatio > (targetRatio - tolerance)) {
+                    // if image aspect ratio is very close to the speed dial aspect ratio crop it to fit
+                    // todo: maybe we can do this programmatically with css imagefit so we dont overly crop images when user wants square format
+
+                    // Aspect is narrower, crop top and bottom
+                    let naturalHeight = targetWidth / sRatio;
+                    let crop = (naturalHeight - targetHeight) / 2;
+                    sY = crop;
+                    sHeight -= 2 * crop;
+                } else if (sRatio > targetRatio && sRatio < (targetRatio + tolerance)) {
+                    // Aspect is wider, crop sides
+                    let naturalWidth = targetHeight * sRatio;
+                    let crop = (naturalWidth - targetWidth) / 2;
+                    sX = crop;
+                    sWidth -= 2 * crop;
+                } else {
+                    nocrop = true;
+                    // image is not close to our target ratio. rescale to a max width/height of 256px without cropping
+                    if (sWidth > sHeight) {
+                        dHeight = Math.round(targetWidth / sRatio);
+                        dWidth = targetWidth;
+                    } else {
+                        dWidth = Math.round(targetHeight * sRatio);
+                        dHeight = targetHeight;
+                    }
+                }
+
+                canvas.width = dWidth;
+                canvas.height = dHeight;
+                if (nocrop) {
+                    ctx.drawImage(this, sX, sY, dWidth, dHeight);
+                } else {
+                    ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
+                }
+
+                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                resolve(newDataURI);
+            } else if (sHeight >= 96 || sWidth >= 96) {
+                resolve(image);
+            } else {
+                // discard images < 96px
+                resolve();
+            }
+        };
+
+        img.crossOrigin = "Anonymous";
+        img.src = image;
+    });
+}
+
+function extractBackgroundImages(cssText) {
+    const backgroundImages = [];
+    const regex = /background(?:-image)?:\s*url\(["']?(.*?)["']?\)/g;
+
+    let match;
+    while ((match = regex.exec(cssText)) !== null) {
+        backgroundImages.push(match[1]); // Extracted URL
+    }
+
+    return backgroundImages;
+}
+
+async function fetchImages(url, quickRefresh) {
+
+    if (url.startsWith('file://')) {
+        return ['img/file.png'];
+    }
+    if (url.startsWith('chrome://')) {
+        return ['img/widget.png'];
+    }
+
+    const whitelist = [
+        "mail.google.com",
+        "gmail.com",
+        "chromewebstore.google.com",
+        "twitter.com"
+    ];
+
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname;
+
+    let images = [];
+
+    // default favicons
+    images.push(urlObj.origin + "/favicon.ico")
+
+    // amazon hack
+    if (hostname.includes('amazon')) {
+        images.push('img/amazon.com.png');
+        // dont fetch other images for the root page
+        if (hostname.startsWith('amazon') && hostname.length < 14) {
+            return(images);
+        }
+    } else {
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/logo/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/icon/fallback/404/?c=key`);
+    }
+
+    // avoid duplicates and preserve the precedence of images
+    function insert(imageUrl) {
+        let existingIndex = images.indexOf(imageUrl);
+        if (existingIndex !== -1) {
+            images.splice(existingIndex, 1);
+        }
+        images.unshift(imageUrl);
+    }
+
+    if (whitelist.includes(hostname)) {
+        return(['img/' + hostname + '.png']);
+    } else {
+
+         // Set up fetch timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
+
+        try {
+            // allows og images to work, with creds they are behind js
+            const omitDomains = ['facebook.com', 'github.com'];
+            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
+
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                credentials,
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId); // Clear timeout if fetch completes in time
+
+            // Update URL to the final redirected URL for proper relative URL resolution
+            const finalUrl = response.url;
+            if (finalUrl !== url) {
+                //console.log(`[fetchImages] URL redirected from ${url} to ${finalUrl}`);
+                url = finalUrl; // Update the base URL for relative URL conversion
+            }
+
+            if (!response.ok) {
+                return(images);
+            }
+
+            const text = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(text, 'text/html');
+
+            // check for svg logo and convert to data url
+            let svgElements = doc.querySelectorAll('svg');
+            for (let svg of svgElements) {
+                // heuristic to find relevant svg (logo class or large size)
+                let isLogo = svg.getAttribute('aria-label')?.toLowerCase().includes(hostname.split('.')[0]) ||
+                        svg.getAttribute('class')?.toLowerCase().includes('logo') ||
+                        svg.id?.toLowerCase().includes('logo') ||
+                        (svg.getAttribute('role') === 'img' && svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
+                if (isLogo) {
+                    try {
+                        // Convert SVG to data URL
+                        let svgString = new XMLSerializer().serializeToString(svg);
+                        let svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
+                        images.push(svgDataUrl);
+                        break; // take the first svg logo we find
+                    } catch (svgError) {
+                        console.warn(`[fetchImages] Error processing SVG:`, svgError);
+                    }
+                }
+            }
+
+            // get first image from page
+            let firstImage = doc.querySelector('img');
+            if (firstImage && firstImage.src) {
+                // filter known problematic images
+                const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
+                if (!filters.some(element => firstImage.src.includes(element))) {
+                    let imageUrl = convertUrlToAbsolute(url, firstImage.getAttribute('src')); // can't use .src directly in offscreen doc
+                    insert(imageUrl);
+                }
+            }
+
+            // amazon images
+            let mainImage = doc.querySelector('#main-image-container img');
+            if (mainImage && mainImage.src) {
+                // filter for 'look inside' amazon book images; grab the next image
+                if (mainImage.id === 'sitbLogoImg') {
+                    let newMainImage = doc.querySelectorAll('#main-image-container img')[1];
+                    if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
+                        insert(newMainImage.src);
+                    }
+                } else {
+                    insert(mainImage.src);
+                }
+            }
+
+            // icon sizes
+            let sizes = [
+                "512x512",
+                "256x256",
+                "192x192",
+                "180x180",
+                "144x144",
+                "96x96"
+            ];
+
+            // get apple touch icon
+            let appleIcon = doc.querySelector('link[rel="apple-touch-icon"]');
+            if (appleIcon && appleIcon.getAttribute('href')) {
+                let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                insert(imageUrl);
+            }
+
+            // get x-icon
+            let xIcon = doc.querySelector('link[rel="icon"]');
+            if (xIcon && xIcon.getAttribute('href')) {
+                let imageUrl = convertUrlToAbsolute(url, xIcon.getAttribute('href'));
+                insert(imageUrl);
+            }
+
+            // get large apple touch icon
+            for (let size of sizes) {
+                let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
+                if (appleIcon && appleIcon.getAttribute('href')) {
+                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
+                    insert(imageUrl);
+                    break;
+                }
+            }
+
+            // get large x-icon
+            for (let size of sizes) {
+                let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
+                if (icon && icon.getAttribute('href')) {
+                    let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
+                    insert(imageUrl);
+                    break;
+                }
+            }
+
+            // get structured data images (schema.org microdata)
+            let structuredImages = doc.querySelectorAll('meta[itemprop="image"]');
+            for (let meta of structuredImages) {
+                let content = meta.getAttribute('content');
+                if (content) {
+                    let imageUrl = convertUrlToAbsolute(url, content);
+                    insert(imageUrl);
+                }
+            }
+
+            // get open graph images
+            let metas = doc.getElementsByTagName("meta");
+            for (let meta of metas) {
+                if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
+                    let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
+                    insert(imageUrl);
+                }
+            }
+
+            // if we havent had much luck with images, lets check the manifest and style sheets
+            // we dont do so during a quick refresh to avoid fetching extra resources
+            if (images.length < 5 && !quickRefresh) {
+                // web application manifest icon
+                let manifestLink = doc.querySelector('link[rel="manifest"]');
+                if (manifestLink && manifestLink.getAttribute('href')) {
+                    try {
+                        let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
+                        const manifestResponse = await fetch(manifestUrl, {
+                            signal: controller.signal
+                        });
+                        if (manifestResponse.ok) {
+                            const manifest = await manifestResponse.json();
+                            if (manifest.icons && Array.isArray(manifest.icons)) {
+                                // Sort icons by size (largest first) and get the best ones
+                                const sortedIcons = manifest.icons
+                                    .filter(icon => icon.src) // Only icons with src
+                                    .sort((a, b) => {
+                                        // Extract numeric size for comparison
+                                        const getSizeValue = (sizes) => {
+                                            if (!sizes) return 0;
+                                            const match = sizes.match(/(\d+)x(\d+)/);
+                                            return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
+                                        };
+                                        return getSizeValue(b.sizes) - getSizeValue(a.sizes);
+                                    });
+                                // take the largest
+                                if (sortedIcons.length > 0) {
+                                    let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
+                                    images.push(iconUrl);
+                                }
+                            }
+                        }
+                    } catch (manifestError) {
+                        console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
+                    }
+                }
+
+                const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
+                .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
+
+                for (const sheetUrl of stylesheetLinks) {
+                    try {
+                        const cssResponse = await fetch(sheetUrl, {
+                            signal: controller.signal
+                        });
+                        if (!cssResponse.ok) throw new Error(`failed to fetch css`);
+                        const cssText = await cssResponse.text();
+                        const cssImages = extractBackgroundImages(cssText)
+                            .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
+
+                        if (cssImages.length) {
+                            // todo: fix the absolute url conversion -- i think urls that jump a couple of levels are busted
+                            cssImages.forEach(cssImage => {
+                                images.push(convertUrlToAbsolute(sheetUrl, cssImage));
+                            });
+                        }
+
+                    } catch (err) {
+                        console.warn(`Could not fetch stylesheet: ${sheetUrl}`, err);
+                    }
+                }
+            }
+
+            return images;
+
+        } catch (error) {
+            //console.log("fetch error: ", error)
+            // return the images we have:
+            return images;
+        } finally {
+            clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
+        }
+    }
 }
