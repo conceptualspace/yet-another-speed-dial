@@ -332,6 +332,72 @@ h1 {
     opacity: 1;
 }
 
+/* nested subfolder tiles: a folder glyph centered on the tile background */
+.folder-tile-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.folder-tile-content svg {
+    width: 42%;
+    height: 42%;
+    fill: rgba(0, 0, 0, 0.55);
+    transition: fill 160ms ease;
+}
+
+.folder-tile:hover .folder-tile-content svg {
+    fill: rgba(0, 0, 0, 0.75);
+}
+
+/* breadcrumb trail (shown only when viewing a nested folder) */
+.breadcrumb {
+    display: none;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0 32px 4px 32px;
+    color: var(--color);
+    font-weight: bold;
+}
+
+.breadcrumb.visible {
+    display: flex;
+}
+
+.breadcrumb-segment {
+    opacity: 0.75;
+    padding: 2px 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: opacity 160ms ease, background 160ms ease;
+}
+
+.breadcrumb-segment:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.breadcrumb-current {
+    opacity: 1;
+    cursor: default;
+}
+
+.breadcrumb-current:hover {
+    background: none;
+}
+
+.breadcrumb-separator {
+    opacity: 0.5;
+    margin: 0 2px;
+    pointer-events: none;
+}
+
+/* hide the breadcrumb while search is active, like the folders bar */
+.search-active .breadcrumb {
+    opacity: 0;
+    pointer-events: none;
+}
+
 a {
     text-decoration: none;
     color: var(--color);

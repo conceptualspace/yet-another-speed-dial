@@ -272,6 +272,9 @@ async function buildDialPages(speedDialId, currentFolderId) {
             }
         }
     }
+
+    // refresh the active tab highlight + breadcrumb (handles the case where currentFolder is a nested folder)
+    updateFolderNav(currentFolderId);
 }
 
 async function buildFolderPages(speedDialId) {
@@ -307,6 +310,9 @@ async function buildFolderPages(speedDialId) {
             folderLink(folder.title, folder.id);
         }
     }
+
+    // restore the active tab highlight + breadcrumb after rebuilding the folder tabs
+    updateFolderNav(currentFolder);
 
     return
 }
@@ -434,15 +440,96 @@ function showFolder(id) {
             folder.style.display = "none";
         }
     }
-    // style the active tab
-    let folderTitles = document.getElementsByClassName('folderTitle');
-    for (let title of folderTitles) {
-        if (title.attributes.folderid.value === id) {
+    // style the active tab and update the breadcrumb trail for nested folders
+    updateFolderNav(id);
+}
+
+// returns the folder path from the Speed Dial root (Home) down to folderId, as [{id, title}, ...].
+// works for any nesting depth by walking parentId up to the Speed Dial root.
+async function getFolderPath(folderId) {
+    const path = [];
+    let id = folderId;
+    while (id && id !== speedDialId) {
+        let nodes = await chrome.bookmarks.get(id).catch(() => null);
+        if (!nodes || !nodes.length) break;
+        let node = nodes[0];
+        path.unshift({ id: node.id, title: node.title });
+        id = node.parentId;
+    }
+    path.unshift({ id: speedDialId, title: homeFolderTitle });
+    return path;
+}
+
+// highlights the top-level ancestor tab for the active folder and renders the breadcrumb trail.
+// the breadcrumb is only shown when inside a nested folder (top-level folders are already reachable via tabs).
+async function updateFolderNav(folderId) {
+    const path = await getFolderPath(folderId);
+
+    // the tab to highlight is the top-level ancestor (path[1]) or Home (the root) when at top level
+    const activeTabId = path.length > 1 ? path[1].id : speedDialId;
+    for (let title of document.getElementsByClassName('folderTitle')) {
+        if (title.getAttribute('folderid') === activeTabId) {
             title.classList.add('activeFolder');
         } else {
             title.classList.remove('activeFolder');
         }
     }
+
+    renderBreadcrumb(path);
+}
+
+function renderBreadcrumb(path) {
+    const breadcrumb = document.getElementById('breadcrumb');
+    if (!breadcrumb) return;
+    breadcrumb.textContent = '';
+
+    // only show the breadcrumb when below the top level (Home > TopFolder is reachable via tabs)
+    if (path.length <= 2) {
+        breadcrumb.classList.remove('visible');
+        return;
+    }
+
+    path.forEach((seg, i) => {
+        const isLast = i === path.length - 1;
+        const segment = document.createElement('span');
+        segment.classList.add('breadcrumb-segment');
+        segment.textContent = seg.title;
+        if (isLast) {
+            segment.classList.add('breadcrumb-current');
+        } else {
+            segment.setAttribute('folderid', seg.id);
+            segment.onclick = () => navigateToFolder(seg.id);
+        }
+        breadcrumb.appendChild(segment);
+
+        if (!isLast) {
+            const sep = document.createElement('span');
+            sep.classList.add('breadcrumb-separator');
+            sep.textContent = '›';
+            breadcrumb.appendChild(sep);
+        }
+    });
+
+    breadcrumb.classList.add('visible');
+}
+
+// navigates into a folder of any nesting level, lazily building its container the first time it is opened.
+async function navigateToFolder(folderId) {
+    if (!folderId) return;
+    hideSettings();
+    currentFolder = folderId;
+    scrollPos = 0;
+    settings.currentFolder = folderId;
+    chrome.storage.local.set({ settings });
+
+    // nested folder containers are built on demand (only top-level folders are pre-rendered by buildDialPages)
+    if (!document.getElementById(folderId)) {
+        const children = await chrome.bookmarks.getChildren(folderId);
+        await printBookmarks(children, folderId);
+    }
+
+    showFolder(folderId);
+    bookmarksContainerParent.scrollTop = scrollPos;
 }
 
 function getThumbs(bookmarkUrl) {
@@ -541,7 +628,11 @@ function removeFolder() {
     chrome.bookmarks.removeTree(targetFolder).then(() => {
         hideModals();
         targetFolderLink?.remove();
-        folders.splice(folders.indexOf(targetFolder), 1);
+        // nested folders aren't tracked in the top-level `folders` array; guard against indexOf(-1)
+        const folderIdx = folders.indexOf(targetFolder);
+        if (folderIdx > -1) {
+            folders.splice(folderIdx, 1);
+        }
         if (!folders.length) {
             //document.getElementById('homeFolderLink').remove();
             // todo: better manager this state
@@ -688,6 +779,35 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
+// builds a tile representing a nested (sub)folder. clicking it navigates into the folder (see navigateToFolder).
+// rendered as an <a> with no href so it is skipped by openAllTabs() and the browser performs no navigation.
+function createFolderTile(bookmark) {
+    let a = document.createElement('a');
+    a.classList.add('tile', 'folder-tile');
+    a.setAttribute('data-id', bookmark.id);
+
+    let main = document.createElement('div');
+    main.classList.add('tile-main');
+
+    let content = document.createElement('div');
+    content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
+    content.classList.add('tile-content', 'folder-tile-content');
+    content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+    content.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h207q16 0 30.5 6t25.5 17l57 57h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Z"/></svg>';
+
+    let title = document.createElement('div');
+    title.classList.add('tile-title');
+    if (!settings.showTitles) {
+        title.classList.add('hide');
+    }
+    title.textContent = bookmark.title;
+
+    main.append(content, title);
+    a.appendChild(main);
+
+    return a;
+}
+
 async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
 
@@ -738,6 +858,10 @@ async function printBookmarks(bookmarks, parentId) {
                 main.append(content, title);
                 a.appendChild(main);
                 fragment.appendChild(a);
+            } else if (!bookmark.url && bookmark.title) {
+                // nested subfolder: render as a folder tile that opens its contents in the main view on click.
+                // top-level folders are skipped above (they appear as tabs), so this only matches subfolders.
+                fragment.appendChild(createFolderTile(bookmark));
             }
         }
     }
@@ -782,7 +906,7 @@ async function printBookmarks(bookmarks, parentId) {
         animation: 160,
         ghostClass: 'selected',
         dragClass: 'dragging',
-        filter: ".createDial",
+        filter: ".createDial, .folder-tile",
         delay: 500,
         delayOnTouchOnly: true,
         onMove: onMoveHandler,
@@ -1864,6 +1988,15 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
+    const folderTileTarget = e.target.closest && e.target.closest('.folder-tile');
+    if (folderTileTarget) {
+        // nested folder tile: reuse the folder menu (rename / remove)
+        targetFolderLink = folderTileTarget;
+        targetFolder = folderTileTarget.dataset.id;
+        targetFolderName = folderTileTarget.querySelector('.tile-title')?.textContent;
+        showContextMenu(folderMenu, e.pageY, e.pageX);
+        return false;
+    }
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
@@ -1886,6 +2019,13 @@ document.addEventListener("contextmenu", function (e) {
 // todo: tidy this up
 window.addEventListener("click", e => {
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
+        return;
+    }
+    // navigate into a nested folder when its tile is clicked
+    const folderTile = e.target.closest && e.target.closest('.folder-tile');
+    if (folderTile) {
+        e.preventDefault();
+        navigateToFolder(folderTile.dataset.id);
         return;
     }
     if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
@@ -2875,11 +3015,18 @@ function getSpeedDialId() {
                 }
             }
             if (speedDialId) {
-                chrome.bookmarks.getChildren(speedDialId).then(results => {
-                    for (let result of results) {
-                        if (!result.url && result.title) {
-                            folderIds.push(result.id);
+                // collect all folder ids under Speed Dial (any depth) so a remembered nested folder can be restored
+                chrome.bookmarks.getSubTree(speedDialId).then(tree => {
+                    const collect = (node) => {
+                        for (let child of (node.children || [])) {
+                            if (!child.url) {
+                                folderIds.push(child.id);
+                                collect(child);
+                            }
                         }
+                    };
+                    if (tree && tree[0]) {
+                        collect(tree[0]);
                     }
                     resolve()
                 })
