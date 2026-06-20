@@ -522,11 +522,11 @@ async function navigateToFolder(folderId) {
     settings.currentFolder = folderId;
     chrome.storage.local.set({ settings });
 
-    // nested folder containers are built on demand (only top-level folders are pre-rendered by buildDialPages)
-    if (!document.getElementById(folderId)) {
-        const children = await chrome.bookmarks.getChildren(folderId);
-        await printBookmarks(children, folderId);
-    }
+    // (re)build the folder's container every time so its contents are always current. nested folder
+    // containers aren't rebuilt by buildDialPages on refresh, so reusing an existing one here would
+    // show stale tiles after the folder's bookmarks changed elsewhere (e.g. the bookmark manager / sync).
+    const children = await chrome.bookmarks.getChildren(folderId);
+    await printBookmarks(children, folderId);
 
     showFolder(folderId);
     bookmarksContainerParent.scrollTop = scrollPos;
@@ -646,8 +646,8 @@ function removeFolder() {
             chrome.storage.local.set({ settings })
         }
 
-        // todo: clean up this node or do it on refresh
-        // document.getElementById(targetFolder).remove();
+        // remove the folder's own dial container (if it was ever opened) so it doesn't linger as a stale orphan
+        document.getElementById(targetFolder)?.remove();
     });
 }
 
