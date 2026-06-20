@@ -676,6 +676,10 @@ function refreshAllThumbnails() {
                     bookmarks.push({ url: child.url, id: child.id, parentId: child.parentId });
                 }
             }
+        }
+        // sub-folders have no url and are skipped above; only proceed when there
+        // are actual tiles to capture, otherwise the toast would never clear
+        if (bookmarks.length) {
             //tabMessagePort.postMessage({refreshAll: true, urls});
             showToast(' Capturing images...')
             // gives the ui time to animate before blocking the process with the bg work
