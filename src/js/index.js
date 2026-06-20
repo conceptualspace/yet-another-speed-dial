@@ -908,9 +908,13 @@ async function printBookmarks(bookmarks, parentId) {
         animation: 160,
         ghostClass: 'selected',
         dragClass: 'dragging',
-        filter: ".createDial, .folder-tile",
+        filter: ".createDial",
         delay: 500,
         delayOnTouchOnly: true,
+        // simulate dragging via pointer events instead of native HTML5 DnD. native DnD only makes
+        // <a href> tiles implicitly draggable, so hrefless folder tiles wouldn't drag; the fallback
+        // drags any element uniformly (bookmark tiles and folder tiles alike).
+        forceFallback: true,
         onMove: onMoveHandler,
         onEnd: onEndHandler
     });
@@ -2933,7 +2937,9 @@ function onEndHandler(evt) {
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
 
-    if (evt && evt.clone.href) {
+    if (evt && evt.clone.dataset.id) {
+        // bookmark tiles (with href) and nested folder tiles (no href) both carry a data-id and
+        // live in the dial container, so they are reordered/moved through the same bookmark path
         let id = evt.clone.dataset.id;
         let fromParentId = dewrap(evt.from.id);
         let toParentId = dewrap(evt.to.id);

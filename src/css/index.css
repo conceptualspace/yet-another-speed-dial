@@ -344,6 +344,8 @@ h1 {
     height: 42%;
     fill: rgba(0, 0, 0, 0.55);
     transition: fill 160ms ease;
+    /* keep the svg from becoming the drag/click target so the parent <a> tile drags like a bookmark tile */
+    pointer-events: none;
 }
 
 .folder-tile:hover .folder-tile-content svg {
