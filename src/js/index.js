@@ -589,9 +589,11 @@ function saveFolder() {
     let name = createFolderModalName.value.trim();
 
     if (name.length) {
+        // create inside the folder currently being viewed so nested subfolders are supported;
+        // fall back to the top-level Speed Dial folder if no folder is active
         chrome.bookmarks.create({
             title: name,
-            parentId: speedDialId
+            parentId: currentFolder || speedDialId
         }).then(node => {
             hideModals();
         });
