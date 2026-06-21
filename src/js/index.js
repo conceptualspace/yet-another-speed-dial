@@ -4,18 +4,78 @@
 
 'use strict';
 
-// initialize Coloris color picker
+// lazy asset loader: fetch interaction-only libs (jQuery, flexCarousel, Coloris)
+// on demand so they don't block the new tab's first paint. Promises are cached
+// per-url so each asset is only ever requested once.
+const _assetPromises = {};
+
+function loadScript(src) {
+    if (_assetPromises[src]) return _assetPromises[src];
+    _assetPromises[src] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src;
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+    });
+    return _assetPromises[src];
+}
+
+function loadStylesheet(href) {
+    if (_assetPromises[href]) return _assetPromises[href];
+    _assetPromises[href] = new Promise((resolve) => {
+        const l = document.createElement('link');
+        l.rel = 'stylesheet';
+        l.type = 'text/css';
+        l.href = href;
+        // don't block on css load failures
+        l.onload = resolve;
+        l.onerror = resolve;
+        document.head.appendChild(l);
+    });
+    return _assetPromises[href];
+}
+
+// initialize Coloris color picker on demand
 // outputs hex #RRGGBBAA
-Coloris({
-    themeMode: 'dark',
-    alpha: true,
-    forceAlpha: true,
-    formatToggle: false,
-    showInput: false,
-    cancelButton: true,
-    closeButton: true,
-    closeLabel: 'OK',
-});
+let _colorisReady = null;
+function ensureColoris() {
+    if (_colorisReady) return _colorisReady;
+    _colorisReady = Promise.all([
+        loadScript('js/lib/coloris.min.js'),
+        loadStylesheet('css/coloris.min.css')
+    ]).then(() => {
+        Coloris({
+            themeMode: 'dark',
+            alpha: true,
+            forceAlpha: true,
+            formatToggle: false,
+            showInput: false,
+            cancelButton: true,
+            closeButton: true,
+            closeLabel: 'OK',
+        });
+        // bind overlay listeners now that the picker exists
+        document.querySelectorAll('.settingsCtl[data-coloris]').forEach(picker => {
+            picker.addEventListener('open', () => colorisOverlay.style.display = 'block');
+            // Using a timeout so the overlay stays for the full click cycle (mouseup/click)
+            // before disappearing, absorbing the entire pointer interaction.
+            picker.addEventListener('close', () => setTimeout(() => colorisOverlay.style.display = 'none', 100));
+        });
+    });
+    return _colorisReady;
+}
+
+// flexCarousel is a jQuery plugin, so jQuery must load first
+let _carouselReady = null;
+function ensureCarousel() {
+    if (_carouselReady) return _carouselReady;
+    _carouselReady = loadScript('js/lib/jquery-4.0.0.slim.min.js').then(() => Promise.all([
+        loadScript('js/lib/flexCarousel.min.js'),
+        loadStylesheet('css/flexCarousel.min.css')
+    ]));
+    return _carouselReady;
+}
 
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
@@ -174,13 +234,6 @@ const colorisOverlay = document.createElement('div');
 colorisOverlay.className = 'coloris-overlay';
 colorisOverlay.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999;display:none;';
 document.body.appendChild(colorisOverlay);
-
-document.querySelectorAll('.settingsCtl[data-coloris]').forEach(picker => {
-    picker.addEventListener('open', () => colorisOverlay.style.display = 'block');
-    // Using a timeout so the overlay stays for the full click cycle (mouseup/click)
-    // before disappearing, absorbing the entire pointer interaction.
-    picker.addEventListener('close', () => setTimeout(() => colorisOverlay.style.display = 'none', 100));
-});
 
 const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
@@ -902,6 +955,8 @@ function buildCreateDialModal(parentId) {
 }
 
 async function buildModal(url, title) {
+    // lazy-load the color picker the first time the edit modal opens
+    ensureColoris();
     // nuke any previous modal
     let carousel = document.getElementById("carousel");
     if (carousel) {
@@ -964,6 +1019,7 @@ async function buildModal(url, title) {
                 newCarousel.appendChild(imgDiv);
             }
         }
+        await ensureCarousel();
         $('#carousel').flexCarousel({ height: '180px' });
 
         // listen for carousel navigation to updade the bg color button preview
