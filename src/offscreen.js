@@ -35,9 +35,12 @@ async function handleMessages(message) {
         console.log(err);
     })
 
+    const topCropGoogleThumb = shouldTopCropGoogleThumb(url);
+
     if (images && images.length) {
         resizedImages = await Promise.all(images.map(async (image, index) => {
-            const result = await resizeImage(image).catch(err => {
+            const topCrop = topCropGoogleThumb && typeof image === 'string' && image.startsWith('https://drive.google.com/thumbnail?id=');
+            const result = await resizeImage(image, false, false, topCrop).catch(err => {
                 console.log(err);
             });
             return result
@@ -255,7 +258,7 @@ function getBgColor(image) {
     });
 }
 
-function resizeImage(image, screenshot = false, isFallback = false) {
+function resizeImage(image, screenshot = false, isFallback = false, topCrop = false) {
     return new Promise((resolve, reject) => {
         if (!image || !image.length) {
             return resolve();
@@ -279,7 +282,7 @@ function resizeImage(image, screenshot = false, isFallback = false) {
                 if (!isFallback && !image.startsWith('data:')) {
                     const dataUri = await fetchImageAsDataURI(image).catch(() => null);
                     if (dataUri) {
-                        const result = await resizeImage(dataUri, screenshot, true);
+                        const result = await resizeImage(dataUri, screenshot, true, topCrop);
                         return resolve(result);
                     }
                 }
@@ -315,7 +318,7 @@ function resizeImage(image, screenshot = false, isFallback = false) {
             if (!isFallback && !image.startsWith('data:')) {
                 const dataUri = await fetchImageAsDataURI(image).catch(() => null);
                 if (dataUri) {
-                    const result = await resizeImage(dataUri, screenshot, true);
+                    const result = await resizeImage(dataUri, screenshot, true, topCrop);
                     return resolve(result);
                 }
             }
@@ -344,7 +347,15 @@ function resizeImage(image, screenshot = false, isFallback = false) {
 
                 let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
 
-                if (screenshot) {
+                if (topCrop) {
+                    // trim 5% off the page margins for google doc thumbnails
+                    // if this looks shitty we can remove it (todo: test)
+                    const marginX = sWidth * 0.05;
+                    sX = marginX;
+                    sWidth = sWidth - 2 * marginX;
+                    sY = sHeight * 0.05;
+                    sHeight = sWidth / targetRatio;
+                } else if (screenshot) {
                     if (sRatio > targetRatio) {
                         // Wider than target, crop sides
                         const newWidth = sHeight * targetRatio;
@@ -417,6 +428,41 @@ function extractBackgroundImages(cssText) {
     return backgroundImages;
 }
 
+function getGoogleDriveFileId(urlObj) {
+    const hostname = urlObj.hostname.toLowerCase();
+    if (hostname === 'docs.google.com') {
+        const match = urlObj.pathname.match(/^\/(?:document|spreadsheets|presentation|drawings|forms)\/d\/([^/?#]+)/);
+        if (match) {
+            return match[1];
+        }
+    }
+    if (hostname === 'drive.google.com') {
+        const fileMatch = urlObj.pathname.match(/^\/file\/d\/([^/?#]+)/);
+        if (fileMatch) {
+            return fileMatch[1];
+        }
+        return urlObj.searchParams.get('id');
+    }
+    return null;
+}
+
+function getGoogleDriveThumbnailUrl(urlObj) {
+    const fileId = getGoogleDriveFileId(urlObj);
+    return fileId ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(fileId)}&sz=w512` : null;
+}
+
+// docs and sheets render as tall portrait pages; top-crop them to fill the dial.
+// slides and drawings are landscape and fit naturally, so leave them as-is.
+function shouldTopCropGoogleThumb(url) {
+    try {
+        const urlObj = new URL(url);
+        return urlObj.hostname.toLowerCase() === 'docs.google.com' &&
+            /^\/(?:document|spreadsheets)\/d\//.test(urlObj.pathname);
+    } catch (err) {
+        return false;
+    }
+}
+
 async function fetchImages(url, quickRefresh) {
 
     if (url.startsWith('file://')) {
@@ -460,6 +506,12 @@ async function fetchImages(url, quickRefresh) {
             images.splice(existingIndex, 1);
         }
         images.unshift(imageUrl);
+    }
+
+    const googleDriveThumbnailUrl = getGoogleDriveThumbnailUrl(urlObj);
+    if (googleDriveThumbnailUrl) {
+        insert(googleDriveThumbnailUrl);
+        return images;
     }
 
     if (whitelist.includes(hostname)) {
