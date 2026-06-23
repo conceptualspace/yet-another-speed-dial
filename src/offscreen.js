@@ -596,13 +596,15 @@ async function fetchImages(url, quickRefresh) {
                 if (content) {
                     let imageUrl = convertUrlToAbsolute(url, content);
                     insert(imageUrl);
+                    break;
                 }
             }
 
             // get open graph images
             let metas = doc.getElementsByTagName("meta");
             for (let meta of metas) {
-                if (meta.getAttribute("property") === "og:image" && meta.getAttribute("content")) {
+                const ogType = meta.getAttribute("property") || meta.getAttribute("name");
+                if (ogType?.toLowerCase() === "og:image" && meta.getAttribute("content")) {
                     let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
                     insert(imageUrl);
                 }
