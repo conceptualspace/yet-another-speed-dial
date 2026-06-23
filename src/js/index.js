@@ -126,6 +126,8 @@ let settings = null;
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
+let dragOverFolderId = null;
+let folderDragMoveHandler = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileTitle = null;
@@ -569,9 +571,6 @@ function folderLink(title, id) {
         //tabMessagePort.postMessage({currentFolder: id});
     };
 
-    a.ondragenter = dragenterHandler;
-    a.ondragleave = dragleaveHandler;
-
     foldersContainer.appendChild(a);
 }
 
@@ -919,6 +918,7 @@ async function printBookmarks(bookmarks, parentId) {
         // <a href> tiles implicitly draggable, so hrefless folder tiles wouldn't drag; the fallback
         // drags any element uniformly (bookmark tiles and folder tiles alike).
         forceFallback: true,
+        onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
     });
@@ -2855,38 +2855,22 @@ function importFromOldYASD(json) {
     })
 }
 
-// native handlers for folder tab target
-// container-level handlers to expand/collapse all folder titles
-function folderContainerDragEnter(ev) {
-    ev.preventDefault();
-    this.classList.add('folders-drag-active');
-}
+// The dial Sortable runs with forceFallback, so dragging a tile is simulated via pointer events and
+// the native HTML5 drag events (dragenter/dragover/dragleave) never reach the top-of-page folder
+// labels. We track the pointer ourselves for the duration of the drag (see onStartHandler) so that
+// dropping a tile onto a folder label still highlights it, navigates into it on hover, and moves the
+// tile there. The element under the pointer is passed in; null means the pointer is over no label.
+function updateFolderDragHover(folderTitleEl) {
+    const folderId = folderTitleEl ? folderTitleEl.getAttribute('folderid') : null;
+    if (dragOverFolderId === folderId) return;
 
-function folderContainerDragLeave(ev) {
-    // only collapse when truly leaving the container (not entering a child)
-    if (this.contains(ev.relatedTarget)) return;
-    this.classList.remove('folders-drag-active');
-    clearTimeout(folderNavTimeout);
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
-}
-
-function folderContainerDragOver(ev) {
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
-}
-
-// individual folder title handlers for highlight + navigation
-function dragenterHandler(ev) {
-    ev.preventDefault();
-    const el = ev.currentTarget;
-    if (!el.classList.contains("folderTitle")) return;
-
-    // clear hover from siblings, highlight this one
+    dragOverFolderId = folderId;
     document.querySelectorAll('.folderTitle.drag-hover').forEach(t => t.classList.remove('drag-hover'));
-    el.classList.add("drag-hover");
-
-    const folderId = el.getAttribute("folderid");
     clearTimeout(folderNavTimeout);
+
+    if (!folderId) return;
+
+    folderTitleEl.classList.add("drag-hover");
     if (currentFolder !== folderId) {
         folderNavTimeout = setTimeout(() => {
             currentFolder = folderId;
@@ -2899,17 +2883,17 @@ function dragenterHandler(ev) {
     }
 }
 
-function dragleaveHandler(ev) {
-    const el = ev.currentTarget;
-    // ignore if still inside the element (entering a child node)
-    if (el.contains(ev.relatedTarget)) return;
-
-    el.classList.remove("drag-hover");
-
-    // only clear nav timeout if we're not entering another folder title
-    if (!foldersContainer.querySelector('.folderTitle.drag-hover')) {
-        clearTimeout(folderNavTimeout);
-    }
+function onStartHandler() {
+    dragOverFolderId = null;
+    document.getElementById('foldersContainer').classList.add('folders-drag-active');
+    folderDragMoveHandler = function (e) {
+        const point = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        const el = document.elementFromPoint(point.clientX, point.clientY);
+        updateFolderDragHover(el && el.closest ? el.closest('.folderTitle[folderid]') : null);
+    };
+    document.addEventListener('pointermove', folderDragMoveHandler, true);
+    document.addEventListener('mousemove', folderDragMoveHandler, true);
+    document.addEventListener('touchmove', folderDragMoveHandler, true);
 }
 
 // Sortable helper fns
@@ -2937,9 +2921,19 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
-    // clean up folder drag-hover state
+    // clean up folder drag-hover state + the pointer tracking started in onStartHandler
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+    if (folderDragMoveHandler) {
+        document.removeEventListener('pointermove', folderDragMoveHandler, true);
+        document.removeEventListener('mousemove', folderDragMoveHandler, true);
+        document.removeEventListener('touchmove', folderDragMoveHandler, true);
+        folderDragMoveHandler = null;
+    }
+    clearTimeout(folderNavTimeout);
+    // the folder label under the pointer at drop time (tracked during the fallback drag)
+    const folderDropId = dragOverFolderId;
+    dragOverFolderId = null;
 
     if (evt && evt.clone.dataset.id) {
         // bookmark tiles (with href) and nested folder tiles (no href) both carry a data-id and
@@ -2952,10 +2946,19 @@ function onEndHandler(evt) {
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
 
-        // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires)
+        // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires).
+        // under forceFallback the native drop target isn't reliable, so prefer the folder label tracked
+        // under the pointer during the drag, falling back to the originalEvent target.
         let dropTarget = evt.originalEvent.target;
-        let folderTitleEl = dropTarget.closest ? dropTarget.closest('.folderTitle') : null;
-        let droppedOnFolderId = folderTitleEl ? folderTitleEl.getAttribute('folderid') : null;
+        let folderTitleEl = (dropTarget && dropTarget.closest) ? dropTarget.closest('.folderTitle[folderid]') : null;
+        let droppedOnFolderId = folderDropId || (folderTitleEl ? folderTitleEl.getAttribute('folderid') : null);
+
+        if (droppedOnFolderId) {
+            // released directly over a folder label -> move into that folder. sortable's own to/from is
+            // unreliable here because the label isn't part of a sortable list, and when dropping inside
+            // the same folder being viewed neither branch below would otherwise pick up the target.
+            toParentId = droppedOnFolderId;
+        }
 
         // todo: test if this is needed
         if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
@@ -3240,12 +3243,6 @@ function init() {
 
 
     sidenav.style.display = "flex";
-
-    // container-level drag listeners for expanding folder titles
-    const foldersContainerEl = document.getElementById('foldersContainer');
-    foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
-    foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
-    foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
 
     new Sortable(foldersContainer, {
         animation: 150,
