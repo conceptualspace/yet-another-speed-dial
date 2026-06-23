@@ -431,7 +431,7 @@ function extractBackgroundImages(cssText) {
 function getGoogleDriveFileId(urlObj) {
     const hostname = urlObj.hostname.toLowerCase();
     if (hostname === 'docs.google.com') {
-        const match = urlObj.pathname.match(/^\/(?:document|spreadsheets|presentation|drawings|forms)\/d\/([^/?#]+)/);
+        const match = urlObj.pathname.match(/^\/(?:document|spreadsheets|presentation|drawings)\/d\/([^/?#]+)/);
         if (match) {
             return match[1];
         }
