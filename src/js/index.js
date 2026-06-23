@@ -2046,7 +2046,7 @@ searchBtn.addEventListener("click", function() {
 function activateExpandableSearch() {
     document.body.classList.add('search-active');
     searchContainer.classList.add('active');
-    setTimeout(() => searchInput.focus(), 300);
+    setTimeout(() => searchInput.focus(), 200);
 }
 
 function hideSearch() {
