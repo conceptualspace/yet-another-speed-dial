@@ -115,6 +115,7 @@ const helpBtn = document.getElementById("help");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
+const dialPaddingInput = document.getElementById("dialPadding");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -175,6 +176,7 @@ let defaults = {
     dialBackground: '#ffffff80',
     dialSize: 'large',
     dialRatio: 'wide',
+    dialPadding: '0px',
     currentFolder: null,
 };
 
@@ -1622,6 +1624,12 @@ function applySettings() {
             document.documentElement.style.setProperty('--dial-background', settings.dialBackground);
         }
 
+        if (settings.dialPadding) {
+            document.documentElement.style.setProperty('--dial-padding', settings.dialPadding);
+        } else {
+            document.documentElement.style.setProperty('--dial-padding', '0px');
+        }
+
         /*
         if (settings.scaleImages) {
             document.documentElement.style.setProperty('--image-scaling', 'contain');
@@ -1803,6 +1811,7 @@ function applySettings() {
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
+        dialPaddingInput.value = settings.dialPadding;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -1849,6 +1858,7 @@ function saveSettings() {
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
+    settings.dialPadding = dialPaddingInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
@@ -1931,7 +1941,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'dialPadding') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -2125,6 +2135,10 @@ dialSizeInput.oninput = function (e) {
 }
 
 dialRatioInput.oninput = function (e) {
+    saveSettings()
+}
+
+dialPaddingInput.oninput = function (e) {
     saveSettings()
 }
 

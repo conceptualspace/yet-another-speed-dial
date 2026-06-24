@@ -44,6 +44,9 @@
   "dialBackground": {
     "message": "Dial Background"
   },
+  "dialPadding": {
+    "message": "Dial Padding"
+  },
   "dialRatio": {
     "message": "Dial Format"
   },
@@ -195,6 +198,9 @@
   },
   "optionSmall": {
     "message": "Small"
+  },
+  "optionNone": {
+    "message": "None"
   },
   "optionMedium": {
     "message": "Medium"

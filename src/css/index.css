@@ -12,6 +12,7 @@
     --dial-height: 118px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
     --dial-background: rgba(255, 255, 255, 0.5);
+    --dial-padding: 0px;
 }
 
 /* Apply a smooth transition for the background image */
@@ -294,13 +295,17 @@ h1 {
 .tile-content {
     width: 100%;
     height: var(--dial-content-height);
+    box-sizing: border-box;
+    padding: var(--dial-padding);
     border-color: transparent;
     border-radius: inherit;
     background-color: var(--dial-background);
     background-origin: content-box;
+    background-clip: border-box;
     background-position: 50%;
     background-repeat: no-repeat;
     background-size: var(--image-scaling);
+    overflow: hidden;
 }
 
 .tile-title {
