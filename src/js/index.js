@@ -17,6 +17,12 @@ Coloris({
     closeLabel: 'OK',
 });
 
+// bind the dial background swatch without wrapping so it matches the native color pickers
+Coloris({
+    el: '#dialColor-picker',
+    wrap: false,
+});
+
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
@@ -81,6 +87,8 @@ const color_picker = document.getElementById("color-picker");
 const color_picker_wrapper = document.getElementById("color-picker-wrapper");
 const textColor_picker = document.getElementById("textColor-picker");
 const textColor_picker_wrapper = document.getElementById("textColor-picker-wrapper");
+const dialColor_picker = document.getElementById("dialColor-picker");
+const dialColor_picker_wrapper = document.getElementById("dialColor-picker-wrapper");
 const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const previewOverlay = document.getElementById("previewOverlay");
@@ -164,6 +172,7 @@ let defaults = {
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
+    dialBackground: '#ffffff80',
     dialSize: 'large',
     dialRatio: 'wide',
     currentFolder: null,
@@ -726,7 +735,6 @@ async function printBookmarks(bookmarks, parentId) {
                 content.classList.add('tile-content');
                 //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
                 //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
-                content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title');
@@ -1610,6 +1618,10 @@ function applySettings() {
             document.documentElement.style.setProperty('--color', settings.textColor);
         }
 
+        if (settings.dialBackground) {
+            document.documentElement.style.setProperty('--dial-background', settings.dialBackground);
+        }
+
         /*
         if (settings.scaleImages) {
             document.documentElement.style.setProperty('--image-scaling', 'contain');
@@ -1779,6 +1791,8 @@ function applySettings() {
         color_picker_wrapper.style.backgroundColor = settings.backgroundColor;
         textColor_picker.value = settings.textColor;
         textColor_picker_wrapper.style.backgroundColor = settings.textColor;
+        setInputValue(dialColor_picker, settings.dialBackground);
+        dialColor_picker_wrapper.style.backgroundColor = settings.dialBackground;
         showTitlesInput.checked = settings.showTitles;
         showCreateDialInput.checked = settings.showAddSite;
         largeTilesInput.checked = settings.largeTiles;
@@ -1824,6 +1838,7 @@ function saveSettings() {
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
     settings.textColor = textColor_picker.value;
+    settings.dialBackground = dialColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
     settings.showAddSite = showCreateDialInput.checked;
     settings.largeTiles = largeTilesInput.checked;
@@ -2135,6 +2150,18 @@ textColor_picker.onchange = function () {
         saveSettings();
     }
 };
+
+dialColor_picker.addEventListener('input', function () {
+    // live preview while picking
+    document.documentElement.style.setProperty('--dial-background', this.value);
+    dialColor_picker_wrapper.style.backgroundColor = this.value;
+});
+
+dialColor_picker.addEventListener('change', function () {
+    if (settings.dialBackground !== this.value) {
+        saveSettings();
+    }
+});
 
 showTitlesInput.oninput = function (e) {
     saveSettings()
@@ -2992,7 +3019,8 @@ function setBackgroundImages(thumbnails) {
 function batchApplyImages(elements) {
     requestAnimationFrame(() => {
         elements.forEach(({ element, thumb }) => {
-            element.style.backgroundColor = "unset";
+            // defer to the global --dial-background so transparent thumbs sit on a consistent color
+            element.style.removeProperty('background-color');
             element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
         });
     });

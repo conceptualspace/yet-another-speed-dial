@@ -248,6 +248,24 @@
     /*float: left;*/
 }
 
+.sidenav #dialColor-picker-wrapper {
+    width: 50px;
+    padding: 0;
+    border-radius: 34px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+}
+
+.sidenav #dialColor-picker {
+    display: block;
+    width: 50px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    cursor: pointer;
+}
+
 .sidenav [type="file"] {
     height: 0;
     overflow: hidden;

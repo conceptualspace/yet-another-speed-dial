@@ -41,6 +41,9 @@
   "delete": {
     "message": "Delete"
   },
+  "dialBackground": {
+    "message": "Dial Background"
+  },
   "dialRatio": {
     "message": "Dial Format"
   },
