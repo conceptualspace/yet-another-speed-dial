@@ -25,10 +25,11 @@
 }
 
 .sidenav h2 {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgb(0, 195, 255);
     font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
+    margin-bottom: 0.5em;
 }
 
 .sidenav hr {
@@ -36,7 +37,7 @@
 }
 
 .sidenav div {
-    padding: 0.2em 0;
+    padding: 0;
 }
 
 .sidenav .closeBtn {
@@ -91,10 +92,11 @@
 }
 
 .sidenav #preview {
-    width: 170px;
+    width: 290px;
     max-height: 160px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
+    object-fit: cover;
 }
 
 .sidenav #previewContainer {
@@ -106,7 +108,7 @@
 .sidenav #previewOverlay {
     position: absolute;
     bottom: 0;
-    width: 270px;
+    width: 290px;
     height: 100%;
     transition: all 160ms ease;
     background: url('../img/upload.png') no-repeat center #000;
@@ -124,8 +126,14 @@
 }
 
 .sidenav .rowHeader {
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    margin: 2em 0 0 0 ;
+    border-top: 0;
+    margin: 2em 0 0 0;
+    padding-top: 0.5em;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.22)
+    ) top / 100% 1px no-repeat;
 }
 
 .sidenav .row {
@@ -134,6 +142,8 @@
     flex-wrap: wrap;
     width: 100%;
     align-items: center;
+    min-height: 34px;
+    padding: 0.18em 0;
 }
 
 .sidenav .column {
@@ -282,4 +292,27 @@
     opacity: 0;
     color: lightgreen;
     transition: opacity 200ms ease-in-out;
+}
+
+#settingsDiv {
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+#settingsDiv:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.22) transparent;
+}
+
+#settingsDiv::-webkit-scrollbar {
+    width: 6px;
+}
+
+#settingsDiv::-webkit-scrollbar-thumb {
+    background-color: transparent;
+    border-radius: 999px;
+}
+
+#settingsDiv:hover::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.22);
 }
