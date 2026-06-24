@@ -24,12 +24,19 @@
      */
 }
 
+.sidenav h2 {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
 .sidenav hr {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidenav div {
-    padding: 0.3em 0;
+    padding: 0.2em 0;
 }
 
 .sidenav .closeBtn {
@@ -84,7 +91,7 @@
 }
 
 .sidenav #preview {
-    width: 270px;
+    width: 170px;
     max-height: 160px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
@@ -114,6 +121,11 @@
 
 .sidenav #switchesContainer {
     transition: all 160ms ease;
+}
+
+.sidenav .rowHeader {
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    margin: 2em 0 0 0 ;
 }
 
 .sidenav .row {
