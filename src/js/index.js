@@ -1842,6 +1842,9 @@ function saveSettings() {
 
     applySettings();
 
+    // dial sizes/layout might have changed update gsap 
+    animate();
+
     chrome.storage.local.set({ settings })
         .then(() => {
             /*
@@ -2390,6 +2393,8 @@ resetSettingsBtn.onclick = function () {
         settings = JSON.parse(JSON.stringify(defaults));
         chrome.storage.local.set({ settings }).then(() => {
             applySettings();
+            // dial sizes/layout might have changed update gsap 
+            animate();
         });
     }
 }
