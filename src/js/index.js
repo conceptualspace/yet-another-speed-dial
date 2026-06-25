@@ -146,6 +146,8 @@ const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
+const titleToggleFlipThreshold = 100;
+const titleToggleFlipDuration = 0.18;
 
 let folderIds = [];
 
@@ -1464,6 +1466,87 @@ const animate = debounce(() => {
     });
 }, 300)
 
+function getCurrentDialNodes() {
+    let currentParent = currentFolder ? currentFolder : speedDialId;
+    const folder = document.getElementById(currentParent);
+    if (!folder) return [];
+
+    return Array.from(folder.children).filter(node => {
+        return node.classList?.contains('tile') || node.classList?.contains('createDial');
+    });
+}
+
+function getVisibleDialRects(nodes) {
+    const viewportTop = bookmarksContainerParent.scrollTop;
+    const viewportHeight = bookmarksContainerParent.clientHeight;
+    const minTop = viewportTop - Math.round(viewportHeight * 0.25);
+    const maxBottom = viewportTop + (viewportHeight * 2);
+    const rects = new Map();
+
+    for (let node of nodes) {
+        const top = node.offsetTop;
+        const bottom = top + node.offsetHeight;
+        if (bottom >= minTop && top <= maxBottom) {
+            const rect = node.getBoundingClientRect();
+            rects.set(node, { left: rect.left, top: rect.top });
+        }
+    }
+
+    return rects;
+}
+
+function applyTitleVisibility() {
+    const root = document.documentElement;
+    const hideTitles = !settings.showTitles;
+    const titleVisibilityChanged = root.classList.contains('hide-titles') !== hideTitles;
+    const dialNodes = getCurrentDialNodes();
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const useFlip = titleVisibilityChanged && dialNodes.length > titleToggleFlipThreshold && !reduceMotion;
+
+    if (!useFlip) {
+        root.style.setProperty('--title-opacity', settings.showTitles ? '1' : '0');
+        root.classList.toggle('hide-titles', hideTitles);
+        if (titleVisibilityChanged) animate();
+        return;
+    }
+
+    const beforeRects = getVisibleDialRects(dialNodes);
+    root.classList.add('skip-title-height-transition');
+    root.style.setProperty('--title-opacity', settings.showTitles ? '1' : '0');
+    root.classList.toggle('hide-titles', hideTitles);
+
+    const afterRects = getVisibleDialRects(dialNodes);
+    const nodesToAnimate = new Set([...beforeRects.keys(), ...afterRects.keys()]);
+    const animatedNodes = [];
+
+    for (let node of nodesToAnimate) {
+        const before = beforeRects.get(node);
+        const after = afterRects.get(node);
+        if (!after) continue;
+
+        let x = 0;
+        let y = hideTitles ? 18 : -18;
+        if (before) {
+            x = before.left - after.left;
+            y = before.top - after.top;
+        }
+
+        if (x || y) {
+            TweenMax.killTweensOf(node);
+            TweenMax.set(node, { x, y, force3D: true });
+            animatedNodes.push(node);
+        }
+    }
+
+    requestAnimationFrame(() => {
+        root.classList.remove('skip-title-height-transition');
+        if (animatedNodes.length) {
+            TweenMax.to(animatedNodes, titleToggleFlipDuration, { x: 0, y: 0, force3D: true, ease });
+        }
+        animate();
+    });
+}
+
 function readURL(input) {
     if (input.files && input.files[0]) {
         reader.readAsDataURL(input.files[0]);
@@ -1758,13 +1841,7 @@ function applySettings() {
         // Position search icon based on what's visible
         updateSearchIconPosition();
 
-        if (!settings.showTitles) {
-            document.documentElement.style.setProperty('--title-opacity', '0');
-            document.documentElement.classList.add('hide-titles');
-        } else {
-            document.documentElement.style.setProperty('--title-opacity', '1');
-            document.documentElement.classList.remove('hide-titles');
-        }
+        applyTitleVisibility();
 
         if (!settings.showAddSite) {
             document.documentElement.style.setProperty('--create-dial-display', 'none');
