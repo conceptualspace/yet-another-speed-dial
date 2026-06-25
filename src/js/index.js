@@ -185,6 +185,19 @@ function isDialBorderEnabled(dialPadding) {
     return parseFloat(dialPadding) > 0;
 }
 
+function getDialBorderPadding(dialSize) {
+    switch (dialSize) {
+        case 'small':
+            return '5px';
+        case 'x-small':
+            return '4px';
+        case 'xx-small':
+            return '3px';
+        default:
+            return '6px';
+    }
+}
+
 function updateDialBackgroundVisibility() {
     dialBackgroundContainer.classList.toggle('collapsed', !isDialBorderEnabled(settings.dialPadding));
 }
@@ -1631,7 +1644,7 @@ function applySettings() {
 
         const dialBorderEnabled = isDialBorderEnabled(settings.dialPadding);
         document.documentElement.style.setProperty('--dial-background', dialBorderEnabled && settings.dialBackground ? settings.dialBackground : 'transparent');
-        document.documentElement.style.setProperty('--dial-padding', dialBorderEnabled ? '6px' : '0px');
+        document.documentElement.style.setProperty('--dial-padding', dialBorderEnabled ? getDialBorderPadding(settings.dialSize) : '0px');
 
         /*
         if (settings.scaleImages) {
