@@ -277,7 +277,6 @@ h1 {
     border-radius: 7px;
     margin: var(--dial-margin);
     will-change: transform;
-    transition: height 160ms ease;
 }
 
 .tile:hover {
@@ -318,7 +317,6 @@ h1 {
     margin: var(--dial-margin);
     display: var(--create-dial-display);
     z-index: 1;
-    transition: height 160ms ease;
 }
 
 .createDial-content {
@@ -343,6 +341,13 @@ h1 {
 
 .hide-titles .tile-title {
     pointer-events: none;
+}
+
+/* Only smoothly animate the tile height while titles are being toggled,
+   not when other geometry (e.g. dial size) changes. */
+.animate-tile-height .tileContainer .tile,
+.animate-tile-height .tileContainer .createDial {
+    transition: height 160ms ease;
 }
 
 a {

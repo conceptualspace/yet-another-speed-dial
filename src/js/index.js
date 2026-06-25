@@ -1464,6 +1464,47 @@ const animate = debounce(() => {
     });
 }, 300)
 
+// Smoothly morph the dials to their new size/position when dial dimensions
+// change. Uses a FLIP (First-Last-Invert-Play) so each tile animates from its
+// old rect to its new rect, translating and scaling together instead of
+// snapping (which looked like the dials moved first, then resized).
+function flipResizeTiles(applyChanges) {
+    const nodes = Array.from(document.querySelectorAll(`[id="${currentFolder}"] > .tile`));
+    if (!nodes.length) {
+        applyChanges();
+        animate();
+        return;
+    }
+
+    // FIRST: measure current rects
+    const first = nodes.map(n => n.getBoundingClientRect());
+
+    // apply the new dial dimensions (synchronously updates the CSS variables)
+    applyChanges();
+
+    // LAST: measure the new rects (batched to avoid layout thrashing)
+    const last = nodes.map(n => n.getBoundingClientRect());
+
+    const duration = 0.4;
+    for (let i = 0; i < nodes.length; i++) {
+        const f = first[i], l = last[i];
+        // INVERT to the old rect, then PLAY back to the natural new rect
+        TweenMax.killTweensOf(nodes[i]);
+        TweenMax.set(nodes[i], {
+            x: f.left - l.left,
+            y: f.top - l.top,
+            scaleX: l.width ? f.width / l.width : 1,
+            scaleY: l.height ? f.height / l.height : 1,
+            transformOrigin: '0 0'
+        });
+        TweenMax.to(nodes[i], duration, { x: 0, y: 0, scaleX: 1, scaleY: 1, ease: Power2.easeInOut, force3D: true });
+    }
+
+    // refresh the FLIP baseline once the tiles settle so window resizes stay correct
+    TweenMax.delayedCall(duration + 0.05, animate);
+}
+
+
 function readURL(input) {
     if (input.files && input.files[0]) {
         reader.readAsDataURL(input.files[0]);
@@ -1760,11 +1801,19 @@ function applySettings() {
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
-            document.documentElement.classList.add('hide-titles');
         } else {
             document.documentElement.style.setProperty('--title-opacity', '1');
-            document.documentElement.classList.remove('hide-titles');
         }
+
+        // Animate the tile height only while the titles are actually being
+        // toggled, so changing the dial size doesn't animate.
+        const root = document.documentElement;
+        const hideTitles = !settings.showTitles;
+        if (hideTitles !== root.classList.contains('hide-titles')) {
+            root.classList.add('animate-tile-height');
+            setTimeout(() => root.classList.remove('animate-tile-height'), 200);
+        }
+        root.classList.toggle('hide-titles', hideTitles);
 
         if (!settings.showAddSite) {
             document.documentElement.style.setProperty('--create-dial-display', 'none');
@@ -1822,6 +1871,10 @@ function applySettings() {
 }
 
 function saveSettings() {
+    const prevDialSize = settings.dialSize;
+    const prevDialRatio = settings.dialRatio;
+    const prevMaxCols = settings.maxCols;
+
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
@@ -1840,10 +1893,18 @@ function saveSettings() {
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
-    applySettings();
+    const dialsResized = settings.dialSize !== prevDialSize
+        || settings.dialRatio !== prevDialRatio
+        || settings.maxCols !== prevMaxCols;
 
-    // dial sizes/layout might have changed update gsap 
-    animate();
+    if (dialsResized) {
+        // morph the dials smoothly into their new size/position
+        flipResizeTiles(applySettings);
+    } else {
+        applySettings();
+        // other layout-affecting settings might have changed; refresh the gsap baseline
+        animate();
+    }
 
     chrome.storage.local.set({ settings })
         .then(() => {
