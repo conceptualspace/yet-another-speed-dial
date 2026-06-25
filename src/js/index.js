@@ -1370,6 +1370,12 @@ function isRectNearViewport(rect, viewport, padding = 80) {
     return rect.bottom >= viewport.top - padding && rect.top <= viewport.bottom + padding;
 }
 
+function isTileNearScrollViewport(top, height, padding = 80) {
+    const scrollTop = bookmarksContainerParent.scrollTop;
+    const scrollBottom = scrollTop + bookmarksContainerParent.clientHeight;
+    return top + height >= scrollTop - padding && top <= scrollBottom + padding;
+}
+
 function layout(force = false) {
     if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
@@ -1377,7 +1383,6 @@ function layout(force = false) {
 
         let nodesToAnimate = [];
         let positions = [];
-        const viewport = bookmarksContainerParent.getBoundingClientRect();
 
         // avoid layout thrashing
         // batch reads
@@ -1398,12 +1403,7 @@ function layout(force = false) {
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
                 const x = boxes[i].transform.x + box.lastX - box.x;
                 const y = boxes[i].transform.y + box.lastY - box.y;
-                const rect = box.node.getBoundingClientRect();
-                const oldRect = {
-                    top: rect.top + y,
-                    bottom: rect.bottom + y
-                };
-                if (isRectNearViewport(rect, viewport) || isRectNearViewport(oldRect, viewport)) {
+                if (isTileNearScrollViewport(box.y, box.node.offsetHeight) || isTileNearScrollViewport(box.lastY, box.node.offsetHeight)) {
                     TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
                     TweenMax.set(box.node, { x, y });
                     nodesToAnimate.push(box.node);
@@ -1420,11 +1420,7 @@ function layout(force = false) {
             if (duration === 0) {
                 TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
-                if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
-                } else {
-                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
-                }
+                TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
             }
         }
 
@@ -1453,14 +1449,13 @@ const animate = debounce(() => {
     const total = nodes.length;
 
     if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
 
     const nodePositions = [];
     for (let i = 0; i < total; i++) {
         let node = nodes[i];
         nodePositions.push({
             node,
-            transform: node._gsTransform,
+            transform: node._gsTransform || { x: 0, y: 0 },
             x: node.offsetLeft,
             y: node.offsetTop
         });
@@ -1511,6 +1506,8 @@ function flipResizeTiles(applyChanges) {
 
     const animatedNodes = [];
     const animatedNodeSet = new Set();
+    const maxScaledTiles = 90;
+    const scaleTiles = first.length <= maxScaledTiles;
     const duration = 0.4;
 
     const invertTile = function (node, f, l) {
@@ -1519,8 +1516,8 @@ function flipResizeTiles(applyChanges) {
         TweenMax.set(node, {
             x: f.left - l.left,
             y: f.top - l.top,
-            scaleX: l.width ? f.width / l.width : 1,
-            scaleY: l.height ? f.height / l.height : 1,
+            scaleX: scaleTiles && l.width ? f.width / l.width : 1,
+            scaleY: scaleTiles && l.height ? f.height / l.height : 1,
             transformOrigin: '0 0'
         });
         animatedNodes.push(node);
@@ -2543,7 +2540,6 @@ searchInput.addEventListener('input', function (e) {
 function filterDials(searchTerm) {
     const currentParent = currentFolder;
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
-    const viewport = bookmarksContainerParent.getBoundingClientRect();
     const showDials = [];
     const hideDials = [];
 
@@ -2570,16 +2566,14 @@ function filterDials(searchTerm) {
     const visibleShowDials = [];
     const visibleHideDials = [];
     for (let i = 0; i < showDials.length; i++) {
-        const rect = showDials[i].getBoundingClientRect();
-        if (isRectNearViewport(rect, viewport)) {
+        if (isTileNearScrollViewport(showDials[i].offsetTop, showDials[i].offsetHeight)) {
             visibleShowDials.push(showDials[i]);
         } else {
             TweenMax.set(showDials[i], { opacity: 1, scale: 1 });
         }
     }
     for (let i = 0; i < hideDials.length; i++) {
-        const rect = hideDials[i].getBoundingClientRect();
-        if (isRectNearViewport(rect, viewport)) {
+        if (isTileNearScrollViewport(hideDials[i].offsetTop, hideDials[i].offsetHeight)) {
             visibleHideDials.push(hideDials[i]);
         } else {
             TweenMax.set(hideDials[i], { opacity: 0, scale: 0.8, display: 'none' });
