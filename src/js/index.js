@@ -1366,6 +1366,10 @@ function saveBookmarkSettings() {
 }
 
 // todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
+function isRectNearViewport(rect, viewport, padding = 80) {
+    return rect.bottom >= viewport.top - padding && rect.top <= viewport.bottom + padding;
+}
+
 function layout(force = false) {
     if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
         windowSize = window.innerWidth;
@@ -1373,6 +1377,7 @@ function layout(force = false) {
 
         let nodesToAnimate = [];
         let positions = [];
+        const viewport = bookmarksContainerParent.getBoundingClientRect();
 
         // avoid layout thrashing
         // batch reads
@@ -1391,11 +1396,18 @@ function layout(force = false) {
         for (let i = 0; i < boxes.length; i++) {
             let box = positions[i];
             if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
                 const x = boxes[i].transform.x + box.lastX - box.x;
                 const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
-                nodesToAnimate.push(box.node);
+                const rect = box.node.getBoundingClientRect();
+                const oldRect = {
+                    top: rect.top + y,
+                    bottom: rect.bottom + y
+                };
+                if (isRectNearViewport(rect, viewport) || isRectNearViewport(oldRect, viewport)) {
+                    TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
+                    TweenMax.set(box.node, { x, y });
+                    nodesToAnimate.push(box.node);
+                }
             }
             boxes[i].x = box.x;
             boxes[i].y = box.y;
@@ -1477,32 +1489,31 @@ function flipResizeTiles(applyChanges) {
     }
 
     const viewport = bookmarksContainerParent.getBoundingClientRect();
-    const viewportPadding = 80;
+    const viewportTopPadding = 80;
+    const viewportBottomPadding = Math.max(240, bookmarksContainerParent.clientHeight);
     const first = [];
 
-    // FIRST: measure only visible dials. Offscreen dials can snap to their new
-    // geometry because nobody sees them, and skipping them keeps large dial sets fast.
+    // FIRST: measure visible dials plus one below-viewport screen. When dials
+    // shrink, those below-viewport dials often become visible and can animate
+    // from a real old rect instead of a synthetic one.
     for (let i = 0; i < nodes.length; i++) {
         const rect = nodes[i].getBoundingClientRect();
-        if (rect.bottom < viewport.top - viewportPadding) continue;
-        if (rect.top > viewport.bottom + viewportPadding) break;
-        first.push({ node: nodes[i], rect });
+        if (rect.bottom < viewport.top - viewportTopPadding) continue;
+        if (rect.top > viewport.bottom + viewportBottomPadding) break;
+        const item = { node: nodes[i], rect };
+        first.push(item);
     }
+
+    const oldTileRect = first[0]?.rect;
 
     // apply the new dial dimensions (synchronously updates the CSS variables)
     applyChanges();
 
-    if (!first.length) {
-        animate();
-        return;
-    }
-
     const animatedNodes = [];
+    const animatedNodeSet = new Set();
     const duration = 0.4;
-    for (let i = 0; i < first.length; i++) {
-        const node = first[i].node;
-        const f = first[i].rect;
-        const l = node.getBoundingClientRect();
+
+    const invertTile = function (node, f, l) {
         // INVERT to the old rect, then PLAY back to the natural new rect
         TweenMax.killTweensOf(node);
         TweenMax.set(node, {
@@ -1513,6 +1524,36 @@ function flipResizeTiles(applyChanges) {
             transformOrigin: '0 0'
         });
         animatedNodes.push(node);
+        animatedNodeSet.add(node);
+    };
+
+    for (let i = 0; i < first.length; i++) {
+        const node = first[i].node;
+        const l = node.getBoundingClientRect();
+        if (!isRectNearViewport(first[i].rect, viewport) && !isRectNearViewport(l, viewport)) continue;
+        invertTile(node, first[i].rect, l);
+    }
+
+    // If dials get smaller, new rows can enter the viewport. They weren't
+    // visible before, so give them a lightweight synthetic start instead of
+    // snapping into place.
+    for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+        if (animatedNodeSet.has(node)) continue;
+
+        const l = node.getBoundingClientRect();
+        if (!isRectNearViewport(l, viewport)) {
+            if (l.top > viewport.bottom + 80) break;
+            continue;
+        }
+
+        const f = {
+            left: l.left,
+            top: l.top + Math.min(120, Math.max(40, viewport.bottom - l.top + 16)),
+            width: oldTileRect ? oldTileRect.width : l.width,
+            height: oldTileRect ? oldTileRect.height : l.height
+        };
+        invertTile(node, f, l);
     }
 
     if (animatedNodes.length) {
@@ -2502,6 +2543,9 @@ searchInput.addEventListener('input', function (e) {
 function filterDials(searchTerm) {
     const currentParent = currentFolder;
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
+    const viewport = bookmarksContainerParent.getBoundingClientRect();
+    const showDials = [];
+    const hideDials = [];
 
     dials.forEach(dial => {
         if (!settings.showAddSite && dial.classList.contains('createDial')) {
@@ -2513,23 +2557,41 @@ function filterDials(searchTerm) {
         const url = dial.href.toLowerCase();
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
-            // Fade-in and scale-up for matching thumbnails
-            TweenMax.to(dial, 0.3, { 
-                opacity: 1, 
-                scale: 1, 
-                display: 'block', 
-                ease: Power2.easeOut 
-            });
+            showDials.push(dial);
         } else {
-            // Fade-out and scale-down for non-matching thumbnails
-            TweenMax.to(dial, 0.3, { 
-                opacity: 0, 
-                scale: 0.8, 
-                display: 'none', 
-                ease: Power2.easeIn 
-            });
+            hideDials.push(dial);
         }
     });
+
+    TweenMax.killTweensOf(showDials);
+    TweenMax.killTweensOf(hideDials);
+    TweenMax.set(showDials, { display: 'block' });
+
+    const visibleShowDials = [];
+    const visibleHideDials = [];
+    for (let i = 0; i < showDials.length; i++) {
+        const rect = showDials[i].getBoundingClientRect();
+        if (isRectNearViewport(rect, viewport)) {
+            visibleShowDials.push(showDials[i]);
+        } else {
+            TweenMax.set(showDials[i], { opacity: 1, scale: 1 });
+        }
+    }
+    for (let i = 0; i < hideDials.length; i++) {
+        const rect = hideDials[i].getBoundingClientRect();
+        if (isRectNearViewport(rect, viewport)) {
+            visibleHideDials.push(hideDials[i]);
+        } else {
+            TweenMax.set(hideDials[i], { opacity: 0, scale: 0.8, display: 'none' });
+        }
+    }
+
+    if (visibleShowDials.length) {
+        TweenMax.to(visibleShowDials, 0.3, { opacity: 1, scale: 1, ease: Power2.easeOut });
+    }
+    if (visibleHideDials.length) {
+        TweenMax.to(visibleHideDials, 0.3, { opacity: 0, scale: 0.8, display: 'none', ease: Power2.easeIn });
+    }
 
     // Recalculate layout after filtering
     animate();
