@@ -276,7 +276,7 @@ h1 {
 .tile {
     width: var(--dial-width);
     height: var(--dial-height);
-    border-radius: 7px;
+    border-radius: 12px;
     margin: var(--dial-margin);
     will-change: transform;
     /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
@@ -300,11 +300,11 @@ h1 {
     border-color: transparent;
     border-radius: inherit;
     background-color: var(--dial-background);
-    background-origin: content-box;
-    background-clip: border-box;
-    background-position: 50%;
-    background-repeat: no-repeat;
-    background-size: var(--image-scaling);
+    background-origin: content-box, content-box, border-box;
+    background-clip: content-box, content-box, border-box;
+    background-position: 50%, 50%, 50%;
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-size: var(--image-scaling), cover, cover;
     overflow: hidden;
 }
 

@@ -1280,7 +1280,7 @@ function saveBookmarkSettings() {
         } else {
             bgColor = rgbaToCssGradient(bgColor);
         }
-        targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
+        setTileBackgroundImage(targetNode.children[0].children[0], selectedImageSrc, bgColor);
         //targetNode.children[0].children[0].style.backgroundColor = bgColor;
         chrome.storage.local.get(url)
             .then(result => {
@@ -1320,7 +1320,7 @@ function saveBookmarkSettings() {
                 }
 
                 // update tile
-                targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
+                setTileBackgroundImage(targetNode.children[0].children[0], selectedImageSrc, bgColor);
                 //targetNode.children[0].children[0].style.backgroundColor = bgColor;
                 break;
             }
@@ -3043,9 +3043,14 @@ function batchApplyImages(elements) {
         elements.forEach(({ element, thumb }) => {
             // defer to the global --dial-background so transparent thumbs sit on a consistent color
             element.style.removeProperty('background-color');
-            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
+            setTileBackgroundImage(element, thumb.thumbnail, thumb.bgColor);
         });
     });
+}
+
+function setTileBackgroundImage(element, thumbnail, bgColor) {
+    const thumbnailBackground = bgColor || 'linear-gradient(transparent, transparent)';
+    element.style.backgroundImage = `url('${thumbnail}'), ${thumbnailBackground}, linear-gradient(var(--dial-background), var(--dial-background))`;
 }
 
 function handleMessages(message) {
