@@ -1476,28 +1476,47 @@ function flipResizeTiles(applyChanges) {
         return;
     }
 
-    // FIRST: measure current rects
-    const first = nodes.map(n => n.getBoundingClientRect());
+    const viewport = bookmarksContainerParent.getBoundingClientRect();
+    const viewportPadding = 80;
+    const first = [];
+
+    // FIRST: measure only visible dials. Offscreen dials can snap to their new
+    // geometry because nobody sees them, and skipping them keeps large dial sets fast.
+    for (let i = 0; i < nodes.length; i++) {
+        const rect = nodes[i].getBoundingClientRect();
+        if (rect.bottom < viewport.top - viewportPadding) continue;
+        if (rect.top > viewport.bottom + viewportPadding) break;
+        first.push({ node: nodes[i], rect });
+    }
 
     // apply the new dial dimensions (synchronously updates the CSS variables)
     applyChanges();
 
-    // LAST: measure the new rects (batched to avoid layout thrashing)
-    const last = nodes.map(n => n.getBoundingClientRect());
+    if (!first.length) {
+        animate();
+        return;
+    }
 
+    const animatedNodes = [];
     const duration = 0.4;
-    for (let i = 0; i < nodes.length; i++) {
-        const f = first[i], l = last[i];
+    for (let i = 0; i < first.length; i++) {
+        const node = first[i].node;
+        const f = first[i].rect;
+        const l = node.getBoundingClientRect();
         // INVERT to the old rect, then PLAY back to the natural new rect
-        TweenMax.killTweensOf(nodes[i]);
-        TweenMax.set(nodes[i], {
+        TweenMax.killTweensOf(node);
+        TweenMax.set(node, {
             x: f.left - l.left,
             y: f.top - l.top,
             scaleX: l.width ? f.width / l.width : 1,
             scaleY: l.height ? f.height / l.height : 1,
             transformOrigin: '0 0'
         });
-        TweenMax.to(nodes[i], duration, { x: 0, y: 0, scaleX: 1, scaleY: 1, ease: Power2.easeInOut, force3D: true });
+        animatedNodes.push(node);
+    }
+
+    if (animatedNodes.length) {
+        TweenMax.to(animatedNodes, duration, { x: 0, y: 0, scaleX: 1, scaleY: 1, ease: Power2.easeInOut, force3D: true });
     }
 
     // refresh the FLIP baseline once the tiles settle so window resizes stay correct
