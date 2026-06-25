@@ -312,15 +312,16 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="textColor">Text Color</label>
+                    <label data-locale="dialBorder">Dial Border</label>
                 </div>
                 <div class='column controls'>
-                    <div id="textColor-picker-wrapper">
-                        <input class="settingsCtl" id="textColor-picker" type="color">
-                    </div>
+                    <label class="switch">
+                        <input class="settingsCtl" id="dialPadding" type="checkbox">
+                        <span class="slider round settingsCtl"></span>
+                    </label>
                 </div>
             </div>
-            <div class='row'>
+            <div class='row collapsed' id="dialBackgroundContainer">
                 <div class='column'>
                     <label data-locale="dialBackground">Dial Background</label>
                 </div>
@@ -332,15 +333,12 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="dialPadding">Dial Padding</label>
+                    <label data-locale="textColor">Text Color</label>
                 </div>
                 <div class='column controls'>
-                    <select class="settingsCtl" id="dialPadding" name="dialPadding">
-                        <option value="0px" data-locale="optionNone">None</option>
-                        <option value="6px" data-locale="optionSmall">Small</option>
-                        <option value="10px" data-locale="optionMedium">Medium</option>
-                        <option value="14px" data-locale="optionLarge">Large</option>
-                    </select>
+                    <div id="textColor-picker-wrapper">
+                        <input class="settingsCtl" id="textColor-picker" type="color">
+                    </div>
                 </div>
             </div>
             <div class="rowHeader">

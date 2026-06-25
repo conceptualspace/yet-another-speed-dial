@@ -11,7 +11,7 @@
     --dial-width: 178px;
     --dial-height: 118px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
-    --dial-background: rgba(255, 255, 255, 0.5);
+    --dial-background: transparent;
     --dial-padding: 0px;
 }
 

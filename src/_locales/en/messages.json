@@ -42,7 +42,10 @@
     "message": "Delete"
   },
   "dialBackground": {
-    "message": "Dial Background"
+    "message": "Border Color"
+  },
+  "dialBorder": {
+    "message": "Dial Border"
   },
   "dialPadding": {
     "message": "Dial Padding"

@@ -96,6 +96,7 @@ const switchesContainer = document.getElementById("switchesContainer");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
+const dialBackgroundContainer = document.getElementById("dialBackgroundContainer");
 const largeTilesInput = document.getElementById("largeTiles");
 const rememberFolderInput = document.getElementById("rememberFolder");
 const showTitlesInput = document.getElementById("showTitles");
@@ -179,6 +180,14 @@ let defaults = {
     dialPadding: '0px',
     currentFolder: null,
 };
+
+function isDialBorderEnabled(dialPadding) {
+    return parseFloat(dialPadding) > 0;
+}
+
+function updateDialBackgroundVisibility() {
+    dialBackgroundContainer.classList.toggle('collapsed', !isDialBorderEnabled(settings.dialPadding));
+}
 
 // Create an invisible overlay to absorb outside clicks when Coloris is open
 const colorisOverlay = document.createElement('div');
@@ -1620,15 +1629,9 @@ function applySettings() {
             document.documentElement.style.setProperty('--color', settings.textColor);
         }
 
-        if (settings.dialBackground) {
-            document.documentElement.style.setProperty('--dial-background', settings.dialBackground);
-        }
-
-        if (settings.dialPadding) {
-            document.documentElement.style.setProperty('--dial-padding', settings.dialPadding);
-        } else {
-            document.documentElement.style.setProperty('--dial-padding', '0px');
-        }
+        const dialBorderEnabled = isDialBorderEnabled(settings.dialPadding);
+        document.documentElement.style.setProperty('--dial-background', dialBorderEnabled && settings.dialBackground ? settings.dialBackground : 'transparent');
+        document.documentElement.style.setProperty('--dial-padding', dialBorderEnabled ? '6px' : '0px');
 
         /*
         if (settings.scaleImages) {
@@ -1811,7 +1814,8 @@ function applySettings() {
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
-        dialPaddingInput.value = settings.dialPadding;
+        dialPaddingInput.checked = isDialBorderEnabled(settings.dialPadding);
+        updateDialBackgroundVisibility();
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -1858,7 +1862,7 @@ function saveSettings() {
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
-    settings.dialPadding = dialPaddingInput.value;
+    settings.dialPadding = dialPaddingInput.checked ? '6px' : '0px';
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
@@ -2139,6 +2143,8 @@ dialRatioInput.oninput = function (e) {
 }
 
 dialPaddingInput.oninput = function (e) {
+    settings.dialPadding = dialPaddingInput.checked ? '6px' : '0px';
+    updateDialBackgroundVisibility();
     saveSettings()
 }
 
@@ -2167,7 +2173,9 @@ textColor_picker.onchange = function () {
 
 dialColor_picker.addEventListener('input', function () {
     // live preview while picking
-    document.documentElement.style.setProperty('--dial-background', this.value);
+    if (isDialBorderEnabled(settings.dialPadding)) {
+        document.documentElement.style.setProperty('--dial-background', this.value);
+    }
     dialColor_picker_wrapper.style.backgroundColor = this.value;
 });
 
