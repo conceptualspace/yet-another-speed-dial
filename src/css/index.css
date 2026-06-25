@@ -277,7 +277,7 @@ h1 {
     border-radius: 7px;
     margin: var(--dial-margin);
     will-change: transform;
-    /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
+    transition: height 160ms ease;
 }
 
 .tile:hover {
@@ -318,6 +318,7 @@ h1 {
     margin: var(--dial-margin);
     display: var(--create-dial-display);
     z-index: 1;
+    transition: height 160ms ease;
 }
 
 .createDial-content {
@@ -330,6 +331,18 @@ h1 {
 
 .createDial-content:hover {
     opacity: 1;
+}
+
+/* When titles are hidden, collapse the title space so tiles shrink to the
+   thumbnail height and rows aren't separated by an empty gap. The title fades
+   out via --title-opacity while the tile height animates. */
+.hide-titles .tileContainer .tile,
+.hide-titles .tileContainer .createDial {
+    height: var(--dial-content-height);
+}
+
+.hide-titles .tile-title {
+    pointer-events: none;
 }
 
 a {

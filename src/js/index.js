@@ -1760,8 +1760,10 @@ function applySettings() {
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
+            document.documentElement.classList.add('hide-titles');
         } else {
             document.documentElement.style.setProperty('--title-opacity', '1');
+            document.documentElement.classList.remove('hide-titles');
         }
 
         if (!settings.showAddSite) {
