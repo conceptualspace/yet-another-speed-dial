@@ -10,6 +10,7 @@
     --image-scaling: contain;
     --dial-width: 178px;
     --dial-height: 118px;
+    --dial-content-height: 100px;
     --dial-margin: 14px; /*todo: oops accidentally bumped this from 12 to 18 */
 }
 
