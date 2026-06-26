@@ -148,6 +148,8 @@ const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
 const titleToggleFlipThreshold = 100;
 const titleToggleFlipDuration = 0.18;
+const dialResizeFlipDuration = 0.22;
+const dialResizeScaleThreshold = 90;
 
 let folderIds = [];
 
@@ -1488,11 +1490,74 @@ function getVisibleDialRects(nodes) {
         const bottom = top + node.offsetHeight;
         if (bottom >= minTop && top <= maxBottom) {
             const rect = node.getBoundingClientRect();
-            rects.set(node, { left: rect.left, top: rect.top });
+            rects.set(node, { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
         }
     }
 
     return rects;
+}
+
+function flipResizeDials(applyChanges) {
+    const root = document.documentElement;
+    const dialNodes = getCurrentDialNodes();
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!dialNodes.length || reduceMotion) {
+        root.classList.add('skip-dial-geometry-transition');
+        const result = applyChanges();
+        requestAnimationFrame(() => {
+            root.classList.remove('skip-dial-geometry-transition');
+            animate();
+        });
+        return result;
+    }
+
+    const beforeRects = getVisibleDialRects(dialNodes);
+    root.classList.add('skip-dial-geometry-transition');
+    const result = applyChanges();
+    const afterRects = getVisibleDialRects(dialNodes);
+    const nodesToAnimate = new Set([...beforeRects.keys(), ...afterRects.keys()]);
+    const useScale = nodesToAnimate.size <= dialResizeScaleThreshold;
+    const animatedNodes = [];
+
+    for (let node of nodesToAnimate) {
+        const before = beforeRects.get(node);
+        const after = afterRects.get(node);
+        if (!after) continue;
+
+        let x = 0;
+        let y = Math.min(after.height * 0.4, 72);
+        let scaleX = 1;
+        let scaleY = 1;
+
+        if (before) {
+            x = before.left - after.left;
+            y = before.top - after.top;
+            if (useScale) {
+                scaleX = before.width / after.width;
+                scaleY = before.height / after.height;
+            }
+        } else if (useScale) {
+            scaleX = 0.96;
+            scaleY = 0.96;
+        }
+
+        if (x || y || scaleX !== 1 || scaleY !== 1) {
+            TweenMax.killTweensOf(node);
+            TweenMax.set(node, { x, y, scaleX, scaleY, transformOrigin: '0 0', force3D: true });
+            animatedNodes.push(node);
+        }
+    }
+
+    requestAnimationFrame(() => {
+        root.classList.remove('skip-dial-geometry-transition');
+        if (animatedNodes.length) {
+            TweenMax.to(animatedNodes, dialResizeFlipDuration, { x: 0, y: 0, scaleX: 1, scaleY: 1, force3D: true, ease });
+        }
+        animate();
+    });
+
+    return result;
 }
 
 function applyTitleVisibility() {
@@ -1666,7 +1731,7 @@ function addImage(image) {
     }
 }
 
-function applySettings() {
+function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
@@ -1738,10 +1803,10 @@ function applySettings() {
         
             const containerWidth = settings.maxCols * (dialWidth + dialMargin);
             document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
-            layout();
+            if (!options.skipLayout) layout();
         } else {
             document.documentElement.style.setProperty('--columns', '100%');
-            layout();
+            if (!options.skipLayout) layout();
         }
 
         if (settings.dialSize && settings.dialSize !== "large") {
@@ -1899,6 +1964,10 @@ function applySettings() {
 }
 
 function saveSettings() {
+    const oldDialSize = settings.dialSize;
+    const oldDialRatio = settings.dialRatio;
+    const oldMaxCols = settings.maxCols;
+
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
@@ -1917,7 +1986,12 @@ function saveSettings() {
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
-    applySettings();
+    const dialGeometryChanged = oldDialSize !== settings.dialSize || oldDialRatio !== settings.dialRatio || oldMaxCols !== settings.maxCols;
+    if (dialGeometryChanged) {
+        flipResizeDials(() => applySettings({ skipLayout: true }));
+    } else {
+        applySettings();
+    }
 
     chrome.storage.local.set({ settings })
         .then(() => {

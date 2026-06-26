@@ -346,6 +346,11 @@ h1 {
     transition: none;
 }
 
+.skip-dial-geometry-transition .tileContainer .tile,
+.skip-dial-geometry-transition .tileContainer .createDial {
+    transition: none;
+}
+
 .hide-titles .tile-title {
     pointer-events: none;
 }
