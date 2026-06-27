@@ -2493,25 +2493,34 @@ function filterDials(searchTerm) {
         const url = dial.href.toLowerCase();
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
-            // Fade in matching tiles (position is handled by the reflow loop,
-            // which owns the transform, so we don't animate scale here)
-            TweenMax.to(dial, 0.3, { 
-                opacity: 1, 
-                display: 'block', 
-                ease: Power2.easeOut 
-            });
+            showFilteredDial(dial);
         } else {
-            // Fade out non-matching tiles
-            TweenMax.to(dial, 0.3, { 
-                opacity: 0, 
-                display: 'none', 
-                ease: Power2.easeIn 
-            });
+            hideFilteredDial(dial);
         }
     });
+}
 
-    // Recalculate layout after filtering
-    animate();
+// Search filter visibility. Matching tiles scale + fade back in, non-matching tiles
+// shrink + fade out in place (the effect lives on .tile-main so it never fights the
+// reflow loop, which owns .tile's transform). Positions are intentionally NOT animated
+// here: the flex grid reflows instantly when a tile is hidden, keeping search a light,
+// in-place effect rather than a full reflow.
+function showFilteredDial(dial) {
+    clearTimeout(dial._filterTimer);
+    if (dial.style.display === 'none') {
+        dial.style.display = '';
+        // commit the collapsed state before un-hiding so the transition plays
+        void dial.offsetWidth;
+    }
+    dial.classList.remove('filtered-out');
+}
+
+function hideFilteredDial(dial) {
+    if (dial.classList.contains('filtered-out')) return;
+    dial.classList.add('filtered-out');
+    dial._filterTimer = setTimeout(() => {
+        dial.style.display = 'none';
+    }, 300);
 }
 
 
