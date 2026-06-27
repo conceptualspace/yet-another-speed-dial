@@ -121,7 +121,6 @@ let tabMessagePort = null;
 chrome.runtime.onMessage.addListener(handleMessages);
 
 let cache = {};
-let resizing = false;
 let settings = null;
 let speedDialId = null;
 let sortable = null;
@@ -137,10 +136,16 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
-let windowSize = null;
-let containerSize = null;
 let layoutFolder = false;
 let boxes = [];
+// tile reflow (FLIP) animation state
+let reflowRAF = null;
+let reflowLastTime = 0;
+let isResizing = false;
+let resizeSettleTimer = null;
+const REFLOW_SMOOTH = 0.2;          // easing toward target per 60fps frame (0..1); higher = snappier
+const REFLOW_SETTLE = 0.5;          // px threshold to snap a tile to its resting position
+const REFLOW_FRAME_MS = 1000 / 60;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -1365,102 +1370,123 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-// todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-function layout(force = false) {
-    if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
-        windowSize = window.innerWidth;
-        containerSize = getComputedStyle(bookmarksContainer).maxWidth;
+// Tile reflow animation (FLIP via a single rAF integrator).
+//
+// Each tile always sits at its native flexbox position; we only ever write a
+// `transform: translate3d(...)` offset that eases toward zero. When the grid
+// reflows (window resize, folder re-pack, dial-size change, delete, search)
+// a tile's native position jumps while its tracked "displayed" position lags
+// behind, so the offset becomes non-zero and the loop animates it smoothly
+// back to rest.
+//
+// This replaces the old approach of restarting GSAP springs and calling
+// getComputedStyle every frame, which caused a style-recalculation storm and
+// poor frame rates during continuous window resizes.
 
-        let nodesToAnimate = [];
-        let positions = [];
+// (Re)build boxes[] from the current folder's tiles. Displayed positions are
+// preserved for tiles that already existed (so an intervening layout change
+// animates); brand-new tiles are seeded at rest so first paint doesn't animate.
+function measureTiles() {
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
 
-        // avoid layout thrashing
-        // batch reads
-        for (let i = 0; i < boxes.length; i++) {
-            let box = boxes[i];
-            positions[i] = { 
-                node: box.node,
-                x: box.node.offsetLeft,
-                y: box.node.offsetTop,
-                lastX: box.x,
-                lastY: box.y
-            };
-        }
-
-        // batch writes
-        for (let i = 0; i < boxes.length; i++) {
-            let box = positions[i];
-            if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
-                const x = boxes[i].transform.x + box.lastX - box.x;
-                const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
-                nodesToAnimate.push(box.node);
-            }
-            boxes[i].x = box.x;
-            boxes[i].y = box.y;
-        }
-
-        // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
-        // a resize occurs the animation will start from the right position
-        if (nodesToAnimate.length > 0 || force) {
-            let duration = layoutFolder ? 0 : 0.6;
-            if (duration === 0) {
-                TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
-            } else {
-                if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
-                } else {
-                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
-                }
-            }
-        }
-
-        layoutFolder = false;
+    const prev = new Map();
+    for (let box of boxes) {
+        prev.set(box.node, box);
     }
-}
 
-function ease(progress) {
-    const omega = 12;
-    const zeta = 0.8;
-    const beta = Math.sqrt(1.0 - zeta * zeta);
-    progress = 1 - Math.cos(progress * Math.PI / 2);
-    progress = 1 / beta *
-        Math.exp(-zeta * omega * progress) *
-        Math.sin(beta * omega * progress + Math.atan(beta / zeta));
-    return 1 - progress;
-}
-
-const animate = debounce(() => {
-    requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
-    let currentParent;
-    if (currentFolder) {
-        currentParent = currentFolder
-    }
-    const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
-    const total = nodes.length;
-
-    if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
-
-    const nodePositions = [];
-    for (let i = 0; i < total; i++) {
-        let node = nodes[i];
-        nodePositions.push({
+    const next = [];
+    for (let node of nodes) {
+        // skip hidden tiles (e.g. filtered out) so they don't pollute measurements
+        if (node.offsetParent === null) continue;
+        const nx = node.offsetLeft;
+        const ny = node.offsetTop;
+        const old = prev.get(node);
+        next.push({
             node,
-            transform: node._gsTransform,
-            x: node.offsetLeft,
-            y: node.offsetTop
+            nx,
+            ny,
+            dispX: old ? old.dispX : nx,
+            dispY: old ? old.dispY : ny,
+            transformed: node.style.transform !== ''
         });
     }
 
-    for (let i = 0; i < total; i++) {
-        boxes[i] = nodePositions[i];
+    boxes = next;
+}
+
+function startReflow() {
+    if (reflowRAF === null) {
+        reflowLastTime = performance.now();
+        reflowRAF = requestAnimationFrame(reflowTick);
     }
-    boxes.length = total;
+}
 
-    layout();
+function reflowTick(now) {
+    const count = boxes.length;
+    if (!count) {
+        reflowRAF = null;
+        return;
+    }
 
+    // frame-rate independent smoothing factor
+    let dt = now - reflowLastTime;
+    reflowLastTime = now;
+    if (dt > 50) dt = 50;
+    else if (dt < 1) dt = 1;
+    const t = 1 - Math.pow(1 - REFLOW_SMOOTH, dt / REFLOW_FRAME_MS);
+
+    // batch reads: refresh each tile's native (untransformed) position.
+    // transforms don't affect layout, so this triggers at most one reflow.
+    for (let i = 0; i < count; i++) {
+        const box = boxes[i];
+        box.nx = box.node.offsetLeft;
+        box.ny = box.node.offsetTop;
+    }
+
+    // batch writes: ease the displayed position toward the native position and
+    // express the difference as a composited translate (no layout/paint).
+    let moving = false;
+    for (let i = 0; i < count; i++) {
+        const box = boxes[i];
+        box.dispX += (box.nx - box.dispX) * t;
+        box.dispY += (box.ny - box.dispY) * t;
+
+        const tx = box.dispX - box.nx;
+        const ty = box.dispY - box.ny;
+
+        if (Math.abs(tx) < REFLOW_SETTLE && Math.abs(ty) < REFLOW_SETTLE) {
+            box.dispX = box.nx;
+            box.dispY = box.ny;
+            if (box.transformed) {
+                box.node.style.transform = '';
+                box.transformed = false;
+            }
+        } else {
+            moving = true;
+            box.node.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+            box.transformed = true;
+        }
+    }
+
+    if (moving || isResizing) {
+        reflowRAF = requestAnimationFrame(reflowTick);
+    } else {
+        reflowRAF = null;
+    }
+}
+
+// Public entry points used after a layout-affecting change. `layout` runs
+// immediately; `animate` is debounced for high-frequency callers.
+function layout() {
+    measureTiles();
+    startReflow();
+}
+
+const animate = debounce(() => {
+    requestAnimationFrame(() => {
+        measureTiles();
+        startReflow();
     });
 }, 300)
 
@@ -2426,18 +2452,17 @@ function filterDials(searchTerm) {
         const url = dial.href.toLowerCase();
 
         if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
-            // Fade-in and scale-up for matching thumbnails
+            // Fade in matching tiles (position is handled by the reflow loop,
+            // which owns the transform, so we don't animate scale here)
             TweenMax.to(dial, 0.3, { 
                 opacity: 1, 
-                scale: 1, 
                 display: 'block', 
                 ease: Power2.easeOut 
             });
         } else {
-            // Fade-out and scale-down for non-matching thumbnails
+            // Fade out non-matching tiles
             TweenMax.to(dial, 0.3, { 
                 opacity: 0, 
-                scale: 0.8, 
                 display: 'none', 
                 ease: Power2.easeIn 
             });
@@ -3022,13 +3047,18 @@ function handleMessages(message) {
 }
 
 function onResize() {
-    if (!resizing) {
-        requestAnimationFrame(() => {
-            layout();
-            resizing = false;
-        });
-        resizing = true;
+    // Ensure the reflow loop is running; it reads native positions every frame,
+    // so tiles trail smoothly toward their new flex positions as the window
+    // changes. isResizing keeps the loop alive until shortly after resizing stops.
+    if (!isResizing) {
+        isResizing = true;
+        measureTiles();
+        startReflow();
     }
+    clearTimeout(resizeSettleTimer);
+    resizeSettleTimer = setTimeout(() => {
+        isResizing = false;
+    }, 150);
 }
 
 function init() {
