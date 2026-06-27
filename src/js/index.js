@@ -1985,7 +1985,6 @@ function saveSettings() {
     if (flipTitleToggle) {
         restoreScrollAnchor(scrollAnchor);
         flipVisibleTitleToggleTiles(titleToggleFirstRects);
-        preserveScrollAnchor(scrollAnchor);
     } else {
         preserveScrollAnchor(scrollAnchor);
     }
