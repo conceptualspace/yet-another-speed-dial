@@ -148,6 +148,7 @@ const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
 
 let folderIds = [];
+const titleHeightTransitionLimit = 150;
 
 let defaults = {
     wallpaper: true,
@@ -1484,6 +1485,21 @@ function getScrollAnchor() {
     return null;
 }
 
+function getCurrentTileCount() {
+    let currentParent = currentFolder ? currentFolder : speedDialId;
+    let currentContainer = document.getElementById(currentParent);
+    return currentContainer ? currentContainer.querySelectorAll(':scope > .tile').length : 0;
+}
+
+function skipTitleHeightTransition() {
+    document.documentElement.classList.add('skip-title-height-transition');
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            document.documentElement.classList.remove('skip-title-height-transition');
+        });
+    });
+}
+
 function preserveScrollAnchor(anchor, duration = 180) {
     if (!anchor || !anchor.node || !anchor.node.isConnected) return;
 
@@ -1865,6 +1881,9 @@ function applySettings() {
 function saveSettings() {
     const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
     const scrollAnchor = showTitlesChanged ? getScrollAnchor() : null;
+    if (showTitlesChanged && getCurrentTileCount() > titleHeightTransitionLimit) {
+        skipTitleHeightTransition();
+    }
 
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;

@@ -342,6 +342,11 @@ h1 {
     height: var(--dial-content-height);
 }
 
+.skip-title-height-transition .tileContainer .tile,
+.skip-title-height-transition .tileContainer .createDial {
+    transition: none;
+}
+
 .hide-titles .tile-title {
     pointer-events: none;
 }
