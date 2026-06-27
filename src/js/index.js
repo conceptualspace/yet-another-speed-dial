@@ -1464,6 +1464,47 @@ const animate = debounce(() => {
     });
 }, 300)
 
+function getScrollAnchor() {
+    let currentParent = currentFolder ? currentFolder : speedDialId;
+    let currentContainer = document.getElementById(currentParent);
+    if (!currentContainer) return null;
+
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const tiles = currentContainer.children;
+    for (let i = 0; i < tiles.length; i++) {
+        let node = tiles[i];
+        if (!node.classList.contains('tile')) continue;
+
+        const rect = node.getBoundingClientRect();
+        if (rect.bottom > containerRect.top && rect.top < containerRect.bottom) {
+            return { node, top: rect.top };
+        }
+    }
+
+    return null;
+}
+
+function preserveScrollAnchor(anchor, duration = 180) {
+    if (!anchor || !anchor.node || !anchor.node.isConnected) return;
+
+    const start = performance.now();
+    function restore(now) {
+        if (!anchor.node.isConnected) return;
+
+        const delta = anchor.node.getBoundingClientRect().top - anchor.top;
+        if (delta !== 0) {
+            bookmarksContainerParent.scrollTop += delta;
+            scrollPos = bookmarksContainerParent.scrollTop;
+        }
+
+        if (now - start < duration) {
+            requestAnimationFrame(restore);
+        }
+    }
+
+    requestAnimationFrame(restore);
+}
+
 function readURL(input) {
     if (input.files && input.files[0]) {
         reader.readAsDataURL(input.files[0]);
@@ -1822,6 +1863,9 @@ function applySettings() {
 }
 
 function saveSettings() {
+    const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
+    const scrollAnchor = showTitlesChanged ? getScrollAnchor() : null;
+
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
@@ -1841,6 +1885,7 @@ function saveSettings() {
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
     applySettings();
+    preserveScrollAnchor(scrollAnchor);
 
     // dial sizes/layout might have changed update gsap 
     animate();
