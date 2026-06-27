@@ -144,9 +144,9 @@ let reflowLastTime = 0;
 let isResizing = false;
 let resizeSettleTimer = null;
 let reflowDirty = false;            // true when native positions need re-reading (resize/relayout)
-const REFLOW_SMOOTH = 0.2;          // easing toward target per 60fps frame (0..1); higher = snappier
+const REFLOW_OMEGA = 20;            // critically-damped spring frequency (rad/s); higher = snappier
 const REFLOW_SETTLE = 0.5;          // px threshold to snap a tile to its resting position
-const REFLOW_FRAME_MS = 1000 / 60;
+const REFLOW_VEL_SETTLE = 2;        // px/s velocity below which a tile may snap to rest
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -1409,6 +1409,8 @@ function measureTiles() {
             ny,
             dispX: old ? old.dispX : nx,
             dispY: old ? old.dispY : ny,
+            velX: old ? old.velX : 0,
+            velY: old ? old.velY : 0,
             transformed: node.style.transform !== ''
         });
     }
@@ -1431,12 +1433,13 @@ function reflowTick(now) {
         return;
     }
 
-    // frame-rate independent smoothing factor
+    // frame-rate independent timestep (seconds), clamped against stalls
     let dt = now - reflowLastTime;
     reflowLastTime = now;
     if (dt > 50) dt = 50;
     else if (dt < 1) dt = 1;
-    const t = 1 - Math.pow(1 - REFLOW_SMOOTH, dt / REFLOW_FRAME_MS);
+    const dtS = dt / 1000;
+    const decay = Math.exp(-REFLOW_OMEGA * dtS);
 
     // Re-read native positions only when the layout may have actually changed
     // (an active resize or a relayout). While tiles merely ease to rest the grid
@@ -1465,6 +1468,8 @@ function reflowTick(now) {
         if (box.ny < bandTop || box.ny > bandBottom) {
             box.dispX = box.nx;
             box.dispY = box.ny;
+            box.velX = 0;
+            box.velY = 0;
             if (box.transformed) {
                 box.node.style.transform = '';
                 box.transformed = false;
@@ -1472,15 +1477,28 @@ function reflowTick(now) {
             continue;
         }
 
-        box.dispX += (box.nx - box.dispX) * t;
-        box.dispY += (box.ny - box.dispY) * t;
+        // critically-damped spring toward the native position: velocity starts at rest
+        // (gentle ease-in) and decays without overshoot (ease-out). Solved analytically
+        // so the motion is identical regardless of frame rate.
+        const dx = box.dispX - box.nx;
+        const bx = box.velX + REFLOW_OMEGA * dx;
+        box.dispX = box.nx + (dx + bx * dtS) * decay;
+        box.velX = (box.velX - REFLOW_OMEGA * bx * dtS) * decay;
+
+        const dy = box.dispY - box.ny;
+        const by = box.velY + REFLOW_OMEGA * dy;
+        box.dispY = box.ny + (dy + by * dtS) * decay;
+        box.velY = (box.velY - REFLOW_OMEGA * by * dtS) * decay;
 
         const tx = box.dispX - box.nx;
         const ty = box.dispY - box.ny;
 
-        if (Math.abs(tx) < REFLOW_SETTLE && Math.abs(ty) < REFLOW_SETTLE) {
+        if (Math.abs(tx) < REFLOW_SETTLE && Math.abs(ty) < REFLOW_SETTLE &&
+            Math.abs(box.velX) < REFLOW_VEL_SETTLE && Math.abs(box.velY) < REFLOW_VEL_SETTLE) {
             box.dispX = box.nx;
             box.dispY = box.ny;
+            box.velX = 0;
+            box.velY = 0;
             if (box.transformed) {
                 box.node.style.transform = '';
                 box.transformed = false;
