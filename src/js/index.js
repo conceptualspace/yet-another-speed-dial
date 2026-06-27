@@ -1491,6 +1491,27 @@ function getCurrentTileCount() {
     return currentContainer ? currentContainer.querySelectorAll(':scope > .tile').length : 0;
 }
 
+function getVisibleTileRects() {
+    let currentParent = currentFolder ? currentFolder : speedDialId;
+    let currentContainer = document.getElementById(currentParent);
+    if (!currentContainer) return [];
+
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const rects = [];
+    const tiles = currentContainer.children;
+    for (let i = 0; i < tiles.length; i++) {
+        let node = tiles[i];
+        if (!node.classList.contains('tile')) continue;
+
+        const rect = node.getBoundingClientRect();
+        if (rect.bottom > containerRect.top && rect.top < containerRect.bottom) {
+            rects.push({ node, left: rect.left, top: rect.top });
+        }
+    }
+
+    return rects;
+}
+
 function skipTitleHeightTransition() {
     document.documentElement.classList.add('skip-title-height-transition');
     requestAnimationFrame(() => {
@@ -1498,6 +1519,60 @@ function skipTitleHeightTransition() {
             document.documentElement.classList.remove('skip-title-height-transition');
         });
     });
+}
+
+function enableVisibleTitleHeightTransition(firstRects, duration = 200) {
+    if (!firstRects || !firstRects.length) return;
+
+    const nodes = [];
+    for (let i = 0; i < firstRects.length; i++) {
+        let node = firstRects[i].node;
+        if (!node.isConnected) continue;
+
+        node.classList.add('visible-title-height-transition');
+        nodes.push(node);
+    }
+
+    setTimeout(() => {
+        for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].isConnected) {
+                nodes[i].classList.remove('visible-title-height-transition');
+            }
+        }
+    }, duration);
+}
+
+function restoreScrollAnchor(anchor) {
+    if (!anchor || !anchor.node || !anchor.node.isConnected) return;
+
+    const delta = anchor.node.getBoundingClientRect().top - anchor.top;
+    if (delta !== 0) {
+        bookmarksContainerParent.scrollTop += delta;
+        scrollPos = bookmarksContainerParent.scrollTop;
+    }
+}
+
+function flipVisibleTitleToggleTiles(firstRects) {
+    if (!firstRects || !firstRects.length) return;
+
+    const nodesToAnimate = [];
+    for (let i = 0; i < firstRects.length; i++) {
+        let first = firstRects[i];
+        if (!first.node.isConnected) continue;
+
+        const last = first.node.getBoundingClientRect();
+        const x = first.left - last.left;
+        const y = first.top - last.top;
+        if (x !== 0 || y !== 0) {
+            TweenMax.killTweensOf(first.node);
+            TweenMax.set(first.node, { x, y, force3D: true });
+            nodesToAnimate.push(first.node);
+        }
+    }
+
+    if (nodesToAnimate.length) {
+        TweenMax.to(nodesToAnimate, 0.18, { x: 0, y: 0, force3D: true, ease });
+    }
 }
 
 function preserveScrollAnchor(anchor, duration = 180) {
@@ -1881,7 +1956,10 @@ function applySettings() {
 function saveSettings() {
     const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
     const scrollAnchor = showTitlesChanged ? getScrollAnchor() : null;
-    if (showTitlesChanged && getCurrentTileCount() > titleHeightTransitionLimit) {
+    const flipTitleToggle = showTitlesChanged && getCurrentTileCount() > titleHeightTransitionLimit;
+    const titleToggleFirstRects = flipTitleToggle ? getVisibleTileRects() : null;
+    if (flipTitleToggle) {
+        enableVisibleTitleHeightTransition(titleToggleFirstRects);
         skipTitleHeightTransition();
     }
 
@@ -1904,7 +1982,13 @@ function saveSettings() {
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
     applySettings();
-    preserveScrollAnchor(scrollAnchor);
+    if (flipTitleToggle) {
+        restoreScrollAnchor(scrollAnchor);
+        flipVisibleTitleToggleTiles(titleToggleFirstRects);
+        preserveScrollAnchor(scrollAnchor);
+    } else {
+        preserveScrollAnchor(scrollAnchor);
+    }
 
     // dial sizes/layout might have changed update gsap 
     animate();

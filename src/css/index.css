@@ -347,6 +347,11 @@ h1 {
     transition: none;
 }
 
+.skip-title-height-transition .tileContainer .tile.visible-title-height-transition,
+.skip-title-height-transition .tileContainer .createDial.visible-title-height-transition {
+    transition: height 160ms ease;
+}
+
 .hide-titles .tile-title {
     pointer-events: none;
 }
