@@ -143,6 +143,7 @@ let reflowRAF = null;
 let reflowLastTime = 0;
 let isResizing = false;
 let resizeSettleTimer = null;
+let reflowDirty = false;            // true when native positions need re-reading (resize/relayout)
 const REFLOW_SMOOTH = 0.2;          // easing toward target per 60fps frame (0..1); higher = snappier
 const REFLOW_SETTLE = 0.5;          // px threshold to snap a tile to its resting position
 const REFLOW_FRAME_MS = 1000 / 60;
@@ -1413,6 +1414,7 @@ function measureTiles() {
     }
 
     boxes = next;
+    reflowDirty = true;
 }
 
 function startReflow() {
@@ -1436,19 +1438,40 @@ function reflowTick(now) {
     else if (dt < 1) dt = 1;
     const t = 1 - Math.pow(1 - REFLOW_SMOOTH, dt / REFLOW_FRAME_MS);
 
-    // batch reads: refresh each tile's native (untransformed) position.
-    // transforms don't affect layout, so this triggers at most one reflow.
-    for (let i = 0; i < count; i++) {
-        const box = boxes[i];
-        box.nx = box.node.offsetLeft;
-        box.ny = box.node.offsetTop;
+    // Re-read native positions only when the layout may have actually changed
+    // (an active resize or a relayout). While tiles merely ease to rest the grid
+    // is static, so we reuse cached positions and skip the forced reflow entirely.
+    if (reflowDirty) {
+        for (let i = 0; i < count; i++) {
+            const box = boxes[i];
+            box.nx = box.node.offsetLeft;
+            box.ny = box.node.offsetTop;
+        }
+        reflowDirty = false;
     }
 
-    // batch writes: ease the displayed position toward the native position and
-    // express the difference as a composited translate (no layout/paint).
+    // Visible band (in offsetTop space, with one screen of slack each side) used to
+    // skip animating tiles far off-screen in large folders -- they snap to their
+    // final spot, so per-frame write cost scales with what's visible, not folder size.
+    const sc = bookmarksContainerParent;
+    const bandTop = sc.offsetTop + sc.scrollTop - sc.clientHeight;
+    const bandBottom = sc.offsetTop + sc.scrollTop + 2 * sc.clientHeight;
+
     let moving = false;
     for (let i = 0; i < count; i++) {
         const box = boxes[i];
+
+        // cull tiles well outside the viewport: snap them straight to rest
+        if (box.ny < bandTop || box.ny > bandBottom) {
+            box.dispX = box.nx;
+            box.dispY = box.ny;
+            if (box.transformed) {
+                box.node.style.transform = '';
+                box.transformed = false;
+            }
+            continue;
+        }
+
         box.dispX += (box.nx - box.dispX) * t;
         box.dispY += (box.ny - box.dispY) * t;
 
@@ -3055,6 +3078,7 @@ function onResize() {
         measureTiles();
         startReflow();
     }
+    reflowDirty = true;
     clearTimeout(resizeSettleTimer);
     resizeSettleTimer = setTimeout(() => {
         isResizing = false;
