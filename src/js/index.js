@@ -1416,7 +1416,6 @@ function measureTiles() {
     }
 
     boxes = next;
-    reflowDirty = true;
 }
 
 function startReflow() {
@@ -1722,10 +1721,8 @@ function applySettings() {
         
             const containerWidth = settings.maxCols * (dialWidth + dialMargin);
             document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
-            layout();
         } else {
             document.documentElement.style.setProperty('--columns', '100%');
-            layout();
         }
 
         if (settings.dialSize && settings.dialSize !== "large") {
@@ -1837,6 +1834,10 @@ function applySettings() {
             document.documentElement.style.setProperty('--create-dial-display', 'block');
         }
 
+        // All layout-affecting CSS variables are set above; reflow once now so the
+        // spring animates every tile straight to its final position in a single pass
+        // (rather than measuring/reflowing in a half-updated state).
+        layout();
 
         resolve();
 
