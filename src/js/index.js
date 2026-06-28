@@ -151,13 +151,14 @@ let layoutFolder = false;
 // CSS transition: each relayout does a single main-thread pass (read resting
 // positions, invert, then hand off to a `transform` transition), so per-frame
 // style recalc cost is independent of how many tiles are on screen.
-let flipRAF = null;                  // pending rAF for the "play" phase
 let flipGen = 0;                     // generation token so stale cleanups bail out
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
 const flipPrevRects = new Map();     // node -> last resting {left, top} (viewport coords)
-const FLIP_DURATION = 420;           // ms; compositor transition duration
+const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
+const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
+                                     // evenly across however many tiles are animating
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -1404,12 +1405,6 @@ function flip() {
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
 
-    // cancel a pending play phase from an in-flight flip; we're restarting
-    if (flipRAF !== null) {
-        cancelAnimationFrame(flipRAF);
-        flipRAF = null;
-    }
-
     if (!nodes.length) {
         flipPrevRects.clear();
         return;
@@ -1432,7 +1427,7 @@ function flip() {
     }
 
     // INVERT: offset each tile from its new position back to where it used to be.
-    let animating = false;
+    const anim = [];
     const liveSet = new Set();
     for (const item of live) {
         liveSet.add(item.node);
@@ -1450,7 +1445,7 @@ function flip() {
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
 
         item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
-        animating = true;
+        anim.push(item);
     }
 
     // prune entries for tiles that no longer exist
@@ -1460,29 +1455,35 @@ function flip() {
         }
     }
 
-    if (!animating) return;
+    if (!anim.length) return;
 
-    // PLAY: next frame, transition every offset back to zero on the compositor.
+    // PLAY: transition every offset back to zero on the compositor. We commit the
+    // inverted transforms with one synchronous reflow and then start the transition
+    // in the SAME frame, so the motion begins together with the (instant) size
+    // change instead of a frame later -- which otherwise reads as "resize, pause,
+    // slide". A per-tile transition-delay spreads the tiles into a wave, distributed
+    // evenly so every animating tile staggers regardless of count. Delay is part of
+    // the transition, so the stagger stays entirely compositor-driven.
+    void bookmarksContainerParent.offsetWidth; // commit the inverted positions
     const gen = ++flipGen;
-    flipRAF = requestAnimationFrame(() => {
-        flipRAF = null;
-        for (const item of live) {
-            if (item.node.style.transform !== '') {
-                item.node.style.transition = `transform ${FLIP_DURATION}ms ${FLIP_EASING}`;
-                item.node.style.transform = '';
+    const span = anim.length > 1 ? anim.length - 1 : 1;
+    for (let i = 0; i < anim.length; i++) {
+        const node = anim[i].node;
+        const delay = (i / span) * FLIP_STAGGER_WINDOW;
+        node.style.transition = `transform ${FLIP_DURATION}ms ${FLIP_EASING} ${delay}ms`;
+        node.style.transform = '';
+    }
+
+    // once settled, drop the transition so it can't interfere with drag/sort.
+    // guarded by the generation token so a newer flip isn't clobbered.
+    setTimeout(() => {
+        if (gen !== flipGen) return;
+        for (const item of anim) {
+            if (item.node.style.transform === '') {
+                item.node.style.transition = '';
             }
         }
-        // once settled, drop the transition so it can't interfere with drag/sort.
-        // guarded by the generation token so a newer flip isn't clobbered.
-        setTimeout(() => {
-            if (gen !== flipGen) return;
-            for (const item of live) {
-                if (item.node.style.transform === '') {
-                    item.node.style.transition = '';
-                }
-            }
-        }, FLIP_DURATION + 60);
-    });
+    }, FLIP_DURATION + FLIP_STAGGER_WINDOW + 60);
 }
 
 // Public entry points used after a layout-affecting change. `layout` runs
