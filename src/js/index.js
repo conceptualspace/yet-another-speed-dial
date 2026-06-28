@@ -153,6 +153,12 @@ let layoutFolder = false;
 // style recalc cost is independent of how many tiles are on screen.
 let flipGen = 0;                     // generation token so stale cleanups bail out
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
+let flipCleanupTimer = null;         // pending transition teardown for the resize flip
+let lastResizeW = window.innerWidth;  // last seen viewport size, to measure each resize step
+let lastResizeH = window.innerHeight;
+const RESIZE_SNAP_THRESHOLD = 250;   // px; a single resize step bigger than this (maximize,
+                                     // restore, tiling snap) replays the staggered wave --
+                                     // smaller incremental steps (manual drag) follow smoothly
 const flipPrevRects = new Map();     // node -> last resting {left, top} (viewport coords)
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
@@ -1486,6 +1492,111 @@ function flip() {
     }, FLIP_DURATION + FLIP_STAGGER_WINDOW + 60);
 }
 
+// Resize-driven reflow. The discrete flip() above resets every tile to its
+// resting spot and replays a staggered wave -- ideal for one-shot relayouts
+// (dial-size change, delete) but wrong for a window drag, where the grid reflows
+// continuously and we want the dials to *trail* smoothly toward their shifting
+// positions. The difference: here we invert from each tile's CURRENT rendered
+// position (read from its live transform) instead of its last resting spot,
+// accumulating the new layout delta on top of wherever the in-flight transition
+// has reached. That preserves motion across frames -- the same continuity gsap
+// got from _gsTransform -- so the tiles glide instead of snapping. No stagger:
+// during a drag every tile follows immediately.
+function flipResize() {
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+
+    if (!nodes.length) {
+        flipPrevRects.clear();
+        return;
+    }
+
+    const vh = window.innerHeight;
+
+    // READ: derive each tile's resting position from its rendered box minus its
+    // current transform, and remember that live offset so we can keep it put.
+    const items = [];
+    const liveSet = new Set();
+    for (const node of nodes) {
+        const r = node.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) continue; // hidden (filtered/removing)
+        liveSet.add(node);
+
+        const onScreen = r.bottom >= -FLIP_MARGIN && r.top <= vh + FLIP_MARGIN;
+        let offX = 0, offY = 0;
+        if (onScreen) {
+            // live (interpolated) transform -- valid even mid-transition, when the
+            // inline style.transform has already been cleared to '' to play to rest
+            const t = getComputedStyle(node).transform;
+            if (t && t !== 'none') {
+                const m = new DOMMatrixReadOnly(t);
+                offX = m.m41;
+                offY = m.m42;
+            }
+        }
+        items.push({ node, restLeft: r.left - offX, restTop: r.top - offY, offX, offY, onScreen });
+    }
+
+    // INVERT: hold each on-screen tile at its current rendered position, then let
+    // it animate on toward the new resting spot.
+    const anim = [];
+    for (const item of items) {
+        const prev = flipPrevRects.get(item.node);
+        flipPrevRects.set(item.node, { left: item.restLeft, top: item.restTop });
+
+        if (!item.onScreen || !prev) {
+            // offscreen or brand-new: snap to rest, no animation
+            if (item.node.style.transform) {
+                item.node.style.transition = 'none';
+                item.node.style.transform = '';
+            }
+            continue;
+        }
+
+        // accumulate the layout shift on top of the current visual offset
+        const dx = item.offX + (prev.left - item.restLeft);
+        const dy = item.offY + (prev.top - item.restTop);
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+            if (item.node.style.transform) {
+                item.node.style.transition = 'none';
+                item.node.style.transform = '';
+            }
+            continue;
+        }
+
+        item.node.style.transition = 'none';
+        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        anim.push(item.node);
+    }
+
+    // prune entries for tiles that no longer exist
+    if (flipPrevRects.size > liveSet.size) {
+        for (const node of flipPrevRects.keys()) {
+            if (!liveSet.has(node)) flipPrevRects.delete(node);
+        }
+    }
+
+    if (!anim.length) return;
+
+    // PLAY: commit the held positions with one reflow, then transition them all to
+    // rest together. Each resize frame supersedes the last (generation token), and a
+    // single cleanup timer drops the transitions once the final frame has settled.
+    void bookmarksContainerParent.offsetWidth;
+    const gen = ++flipGen;
+    for (const node of anim) {
+        node.style.transition = `transform ${FLIP_DURATION}ms ${FLIP_EASING}`;
+        node.style.transform = '';
+    }
+
+    clearTimeout(flipCleanupTimer);
+    flipCleanupTimer = setTimeout(() => {
+        if (gen !== flipGen) return;
+        for (const node of anim) {
+            if (node.style.transform === '') node.style.transition = '';
+        }
+    }, FLIP_DURATION + 60);
+}
+
 // Public entry points used after a layout-affecting change. `layout` runs
 // immediately; `animate` is debounced for high-frequency callers.
 function layout() {
@@ -2455,45 +2566,59 @@ function filterDials(searchTerm) {
     const currentParent = currentFolder;
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
-    dials.forEach(dial => {
+    const toShow = [];
+    const toHide = [];
+
+    for (const dial of dials) {
         if (!settings.showAddSite && dial.classList.contains('createDial')) {
             // dont show the create dial button
-            return;
+            continue;
         }
-
         const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
         const url = dial.href.toLowerCase();
-
-        if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
-            showFilteredDial(dial);
+        if ((title && title.includes(searchTerm)) || url.includes(searchTerm)) {
+            toShow.push(dial);
         } else {
-            hideFilteredDial(dial);
+            toHide.push(dial);
         }
-    });
-}
-
-// Search filter visibility. Matching tiles scale + fade back in, non-matching tiles
-// shrink + fade out in place (the effect lives on .tile-main so it never fights the
-// reflow loop, which owns .tile's transform). Positions are intentionally NOT animated
-// here: the flex grid reflows instantly when a tile is hidden, keeping search a light,
-// in-place effect rather than a full reflow.
-function showFilteredDial(dial) {
-    clearTimeout(dial._filterTimer);
-    if (dial.style.display === 'none') {
-        dial.style.display = '';
-        // commit the collapsed state before un-hiding so the transition plays
-        void dial.offsetWidth;
     }
-    dial.classList.remove('filtered-out');
+
+    // un-hide matching tiles that were fully collapsed, keeping the filtered-out
+    // class so they stay visually collapsed until we commit and release them
+    let needsReflow = false;
+    for (const dial of toShow) {
+        clearTimeout(dial._filterTimer);
+        if (dial.style.display === 'none') {
+            dial.style.display = '';
+            needsReflow = true;
+        }
+    }
+    // single synchronous reflow commits the collapsed state for the whole batch
+    if (needsReflow) void bookmarksContainerParent.offsetWidth;
+
+    // flip the classes -- opacity/scale transitions then run on the compositor
+    for (const dial of toShow) {
+        dial.classList.remove('filtered-out');
+    }
+    for (const dial of toHide) {
+        if (dial.classList.contains('filtered-out')) continue;
+        dial.classList.add('filtered-out');
+        dial._filterTimer = setTimeout(() => {
+            dial.style.display = 'none';
+        }, 300);
+    }
 }
 
-function hideFilteredDial(dial) {
-    if (dial.classList.contains('filtered-out')) return;
-    dial.classList.add('filtered-out');
-    dial._filterTimer = setTimeout(() => {
-        dial.style.display = 'none';
-    }, 300);
-}
+// Search filter visibility. Matching tiles scale + fade back in, non-matching
+// tiles shrink + fade out in place (the effect lives on .tile-main so it never
+// fights the reflow loop, which owns .tile's transform). Positions are not
+// animated: the flex grid reflows instantly when a tile is hidden, keeping search
+// a light, in-place effect.
+//
+// Re-showing a fully hidden (display:none) tile needs one forced reflow to commit
+// its collapsed state before the transition can play. filterDials batches every
+// match/no-match decision first and does that reflow ONCE per keystroke -- doing
+// it per-tile inside the loop thrashed layout and was the source of typing lag.
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
@@ -3069,14 +3194,31 @@ function handleMessages(message) {
 }
 
 function onResize() {
-    // Re-FLIP at most once per frame while the window resizes. Each pass restarts
-    // the transform transition from the tiles' previous positions, so they trail
-    // smoothly toward their new flex positions -- all tweened on the compositor.
+    // A single large step -- maximize, un-maximize, or a tiling/snap -- arrives as
+    // one big jump in viewport size and should play the staggered settle wave, just
+    // as it did before the resize refactor (back then every resize ran the staggered
+    // flip(); a maximize is essentially one event, so it got the full wave, while a
+    // manual drag's stream of tiny events reset each other and snapped). A manual
+    // edge-drag arrives as many small steps and should instead follow the cursor
+    // smoothly with no stagger. We tell them apart by the size of each step.
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const step = Math.abs(w - lastResizeW) + Math.abs(h - lastResizeH);
+    lastResizeW = w;
+    lastResizeH = h;
+
+    if (step >= RESIZE_SNAP_THRESHOLD) {
+        // one-shot jump: replay the staggered wave
+        flip();
+        return;
+    }
+
+    // manual drag: smooth immediate follow, throttled to one pass per frame
     if (resizeFlipScheduled) return;
     resizeFlipScheduled = true;
     requestAnimationFrame(() => {
         resizeFlipScheduled = false;
-        flip();
+        flipResize();
     });
 }
 
