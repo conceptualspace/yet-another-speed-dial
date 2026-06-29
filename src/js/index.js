@@ -160,6 +160,7 @@ const flipPrevRects = new Map();     // node -> last resting {left, top} (viewpo
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
+const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
 let hourCycle = 'h12';
@@ -1508,28 +1509,53 @@ function layout() {
 // pre-drag resting spot (transform back, no transition) so the dials sit still
 // even as they spill outside the viewport. flipPrevRects is frozen here (never
 // updated) so it still holds the original layout -- the settle flip() then
-// inverts from there and staggers the whole grid into place. Margin is huge so
-// tiles pushed off-screen stay pinned (don't get culled and snapped) long
-// enough to take part in the wave.
+// inverts from there and staggers the whole grid into place. During the live
+// drag, tiles within a few viewport-heights are pinned; that larger lookahead
+// prevents dense folders from popping when a big width change pulls lower rows
+// into view, while the settle flip still uses the tighter animation cull.
 function flipHold() {
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     if (!nodes.length) return;
-    // clear any prior pin so getBoundingClientRect reads the true flex spot --
-    // measuring through our own transform would let the offset drift each frame
-    for (const node of nodes) {
-        node.style.transition = 'none';
-        node.style.transform = '';
-    }
-    // read all true positions, then write all pins (no interleaved reflow)
-    const pins = [];
+
+    const holdMargin = Math.max(FLIP_MARGIN, window.innerHeight * RESIZE_HOLD_MARGIN_MULTIPLIER);
+    const minY = -holdMargin;
+    const maxY = window.innerHeight + holdMargin;
+    const candidates = [];
+
     for (const node of nodes) {
         const prev = flipPrevRects.get(node);
         if (!prev) continue; // brand-new tile: leave at rest
-        const r = node.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) continue;
-        pins.push({ node, dx: prev.left - r.left, dy: prev.top - r.top });
+
+        const prevBottom = prev.top + prev.height;
+        if (prevBottom < minY || prev.top > maxY) continue;
+
+        candidates.push({ node, prev });
     }
+
+    if (!candidates.length) return;
+
+    // clear any prior pin so getBoundingClientRect reads the true flex spot --
+    // measuring through our own transform would let the offset drift each frame
+    for (const item of candidates) {
+        item.node.style.transition = 'none';
+        item.node.style.transform = '';
+    }
+
+    // read all true positions, then write all pins (no interleaved reflow)
+    const pins = [];
+    for (const item of candidates) {
+        const r = item.node.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) continue;
+        if (r.bottom < minY || r.top > maxY) continue;
+
+        const dx = item.prev.left - r.left;
+        const dy = item.prev.top - r.top;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
+
+        pins.push({ node: item.node, dx, dy });
+    }
+
     for (const p of pins) {
         p.node.style.transform = `translate3d(${p.dx}px, ${p.dy}px, 0)`;
     }
