@@ -163,6 +163,8 @@ const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it s
 const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
+const TITLE_TOGGLE_FLIP_DURATION = 300;
+const TITLE_TOGGLE_STAGGER_WINDOW = 220;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -1407,6 +1409,8 @@ function saveBookmarkSettings() {
 
 function flip(options = {}) {
     const scaleTiles = options.scale !== false;
+    const duration = options.duration ?? FLIP_DURATION;
+    const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
 
@@ -1480,8 +1484,8 @@ function flip(options = {}) {
     const span = anim.length > 1 ? anim.length - 1 : 1;
     for (let i = 0; i < anim.length; i++) {
         const node = anim[i].node;
-        const delay = (i / span) * FLIP_STAGGER_WINDOW;
-        node.style.transition = `transform ${FLIP_DURATION}ms ${FLIP_EASING} ${delay}ms`;
+        const delay = (i / span) * staggerWindow;
+        node.style.transition = `transform ${duration}ms ${FLIP_EASING} ${delay}ms`;
         node.style.transform = '';
     }
 
@@ -1494,7 +1498,7 @@ function flip(options = {}) {
                 item.node.style.transition = '';
             }
         }
-    }, FLIP_DURATION + FLIP_STAGGER_WINDOW + 60);
+    }, duration + staggerWindow + 60);
 }
 
 // Public entry points used after a layout-affecting change. `layout` runs
@@ -1837,7 +1841,11 @@ function applySettings(options = {}) {
             `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
 
         // All sizing applied; trigger the FLIP reflow exactly once.
-        layout({ scale: options.scaleTiles });
+        layout({
+            scale: options.scaleTiles,
+            duration: options.flipDuration,
+            staggerWindow: options.flipStaggerWindow
+        });
 
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
@@ -1950,7 +1958,11 @@ function saveSettings() {
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
-    applySettings({ scaleTiles: !showTitlesChanged });
+    applySettings({
+        scaleTiles: !showTitlesChanged,
+        flipDuration: showTitlesChanged ? TITLE_TOGGLE_FLIP_DURATION : undefined,
+        flipStaggerWindow: showTitlesChanged ? TITLE_TOGGLE_STAGGER_WINDOW : undefined
+    });
 
     chrome.storage.local.set({ settings })
         .then(() => {
