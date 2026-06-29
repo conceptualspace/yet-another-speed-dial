@@ -1405,7 +1405,8 @@ function saveBookmarkSettings() {
 // Previous resting positions are tracked across calls (callers apply their layout
 // change before invoking flip), so brand-new tiles seed at rest without animating.
 
-function flip() {
+function flip(options = {}) {
+    const scaleTiles = options.scale !== false;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
 
@@ -1446,13 +1447,11 @@ function flip() {
 
         const dx = prev.left - item.left;
         const dy = prev.top - item.top;
-        // scale back to the old size too: a dial-size change alters width/height,
-        // and translate alone would let the tile paint at the NEW size for one
-        // frame before sliding (the snap). Pairing scale with translate (top-left
-        // origin) makes it sit AND measure at the old size, then morph both to rest
-        // in a single compositor transition -- no flash, GPU-only.
-        const sx = item.width ? prev.width / item.width : 1;
-        const sy = item.height ? prev.height / item.height : 1;
+        // Scale back to the old size for true dial-size changes. Title visibility
+        // toggles opt out so the tile height snaps to rest and only row position
+        // animates; otherwise the labels feel like they bounce.
+        const sx = scaleTiles && item.width ? prev.width / item.width : 1;
+        const sy = scaleTiles && item.height ? prev.height / item.height : 1;
         const scaled = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && !scaled) continue;
 
@@ -1500,8 +1499,8 @@ function flip() {
 
 // Public entry points used after a layout-affecting change. `layout` runs
 // immediately; `animate` is debounced for high-frequency callers.
-function layout() {
-    flip();
+function layout(options = {}) {
+    flip(options);
 }
 
 // Resize HOLD. While the window is being dragged the flex grid reflows every
@@ -1684,7 +1683,7 @@ function addImage(image) {
     }
 }
 
-function applySettings() {
+function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
@@ -1830,14 +1829,15 @@ function applySettings() {
         // makes don't force every tile to re-resolve custom properties on recalc.
         // `color` is emitted concretely too: a tile is an <a>, so it would otherwise
         // inherit `color: var(--color)` and re-resolve that var on every recalc.
+        const tileHeight = settings.showTitles ? dialHeight : dialContentHeight;
         dialSizeStyleEl.textContent =
             `.container{max-width:${columnsValue}}` +
-            `.tile,.createDial{width:${dialWidth};height:${dialHeight};margin:${dialMargin};color:${settings.textColor}}` +
+            `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${dialMargin};color:${settings.textColor}}` +
             `.tile-content{height:${dialContentHeight}}` +
             `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
 
         // All sizing applied; trigger the FLIP reflow exactly once.
-        layout();
+        layout({ scale: options.scaleTiles });
 
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
@@ -1868,8 +1868,10 @@ function applySettings() {
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
+            document.documentElement.classList.add('hide-titles');
         } else {
             document.documentElement.style.setProperty('--title-opacity', '1');
+            document.documentElement.classList.remove('hide-titles');
         }
 
         if (!settings.showAddSite) {
@@ -1928,6 +1930,8 @@ function applySettings() {
 }
 
 function saveSettings() {
+    const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
+
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
@@ -1946,7 +1950,7 @@ function saveSettings() {
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
-    applySettings();
+    applySettings({ scaleTiles: !showTitlesChanged });
 
     chrome.storage.local.set({ settings })
         .then(() => {
