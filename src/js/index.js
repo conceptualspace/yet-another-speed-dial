@@ -1429,7 +1429,7 @@ function flip() {
         const r = node.getBoundingClientRect();
         // skip hidden tiles (e.g. one being removed): nothing to measure/animate
         if (r.width === 0 && r.height === 0) continue;
-        live.push({ node, left: r.left, top: r.top, bottom: r.bottom });
+        live.push({ node, left: r.left, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
     }
 
     // INVERT: offset each tile from its new position back to where it used to be.
@@ -1438,8 +1438,8 @@ function flip() {
     for (const item of live) {
         liveSet.add(item.node);
         const prev = flipPrevRects.get(item.node);
-        // record the new resting position for the next relayout
-        flipPrevRects.set(item.node, { left: item.left, top: item.top });
+        // record the new resting position AND size for the next relayout
+        flipPrevRects.set(item.node, { left: item.left, top: item.top, width: item.width, height: item.height });
 
         // cull tiles well outside the viewport: they snap to rest, so cost scales
         // with what's on screen, not folder size
@@ -1448,9 +1448,17 @@ function flip() {
 
         const dx = prev.left - item.left;
         const dy = prev.top - item.top;
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
+        // scale back to the old size too: a dial-size change alters width/height,
+        // and translate alone would let the tile paint at the NEW size for one
+        // frame before sliding (the snap). Pairing scale with translate (top-left
+        // origin) makes it sit AND measure at the old size, then morph both to rest
+        // in a single compositor transition -- no flash, GPU-only.
+        const sx = item.width ? prev.width / item.width : 1;
+        const sy = item.height ? prev.height / item.height : 1;
+        const scaled = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && !scaled) continue;
 
-        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
         anim.push(item);
     }
 
@@ -1534,7 +1542,7 @@ function flipResize() {
                 offY = m.m42;
             }
         }
-        items.push({ node, restLeft: r.left - offX, restTop: r.top - offY, offX, offY, onScreen });
+        items.push({ node, restLeft: r.left - offX, restTop: r.top - offY, offX, offY, onScreen, width: r.width, height: r.height });
     }
 
     // INVERT: hold each on-screen tile at its current rendered position, then let
@@ -1542,7 +1550,7 @@ function flipResize() {
     const anim = [];
     for (const item of items) {
         const prev = flipPrevRects.get(item.node);
-        flipPrevRects.set(item.node, { left: item.restLeft, top: item.restTop });
+        flipPrevRects.set(item.node, { left: item.restLeft, top: item.restTop, width: item.width, height: item.height });
 
         if (!item.onScreen || !prev) {
             // offscreen or brand-new: snap to rest, no animation
