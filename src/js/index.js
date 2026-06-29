@@ -154,11 +154,8 @@ let layoutFolder = false;
 let flipGen = 0;                     // generation token so stale cleanups bail out
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
 let flipCleanupTimer = null;         // pending transition teardown for the resize flip
-let lastResizeW = window.innerWidth;  // last seen viewport size, to measure each resize step
-let lastResizeH = window.innerHeight;
-const RESIZE_SNAP_THRESHOLD = 250;   // px; a single resize step bigger than this (maximize,
-                                     // restore, tiling snap) replays the staggered wave --
-                                     // smaller incremental steps (manual drag) follow smoothly
+let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
+const RESIZE_SETTLE_DELAY = 140;     // ms of resize quiet before the settle wave plays
 const flipPrevRects = new Map();     // node -> last resting {left, top} (viewport coords)
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
@@ -1500,115 +1497,42 @@ function flip() {
     }, FLIP_DURATION + FLIP_STAGGER_WINDOW + 60);
 }
 
-// Resize-driven reflow. The discrete flip() above resets every tile to its
-// resting spot and replays a staggered wave -- ideal for one-shot relayouts
-// (dial-size change, delete) but wrong for a window drag, where the grid reflows
-// continuously and we want the dials to *trail* smoothly toward their shifting
-// positions. The difference: here we invert from each tile's CURRENT rendered
-// position (read from its live transform) instead of its last resting spot,
-// accumulating the new layout delta on top of wherever the in-flight transition
-// has reached. That preserves motion across frames -- the same continuity gsap
-// got from _gsTransform -- so the tiles glide instead of snapping. No stagger:
-// during a drag every tile follows immediately.
-function flipResize() {
-    const parent = currentFolder || speedDialId;
-    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
-
-    if (!nodes.length) {
-        flipPrevRects.clear();
-        return;
-    }
-
-    const vh = window.innerHeight;
-
-    // READ: derive each tile's resting position from its rendered box minus its
-    // current transform, and remember that live offset so we can keep it put.
-    const items = [];
-    const liveSet = new Set();
-    for (const node of nodes) {
-        const r = node.getBoundingClientRect();
-        if (r.width === 0 && r.height === 0) continue; // hidden (filtered/removing)
-        liveSet.add(node);
-
-        const onScreen = r.bottom >= -FLIP_MARGIN && r.top <= vh + FLIP_MARGIN;
-        let offX = 0, offY = 0;
-        if (onScreen) {
-            // live (interpolated) transform -- valid even mid-transition, when the
-            // inline style.transform has already been cleared to '' to play to rest
-            const t = getComputedStyle(node).transform;
-            if (t && t !== 'none') {
-                const m = new DOMMatrixReadOnly(t);
-                offX = m.m41;
-                offY = m.m42;
-            }
-        }
-        items.push({ node, restLeft: r.left - offX, restTop: r.top - offY, offX, offY, onScreen, width: r.width, height: r.height });
-    }
-
-    // INVERT: hold each on-screen tile at its current rendered position, then let
-    // it animate on toward the new resting spot.
-    const anim = [];
-    for (const item of items) {
-        const prev = flipPrevRects.get(item.node);
-        flipPrevRects.set(item.node, { left: item.restLeft, top: item.restTop, width: item.width, height: item.height });
-
-        if (!item.onScreen || !prev) {
-            // offscreen or brand-new: snap to rest, no animation
-            if (item.node.style.transform) {
-                item.node.style.transition = 'none';
-                item.node.style.transform = '';
-            }
-            continue;
-        }
-
-        // accumulate the layout shift on top of the current visual offset
-        const dx = item.offX + (prev.left - item.restLeft);
-        const dy = item.offY + (prev.top - item.restTop);
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-            if (item.node.style.transform) {
-                item.node.style.transition = 'none';
-                item.node.style.transform = '';
-            }
-            continue;
-        }
-
-        item.node.style.transition = 'none';
-        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
-        anim.push(item.node);
-    }
-
-    // prune entries for tiles that no longer exist
-    if (flipPrevRects.size > liveSet.size) {
-        for (const node of flipPrevRects.keys()) {
-            if (!liveSet.has(node)) flipPrevRects.delete(node);
-        }
-    }
-
-    if (!anim.length) return;
-
-    // PLAY: commit the held positions with one reflow, then transition them all to
-    // rest together. Each resize frame supersedes the last (generation token), and a
-    // single cleanup timer drops the transitions once the final frame has settled.
-    void bookmarksContainerParent.offsetWidth;
-    const gen = ++flipGen;
-    for (const node of anim) {
-        node.style.transition = `transform ${FLIP_DURATION}ms ${FLIP_EASING}`;
-        node.style.transform = '';
-    }
-
-    clearTimeout(flipCleanupTimer);
-    flipCleanupTimer = setTimeout(() => {
-        if (gen !== flipGen) return;
-        for (const node of anim) {
-            if (node.style.transform === '') node.style.transition = '';
-        }
-    }, FLIP_DURATION + 60);
-}
-
 // Public entry points used after a layout-affecting change. `layout` runs
 // immediately; `animate` is debounced for high-frequency callers.
 function layout() {
     flip();
+}
+
+// Resize HOLD. While the window is being dragged the flex grid reflows every
+// frame; rather than let each tile chase the edge, we pin every tile to its
+// pre-drag resting spot (transform back, no transition) so the dials sit still
+// even as they spill outside the viewport. flipPrevRects is frozen here (never
+// updated) so it still holds the original layout -- the settle flip() then
+// inverts from there and staggers the whole grid into place. Margin is huge so
+// tiles pushed off-screen stay pinned (don't get culled and snapped) long
+// enough to take part in the wave.
+function flipHold() {
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+    if (!nodes.length) return;
+    // clear any prior pin so getBoundingClientRect reads the true flex spot --
+    // measuring through our own transform would let the offset drift each frame
+    for (const node of nodes) {
+        node.style.transition = 'none';
+        node.style.transform = '';
+    }
+    // read all true positions, then write all pins (no interleaved reflow)
+    const pins = [];
+    for (const node of nodes) {
+        const prev = flipPrevRects.get(node);
+        if (!prev) continue; // brand-new tile: leave at rest
+        const r = node.getBoundingClientRect();
+        if (r.width === 0 && r.height === 0) continue;
+        pins.push({ node, dx: prev.left - r.left, dy: prev.top - r.top });
+    }
+    for (const p of pins) {
+        p.node.style.transform = `translate3d(${p.dx}px, ${p.dy}px, 0)`;
+    }
 }
 
 const animate = debounce(() => {
@@ -3202,32 +3126,25 @@ function handleMessages(message) {
 }
 
 function onResize() {
-    // A single large step -- maximize, un-maximize, or a tiling/snap -- arrives as
-    // one big jump in viewport size and should play the staggered settle wave, just
-    // as it did before the resize refactor (back then every resize ran the staggered
-    // flip(); a maximize is essentially one event, so it got the full wave, while a
-    // manual drag's stream of tiny events reset each other and snapped). A manual
-    // edge-drag arrives as many small steps and should instead follow the cursor
-    // smoothly with no stagger. We tell them apart by the size of each step.
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    const step = Math.abs(w - lastResizeW) + Math.abs(h - lastResizeH);
-    lastResizeW = w;
-    lastResizeH = h;
-
-    if (step >= RESIZE_SNAP_THRESHOLD) {
-        // one-shot jump: replay the staggered wave
-        flip();
-        return;
+    // Every resize -- a maximize/snap (one event) or a slow edge-drag (many
+    // events) -- pins each tile at its pre-drag spot via flipHold so the grid sits
+    // still while the viewport changes, then plays one staggered settle wave (flip)
+    // once the resize goes quiet. The hold keeps flipPrevRects on the original
+    // layout so the settle wave has the full delta to stagger across.
+    if (!resizeFlipScheduled) {
+        resizeFlipScheduled = true;
+        requestAnimationFrame(() => {
+            resizeFlipScheduled = false;
+            flipHold();
+        });
     }
 
-    // manual drag: smooth immediate follow, throttled to one pass per frame
-    if (resizeFlipScheduled) return;
-    resizeFlipScheduled = true;
-    requestAnimationFrame(() => {
-        resizeFlipScheduled = false;
-        flipResize();
-    });
+    // once the drag goes quiet, replay one staggered settle wave so a slow manual
+    // resize ends with the same flourish as a maximize/snap jump
+    clearTimeout(resizeSettleTimer);
+    resizeSettleTimer = setTimeout(() => {
+        flip();
+    }, RESIZE_SETTLE_DELAY);
 }
 
 function init() {
