@@ -157,6 +157,7 @@ let flipCleanupTimer = null;         // pending transition teardown for the resi
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
 const RESIZE_SETTLE_DELAY = 60;     // ms of resize quiet before the settle wave plays
 const flipPrevRects = new Map();     // node -> last resting {left, top} (viewport coords)
+const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
@@ -1414,6 +1415,11 @@ function flip(options = {}) {
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
 
+    // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
+    // a later hold starts from a clean slate (the transforms themselves are
+    // cleared by the read pass below).
+    flipHoldPins.clear();
+
     if (!nodes.length) {
         flipPrevRects.clear();
         return;
@@ -1516,6 +1522,12 @@ function layout(options = {}) {
 // drag, tiles within a few viewport-heights are pinned; that larger lookahead
 // prevents dense folders from popping when a big width change pulls lower rows
 // into view, while the settle flip still uses the tighter animation cull.
+//
+// Each frame measures every pinned tile and re-derives its true flex position as
+// `measuredRect - appliedPin` (tracked in flipHoldPins), so the grid is read once
+// per frame without a separate transform-clearing write. Halving the per-frame
+// style invalidations keeps the main thread free enough that the `cover`
+// background image can repaint smoothly during the drag.
 function flipHold() {
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
@@ -1538,29 +1550,44 @@ function flipHold() {
 
     if (!candidates.length) return;
 
-    // clear any prior pin so getBoundingClientRect reads the true flex spot --
-    // measuring through our own transform would let the offset drift each frame
-    for (const item of candidates) {
-        item.node.style.transition = 'none';
-        item.node.style.transform = '';
-    }
-
-    // read all true positions, then write all pins (no interleaved reflow)
-    const pins = [];
+    // READ pass: measure every candidate's current on-screen rect in one batch.
+    // The rect already includes whatever pin we applied last frame, so the true
+    // flex position is `rect - appliedPin`. Recovering it this way -- instead of
+    // clearing the transform and re-measuring -- avoids a second style
+    // invalidation + forced reflow per frame. That extra invalidation is the
+    // dominant main-thread cost (Recalculate style) when many dials are on
+    // screen during a live edge-drag, and starving the main thread is what makes
+    // the `cover` background image stutter as it repaints each frame.
+    const reads = [];
     for (const item of candidates) {
         const r = item.node.getBoundingClientRect();
         if (r.width === 0 && r.height === 0) continue;
         if (r.bottom < minY || r.top > maxY) continue;
 
-        const dx = item.prev.left - r.left;
-        const dy = item.prev.top - r.top;
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) continue;
-
-        pins.push({ node: item.node, dx, dy });
+        const applied = flipHoldPins.get(item.node);
+        const flexLeft = applied ? r.left - applied.dx : r.left;
+        const flexTop = applied ? r.top - applied.dy : r.top;
+        reads.push({ node: item.node, flexLeft, flexTop, prev: item.prev, hadPin: !!applied });
     }
 
-    for (const p of pins) {
-        p.node.style.transform = `translate3d(${p.dx}px, ${p.dy}px, 0)`;
+    // WRITE pass: pin each tile back to its frozen pre-resize spot. All reads are
+    // done, so nothing here forces an interleaved reflow. `transition: none` only
+    // needs to be set when a tile first gets pinned, not re-asserted every frame.
+    for (const item of reads) {
+        const dx = item.prev.left - item.flexLeft;
+        const dy = item.prev.top - item.flexTop;
+
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+            if (item.hadPin) {
+                item.node.style.transform = '';
+                flipHoldPins.delete(item.node);
+            }
+            continue;
+        }
+
+        if (!item.hadPin) item.node.style.transition = 'none';
+        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        flipHoldPins.set(item.node, { dx, dy });
     }
 }
 
