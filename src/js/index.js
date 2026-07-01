@@ -1391,10 +1391,12 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-function getTileContentRect(node, containerRect) {
+// Convert a tile's viewport rect into tileContainer content coordinates, which
+// are scroll-independent so saved positions stay valid across scroll changes.
+// scrollLeft/scrollTop are read once by the caller and threaded in so the hot
+// per-frame hold path doesn't re-read scroll for every tile.
+function getTileContentRect(node, containerRect, scrollLeft, scrollTop) {
     const r = node.getBoundingClientRect();
-    const scrollLeft = bookmarksContainerParent.scrollLeft;
-    const scrollTop = bookmarksContainerParent.scrollTop;
 
     return {
         left: r.left - containerRect.left + scrollLeft,
@@ -1519,10 +1521,12 @@ function flip(options = {}) {
     }
 
     const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
     const live = [];
     const liveByNode = new Map();
     for (const node of nodes) {
-        const r = getTileContentRect(node, containerRect);
+        const r = getTileContentRect(node, containerRect, readScrollLeft, readScrollTop);
         // skip hidden tiles (e.g. one being removed): nothing to measure/animate
         if (r.width === 0 && r.height === 0) continue;
 
@@ -1547,11 +1551,11 @@ function flip(options = {}) {
 
         // cull tiles well outside the viewport: they snap to rest, so cost scales
         // with what's on screen, not folder size
-    if (!isContentRectNearViewport(item, scrollState.top, vh, FLIP_MARGIN)) continue;
+        if (!isContentRectNearViewport(item, scrollState.top, vh, FLIP_MARGIN)) continue;
         if (!prev) continue; // brand-new tile: seed at rest, no animation
 
-    const dx = (prev.left - oldScrollLeft) - (item.left - scrollState.left);
-    const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top);
+        const dx = (prev.left - oldScrollLeft) - (item.left - scrollState.left);
+        const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top);
         // Scale back to the old size for true dial-size changes. Title visibility
         // toggles opt out so the tile height snaps to rest and only row position
         // animates; otherwise the labels feel like they bounce.
@@ -1661,8 +1665,10 @@ function flipHold() {
     const reads = [];
     const liveByNode = new Map();
     const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
     for (const item of candidates) {
-        const r = getTileContentRect(item.node, containerRect);
+        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
         if (r.width === 0 && r.height === 0) continue;
 
         const applied = flipHoldPins.get(item.node);
