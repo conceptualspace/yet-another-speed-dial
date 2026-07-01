@@ -156,8 +156,9 @@ let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
 let flipCleanupTimer = null;         // pending transition teardown for the resize flip
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
 const RESIZE_SETTLE_DELAY = 60;     // ms of resize quiet before the settle wave plays
-const flipPrevRects = new Map();     // node -> last resting {left, top} (viewport coords)
+const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
+let flipHoldAnchor = null;           // scroll anchor frozen for an in-progress resize hold
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
@@ -1390,6 +1391,89 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
+function getTileContentRect(node, containerRect) {
+    const r = node.getBoundingClientRect();
+    const scrollLeft = bookmarksContainerParent.scrollLeft;
+    const scrollTop = bookmarksContainerParent.scrollTop;
+
+    return {
+        left: r.left - containerRect.left + scrollLeft,
+        top: r.top - containerRect.top + scrollTop,
+        bottom: r.bottom - containerRect.top + scrollTop,
+        width: r.width,
+        height: r.height
+    };
+}
+
+function captureFlipScrollAnchor(nodes, scrollTop = bookmarksContainerParent.scrollTop, scrollLeft = bookmarksContainerParent.scrollLeft) {
+    const viewportBottom = scrollTop + bookmarksContainerParent.clientHeight;
+    let anchor = null;
+    let bestDistance = Infinity;
+
+    for (const node of nodes) {
+        if (node.style.display === 'none') continue;
+
+        const prev = flipPrevRects.get(node);
+        if (!prev) continue;
+
+        const prevBottom = prev.top + prev.height;
+        if (prevBottom < scrollTop || prev.top > viewportBottom) continue;
+
+        const offsetTop = prev.top - scrollTop;
+        const distance = offsetTop <= 0 && prevBottom >= scrollTop ? 0 : Math.abs(offsetTop);
+        if (distance >= bestDistance) continue;
+
+        bestDistance = distance;
+        anchor = {
+            node,
+            offsetLeft: prev.left - scrollLeft,
+            offsetTop,
+            scrollLeft,
+            scrollTop
+        };
+    }
+
+    return anchor;
+}
+
+function restoreFlipScrollAnchor(anchor, liveByNode) {
+    if (!anchor) {
+        return {
+            left: bookmarksContainerParent.scrollLeft,
+            top: bookmarksContainerParent.scrollTop
+        };
+    }
+
+    const item = liveByNode.get(anchor.node);
+    if (!item) {
+        return {
+            left: bookmarksContainerParent.scrollLeft,
+            top: bookmarksContainerParent.scrollTop
+        };
+    }
+
+    const maxScrollLeft = Math.max(0, bookmarksContainerParent.scrollWidth - bookmarksContainerParent.clientWidth);
+    const maxScrollTop = Math.max(0, bookmarksContainerParent.scrollHeight - bookmarksContainerParent.clientHeight);
+    const targetLeft = Math.min(maxScrollLeft, Math.max(0, item.left - anchor.offsetLeft));
+    const targetTop = Math.min(maxScrollTop, Math.max(0, item.top - anchor.offsetTop));
+
+    if (Math.abs(bookmarksContainerParent.scrollLeft - targetLeft) > 0.5) {
+        bookmarksContainerParent.scrollLeft = targetLeft;
+    }
+    if (Math.abs(bookmarksContainerParent.scrollTop - targetTop) > 0.5) {
+        bookmarksContainerParent.scrollTop = targetTop;
+    }
+
+    return {
+        left: bookmarksContainerParent.scrollLeft,
+        top: bookmarksContainerParent.scrollTop
+    };
+}
+
+function isContentRectNearViewport(item, scrollTop, viewportHeight, margin) {
+    return item.bottom - scrollTop >= -margin && item.top - scrollTop <= viewportHeight + margin;
+}
+
 // Tile reflow animation (FLIP, compositor-driven).
 //
 // When the grid reflows (window resize, folder re-pack, dial-size change,
@@ -1414,6 +1498,8 @@ function flip(options = {}) {
     const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+    const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
+    flipHoldAnchor = null;
 
     // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
     // a later hold starts from a clean slate (the transforms themselves are
@@ -1432,14 +1518,23 @@ function flip(options = {}) {
         node.style.transform = '';
     }
 
-    const vh = window.innerHeight;
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
     const live = [];
+    const liveByNode = new Map();
     for (const node of nodes) {
-        const r = node.getBoundingClientRect();
+        const r = getTileContentRect(node, containerRect);
         // skip hidden tiles (e.g. one being removed): nothing to measure/animate
         if (r.width === 0 && r.height === 0) continue;
-        live.push({ node, left: r.left, top: r.top, bottom: r.bottom, width: r.width, height: r.height });
+
+        const item = { node, left: r.left, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        live.push(item);
+        liveByNode.set(node, item);
     }
+
+    const scrollState = restoreFlipScrollAnchor(scrollAnchor, liveByNode);
+    const oldScrollLeft = scrollAnchor ? scrollAnchor.scrollLeft : scrollState.left;
+    const oldScrollTop = scrollAnchor ? scrollAnchor.scrollTop : scrollState.top;
+    const vh = bookmarksContainerParent.clientHeight;
 
     // INVERT: offset each tile from its new position back to where it used to be.
     const anim = [];
@@ -1452,11 +1547,11 @@ function flip(options = {}) {
 
         // cull tiles well outside the viewport: they snap to rest, so cost scales
         // with what's on screen, not folder size
-        if (item.bottom < -FLIP_MARGIN || item.top > vh + FLIP_MARGIN) continue;
+    if (!isContentRectNearViewport(item, scrollState.top, vh, FLIP_MARGIN)) continue;
         if (!prev) continue; // brand-new tile: seed at rest, no animation
 
-        const dx = prev.left - item.left;
-        const dy = prev.top - item.top;
+    const dx = (prev.left - oldScrollLeft) - (item.left - scrollState.left);
+    const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top);
         // Scale back to the old size for true dial-size changes. Title visibility
         // toggles opt out so the tile height snaps to rest and only row position
         // animates; otherwise the labels feel like they bounce.
@@ -1533,9 +1628,14 @@ function flipHold() {
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     if (!nodes.length) return;
 
+    if (!flipHoldAnchor) {
+        flipHoldAnchor = captureFlipScrollAnchor(nodes);
+    }
+
     const holdMargin = Math.max(FLIP_MARGIN, window.innerHeight * RESIZE_HOLD_MARGIN_MULTIPLIER);
-    const minY = -holdMargin;
-    const maxY = window.innerHeight + holdMargin;
+    const anchorScrollTop = flipHoldAnchor ? flipHoldAnchor.scrollTop : bookmarksContainerParent.scrollTop;
+    const anchorScrollLeft = flipHoldAnchor ? flipHoldAnchor.scrollLeft : bookmarksContainerParent.scrollLeft;
+    const viewportHeight = bookmarksContainerParent.clientHeight;
     const candidates = [];
 
     for (const node of nodes) {
@@ -1543,7 +1643,7 @@ function flipHold() {
         if (!prev) continue; // brand-new tile: leave at rest
 
         const prevBottom = prev.top + prev.height;
-        if (prevBottom < minY || prev.top > maxY) continue;
+        if (prevBottom - anchorScrollTop < -holdMargin || prev.top - anchorScrollTop > viewportHeight + holdMargin) continue;
 
         candidates.push({ node, prev });
     }
@@ -1559,23 +1659,45 @@ function flipHold() {
     // screen during a live edge-drag, and starving the main thread is what makes
     // the `cover` background image stutter as it repaints each frame.
     const reads = [];
+    const liveByNode = new Map();
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
     for (const item of candidates) {
-        const r = item.node.getBoundingClientRect();
+        const r = getTileContentRect(item.node, containerRect);
         if (r.width === 0 && r.height === 0) continue;
-        if (r.bottom < minY || r.top > maxY) continue;
 
         const applied = flipHoldPins.get(item.node);
         const flexLeft = applied ? r.left - applied.dx : r.left;
         const flexTop = applied ? r.top - applied.dy : r.top;
-        reads.push({ node: item.node, flexLeft, flexTop, prev: item.prev, hadPin: !!applied });
+        const read = {
+            node: item.node,
+            left: flexLeft,
+            top: flexTop,
+            bottom: flexTop + r.height,
+            flexLeft,
+            flexTop,
+            prev: item.prev,
+            hadPin: !!applied
+        };
+        reads.push(read);
+        liveByNode.set(item.node, read);
     }
+
+    const scrollState = restoreFlipScrollAnchor(flipHoldAnchor, liveByNode);
 
     // WRITE pass: pin each tile back to its frozen pre-resize spot. All reads are
     // done, so nothing here forces an interleaved reflow. `transition: none` only
     // needs to be set when a tile first gets pinned, not re-asserted every frame.
     for (const item of reads) {
-        const dx = item.prev.left - item.flexLeft;
-        const dy = item.prev.top - item.flexTop;
+        if (!isContentRectNearViewport(item, scrollState.top, viewportHeight, holdMargin)) {
+            if (item.hadPin) {
+                item.node.style.transform = '';
+                flipHoldPins.delete(item.node);
+            }
+            continue;
+        }
+
+        const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
+        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top);
 
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
             if (item.hadPin) {
