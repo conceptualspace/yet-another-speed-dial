@@ -157,6 +157,7 @@ h1 {
     transition: opacity 150ms ease-in;
     overflow-x: hidden;
     overflow-y: auto;
+    overflow-anchor: none;
     scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
     scrollbar-width: thin;
 }

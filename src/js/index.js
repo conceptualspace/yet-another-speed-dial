@@ -1663,7 +1663,6 @@ function flipHold() {
     // screen during a live edge-drag, and starving the main thread is what makes
     // the `cover` background image stutter as it repaints each frame.
     const reads = [];
-    const liveByNode = new Map();
     const containerRect = bookmarksContainerParent.getBoundingClientRect();
     const readScrollLeft = bookmarksContainerParent.scrollLeft;
     const readScrollTop = bookmarksContainerParent.scrollTop;
@@ -1685,10 +1684,17 @@ function flipHold() {
             hadPin: !!applied
         };
         reads.push(read);
-        liveByNode.set(item.node, read);
     }
 
-    const scrollState = restoreFlipScrollAnchor(flipHoldAnchor, liveByNode);
+    // Observe the browser's current scroll instead of writing it. The pin math
+    // below glues every tile to `prev.top - anchorScrollTop` in viewport space
+    // regardless of the scroll value, so we don't need to move the scrollbar to
+    // hold the grid still. Writing scrollTop on every resize frame -- while the
+    // OS is animating the window size (e.g. the macOS maximize zoom) -- fought
+    // the browser's own layout/scroll clamping and produced visible jitter,
+    // worst when scrolled far down where clamping is most active. The one-shot
+    // scroll restore now lives only in the settle flip().
+    const scrollState = { left: readScrollLeft, top: readScrollTop };
 
     // WRITE pass: pin each tile back to its frozen pre-resize spot. All reads are
     // done, so nothing here forces an interleaved reflow. `transition: none` only
