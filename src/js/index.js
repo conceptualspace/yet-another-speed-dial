@@ -159,6 +159,11 @@ const RESIZE_SETTLE_DELAY = 60;     // ms of resize quiet before the settle wave
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
 let flipHoldAnchor = null;           // scroll anchor frozen for an in-progress resize hold
+let flipPrevContainerTop = null;     // tileContainer's screen top for the layout stored in
+                                     // flipPrevRects. Content coords subtract the container top,
+                                     // so a shift of the whole tileContainer (folders header
+                                     // wrapping to more/fewer lines) is otherwise invisible to
+                                     // FLIP and snaps; tracking it lets that shift animate too.
 const FLIP_DURATION = 500;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
@@ -1510,6 +1515,7 @@ function flip(options = {}) {
 
     if (!nodes.length) {
         flipPrevRects.clear();
+        flipPrevContainerTop = null;
         return;
     }
 
@@ -1521,6 +1527,12 @@ function flip(options = {}) {
     }
 
     const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    // The tileContainer can move on screen between relayouts when the folders header
+    // wraps to a different number of lines. Content coords are relative to the
+    // container top, so fold that outer shift back in as a common vertical delta.
+    const prevContainerTop = flipPrevContainerTop;
+    const currentContainerTop = containerRect.top;
+    const containerTopDelta = prevContainerTop != null ? prevContainerTop - currentContainerTop : 0;
     const readScrollLeft = bookmarksContainerParent.scrollLeft;
     const readScrollTop = bookmarksContainerParent.scrollTop;
     const live = [];
@@ -1555,7 +1567,8 @@ function flip(options = {}) {
         if (!prev) continue; // brand-new tile: seed at rest, no animation
 
         const dx = (prev.left - oldScrollLeft) - (item.left - scrollState.left);
-        const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top);
+        // containerTopDelta animates the folders-header shift instead of snapping it
+        const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top) + containerTopDelta;
         // Scale back to the old size for true dial-size changes. Title visibility
         // toggles opt out so the tile height snaps to rest and only row position
         // animates; otherwise the labels feel like they bounce.
@@ -1574,6 +1587,10 @@ function flip(options = {}) {
             if (!liveSet.has(node)) flipPrevRects.delete(node);
         }
     }
+
+    // record the container's screen top alongside the resting rects so the next
+    // relayout can tell how far the folders header pushed the whole grid
+    flipPrevContainerTop = currentContainerTop;
 
     if (!anim.length) return;
 
@@ -1718,7 +1735,10 @@ function flipHold() {
         }
 
         const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
-        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top);
+        // include the tileContainer's screen shift (folders header wrap) so tiles hold
+        // their on-screen spot, not just their spot relative to the moving container
+        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top)
+            + (flipPrevContainerTop != null ? flipPrevContainerTop - containerRect.top : 0);
 
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
             if (item.hadPin) {
@@ -2004,6 +2024,16 @@ function applySettings(options = {}) {
         // `color` is emitted concretely too: a tile is an <a>, so it would otherwise
         // inherit `color: var(--color)` and re-resolve that var on every recalc.
         const tileHeight = settings.showTitles ? dialHeight : dialContentHeight;
+
+        // Capture the scroll anchor BEFORE the size change reflows the grid. Near the
+        // bottom of a folder, shrinking the tiles (e.g. hiding labels) makes the content
+        // shorter and the browser instantly clamps scrollTop to the new, smaller max.
+        // Reading the anchor after that clamp (flip()'s own fallback capture) uses the
+        // already-clamped scroll, desyncs the FLIP scroll restore, and the dials jump up.
+        // Capturing here preserves the pre-reflow scroll; flip() consumes it via flipHoldAnchor.
+        const anchorParent = currentFolder || speedDialId;
+        flipHoldAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
+
         dialSizeStyleEl.textContent =
             `.container{max-width:${columnsValue}}` +
             `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${dialMargin};color:${settings.textColor}}` +
