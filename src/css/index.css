@@ -278,6 +278,9 @@ h1 {
     margin: var(--dial-margin);
     will-change: transform;
     /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
+    contain: layout paint style;      /* isolate each tile from cascade */
+    content-visibility: auto;         /* skip rendering offscreen tiles */
+    contain-intrinsic-size: var(--dial-width) var(--dial-height);
 }
 
 .tile:hover {
