@@ -2044,7 +2044,19 @@ function applySettings(options = {}) {
             `.tile-content{height:${dialContentHeight}}` +
             `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
 
-        // All sizing applied; trigger the FLIP reflow exactly once.
+        // Toggle the createDial (add-site) tile BEFORE the FLIP, not after. Showing or
+        // hiding it adds/removes a tile from the flex grid and reflows every dial;
+        // doing it here folds that reflow into the same flip() pass so the shift
+        // animates and flipPrevRects stays in sync. Toggling it after layout() (as it
+        // used to be) snapped the grid and left the stored resting positions stale, so
+        // the next resize jumped.
+        if (!settings.showAddSite) {
+            document.documentElement.style.setProperty('--create-dial-display', 'none');
+        } else {
+            document.documentElement.style.setProperty('--create-dial-display', 'block');
+        }
+
+        // All layout-affecting changes applied; trigger the FLIP reflow exactly once.
         layout({
             scale: options.scaleTiles,
             duration: options.flipDuration,
@@ -2084,12 +2096,6 @@ function applySettings(options = {}) {
         } else {
             document.documentElement.style.setProperty('--title-opacity', '1');
             document.documentElement.classList.remove('hide-titles');
-        }
-
-        if (!settings.showAddSite) {
-            document.documentElement.style.setProperty('--create-dial-display', 'none');
-        } else {
-            document.documentElement.style.setProperty('--create-dial-display', 'block');
         }
 
 
