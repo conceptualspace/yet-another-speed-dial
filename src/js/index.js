@@ -1409,7 +1409,7 @@ function layout(force = false) {
                 TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
             } else {
                 if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
+                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, stagger: { amount: 0.2 }, ease });
                 } else {
                     TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
                 }
