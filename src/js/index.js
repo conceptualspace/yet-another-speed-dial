@@ -22,6 +22,16 @@ const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
 const foldersContainer = document.getElementById('folders');
 const addFolderButton = document.getElementById('addFolderButton');
+
+// Dial sizing is emitted here as concrete px values rather than as inherited
+// CSS custom properties (var()). The FLIP reflow loop writes `transform` to each
+// moving tile every frame; if tile width/height/margin resolved from var(), each
+// of those per-frame style recalcs would re-resolve the variables for every tile
+// -- the dominant cost when many tiles animate at once (e.g. a dial-size change
+// moves them all simultaneously). Concrete values keep the per-frame recalc cheap.
+const dialSizeStyleEl = document.createElement('style');
+dialSizeStyleEl.id = 'dialSizeStyles';
+document.head.appendChild(dialSizeStyleEl);
 const menu = document.getElementById('contextMenu');
 const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
@@ -121,7 +131,6 @@ let tabMessagePort = null;
 chrome.runtime.onMessage.addListener(handleMessages);
 
 let cache = {};
-let resizing = false;
 let settings = null;
 let speedDialId = null;
 let sortable = null;
@@ -137,10 +146,36 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
-let windowSize = null;
-let containerSize = null;
 let layoutFolder = false;
-let boxes = [];
+// tile reflow (FLIP) animation state. The motion runs on the compositor via a
+// CSS transition: each relayout does a single main-thread pass (read resting
+// positions, invert, then hand off to a `transform` transition), so per-frame
+// style recalc cost is independent of how many tiles are on screen.
+let flipGen = 0;                     // generation token so stale cleanups bail out
+let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
+let flipCleanupTimer = null;         // pending transition teardown for the resize flip
+let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
+const RESIZE_SETTLE_DELAY = 160;     // ms of resize quiet before the settle wave plays. Must
+                                     // exceed the gaps between resize events on a slow edge-drag
+                                     // (the mouse pausing mid-drag while the button is held). A
+                                     // premature settle rewrites the frozen flipPrevRects and gets
+                                     // hard-cut by the next flipHold, which reads as snapping.
+const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
+const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
+let flipHoldAnchor = null;           // scroll anchor frozen for an in-progress resize hold
+let flipPrevContainerTop = null;     // tileContainer's screen top for the layout stored in
+                                     // flipPrevRects. Content coords subtract the container top,
+                                     // so a shift of the whole tileContainer (folders header
+                                     // wrapping to more/fewer lines) is otherwise invisible to
+                                     // FLIP and snaps; tracking it lets that shift animate too.
+const FLIP_DURATION = 500;           // ms; compositor transition duration
+const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
+const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
+const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
+const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
+                                     // evenly across however many tiles are animating
+const TITLE_TOGGLE_FLIP_DURATION = 300;
+const TITLE_TOGGLE_STAGGER_WINDOW = 220;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -1365,103 +1400,366 @@ function saveBookmarkSettings() {
     hideModals();
 }
 
-// todo: why did i debounce animate but not layout? (because we want tiles to move immediately as manually resizing window)
-function layout(force = false) {
-    if (force || layoutFolder || containerSize !== getComputedStyle(bookmarksContainer).maxWidth || windowSize !== window.innerWidth) {
-        windowSize = window.innerWidth;
-        containerSize = getComputedStyle(bookmarksContainer).maxWidth;
+// Convert a tile's viewport rect into tileContainer content coordinates, which
+// are scroll-independent so saved positions stay valid across scroll changes.
+// scrollLeft/scrollTop are read once by the caller and threaded in so the hot
+// per-frame hold path doesn't re-read scroll for every tile.
+function getTileContentRect(node, containerRect, scrollLeft, scrollTop) {
+    const r = node.getBoundingClientRect();
 
-        let nodesToAnimate = [];
-        let positions = [];
-
-        // avoid layout thrashing
-        // batch reads
-        for (let i = 0; i < boxes.length; i++) {
-            let box = boxes[i];
-            positions[i] = { 
-                node: box.node,
-                x: box.node.offsetLeft,
-                y: box.node.offsetTop,
-                lastX: box.x,
-                lastY: box.y
-            };
-        }
-
-        // batch writes
-        for (let i = 0; i < boxes.length; i++) {
-            let box = positions[i];
-            if (box.lastX !== box.x || box.lastY !== box.y || force) {
-                TweenMax.killTweensOf(box.node); // prevent running tweens from modifying transforms during delay
-                const x = boxes[i].transform.x + box.lastX - box.x;
-                const y = boxes[i].transform.y + box.lastY - box.y;
-                TweenMax.set(box.node, { x, y });
-                nodesToAnimate.push(box.node);
-            }
-            boxes[i].x = box.x;
-            boxes[i].y = box.y;
-        }
-
-        // layoutFolder true on folder open -- zero duration because we are just setting the positions of the dials, so whenever
-        // a resize occurs the animation will start from the right position
-        if (nodesToAnimate.length > 0 || force) {
-            let duration = layoutFolder ? 0 : 0.6;
-            if (duration === 0) {
-                TweenMax.set(nodesToAnimate, { x: 0, y: 0, force3D: true });
-            } else {
-                if (nodesToAnimate.length < 150) {
-                    TweenMax.staggerTo(nodesToAnimate, duration, { x: 0, y: 0, stagger: { amount: 0.2 }, ease });
-                } else {
-                    TweenMax.to(nodesToAnimate, duration, { x: 0, y: 0, force3D: true, ease });
-                }
-            }
-        }
-
-        layoutFolder = false;
-    }
+    return {
+        left: r.left - containerRect.left + scrollLeft,
+        top: r.top - containerRect.top + scrollTop,
+        bottom: r.bottom - containerRect.top + scrollTop,
+        width: r.width,
+        height: r.height
+    };
 }
 
-function ease(progress) {
-    const omega = 12;
-    const zeta = 0.8;
-    const beta = Math.sqrt(1.0 - zeta * zeta);
-    progress = 1 - Math.cos(progress * Math.PI / 2);
-    progress = 1 / beta *
-        Math.exp(-zeta * omega * progress) *
-        Math.sin(beta * omega * progress + Math.atan(beta / zeta));
-    return 1 - progress;
+function captureFlipScrollAnchor(nodes, scrollTop = bookmarksContainerParent.scrollTop, scrollLeft = bookmarksContainerParent.scrollLeft) {
+    const viewportBottom = scrollTop + bookmarksContainerParent.clientHeight;
+    let anchor = null;
+    let bestDistance = Infinity;
+
+    for (const node of nodes) {
+        if (node.style.display === 'none') continue;
+
+        const prev = flipPrevRects.get(node);
+        if (!prev) continue;
+
+        const prevBottom = prev.top + prev.height;
+        if (prevBottom < scrollTop || prev.top > viewportBottom) continue;
+
+        const offsetTop = prev.top - scrollTop;
+        const distance = offsetTop <= 0 && prevBottom >= scrollTop ? 0 : Math.abs(offsetTop);
+        if (distance >= bestDistance) continue;
+
+        bestDistance = distance;
+        anchor = {
+            node,
+            offsetLeft: prev.left - scrollLeft,
+            offsetTop,
+            scrollLeft,
+            scrollTop
+        };
+    }
+
+    return anchor;
+}
+
+function restoreFlipScrollAnchor(anchor, liveByNode) {
+    if (!anchor) {
+        return {
+            left: bookmarksContainerParent.scrollLeft,
+            top: bookmarksContainerParent.scrollTop
+        };
+    }
+
+    const item = liveByNode.get(anchor.node);
+    if (!item) {
+        return {
+            left: bookmarksContainerParent.scrollLeft,
+            top: bookmarksContainerParent.scrollTop
+        };
+    }
+
+    const maxScrollLeft = Math.max(0, bookmarksContainerParent.scrollWidth - bookmarksContainerParent.clientWidth);
+    const maxScrollTop = Math.max(0, bookmarksContainerParent.scrollHeight - bookmarksContainerParent.clientHeight);
+    const targetLeft = Math.min(maxScrollLeft, Math.max(0, item.left - anchor.offsetLeft));
+    const targetTop = Math.min(maxScrollTop, Math.max(0, item.top - anchor.offsetTop));
+
+    if (Math.abs(bookmarksContainerParent.scrollLeft - targetLeft) > 0.5) {
+        bookmarksContainerParent.scrollLeft = targetLeft;
+    }
+    if (Math.abs(bookmarksContainerParent.scrollTop - targetTop) > 0.5) {
+        bookmarksContainerParent.scrollTop = targetTop;
+    }
+
+    return {
+        left: bookmarksContainerParent.scrollLeft,
+        top: bookmarksContainerParent.scrollTop
+    };
+}
+
+function isContentRectNearViewport(item, scrollTop, viewportHeight, margin) {
+    return item.bottom - scrollTop >= -margin && item.top - scrollTop <= viewportHeight + margin;
+}
+
+// Tile reflow animation (FLIP, compositor-driven).
+//
+// When the grid reflows (window resize, folder re-pack, dial-size change,
+// delete) every tile's flexbox position can jump. Rather than animate that with
+// a per-frame JS loop that mutates `transform` on every tile each frame -- which
+// forces the browser to recalculate style for all on-screen tiles 60x/sec and
+// stutters in dense folders -- we use the FLIP technique driven by a CSS
+// transition:
+//
+//   1. read each tile's new resting position (one batched layout read)
+//   2. INVERT: offset it back to its previous position with transition disabled
+//   3. PLAY: on the next frame, enable a `transform` transition and clear the
+//      offset, letting the compositor tween it to rest off the main thread.
+//
+// The only main-thread cost is one pass per relayout, independent of tile count.
+// Previous resting positions are tracked across calls (callers apply their layout
+// change before invoking flip), so brand-new tiles seed at rest without animating.
+
+function flip(options = {}) {
+    const scaleTiles = options.scale !== false;
+    const duration = options.duration ?? FLIP_DURATION;
+    const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+    const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
+    flipHoldAnchor = null;
+
+    // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
+    // a later hold starts from a clean slate (the transforms themselves are
+    // cleared by the read pass below).
+    flipHoldPins.clear();
+
+    if (!nodes.length) {
+        flipPrevRects.clear();
+        flipPrevContainerTop = null;
+        return;
+    }
+
+    // LAST: clear any in-flight transform/transition, then read resting positions.
+    // Clearing first means getBoundingClientRect returns the true flex position.
+    for (const node of nodes) {
+        node.style.transition = 'none';
+        node.style.transform = '';
+    }
+
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    // The tileContainer can move on screen between relayouts when the folders header
+    // wraps to a different number of lines. Content coords are relative to the
+    // container top, so fold that outer shift back in as a common vertical delta.
+    const prevContainerTop = flipPrevContainerTop;
+    const currentContainerTop = containerRect.top;
+    const containerTopDelta = prevContainerTop != null ? prevContainerTop - currentContainerTop : 0;
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
+    const live = [];
+    const liveByNode = new Map();
+    for (const node of nodes) {
+        const r = getTileContentRect(node, containerRect, readScrollLeft, readScrollTop);
+        // skip hidden tiles (e.g. one being removed): nothing to measure/animate
+        if (r.width === 0 && r.height === 0) continue;
+
+        const item = { node, left: r.left, top: r.top, bottom: r.bottom, width: r.width, height: r.height };
+        live.push(item);
+        liveByNode.set(node, item);
+    }
+
+    const scrollState = restoreFlipScrollAnchor(scrollAnchor, liveByNode);
+    const oldScrollLeft = scrollAnchor ? scrollAnchor.scrollLeft : scrollState.left;
+    const oldScrollTop = scrollAnchor ? scrollAnchor.scrollTop : scrollState.top;
+    const vh = bookmarksContainerParent.clientHeight;
+
+    // INVERT: offset each tile from its new position back to where it used to be.
+    const anim = [];
+    const liveSet = new Set();
+    for (const item of live) {
+        liveSet.add(item.node);
+        const prev = flipPrevRects.get(item.node);
+        // record the new resting position AND size for the next relayout
+        flipPrevRects.set(item.node, { left: item.left, top: item.top, width: item.width, height: item.height });
+
+        // cull tiles well outside the viewport: they snap to rest, so cost scales
+        // with what's on screen, not folder size
+        if (!isContentRectNearViewport(item, scrollState.top, vh, FLIP_MARGIN)) continue;
+        if (!prev) continue; // brand-new tile: seed at rest, no animation
+
+        const dx = (prev.left - oldScrollLeft) - (item.left - scrollState.left);
+        // containerTopDelta animates the folders-header shift instead of snapping it
+        const dy = (prev.top - oldScrollTop) - (item.top - scrollState.top) + containerTopDelta;
+        // Scale back to the old size for true dial-size changes. Title visibility
+        // toggles opt out so the tile height snaps to rest and only row position
+        // animates; otherwise the labels feel like they bounce.
+        const sx = scaleTiles && item.width ? prev.width / item.width : 1;
+        const sy = scaleTiles && item.height ? prev.height / item.height : 1;
+        const scaled = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && !scaled) continue;
+
+        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
+        anim.push(item);
+    }
+
+    // prune entries for tiles that no longer exist
+    if (flipPrevRects.size > live.length) {
+        for (const node of flipPrevRects.keys()) {
+            if (!liveSet.has(node)) flipPrevRects.delete(node);
+        }
+    }
+
+    // record the container's screen top alongside the resting rects so the next
+    // relayout can tell how far the folders header pushed the whole grid
+    flipPrevContainerTop = currentContainerTop;
+
+    if (!anim.length) return;
+
+    // PLAY: transition every offset back to zero on the compositor. We commit the
+    // inverted transforms with one synchronous reflow and then start the transition
+    // in the SAME frame, so the motion begins together with the (instant) size
+    // change instead of a frame later -- which otherwise reads as "resize, pause,
+    // slide". A per-tile transition-delay spreads the tiles into a wave, distributed
+    // evenly so every animating tile staggers regardless of count. Delay is part of
+    // the transition, so the stagger stays entirely compositor-driven.
+    void bookmarksContainerParent.offsetWidth; // commit the inverted positions
+    const gen = ++flipGen;
+    const span = anim.length > 1 ? anim.length - 1 : 1;
+    for (let i = 0; i < anim.length; i++) {
+        const node = anim[i].node;
+        const delay = (i / span) * staggerWindow;
+        node.style.transition = `transform ${duration}ms ${FLIP_EASING} ${delay}ms`;
+        node.style.transform = '';
+    }
+
+    // once settled, drop the transition so it can't interfere with drag/sort.
+    // guarded by the generation token so a newer flip isn't clobbered.
+    setTimeout(() => {
+        if (gen !== flipGen) return;
+        for (const item of anim) {
+            if (item.node.style.transform === '') {
+                item.node.style.transition = '';
+            }
+        }
+    }, duration + staggerWindow + 60);
+}
+
+// Public entry points used after a layout-affecting change. `layout` runs
+// immediately; `animate` is debounced for high-frequency callers.
+function layout(options = {}) {
+    flip(options);
+}
+
+// Resize HOLD. While the window is being dragged the flex grid reflows every
+// frame; rather than let each tile chase the edge, we pin every tile to its
+// pre-drag resting spot (transform back, no transition) so the dials sit still
+// even as they spill outside the viewport. flipPrevRects is frozen here (never
+// updated) so it still holds the original layout -- the settle flip() then
+// inverts from there and staggers the whole grid into place. During the live
+// drag, tiles are pinned if either their pre-drag spot OR current flex spot is
+// near the viewport; the current-position check catches deep-scroll resizes
+// where a tile from far away reflows into view before the settle flip runs.
+//
+// Each frame measures every pinned tile and re-derives its true flex position as
+// `measuredRect - appliedPin` (tracked in flipHoldPins), so the grid is read once
+// per frame without a separate transform-clearing write. Halving the per-frame
+// style invalidations keeps the main thread free enough that the `cover`
+// background image can repaint smoothly during the drag.
+function flipHold() {
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+    if (!nodes.length) return;
+
+    if (!flipHoldAnchor) {
+        flipHoldAnchor = captureFlipScrollAnchor(nodes);
+    }
+
+    const holdMargin = Math.max(FLIP_MARGIN, window.innerHeight * RESIZE_HOLD_MARGIN_MULTIPLIER);
+    const anchorScrollTop = flipHoldAnchor ? flipHoldAnchor.scrollTop : bookmarksContainerParent.scrollTop;
+    const anchorScrollLeft = flipHoldAnchor ? flipHoldAnchor.scrollLeft : bookmarksContainerParent.scrollLeft;
+    const viewportHeight = bookmarksContainerParent.clientHeight;
+    const candidates = [];
+
+    for (const node of nodes) {
+        const prev = flipPrevRects.get(node);
+        if (!prev) continue; // brand-new tile: leave at rest
+        candidates.push({ node, prev });
+    }
+
+    if (!candidates.length) return;
+
+    // READ pass: measure every candidate's current on-screen rect in one batch.
+    // The rect already includes whatever pin we applied last frame, so the true
+    // flex position is `rect - appliedPin`. Recovering it this way -- instead of
+    // clearing the transform and re-measuring -- avoids a second style
+    // invalidation + forced reflow per frame. That extra invalidation is the
+    // dominant main-thread cost (Recalculate style) when many dials are on
+    // screen during a live edge-drag, and starving the main thread is what makes
+    // the `cover` background image stutter as it repaints each frame.
+    const reads = [];
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
+    for (const item of candidates) {
+        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
+        if (r.width === 0 && r.height === 0) continue;
+
+        const applied = flipHoldPins.get(item.node);
+        const flexLeft = applied ? r.left - applied.dx : r.left;
+        const flexTop = applied ? r.top - applied.dy : r.top;
+        const current = {
+            left: flexLeft,
+            top: flexTop,
+            bottom: flexTop + r.height,
+            width: r.width,
+            height: r.height
+        };
+        const old = {
+            left: item.prev.left,
+            top: item.prev.top,
+            bottom: item.prev.top + item.prev.height,
+            width: item.prev.width,
+            height: item.prev.height
+        };
+        const read = {
+            node: item.node,
+            flexLeft,
+            flexTop,
+            prev: item.prev,
+            oldNearViewport: isContentRectNearViewport(old, anchorScrollTop, viewportHeight, holdMargin),
+            currentNearViewport: isContentRectNearViewport(current, readScrollTop, viewportHeight, holdMargin),
+            hadPin: !!applied
+        };
+        reads.push(read);
+    }
+
+    // Observe the browser's current scroll instead of writing it. The pin math
+    // below glues every tile to `prev.top - anchorScrollTop` in viewport space
+    // regardless of the scroll value, so we don't need to move the scrollbar to
+    // hold the grid still. Writing scrollTop on every resize frame -- while the
+    // OS is animating the window size (e.g. the macOS maximize zoom) -- fought
+    // the browser's own layout/scroll clamping and produced visible jitter,
+    // worst when scrolled far down where clamping is most active. The one-shot
+    // scroll restore now lives only in the settle flip().
+    const scrollState = { left: readScrollLeft, top: readScrollTop };
+
+    // WRITE pass: pin each tile back to its frozen pre-resize spot. All reads are
+    // done, so nothing here forces an interleaved reflow. `transition: none` only
+    // needs to be set when a tile first gets pinned, not re-asserted every frame.
+    for (const item of reads) {
+        if (!item.oldNearViewport && !item.currentNearViewport) {
+            if (item.hadPin) {
+                item.node.style.transform = '';
+                flipHoldPins.delete(item.node);
+            }
+            continue;
+        }
+
+        const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
+        // include the tileContainer's screen shift (folders header wrap) so tiles hold
+        // their on-screen spot, not just their spot relative to the moving container
+        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top)
+            + (flipPrevContainerTop != null ? flipPrevContainerTop - containerRect.top : 0);
+
+        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
+            if (item.hadPin) {
+                item.node.style.transform = '';
+                flipHoldPins.delete(item.node);
+            }
+            continue;
+        }
+
+        if (!item.hadPin) item.node.style.transition = 'none';
+        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+        flipHoldPins.set(item.node, { dx, dy });
+    }
 }
 
 const animate = debounce(() => {
-    requestAnimationFrame(() => { // Use requestAnimationFrame for smoother updates
-    let currentParent;
-    if (currentFolder) {
-        currentParent = currentFolder
-    }
-    const nodes = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
-    const total = nodes.length;
-
-    if (!nodes.length) return;
-    TweenMax.set(nodes, { lazy: false, x: "+=0" }); // maybe lazy doesnt help, cant tell
-
-    const nodePositions = [];
-    for (let i = 0; i < total; i++) {
-        let node = nodes[i];
-        nodePositions.push({
-            node,
-            transform: node._gsTransform,
-            x: node.offsetLeft,
-            y: node.offsetTop
-        });
-    }
-
-    for (let i = 0; i < total; i++) {
-        boxes[i] = nodePositions[i];
-    }
-    boxes.length = total;
-
-    layout();
-
-    });
+    requestAnimationFrame(flip);
 }, 300)
 
 function readURL(input) {
@@ -1583,7 +1881,7 @@ function addImage(image) {
     }
 }
 
-function applySettings() {
+function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
@@ -1620,49 +1918,47 @@ function applySettings() {
         }
         */
 
+        let columnsValue;
         if (settings.maxCols && settings.maxCols !== "100") {
             //todo cleanup - fixed values
-            let dialWidth = 220;
-            let dialMargin = 14 * 2; // 18px on each side
+            let colDialWidth = 220;
+            let colDialMargin = 14 * 2; // 18px on each side
 
             switch (settings.dialSize) {
                 case "xx-large":
-                    dialWidth = 300;
+                    colDialWidth = 300;
                     break;
                 case "x-large":
-                    dialWidth = 256;
+                    colDialWidth = 256;
                     break;
                 case "large":
-                    dialWidth = 220;
+                    colDialWidth = 220;
                     break;
                 case "medium":
-                    dialWidth = 178;
+                    colDialWidth = 178;
                     break;
                 case "small":
-                    dialWidth = 130;
+                    colDialWidth = 130;
                     break;
                 case "x-small":
-                    dialWidth = 100;
-                    dialMargin = 12 * 2;
+                    colDialWidth = 100;
+                    colDialMargin = 12 * 2;
                     break;
                 case "xx-small":
-                    dialWidth = 80;
-                    dialMargin = 8 * 2;
+                    colDialWidth = 80;
+                    colDialMargin = 8 * 2;
                     break;
                 default:
-                    dialWidth = 220;
+                    colDialWidth = 220;
             }
-        
-            const containerWidth = settings.maxCols * (dialWidth + dialMargin);
-            document.documentElement.style.setProperty('--columns', `${containerWidth}px`);
-            layout();
+
+            columnsValue = `${settings.maxCols * (colDialWidth + colDialMargin)}px`;
         } else {
-            document.documentElement.style.setProperty('--columns', '100%');
-            layout();
+            columnsValue = '100%';
         }
 
+        let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
         if (settings.dialSize && settings.dialSize !== "large") {
-            let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
             switch (settings.dialSize) {
                 case "xx-large":
                     dialWidth = '300px';
@@ -1713,23 +2009,47 @@ function applySettings() {
                     dialMargin = '14px';
                     folderDropPadding = '60px';
             }
-            document.documentElement.style.setProperty('--dial-width', dialWidth);
-            document.documentElement.style.setProperty('--dial-height', dialHeight);
-            document.documentElement.style.setProperty('--dial-content-height', dialContentHeight);
-            document.documentElement.style.setProperty('--dial-margin', dialMargin);
-            document.documentElement.style.setProperty('--folder-drop-padding', folderDropPadding);
         } else {
-            document.documentElement.style.setProperty('--dial-width', '220px');
-            document.documentElement.style.setProperty('--dial-margin', '14px');
-            document.documentElement.style.setProperty('--folder-drop-padding', '60px');
+            dialWidth = '220px';
+            dialMargin = '14px';
+            folderDropPadding = '60px';
             if (settings.dialRatio === "square") {
-                document.documentElement.style.setProperty('--dial-height', '238px');
-                document.documentElement.style.setProperty('--dial-content-height', '220px');
+                dialHeight = '238px';
+                dialContentHeight = '220px';
             } else {
-                document.documentElement.style.setProperty('--dial-height', '142px');
-                document.documentElement.style.setProperty('--dial-content-height', '124px');
+                dialHeight = '142px';
+                dialContentHeight = '124px';
             }
         }
+
+        // Apply all dial sizing in a single concrete-value stylesheet update. Using
+        // fixed px (not var()) means the per-frame transform writes the FLIP loop
+        // makes don't force every tile to re-resolve custom properties on recalc.
+        // `color` is emitted concretely too: a tile is an <a>, so it would otherwise
+        // inherit `color: var(--color)` and re-resolve that var on every recalc.
+        const tileHeight = settings.showTitles ? dialHeight : dialContentHeight;
+
+        // Capture the scroll anchor BEFORE the size change reflows the grid. Near the
+        // bottom of a folder, shrinking the tiles (e.g. hiding labels) makes the content
+        // shorter and the browser instantly clamps scrollTop to the new, smaller max.
+        // Reading the anchor after that clamp (flip()'s own fallback capture) uses the
+        // already-clamped scroll, desyncs the FLIP scroll restore, and the dials jump up.
+        // Capturing here preserves the pre-reflow scroll; flip() consumes it via flipHoldAnchor.
+        const anchorParent = currentFolder || speedDialId;
+        flipHoldAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
+
+        dialSizeStyleEl.textContent =
+            `.container{max-width:${columnsValue}}` +
+            `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${dialMargin};color:${settings.textColor}}` +
+            `.tile-content{height:${dialContentHeight}}` +
+            `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
+
+        // All sizing applied; trigger the FLIP reflow exactly once.
+        layout({
+            scale: options.scaleTiles,
+            duration: options.flipDuration,
+            staggerWindow: options.flipStaggerWindow
+        });
 
         if (settings.showFolders) {
             document.documentElement.style.setProperty('--show-folders', 'inline');
@@ -1760,8 +2080,10 @@ function applySettings() {
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
+            document.documentElement.classList.add('hide-titles');
         } else {
             document.documentElement.style.setProperty('--title-opacity', '1');
+            document.documentElement.classList.remove('hide-titles');
         }
 
         if (!settings.showAddSite) {
@@ -1820,6 +2142,8 @@ function applySettings() {
 }
 
 function saveSettings() {
+    const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
+
     settings.wallpaper = wallPaperEnabled.checked;
     settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
@@ -1838,7 +2162,11 @@ function saveSettings() {
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
-    applySettings();
+    applySettings({
+        scaleTiles: !showTitlesChanged,
+        flipDuration: showTitlesChanged ? TITLE_TOGGLE_FLIP_DURATION : undefined,
+        flipStaggerWindow: showTitlesChanged ? TITLE_TOGGLE_STAGGER_WINDOW : undefined
+    });
 
     chrome.storage.local.set({ settings })
         .then(() => {
@@ -2416,37 +2744,59 @@ function filterDials(searchTerm) {
     const currentParent = currentFolder;
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
-    dials.forEach(dial => {
+    const toShow = [];
+    const toHide = [];
+
+    for (const dial of dials) {
         if (!settings.showAddSite && dial.classList.contains('createDial')) {
             // dont show the create dial button
-            return;
+            continue;
         }
-
         const title = dial.querySelector('.tile-title')?.textContent.toLowerCase();
         const url = dial.href.toLowerCase();
-
-        if (title && title.includes(searchTerm) || url.includes(searchTerm)) {
-            // Fade-in and scale-up for matching thumbnails
-            TweenMax.to(dial, 0.3, { 
-                opacity: 1, 
-                scale: 1, 
-                display: 'block', 
-                ease: Power2.easeOut 
-            });
+        if ((title && title.includes(searchTerm)) || url.includes(searchTerm)) {
+            toShow.push(dial);
         } else {
-            // Fade-out and scale-down for non-matching thumbnails
-            TweenMax.to(dial, 0.3, { 
-                opacity: 0, 
-                scale: 0.8, 
-                display: 'none', 
-                ease: Power2.easeIn 
-            });
+            toHide.push(dial);
         }
-    });
+    }
 
-    // Recalculate layout after filtering
-    animate();
+    // un-hide matching tiles that were fully collapsed, keeping the filtered-out
+    // class so they stay visually collapsed until we commit and release them
+    let needsReflow = false;
+    for (const dial of toShow) {
+        clearTimeout(dial._filterTimer);
+        if (dial.style.display === 'none') {
+            dial.style.display = '';
+            needsReflow = true;
+        }
+    }
+    // single synchronous reflow commits the collapsed state for the whole batch
+    if (needsReflow) void bookmarksContainerParent.offsetWidth;
+
+    // flip the classes -- opacity/scale transitions then run on the compositor
+    for (const dial of toShow) {
+        dial.classList.remove('filtered-out');
+    }
+    for (const dial of toHide) {
+        if (dial.classList.contains('filtered-out')) continue;
+        dial.classList.add('filtered-out');
+        dial._filterTimer = setTimeout(() => {
+            dial.style.display = 'none';
+        }, 300);
+    }
 }
+
+// Search filter visibility. Matching tiles scale + fade back in, non-matching
+// tiles shrink + fade out in place (the effect lives on .tile-main so it never
+// fights the reflow loop, which owns .tile's transform). Positions are not
+// animated: the flex grid reflows instantly when a tile is hidden, keeping search
+// a light, in-place effect.
+//
+// Re-showing a fully hidden (display:none) tile needs one forced reflow to commit
+// its collapsed state before the transition can play. filterDials batches every
+// match/no-match decision first and does that reflow ONCE per keystroke -- doing
+// it per-tile inside the loop thrashed layout and was the source of typing lag.
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
@@ -2857,7 +3207,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
 
         //getBookmarks(speedDialId)
         buildDialPages(speedDialId, currentFolder).then(() => {
-            // rebuild boxes[] with the new dom nodes for the layout animations
+            // re-measure resting positions for the new dom nodes and animate
             animate();
         });
     }
@@ -3022,13 +3372,25 @@ function handleMessages(message) {
 }
 
 function onResize() {
-    if (!resizing) {
+    // Every resize -- a maximize/snap (one event) or a slow edge-drag (many
+    // events) -- pins each tile at its pre-drag spot via flipHold so the grid sits
+    // still while the viewport changes, then plays one staggered settle wave (flip)
+    // once the resize goes quiet. The hold keeps flipPrevRects on the original
+    // layout so the settle wave has the full delta to stagger across.
+    if (!resizeFlipScheduled) {
+        resizeFlipScheduled = true;
         requestAnimationFrame(() => {
-            layout();
-            resizing = false;
+            resizeFlipScheduled = false;
+            flipHold();
         });
-        resizing = true;
     }
+
+    // once the drag goes quiet, replay one staggered settle wave so a slow manual
+    // resize ends with the same flourish as a maximize/snap jump
+    clearTimeout(resizeSettleTimer);
+    resizeSettleTimer = setTimeout(() => {
+        flip();
+    }, RESIZE_SETTLE_DELAY);
 }
 
 function init() {
