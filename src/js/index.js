@@ -1618,9 +1618,9 @@ function layout(options = {}) {
 // even as they spill outside the viewport. flipPrevRects is frozen here (never
 // updated) so it still holds the original layout -- the settle flip() then
 // inverts from there and staggers the whole grid into place. During the live
-// drag, tiles within a few viewport-heights are pinned; that larger lookahead
-// prevents dense folders from popping when a big width change pulls lower rows
-// into view, while the settle flip still uses the tighter animation cull.
+// drag, tiles are pinned if either their pre-drag spot OR current flex spot is
+// near the viewport; the current-position check catches deep-scroll resizes
+// where a tile from far away reflows into view before the settle flip runs.
 //
 // Each frame measures every pinned tile and re-derives its true flex position as
 // `measuredRect - appliedPin` (tracked in flipHoldPins), so the grid is read once
@@ -1645,10 +1645,6 @@ function flipHold() {
     for (const node of nodes) {
         const prev = flipPrevRects.get(node);
         if (!prev) continue; // brand-new tile: leave at rest
-
-        const prevBottom = prev.top + prev.height;
-        if (prevBottom - anchorScrollTop < -holdMargin || prev.top - anchorScrollTop > viewportHeight + holdMargin) continue;
-
         candidates.push({ node, prev });
     }
 
@@ -1673,14 +1669,27 @@ function flipHold() {
         const applied = flipHoldPins.get(item.node);
         const flexLeft = applied ? r.left - applied.dx : r.left;
         const flexTop = applied ? r.top - applied.dy : r.top;
-        const read = {
-            node: item.node,
+        const current = {
             left: flexLeft,
             top: flexTop,
             bottom: flexTop + r.height,
+            width: r.width,
+            height: r.height
+        };
+        const old = {
+            left: item.prev.left,
+            top: item.prev.top,
+            bottom: item.prev.top + item.prev.height,
+            width: item.prev.width,
+            height: item.prev.height
+        };
+        const read = {
+            node: item.node,
             flexLeft,
             flexTop,
             prev: item.prev,
+            oldNearViewport: isContentRectNearViewport(old, anchorScrollTop, viewportHeight, holdMargin),
+            currentNearViewport: isContentRectNearViewport(current, readScrollTop, viewportHeight, holdMargin),
             hadPin: !!applied
         };
         reads.push(read);
@@ -1700,7 +1709,7 @@ function flipHold() {
     // done, so nothing here forces an interleaved reflow. `transition: none` only
     // needs to be set when a tile first gets pinned, not re-asserted every frame.
     for (const item of reads) {
-        if (!isContentRectNearViewport(item, scrollState.top, viewportHeight, holdMargin)) {
+        if (!item.oldNearViewport && !item.currentNearViewport) {
             if (item.hadPin) {
                 item.node.style.transform = '';
                 flipHoldPins.delete(item.node);
