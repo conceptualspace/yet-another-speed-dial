@@ -1895,7 +1895,7 @@ function applySettings(options = {}) {
             } else {
                 // Remove the gradient class and apply custom background
                 document.body.classList.remove('gradientBackground');
-                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center fixed`;
+                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center`;
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
