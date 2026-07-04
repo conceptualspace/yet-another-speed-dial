@@ -2027,7 +2027,14 @@ function applySettings(options = {}) {
         // makes don't force every tile to re-resolve custom properties on recalc.
         // `color` is emitted concretely too: a tile is an <a>, so it would otherwise
         // inherit `color: var(--color)` and re-resolve that var on every recalc.
-        const tileHeight = settings.showTitles ? dialHeight : dialContentHeight;
+        //
+        // label overflow used to paint harmlessly into the margin gap;
+        // content-visibility:auto paint containment now clips it. add a little extra height
+        // so the label fits inside the contained box. we adjust tile margin correspondingly
+        // so the flex grid spacing stays the same
+        const TITLE_PADDING = 6;
+        const tileHeight = settings.showTitles ? `${parseInt(dialHeight, 10) + TITLE_PADDING}px` : dialContentHeight;
+        const tileMargin = settings.showTitles ? `${Math.max(0, parseInt(dialMargin, 10) - (TITLE_PADDING / 2))}px ${dialMargin}` : dialMargin;
 
         // Capture the scroll anchor BEFORE the size change reflows the grid. Near the
         // bottom of a folder, shrinking the tiles (e.g. hiding labels) makes the content
@@ -2038,9 +2045,10 @@ function applySettings(options = {}) {
         const anchorParent = currentFolder || speedDialId;
         flipHoldAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
 
+        // content-visilibity set here for perf on folder navigation. test flip animations arent borked
         dialSizeStyleEl.textContent =
             `.container{max-width:${columnsValue}}` +
-            `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${dialMargin};color:${settings.textColor}}` +
+            `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${tileMargin};color:${settings.textColor};content-visibility:auto;contain-intrinsic-size:${dialWidth} ${tileHeight}}` +
             `.tile-content{height:${dialContentHeight}}` +
             `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
 
