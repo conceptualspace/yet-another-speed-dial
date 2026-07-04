@@ -155,7 +155,7 @@ let flipGen = 0;                     // generation token so stale cleanups bail 
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
 let flipCleanupTimer = null;         // pending transition teardown for the resize flip
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
-const RESIZE_SETTLE_DELAY = 160;     // ms of resize quiet before the settle wave plays. Must
+const RESIZE_SETTLE_DELAY = 80;     // ms of resize quiet before the settle wave plays. Must
                                      // exceed the gaps between resize events on a slow edge-drag
                                      // (the mouse pausing mid-drag while the button is held). A
                                      // premature settle rewrites the frozen flipPrevRects and gets
@@ -168,8 +168,8 @@ let flipPrevContainerTop = null;     // tileContainer's screen top for the layou
                                      // so a shift of the whole tileContainer (folders header
                                      // wrapping to more/fewer lines) is otherwise invisible to
                                      // FLIP and snaps; tracking it lets that shift animate too.
-const FLIP_DURATION = 500;           // ms; compositor transition duration
-const FLIP_EASING = 'cubic-bezier(0.22, 1, 0.36, 1)'; // ease-out, gentle settle
+const FLIP_DURATION = 450;           // ms; compositor transition duration
+const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
