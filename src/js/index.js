@@ -232,6 +232,8 @@ const debounce = (func, delay = 500, immediate = false) => {
     }
 }
 
+let filterHideTimer = null;
+
 function updateSearchIconPosition() {
     // No longer needed - flexbox handles positioning automatically
     // This function is kept for compatibility in case it's called elsewhere
@@ -2758,6 +2760,8 @@ function filterDials(searchTerm) {
     const currentParent = currentFolder;
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
+    clearTimeout(filterHideTimer);
+
     const toShow = [];
     const toHide = [];
 
@@ -2779,7 +2783,6 @@ function filterDials(searchTerm) {
     // class so they stay visually collapsed until we commit and release them
     let needsReflow = false;
     for (const dial of toShow) {
-        clearTimeout(dial._filterTimer);
         if (dial.style.display === 'none') {
             dial.style.display = '';
             needsReflow = true;
@@ -2795,10 +2798,15 @@ function filterDials(searchTerm) {
     for (const dial of toHide) {
         if (dial.classList.contains('filtered-out')) continue;
         dial.classList.add('filtered-out');
-        dial._filterTimer = setTimeout(() => {
-            dial.style.display = 'none';
-        }, 300);
     }
+
+    filterHideTimer = setTimeout(() => {
+        for (const dial of toHide) {
+            if (dial.classList.contains('filtered-out')) {
+                dial.style.display = 'none';
+            }
+        }
+    }, 300);
 }
 
 // Search filter visibility. Matching tiles scale + fade back in, non-matching
@@ -2811,6 +2819,8 @@ function filterDials(searchTerm) {
 // its collapsed state before the transition can play. filterDials batches every
 // match/no-match decision first and does that reflow ONCE per keystroke -- doing
 // it per-tile inside the loop thrashed layout and was the source of typing lag.
+// Delayed display:none writes are batched too; one timer per tile can stack up
+// behind fast typing and make the input feel sluggish.
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
