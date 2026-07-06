@@ -2795,12 +2795,10 @@ function filterDials(searchTerm) {
     }
 
     // Bring matching tiles back into layout immediately (a cheap style write, no
-    // forced reflow), then release the collapsed class.
-    let needsShow = false;
+    // forced reflow). The collapsed class is released later, on a frame boundary.
     for (const dial of toShow) {
         if (dial.style.display === 'none') {
             dial.style.display = '';
-            needsShow = true;
         }
     }
 
@@ -2811,21 +2809,19 @@ function filterDials(searchTerm) {
         }
     };
 
-    if (needsShow) {
-        // A CSS transition can't start out of display:none in the same pass --
-        // with content-visibility:auto the collapsed opacity:0 baseline isn't
-        // committed and the tile snaps straight to visible. Two rAFs let the
-        // browser paint the tile at opacity:0 first, so the fade-in actually
-        // plays. This keeps the keystroke free of any synchronous layout.
-        cancelAnimationFrame(filterShowRaf);
-        filterShowRaf = requestAnimationFrame(() => {
-            filterShowRaf = requestAnimationFrame(releaseShown);
-        });
-    } else {
-        // already in layout (only opacity was collapsed): the tile is rendered,
-        // so removing the class transitions 0->1 right away
-        releaseShown();
-    }
+    // Always defer the release across two rAFs -- never release synchronously.
+    // A CSS transition can't start out of display:none in the same pass: with
+    // content-visibility:auto the collapsed opacity:0 baseline isn't committed
+    // and the tile snaps straight to visible. Two rAFs let the browser paint the
+    // tile at opacity:0 first, so the fade-in actually plays. Deferring
+    // unconditionally also avoids releasing a tile that a previous keystroke
+    // un-hid earlier in the same frame before it has painted. The extra ~2
+    // frames are imperceptible against the 300ms fade, and the keystroke stays
+    // free of any synchronous layout.
+    cancelAnimationFrame(filterShowRaf);
+    filterShowRaf = requestAnimationFrame(() => {
+        filterShowRaf = requestAnimationFrame(releaseShown);
+    });
 
     filterHideTimer = setTimeout(() => {
         if (gen !== filterGen) return;
