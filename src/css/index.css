@@ -248,6 +248,8 @@ h1 {
 
 .folderTitle:hover {
     opacity: 1;
+    -webkit-transform: scale(1.1);
+    transform: scale(1.1);
 }
 
 /* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
@@ -280,8 +282,9 @@ h1 {
     /*transition: width 240ms ease-in-out, height 300ms ease-in-out;*/
 }
 
-.tile:hover {
-
+.tile-content:hover {
+    -webkit-transform: scale(0.95);
+    transform: scale(0.95);
 }
 
 .tile-main {
@@ -945,4 +948,3 @@ body:not(:has(.folderTitle)) #tileContainer {
     vertical-align: middle;
     padding-left: 10px;
 }
-
