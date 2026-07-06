@@ -174,6 +174,8 @@ const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it s
 const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
+const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
+                                     // re-synced after this settles on a same-folder reorder.
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
@@ -818,7 +820,7 @@ async function printBookmarks(bookmarks, parentId) {
     // Sortable configuration
     new Sortable(folderContainerEl, {
         group: 'shared',
-        animation: 160,
+        animation: SORTABLE_ANIMATION,
         ghostClass: 'selected',
         dragClass: 'dragging',
         filter: ".createDial",
@@ -1635,6 +1637,37 @@ function flip(options = {}) {
 // immediately; `animate` is debounced for high-frequency callers.
 function layout(options = {}) {
     flip(options);
+}
+
+// Re-seed the FLIP position cache from the tiles' current resting positions without animating
+// currently only needed after dnd
+function recalcFlipRects() {
+    const parent = currentFolder || speedDialId;
+    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
+    if (!nodes.length) {
+        flipPrevRects.clear();
+        flipPrevContainerTop = null;
+        return;
+    }
+
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const scrollLeft = bookmarksContainerParent.scrollLeft;
+    const scrollTop = bookmarksContainerParent.scrollTop;
+    const liveSet = new Set();
+
+    for (const node of nodes) {
+        const r = getTileContentRect(node, containerRect, scrollLeft, scrollTop);
+        if (r.width === 0 && r.height === 0) continue; // hidden / removing tile
+        liveSet.add(node);
+        flipPrevRects.set(node, { left: r.left, top: r.top, width: r.width, height: r.height });
+    }
+
+    // drop entries for tiles that no longer exist (e.g. one just moved to another folder)
+    for (const node of flipPrevRects.keys()) {
+        if (!liveSet.has(node)) flipPrevRects.delete(node);
+    }
+
+    flipPrevContainerTop = containerRect.top;
 }
 
 // Resize HOLD. While the window is being dragged the flex grid reflows every
@@ -3225,6 +3258,9 @@ function onEndHandler(evt) {
 
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
             moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
+
+            // recalc layout after dnd so flip anim runs properly
+            setTimeout(recalcFlipRects, SORTABLE_ANIMATION);
         }
     } else if (evt && evt.clone.classList.contains('folderTitle')) {
         let oldIndex = evt.oldIndex;
