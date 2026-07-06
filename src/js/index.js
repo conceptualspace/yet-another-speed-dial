@@ -168,14 +168,14 @@ let flipPrevContainerTop = null;     // tileContainer's screen top for the layou
                                      // so a shift of the whole tileContainer (folders header
                                      // wrapping to more/fewer lines) is otherwise invisible to
                                      // FLIP and snaps; tracking it lets that shift animate too.
-const FLIP_DURATION = 450;           // ms; compositor transition duration
+const FLIP_DURATION = 420;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
 const TITLE_TOGGLE_FLIP_DURATION = 300;
-const TITLE_TOGGLE_STAGGER_WINDOW = 220;
+const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
