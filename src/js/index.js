@@ -233,6 +233,8 @@ const debounce = (func, delay = 500, immediate = false) => {
 }
 
 let filterHideTimer = null;
+let filterShowRaf = null;
+let filterGen = 0;
 
 function updateSearchIconPosition() {
     // No longer needed - flexbox handles positioning automatically
@@ -2761,6 +2763,10 @@ function filterDials(searchTerm) {
     const dials = document.querySelectorAll(`[id="${currentParent}"] > .tile`);
 
     clearTimeout(filterHideTimer);
+    // generation token: a newer keystroke invalidates the deferred show/hide
+    // callbacks scheduled by an older one, so a tile that flips match->no-match
+    // (or back) between keystrokes isn't released/hidden by a stale callback.
+    const gen = ++filterGen;
 
     const toShow = [];
     const toHide = [];
@@ -2779,28 +2785,50 @@ function filterDials(searchTerm) {
         }
     }
 
-    // un-hide matching tiles that were fully collapsed, keeping the filtered-out
-    // class so they stay visually collapsed until we commit and release them
-    let needsReflow = false;
+    // Fade out non-matching tiles in place. They keep their box (and stay in
+    // layout) until the hide timer collapses them to display:none, so the
+    // opacity/scale transition on .tile-main runs on the compositor.
+    for (const dial of toHide) {
+        if (!dial.classList.contains('filtered-out')) {
+            dial.classList.add('filtered-out');
+        }
+    }
+
+    // Bring matching tiles back into layout immediately (a cheap style write, no
+    // forced reflow), then release the collapsed class.
+    let needsShow = false;
     for (const dial of toShow) {
         if (dial.style.display === 'none') {
             dial.style.display = '';
-            needsReflow = true;
+            needsShow = true;
         }
     }
-    // single synchronous reflow commits the collapsed state for the whole batch
-    if (needsReflow) void bookmarksContainerParent.offsetWidth;
 
-    // flip the classes -- opacity/scale transitions then run on the compositor
-    for (const dial of toShow) {
-        dial.classList.remove('filtered-out');
-    }
-    for (const dial of toHide) {
-        if (dial.classList.contains('filtered-out')) continue;
-        dial.classList.add('filtered-out');
+    const releaseShown = () => {
+        if (gen !== filterGen) return;
+        for (const dial of toShow) {
+            dial.classList.remove('filtered-out');
+        }
+    };
+
+    if (needsShow) {
+        // A CSS transition can't start out of display:none in the same pass --
+        // with content-visibility:auto the collapsed opacity:0 baseline isn't
+        // committed and the tile snaps straight to visible. Two rAFs let the
+        // browser paint the tile at opacity:0 first, so the fade-in actually
+        // plays. This keeps the keystroke free of any synchronous layout.
+        cancelAnimationFrame(filterShowRaf);
+        filterShowRaf = requestAnimationFrame(() => {
+            filterShowRaf = requestAnimationFrame(releaseShown);
+        });
+    } else {
+        // already in layout (only opacity was collapsed): the tile is rendered,
+        // so removing the class transitions 0->1 right away
+        releaseShown();
     }
 
     filterHideTimer = setTimeout(() => {
+        if (gen !== filterGen) return;
         for (const dial of toHide) {
             if (dial.classList.contains('filtered-out')) {
                 dial.style.display = 'none';
@@ -2815,12 +2843,12 @@ function filterDials(searchTerm) {
 // animated: the flex grid reflows instantly when a tile is hidden, keeping search
 // a light, in-place effect.
 //
-// Re-showing a fully hidden (display:none) tile needs one forced reflow to commit
-// its collapsed state before the transition can play. filterDials batches every
-// match/no-match decision first and does that reflow ONCE per keystroke -- doing
-// it per-tile inside the loop thrashed layout and was the source of typing lag.
-// Delayed display:none writes are batched too; one timer per tile can stack up
-// behind fast typing and make the input feel sluggish.
+// The keystroke path does NO synchronous layout (no forced reflow) -- it only
+// records match/no-match and writes classes/display. Re-showing a fully hidden
+// (display:none) tile can't start a CSS transition in the same pass, so the
+// class release is deferred across two animation frames; content-visibility:auto
+// otherwise skips committing the opacity:0 baseline and the tile snaps in. A
+// generation token discards stale deferred callbacks during fast typing.
 
 
 document.getElementById('closeSearch').addEventListener('click', () => {
