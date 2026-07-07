@@ -636,6 +636,21 @@ function refreshAllThumbnails() {
     });
 }
 
+// capture thumbs for imported dials
+function refreshImportedThumbnails(nodes) {
+    let bookmarks = (nodes || [])
+        .filter(node => node && node.url && (node.url.startsWith('https://') || node.url.startsWith('http://') || node.url.startsWith('file://') || node.url.startsWith('chrome://')))
+        .map(node => ({ url: node.url, id: node.id, parentId: node.parentId }));
+
+    if (!bookmarks.length) return;
+
+    showToast(' Capturing images...')
+
+    setTimeout(() => {
+        chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
+    }, 200);
+}
+
 
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
 function batchInsert(parent, fragment, batchSize = 100, onComplete) {
@@ -2882,18 +2897,22 @@ function importFromSD2(json) {
             });
 
             return Promise.all(bookmarkPromises);
-        }).then(() => {
+        }).then((createdBookmarks) => {
             hideModals();
             // refresh page
             processRefresh();
             chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            // sd2 export doesnt include thumbnails, dickheads
+            refreshImportedThumbnails(createdBookmarks);
         }).catch(err => {
             console.log(err)
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
             importExportStatus.innerText = "SD2 import error! Unable to create folders."
         });
 
     }).catch(err => {
         console.log(err)
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         importExportStatus.innerText = "Something went wrong. Please try again"
     });
 }
