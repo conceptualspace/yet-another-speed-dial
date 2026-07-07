@@ -2083,6 +2083,7 @@ function applySettings(options = {}) {
         flipHoldAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
 
         // content-visilibity set here for perf on folder navigation. test flip animations arent borked
+        // todo: clean up
         dialSizeStyleEl.textContent =
             `.container{max-width:${columnsValue}}` +
             `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${tileMargin};color:${settings.textColor};content-visibility:auto;contain-intrinsic-size:${dialWidth} ${tileHeight}}` +
