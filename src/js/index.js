@@ -2821,17 +2821,33 @@ document.getElementById('closeSearch').addEventListener('click', () => {
 });
 
 importFileInput.onchange = function (event) {
+    const file = event && event.target && event.target.files && event.target.files[0];
+    if (!file) return;
+
     let filereader = new FileReader();
 
-    filereader.onload = function (event) {
-        let json = parseJson(event);
-        if (!json) return;
+    filereader.onload = function (loadEvent) {
+        const text = loadEvent.target.result;
+        // netscape bookmark html (opera/chrome/firefox export) vs our json formats
+        const looksLikeHtml = /NETSCAPE-Bookmark-file|<dl/i.test(text) || /\.html?$/i.test(file.name);
 
         // quiet the listeners so yasd doesnt go crazy
         chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } });
         //todo: proceed once we get a response
         //todo: re-enable listener when import complete
         //todo: add an option to fetch new thumbnails or use the included ones
+
+        if (looksLikeHtml) {
+            importFromBookmarksHtml(text);
+            return;
+        }
+
+        let json = parseJson(loadEvent);
+        if (!json) {
+            // nothing to import; re-enable the listener we just disabled
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            return;
+        }
 
         if (json.dials && json.groups) {
             importFromSD2(json);
@@ -2844,9 +2860,7 @@ importFileInput.onchange = function (event) {
         }
     };
 
-    if (event && event.target && event.target.files) {
-        filereader.readAsText(event.target.files[0]);
-    }
+    filereader.readAsText(file);
 };
 
 function importFromSD2(json) {
@@ -3074,6 +3088,165 @@ function importFromOldYASD(json) {
         console.log(err)
         importExportStatus.innerText = "Error! Please try again"
     })
+}
+
+// import from a netscape bookmark html file (opera/chrome/firefox export)
+// opera exports the speed dial as a single device-named top-level folder alongside
+// fixed system buckets (bookmarks bar, other bookmarks, etc). yasd only has one folder
+// level under the speed dial root, so nested folders are flattened into the nearest
+// yasd folder. favicon ICON data is ignored; thumbnails are captured fresh after import.
+function importFromBookmarksHtml(html) {
+    // browser/system buckets we don't want to treat as the speed dial source folder
+    const SYSTEM_FOLDERS = new Set([
+        'Bookmarks Bar',
+        'Bookmarks Toolbar',
+        'Bookmarks Menu',
+        'Pinboard',
+        'Trash',
+        'Unsorted Bookmarks',
+        'Unsynchronized Pinboard',
+        'Other Bookmarks',
+        'Mobile Bookmarks'
+    ]);
+
+    // recursively parse a <DL> into { bookmarks: [{title, url}], folders: [{title, ...}] }
+    function parseFolder(dlEl) {
+        const result = { bookmarks: [], folders: [] };
+        let child = dlEl.firstElementChild;
+        while (child) {
+            if (child.tagName === 'DT') {
+                const anchor = child.querySelector(':scope > a');
+                const header = child.querySelector(':scope > h3');
+                if (anchor && /^(https?|file|chrome):/i.test(anchor.href)) {
+                    result.bookmarks.push({ title: (anchor.textContent || '').trim() || anchor.href, url: anchor.href });
+                } else if (header) {
+                    // the folder's items live in a <DL> that's either nested inside this
+                    // <DT> or a following sibling, depending on how the parser nested it
+                    let sub = child.querySelector(':scope > dl');
+                    if (!sub) {
+                        let sib = child.nextElementSibling;
+                        while (sib && sib.tagName !== 'DL' && sib.tagName !== 'DT') sib = sib.nextElementSibling;
+                        if (sib && sib.tagName === 'DL') sub = sib;
+                    }
+                    const folder = { title: (header.textContent || '').trim(), bookmarks: [], folders: [] };
+                    if (sub) {
+                        const parsed = parseFolder(sub);
+                        folder.bookmarks = parsed.bookmarks;
+                        folder.folders = parsed.folders;
+                    }
+                    result.folders.push(folder);
+                }
+            }
+            child = child.nextElementSibling;
+        }
+        return result;
+    }
+
+    // collect every bookmark in a folder subtree (flattens nested folders)
+    function flatten(folder) {
+        let out = folder.bookmarks.slice();
+        for (const sub of folder.folders) {
+            out = out.concat(flatten(sub));
+        }
+        return out;
+    }
+
+    let root;
+    try {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const rootDl = doc.querySelector('dl');
+        if (!rootDl) throw new Error('no bookmark list found');
+        root = parseFolder(rootDl);
+    } catch (err) {
+        console.log(err);
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        importExportStatus.innerText = "Error! Unable to parse bookmarks file.";
+        return;
+    }
+
+    const hasContent = folder => flatten(folder).length > 0;
+
+    // pick the source whose contents become the yasd root. opera puts the speed dial
+    // in the single non-system top-level folder; otherwise fall back to importing all
+    // non-empty top-level folders as yasd folders.
+    const nonSystem = root.folders.filter(f => !SYSTEM_FOLDERS.has(f.title));
+    let rootBookmarks;
+    let targetFolders;
+
+    if (nonSystem.length === 1) {
+        const source = nonSystem[0];
+        rootBookmarks = source.bookmarks.slice();
+        targetFolders = source.folders
+            .filter(hasContent)
+            .map(sub => ({ title: sub.title, bookmarks: flatten(sub) }));
+    } else {
+        rootBookmarks = root.bookmarks.slice();
+        targetFolders = root.folders
+            .filter(hasContent)
+            .map(f => ({ title: f.title, bookmarks: flatten(f) }));
+    }
+
+    if (!rootBookmarks.length && !targetFolders.length) {
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        importExportStatus.innerText = "Error! No bookmarks found to import.";
+        return;
+    }
+
+    chrome.storage.local.clear().then(() => {
+        // create the yasd folders (reuse existing folders of the same name under the root)
+        let folderPromises = targetFolders.map(folder => {
+            return chrome.bookmarks.search({ title: folder.title }).then(existingFolders => {
+                const matching = existingFolders.filter(f => !f.url && f.parentId === speedDialId);
+                if (matching.length > 0) {
+                    return { id: matching[0].id, bookmarks: folder.bookmarks };
+                }
+                return chrome.bookmarks.create({
+                    title: folder.title,
+                    parentId: speedDialId
+                }).then(node => ({ id: node.id, bookmarks: folder.bookmarks }));
+            });
+        });
+
+        Promise.all(folderPromises).then(createdFolders => {
+            // build the full list of (parentId, bookmark) tasks: root dials + folder dials
+            let tasks = rootBookmarks.map(bookmark => ({ parentId: speedDialId, bookmark }));
+            for (const folder of createdFolders) {
+                for (const bookmark of folder.bookmarks) {
+                    tasks.push({ parentId: folder.id, bookmark });
+                }
+            }
+
+            let bookmarkPromises = tasks.map(task => {
+                return chrome.bookmarks.search({ url: task.bookmark.url }).then(existingBookmarks => {
+                    let existsInFolder = existingBookmarks.some(b => b.parentId === task.parentId);
+                    if (!existsInFolder) {
+                        return chrome.bookmarks.create({
+                            title: task.bookmark.title,
+                            url: task.bookmark.url,
+                            parentId: task.parentId
+                        });
+                    }
+                });
+            });
+
+            return Promise.all(bookmarkPromises);
+        }).then(createdBookmarks => {
+            hideModals();
+            // refresh page
+            processRefresh();
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            // bookmark html has no usable tile thumbnails; capture fresh ones
+            refreshImportedThumbnails(createdBookmarks);
+        }).catch(err => {
+            console.log(err);
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            importExportStatus.innerText = "Import error! Unable to create bookmarks.";
+        });
+    }).catch(err => {
+        console.log(err);
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        importExportStatus.innerText = "Something went wrong. Please try again";
+    });
 }
 
 // native handlers for folder tab target
