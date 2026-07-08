@@ -182,6 +182,7 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const splashHelpUrl = 'https://yetanotherspeeddial.com';
 let isToastVisible = false;
 
 let folderIds = [];
@@ -719,7 +720,7 @@ async function printNewSetup() {
         .join('');
 
     const welcomeTitle = chrome.i18n.getMessage('newInstall1');
-    const welcomeTitlePrefix = 'Get started with ';
+    const welcomeTitlePrefix = 'Welcome to ';
     const welcomeTitleHtml = welcomeTitle.startsWith(welcomeTitlePrefix)
         ? `${welcomeTitlePrefix}<br>${welcomeTitle.slice(welcomeTitlePrefix.length)}`
         : welcomeTitle;
@@ -742,6 +743,7 @@ async function printNewSetup() {
                     <span>Import</span>
                 </button>
             </div>
+            <a id="splashHelp" class="welcome-help" href="${splashHelpUrl}">Need help getting started?</a>
         </div>
     `;
     fragment.appendChild(noBookmarksDiv);
@@ -2297,6 +2299,11 @@ window.addEventListener("mousedown", e => {
         e.preventDefault();
         modalShowEffect(importExportModalContent, importExportModal);
         //importFileInput.click();
+        return;
+    }
+    if (e.target.closest('#splashHelp')) {
+        e.preventDefault();
+        chrome.tabs.create({ url: splashHelpUrl });
         return;
     }
 
