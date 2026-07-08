@@ -718,13 +718,19 @@ async function printNewSetup() {
         .filter(Boolean)
         .join('');
 
+    const welcomeTitle = chrome.i18n.getMessage('newInstall1');
+    const welcomeTitlePrefix = 'Get started with ';
+    const welcomeTitleHtml = welcomeTitle.startsWith(welcomeTitlePrefix)
+        ? `${welcomeTitlePrefix}<br>${welcomeTitle.slice(welcomeTitlePrefix.length)}`
+        : welcomeTitle;
+
     const noBookmarksDiv = document.createElement('div');
     noBookmarksDiv.className = 'default-content';
     noBookmarksDiv.id = 'noBookmarks';
     noBookmarksDiv.innerHTML = `
         <div class="welcome-card">
             <img class="welcome-logo" src="icons/icon128.png" alt="" width="72" height="72">
-            <h1 class="welcome-title" data-locale="newInstall1">${chrome.i18n.getMessage('newInstall1')}</h1>
+            <h1 class="welcome-title">${welcomeTitleHtml}</h1>
             <ul class="welcome-features">${featureRows}</ul>
             <div class="cta-container">
                 <button id="splashAddDial" class="welcome-cta welcome-cta--primary" type="button">
@@ -732,7 +738,7 @@ async function printNewSetup() {
                     <span>Add Site</span>
                 </button>
                 <button id="splashImport" class="welcome-cta welcome-cta--secondary" type="button">
-                    <svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22" fill="currentColor"><path d="M480-320 280-520l56-58 104 104v-326h80v326l104-104 56 58-200 200ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" height="22" viewBox="0 -960 960 960" width="22" fill="currentColor"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
                     <span>Import</span>
                 </button>
             </div>

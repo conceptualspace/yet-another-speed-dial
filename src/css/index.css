@@ -1,5 +1,6 @@
 :root {
     --color: #ffffff;
+    --yasd-blue: rgb(99, 212, 248);
     --title-opacity: 1;
     --show-folders: none;
     --create-dial-display: block;
@@ -220,11 +221,11 @@ h1 {
     padding: 42px 40px 36px;
     box-sizing: border-box;
     background-color: color-mix(in srgb, var(--color) 8%, transparent);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    /* border: 1px solid rgba(255, 255, 255, 0.12); */
     border-radius: 18px;
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+    /* box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); */
     animation: welcomeIn 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
@@ -240,19 +241,19 @@ h1 {
 }
 
 .welcome-logo {
-    width: 72px;
-    height: 72px;
+    width: 56px;
+    height: 56px;
     margin-bottom: 18px;
-    filter: drop-shadow(0 5px 12px rgba(15, 215, 252, 0.25));
+    filter: drop-shadow(0 5px 12px rgba(99, 212, 248, 0.22));
 }
 
 .welcome-title {
     margin: 0 0 24px;
     font-size: 1.75rem;
-    font-weight: 500;
+    font-weight: 300;
     line-height: 1.25;
     letter-spacing: 0;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+    /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22); */
 }
 
 .welcome-features {
@@ -284,7 +285,7 @@ h1 {
     box-sizing: border-box;
     border-radius: 10px;
     background-color: rgba(255, 255, 255, 0.1);
-    color: #0fd7fc;
+    color: var(--yasd-blue);
 }
 
 @media (max-width: 540px) {
@@ -382,24 +383,29 @@ h1 {
 }
 
 .welcome-cta--primary {
-    background-color: #1692EA;
-    box-shadow: 0 4px 12px rgba(22, 146, 234, 0.22);
+    color: #06384a;
+    background-color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.18);
 }
 
 .welcome-cta--primary:hover {
-    background-color: #2ba0f5;
+    background-color: color-mix(in srgb, var(--yasd-blue) 18%, #ffffff);
+    border-color: rgba(255, 255, 255, 0.95);
     transform: translateY(-1px);
-    box-shadow: 0 6px 16px rgba(22, 146, 234, 0.28);
+    box-shadow: 0 6px 16px rgba(99, 212, 248, 0.22);
 }
 
 .welcome-cta--secondary {
+    color: rgba(255, 255, 255, 0.92);
     background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.22);
+    border-color: rgba(99, 212, 248, 0.34);
 }
 
 .welcome-cta--secondary:hover {
-    background-color: rgba(255, 255, 255, 0.16);
-    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    background-color: rgba(99, 212, 248, 0.14);
+    border-color: rgba(99, 212, 248, 0.58);
     transform: translateY(-1px);
 }
 
