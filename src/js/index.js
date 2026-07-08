@@ -2647,31 +2647,40 @@ function prepareExport() {
         }
     };
 
-    // Get bookmarks and folders within the speed dial folder
+    // Get bookmarks and folders that YASD renders within the speed dial folder
+    // todo: update this if we decide to support deeply nested folders in the future
     chrome.bookmarks.getSubTree(speedDialId).then(bookmarkTreeNodes => {
-        function traverseBookmarks(nodes, parentId = null) {
-            nodes.forEach(node => {
-                if (node.url) {
+        let speedDialChildren = bookmarkTreeNodes[0].children || [];
+
+        speedDialChildren.forEach(node => {
+            if (node.url) {
+                yasdJson.yasd.bookmarks.push({
+                    id: node.id,
+                    title: node.title,
+                    url: node.url,
+                    index: node.index,
+                    folderid: speedDialId
+                });
+            } else {
+                yasdJson.yasd.folders.push({
+                    id: node.id,
+                    title: node.title,
+                    index: node.index
+                });
+
+                (node.children || []).forEach(child => {
+                    if (!child.url) return;
+
                     yasdJson.yasd.bookmarks.push({
-                        id: node.id,
-                        title: node.title,
-                        url: node.url,
-                        index: node.index,
-                        folderid: parentId
+                        id: child.id,
+                        title: child.title,
+                        url: child.url,
+                        index: child.index,
+                        folderid: node.id
                     });
-                } else {
-                    yasdJson.yasd.folders.push({
-                        id: node.id,
-                        title: node.title,
-                        index: node.index
-                    });
-                    if (node.children) {
-                        traverseBookmarks(node.children, node.id);
-                    }
-                }
-            });
-        }
-        traverseBookmarks(bookmarkTreeNodes[0].children);
+                });
+            }
+        });
 
         // Get YASD settings and thumbnails from storage
         chrome.storage.local.get(null).then(items => {
