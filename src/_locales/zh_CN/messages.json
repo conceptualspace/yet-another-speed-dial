@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "新建文件夹..."
   },
-  "newInstall1": {
-    "message": "开始使用 Yet Another Speed Dial！"
+  "newInstallTitleLine1": {
+    "message": "开始使用"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial！"
   },
   "newInstall2": {
-    "message": "⭐ 只需将书签添加到快速拨号文件夹，它们就会出现在这里"
+    "message": "只需将书签添加到快速拨号文件夹，它们就会出现在这里"
   },
   "newInstall3": {
-    "message": "✨ 您可以将书签整理到子文件夹中"
+    "message": "您可以将书签整理到子文件夹中"
   },
   "newInstall4": {
-    "message": "✨ 右键单击拨号以编辑它。您还可以拖放以重新排列"
+    "message": "右键单击拨号以编辑它。您还可以拖放以重新排列"
+  },
+  "newInstallAddSite": {
+    "message": "添加网站"
+  },
+  "newInstallImport": {
+    "message": "导入"
   },
   "newPrivate": {
     "message": "在新的无痕窗口中打开"

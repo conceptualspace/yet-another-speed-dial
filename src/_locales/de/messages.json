@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Neuer Ordner..."
   },
-  "newInstall1": {
-    "message": "Erste Schritte mit Yet Another Speed Dial"
+  "newInstallTitleLine1": {
+    "message": "Erste Schritte mit"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial"
   },
   "newInstall2": {
-    "message": "⭐ Fügen Sie Websites hinzu, indem Sie auf die Schaltfläche unten klicken, oder erstellen Sie ein Lesezeichen im Speed Dial Ordner"
+    "message": "Fügen Sie einfach Lesezeichen zum Speed Dial Ordner hinzu und sie erscheinen hier"
   },
   "newInstall3": {
-    "message": "✨ Zifferblätter können durch Rechtsklick darauf geändert werden"
+    "message": "Sie können Ihre Lesezeichen in Unterordnern organisieren"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Weitere Einstellungen sehen Sie, indem Sie auf das Zahnrad in der oberen rechten Ecke klicken"
+    "message": "Klicken Sie mit der rechten Maustaste auf eine Kurzwahl, um sie zu bearbeiten. Sie können sie auch per Drag-and-drop anordnen"
+  },
+  "newInstallAddSite": {
+    "message": "Website hinzufügen"
+  },
+  "newInstallImport": {
+    "message": "Importieren"
   },
   "newPrivate": {
     "message": "In neuem privaten Fenster öffnen"

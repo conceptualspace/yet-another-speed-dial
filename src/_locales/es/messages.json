@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Nueva Carpeta..."
   },
-  "newInstall1": {
-    "message": "¡Empiece con Yet Another Speed Dial!"
+  "newInstallTitleLine1": {
+    "message": "Empiece con"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Agregue sitios haciendo clic en el botón de abajo, o cree un marcador en la carpeta Marcación rápida"
+    "message": "Solo agregue marcadores a la carpeta Marcación rápida y aparecerán aquí"
   },
   "newInstall3": {
-    "message": "✨ Los diales se pueden modificar haciendo clic derecho sobre ellos"
+    "message": "Puede organizar sus marcadores en subcarpetas"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Acceda a más configuraciones haciendo clic en el engranaje en la esquina superior derecha"
+    "message": "Haga clic derecho en una marcación para editarla. También puede arrastrarlas y soltarlas para ordenarlas"
+  },
+  "newInstallAddSite": {
+    "message": "Agregar sitio"
+  },
+  "newInstallImport": {
+    "message": "Importar"
   },
   "newPrivate": {
     "message": "Abrir en nueva ventana privada"

@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "新しいフォルダ..."
   },
-  "newInstall1": {
-    "message": "Yet Another Speed Dialを始めましょう！"
+  "newInstallTitleLine1": {
+    "message": "Yet Another Speed Dialを"
+  },
+  "newInstallTitleLine2": {
+    "message": "始めましょう！"
   },
   "newInstall2": {
-    "message": "⭐ スピードダイヤルフォルダにブックマークを追加するだけで、ここに表示されます"
+    "message": "スピードダイヤルフォルダにブックマークを追加するだけで、ここに表示されます"
   },
   "newInstall3": {
-    "message": "✨ ブックマークをサブフォルダに整理できます"
+    "message": "ブックマークをサブフォルダに整理できます"
   },
   "newInstall4": {
-    "message": "✨ ダイヤルを右クリックすると編集できます。ドラッグ＆ドロップで並べ替えることも可能です"
+    "message": "ダイヤルを右クリックすると編集できます。ドラッグ＆ドロップで並べ替えることも可能です"
+  },
+  "newInstallAddSite": {
+    "message": "サイトを追加"
+  },
+  "newInstallImport": {
+    "message": "インポート"
   },
   "newPrivate": {
     "message": "新しいプライベートウィンドウで開く"

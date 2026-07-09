@@ -1,5 +1,6 @@
 :root {
     --color: #ffffff;
+    --yasd-blue: rgb(99, 212, 248);
     --title-opacity: 1;
     --show-folders: none;
     --create-dial-display: block;
@@ -200,39 +201,264 @@ h1 {
 }
 
 #noBookmarks {
+    display: flex;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 0 100px;
+    padding: 24px 18px;
     color: #ffffff;
     width: 100%;
     z-index: 0;
 }
 
-.default-content.helpText.cta {
+/* Fresh welcome / empty-state card */
+.welcome-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+    padding: 42px 40px 36px;
+    box-sizing: border-box;
+    background-color: color-mix(in srgb, var(--color) 8%, transparent);
+    /* border: 1px solid rgba(255, 255, 255, 0.12); */
+    border-radius: 18px;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    /* box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16); */
+    animation: welcomeIn 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes welcomeIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.welcome-logo {
+    display: block;
+    width: 56px;
+    height: 56px;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 5px 12px rgba(99, 212, 248, 0.22));
+}
+
+/* Each brand tile cascades into place */
+.welcome-logo-tile {
+    fill: #0dd7fc;
+    opacity: 1;
+    transform-box: fill-box;
+    transform-origin: 50% 50%;
+    animation: welcomeTileIn 640ms cubic-bezier(0.18, 0.72, 0.24, 1.12) calc(260ms + var(--i) * 120ms) both;
+}
+
+@keyframes welcomeTileIn {
+    0% {
+        opacity: 0;
+        transform: translateY(7px) scale(0.55);
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Respect reduced-motion: show the finished mark with no movement */
+@media (prefers-reduced-motion: reduce) {
+    .welcome-card {
+        animation: none;
+    }
+
+    .welcome-logo-tile {
+        animation: none;
+        opacity: 1;
+        fill: #0dd7fc;
+    }
+}
+
+.welcome-title {
+    margin: 0 0 24px;
+    font-size: 1.75rem;
+    font-weight: 300;
+    line-height: 1.25;
+    letter-spacing: 0;
+    /* text-shadow: 0 1px 2px rgba(0, 0, 0, 0.22); */
+}
+
+.welcome-title span {
+    display: block;
+}
+
+.welcome-features {
+    list-style: none;
+    margin: 0 0 30px;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.welcome-feature {
     display: flex;
     align-items: center;
-    justify-content: center;
-    margin-top: 40px;
-    font-weight: 400;
-    opacity: 0.8;
+    gap: 14px;
+    text-align: left;
+    font-size: 1rem;
+    font-weight: 300;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.9);
 }
 
-.default-content.helpText.cta:hover {
-    opacity: 1;
-    transition: opacity 160ms ease;
+.welcome-feature-icon {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    padding: 8px;
+    box-sizing: border-box;
+    border-radius: 10px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--yasd-blue);
 }
 
-.default-content.helpText.cta svg {
-    margin-right: 8px; /* Adjust the spacing as needed */
-    vertical-align: middle;
+@media (max-width: 540px) {
+    #noBookmarks {
+        padding: 16px 12px;
+    }
+
+    .welcome-card {
+        max-width: none;
+        padding: 30px 22px 24px;
+        border-radius: 14px;
+    }
+
+    .welcome-logo {
+        width: 58px;
+        height: 58px;
+        margin-bottom: 14px;
+    }
+
+    .welcome-title {
+        margin-bottom: 20px;
+        font-size: 1.35rem;
+    }
+
+    .welcome-feature {
+        gap: 10px;
+        font-size: 0.92rem;
+    }
+
+    .welcome-feature-icon {
+        width: 34px;
+        height: 34px;
+        padding: 7px;
+        border-radius: 8px;
+    }
+
+    .welcome-cta {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-height: 620px) {
+    .welcome-card {
+        padding-top: 24px;
+        padding-bottom: 22px;
+    }
+
+    .welcome-logo {
+        width: 52px;
+        height: 52px;
+        margin-bottom: 12px;
+    }
+
+    .welcome-title {
+        margin-bottom: 18px;
+        font-size: 1.35rem;
+    }
+
+    .welcome-features {
+        gap: 10px;
+        margin-bottom: 22px;
+    }
 }
 
 .cta-container {
     display: flex;
-    gap: 40px;
+    flex-wrap: wrap;
+    gap: 14px;
     justify-content: center;
     align-items: center;
+    width: 100%;
+}
+
+.welcome-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex: 1 1 0;
+    min-width: 130px;
+    padding: 12px 20px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ffffff;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: transform 140ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.welcome-cta svg {
+    flex-shrink: 0;
+}
+
+.welcome-cta--primary {
+    color: #06384a;
+    background-color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.78);
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.18);
+}
+
+.welcome-cta--primary:hover {
+    background-color: color-mix(in srgb, var(--yasd-blue) 18%, #ffffff);
+    border-color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(99, 212, 248, 0.22);
+}
+
+.welcome-cta--secondary {
+    color: rgba(255, 255, 255, 0.92);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 212, 248, 0.34);
+}
+
+.welcome-cta--secondary:hover {
+    color: #ffffff;
+    background-color: rgba(99, 212, 248, 0.14);
+    border-color: rgba(99, 212, 248, 0.58);
+    transform: translateY(-1px);
+}
+
+.welcome-cta:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 540px) {
+    .welcome-cta {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
 }
 
 .hide {

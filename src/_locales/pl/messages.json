@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Nowy folder..."
   },
-  "newInstall1": {
-    "message": "Zacznij korzystać z Yet Another Speed Dial!"
+  "newInstallTitleLine1": {
+    "message": "Zacznij korzystać z"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Po prostu dodaj zakładki do folderu Szybkie wybieranie, a pojawią się tutaj"
+    "message": "Po prostu dodaj zakładki do folderu Szybkie wybieranie, a pojawią się tutaj"
   },
   "newInstall3": {
-    "message": "✨ Możesz organizować zakładki w podfoldery"
+    "message": "Możesz organizować zakładki w podfoldery"
   },
   "newInstall4": {
-    "message": "✨ Kliknij prawym przyciskiem myszy na wybieranie, aby je edytować. Możesz również przeciągać i upuszczać, aby je układać"
+    "message": "Kliknij prawym przyciskiem myszy na wybieranie, aby je edytować. Możesz również przeciągać i upuszczać, aby je układać"
+  },
+  "newInstallAddSite": {
+    "message": "Dodaj stronę"
+  },
+  "newInstallImport": {
+    "message": "Importuj"
   },
   "newPrivate": {
     "message": "Otwórz w nowym oknie prywatnym"

@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "New Folder..."
   },
-  "newInstall1": {
-    "message": "Get started with Yet Another Speed Dial!"
+  "newInstallTitleLine1": {
+    "message": "Get started with"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Just add bookmarks to the Speed Dial folder and they will appear here"
+    "message": "Just add bookmarks to the Speed Dial folder and they will appear here"
   },
   "newInstall3": {
-    "message": "✨ You can organize your bookmarks into subfolders"
+    "message": "You can organize your bookmarks into subfolders"
   },
   "newInstall4": {
-    "message": "✨ Right-click on a dial to edit it. You can also drag and drop to arrange them"
+    "message": "Right-click on a dial to edit it. You can also drag and drop to arrange them"
+  },
+  "newInstallAddSite": {
+    "message": "Add Site"
+  },
+  "newInstallImport": {
+    "message": "Import"
   },
   "newPrivate": {
     "message": "Open in new private window"

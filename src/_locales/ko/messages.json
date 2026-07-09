@@ -106,17 +106,26 @@
     "newFolder": {
       "message": "새로운 폴더..."
     },
-    "newInstall1": {
-      "message": "Yet Another Speed Dial 시작하기!"
+    "newInstallTitleLine1": {
+      "message": "Yet Another Speed Dial"
+    },
+    "newInstallTitleLine2": {
+      "message": "시작하기!"
     },
     "newInstall2": {
-      "message": "⭐ 북마크를 스피드 다이얼 폴더에 추가하면 여기에 나타납니다"
+      "message": "북마크를 스피드 다이얼 폴더에 추가하면 여기에 나타납니다"
     },
     "newInstall3": {
-      "message": "✨ 북마크를 하위 폴더로 정리할 수 있습니다"
+      "message": "북마크를 하위 폴더로 정리할 수 있습니다"
     },
     "newInstall4": {
-      "message": "✨ 다이얼을 오른쪽 클릭하여 편집하세요. 드래그 앤 드롭으로 정렬할 수도 있습니다"
+      "message": "다이얼을 오른쪽 클릭하여 편집하세요. 드래그 앤 드롭으로 정렬할 수도 있습니다"
+    },
+    "newInstallAddSite": {
+      "message": "사이트 추가"
+    },
+    "newInstallImport": {
+      "message": "가져오기"
     },
     "newPrivate": {
       "message": "새로운 시크릿 창에서 열기"

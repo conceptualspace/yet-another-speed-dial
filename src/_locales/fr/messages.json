@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Nouveau Dossier..."
   },
-  "newInstall1": {
-    "message": "Lancez-vous avec Yet Another Speed Dial!"
+  "newInstallTitleLine1": {
+    "message": "Lancez-vous avec"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Ajoutez des sites en cliquant sur le bouton ci-dessous, ou créez un signet dans le dossier Speed Dial"
+    "message": "Ajoutez simplement des favoris au dossier Speed Dial et ils apparaîtront ici"
   },
   "newInstall3": {
-    "message": "✨ Les cadrans peuvent être modifiés en faisant un clic droit"
+    "message": "Vous pouvez organiser vos favoris dans des sous-dossiers"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
+    "message": "Faites un clic droit sur un raccourci pour le modifier. Vous pouvez aussi les faire glisser-déposer pour les organiser"
+  },
+  "newInstallAddSite": {
+    "message": "Ajouter un site"
+  },
+  "newInstallImport": {
+    "message": "Importer"
   },
   "newPrivate": {
     "message": "Ouvrir dans une nouvelle fenêtre privée"

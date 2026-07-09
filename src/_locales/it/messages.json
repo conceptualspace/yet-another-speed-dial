@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Nuovo Cartella..."
   },
-  "newInstall1": {
-    "message": "Inizia con Yet Another Speed Dial!"
+  "newInstallTitleLine1": {
+    "message": "Inizia con"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Aggiungi siti facendo clic sul pulsante in basso o crea un segnalibro nella cartella Chiamata rapida"
+    "message": "Aggiungi semplicemente segnalibri alla cartella Chiamata rapida e appariranno qui"
   },
   "newInstall3": {
-    "message": "✨ I quadranti possono essere modificati facendo clic con il tasto destro su di essi"
+    "message": "Puoi organizzare i segnalibri in sottocartelle"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
+    "message": "Fai clic con il tasto destro su una selezione rapida per modificarla. Puoi anche trascinare e rilasciare per riordinarle"
+  },
+  "newInstallAddSite": {
+    "message": "Aggiungi sito"
+  },
+  "newInstallImport": {
+    "message": "Importa"
   },
   "newPrivate": {
     "message": "Aprire in una nuova finestra privata"

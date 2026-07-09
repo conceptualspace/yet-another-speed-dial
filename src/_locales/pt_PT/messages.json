@@ -106,17 +106,26 @@
   "newFolder": {
     "message": "Nova Pasta..."
   },
-  "newInstall1": {
-    "message": "Comece com mais uma discagem rápida!"
+  "newInstallTitleLine1": {
+    "message": "Comece com"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
   },
   "newInstall2": {
-    "message": "⭐ Adicione sites clicando no botão abaixo ou adicione favoritos à pasta Discagem Rápida"
+    "message": "Basta adicionar favoritos à pasta Discagem Rápida e eles aparecerão aqui"
   },
   "newInstall3": {
-    "message": "✨ Os mostradores podem ser modificados clicando com o botão direito do mouse neles"
+    "message": "Pode organizar os seus favoritos em subpastas"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Acesse mais configurações clicando na engrenagem no canto superior direito"
+    "message": "Clique com o botão direito numa discagem para editá-la. Também pode arrastar e largar para organizá-las"
+  },
+  "newInstallAddSite": {
+    "message": "Adicionar site"
+  },
+  "newInstallImport": {
+    "message": "Importar"
   },
   "newPrivate": {
     "message": "Abrir em nova janela privada"
