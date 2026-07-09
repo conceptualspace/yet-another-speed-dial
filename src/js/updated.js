@@ -20,6 +20,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
+  // Point the review link at the correct store for the current browser
+  const reviewLink = document.getElementById('reviewLink');
+  if (reviewLink) {
+    const ua = navigator.userAgent;
+    if (/Edg\//.test(ua)) {
+      reviewLink.href = 'https://microsoftedge.microsoft.com/addons/detail/yet-another-speed-dial/kachajgmekhiajhbbfpfhbmonmpnpiee';
+    } else if (typeof navigator.userAgentData !== 'undefined' && navigator.userAgentData.brands && navigator.userAgentData.brands.some(b => b.brand === 'Microsoft Edge')) {
+      reviewLink.href = 'https://microsoftedge.microsoft.com/addons/detail/yet-another-speed-dial/kachajgmekhiajhbbfpfhbmonmpnpiee';
+    } else if (/Firefox\//.test(ua)) {
+      reviewLink.href = 'https://addons.mozilla.org/firefox/addon/yet-another-speed-dial/';
+    } else {
+      reviewLink.href = 'https://chrome.google.com/webstore/detail/yet-another-speed-dial/imohnlganmafcmidafklgkgfgaagiohn';
+    }
+  }
+
   // Add event listener for copy button
   const copyButton = document.getElementById('copyButton');
   if (copyButton) {
