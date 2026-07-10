@@ -824,6 +824,10 @@ a {
     background-color: #1692EA;
 }
 
+.formItem > .save:disabled {
+    opacity: 0.55;
+}
+
 
 .formItem > .action:hover::after {
     transform: scaleX(1);
@@ -872,6 +876,23 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     align-items: center;
     justify-content: center;
     position: relative;
+}
+
+#aiChatStatus,
+#aiChatResponse {
+    min-height: 1.5em;
+    line-height: 1.5;
+    user-select: text;
+}
+
+#aiChatStatus {
+    color: var(--yasd-blue);
+}
+
+#aiChatResponse {
+    max-height: 240px;
+    overflow-y: auto;
+    white-space: pre-wrap;
 }
 
 #fetchImageButton {
@@ -1022,12 +1043,14 @@ body:not(:has(.folderTitle)) #tileContainer {
     filter: opacity(1);
 }
 
-.searchIcon {
+.searchIcon,
+.aiIcon {
     display: var(--search);
     line-height: 1;
 }
 
-.searchIcon svg {
+.searchIcon svg,
+.aiIcon svg {
     height: 24px;
     width: 24px;
     fill: var(--color);
@@ -1035,12 +1058,14 @@ body:not(:has(.folderTitle)) #tileContainer {
     display: block;
 }
 
-.searchIcon svg:hover {
+.searchIcon svg:hover,
+.aiIcon svg:hover {
     filter: opacity(1);
 }
 
 /* Hide the floating search icon when search is active */
-.search-active .searchIcon {
+.search-active .searchIcon,
+.search-active .aiIcon {
     opacity: 0;
     pointer-events: none;
 }

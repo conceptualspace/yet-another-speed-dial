@@ -43,6 +43,13 @@ const createDialModalContent = document.getElementById('createDialModalContent')
 const createDialModalURL = document.getElementById('createDialModalURL');
 const createDialModalSave = document.getElementById('createDialModalSave');
 
+const aiChatModal = document.getElementById('aiChatModal');
+const aiChatModalContent = document.getElementById('aiChatModalContent');
+const aiChatPrompt = document.getElementById('aiChatPrompt');
+const aiChatSubmit = document.getElementById('aiChatSubmit');
+const aiChatStatus = document.getElementById('aiChatStatus');
+const aiChatResponse = document.getElementById('aiChatResponse');
+
 const createFolderModal = document.getElementById('createFolderModal');
 const createFolderModalContent = document.getElementById('createFolderModalContent');
 const createFolderModalName = document.getElementById('createFolderModalName');
@@ -121,6 +128,7 @@ const dialRatioInput = document.getElementById("dialRatio");
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
 const searchBtn = document.getElementById('searchBtn');
+const aiChatBtn = document.getElementById('aiChatBtn');
 
 // clock
 const clock = document.getElementById('clock');
@@ -913,8 +921,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+    let modals = [modal, createDialModal, aiChatModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
+    let modalContents = [modalContent, createDialModalContent, aiChatModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -951,6 +959,84 @@ function modalShowEffect(contentEl, modalEl) {
     modalEl.style.opacity = "1";
     contentEl.style.transform = "scale(1)";
     contentEl.style.opacity = "1";
+}
+
+function getLanguageModelApi() {
+    if (globalThis.LanguageModel && typeof globalThis.LanguageModel.create === 'function') {
+        return globalThis.LanguageModel;
+    }
+
+    if (globalThis.ai?.languageModel && typeof globalThis.ai.languageModel.create === 'function') {
+        return globalThis.ai.languageModel;
+    }
+
+    return null;
+}
+
+async function createLanguageModelSession() {
+    const languageModel = getLanguageModelApi();
+    const createOptions = {
+        monitor(monitor) {
+            monitor.addEventListener('downloadprogress', event => {
+                aiChatStatus.textContent = `Downloading Gemini... ${Math.round(event.loaded * 100)}%`;
+            });
+        },
+    };
+
+    if (!languageModel) {
+        throw new Error('Gemini Prompt API is not available in this browser.');
+    }
+
+    if (typeof languageModel.availability === 'function') {
+        const availability = await languageModel.availability();
+        if (availability === 'unavailable') {
+            throw new Error('Gemini Prompt API is unavailable on this device.');
+        }
+    } else if (typeof languageModel.capabilities === 'function') {
+        const capabilities = await languageModel.capabilities();
+        if (capabilities?.available === 'no') {
+            throw new Error('Gemini Prompt API is unavailable on this device.');
+        }
+    }
+
+    return languageModel.create(createOptions);
+}
+
+async function askGemini() {
+    const prompt = aiChatPrompt.value.trim();
+
+    if (!prompt) {
+        aiChatPrompt.focus();
+        return;
+    }
+
+    aiChatSubmit.disabled = true;
+    aiChatStatus.textContent = 'Thinking...';
+    aiChatResponse.textContent = '';
+
+    let session = null;
+
+    try {
+        session = await createLanguageModelSession();
+        const response = await session.prompt(prompt);
+        aiChatStatus.textContent = '';
+        aiChatResponse.textContent = response;
+    } catch (err) {
+        console.log(err);
+        aiChatStatus.textContent = err.message || 'Gemini could not answer right now.';
+    } finally {
+        session?.destroy?.();
+        aiChatSubmit.disabled = false;
+    }
+}
+
+function openAiChat() {
+    hideSettings();
+    aiChatPrompt.value = '';
+    aiChatStatus.textContent = '';
+    aiChatResponse.textContent = '';
+    modalShowEffect(aiChatModalContent, aiChatModal);
+    setTimeout(() => aiChatPrompt.focus(), 160);
 }
 
 function hideToast() {
@@ -2210,7 +2296,7 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
-    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL')) {
+    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL' || e.target.id === 'aiChatPrompt')) {
         return;
     }
     e.preventDefault();
@@ -2397,6 +2483,7 @@ refreshAllModalSave.addEventListener("click", refreshAllThumbnails);
 searchBtn.addEventListener("click", function() {
     activateExpandableSearch();
 });
+aiChatBtn.addEventListener("click", openAiChat);
 
 function activateExpandableSearch() {
     document.body.classList.add('search-active');
@@ -2441,6 +2528,18 @@ createDialModalURL.addEventListener('keydown', e => {
         e.preventDefault();
         createDial();
     }
+});
+
+aiChatPrompt.addEventListener('keydown', e => {
+    if (e.code === "Enter") {
+        e.preventDefault();
+        askGemini();
+    }
+});
+
+aiChatSubmit.addEventListener('click', e => {
+    e.preventDefault();
+    askGemini();
 });
 
 modalImgBtn.addEventListener('click', function () {
