@@ -116,6 +116,7 @@ const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const showSearchBtnInput = document.getElementById("showSearchBtn");
+const showHistoryBtnInput = document.getElementById("showHistoryBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
@@ -211,6 +212,7 @@ let defaults = {
     showSettingsBtn: true,
     showClock: false,
     showSearchBtn: true,
+    showHistoryBtn: true,
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
@@ -2397,6 +2399,12 @@ function applySettings(options = {}) {
             searchBtn.style.setProperty('--search', 'none');
         }
 
+        if (settings.showHistoryBtn) {
+            historyBtn.style.setProperty('--history', 'block');
+        } else {
+            historyBtn.style.setProperty('--history', 'none');
+        }
+
         // Position search icon based on what's visible
         updateSearchIconPosition();
 
@@ -2424,6 +2432,7 @@ function applySettings(options = {}) {
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         showSearchBtnInput.checked = settings.showSearchBtn;
+        showHistoryBtnInput.checked = settings.showHistoryBtn;
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
@@ -2471,6 +2480,7 @@ function saveSettings() {
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.showSearchBtn = showSearchBtnInput.checked;
+    settings.showHistoryBtn = showHistoryBtnInput.checked;
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
@@ -2822,6 +2832,10 @@ showSettingsBtnInput.oninput = function (e) {
 }
 
 showSearchBtnInput.oninput = function (e) {
+    saveSettings()
+}
+
+showHistoryBtnInput.oninput = function (e) {
     saveSettings()
 }
 

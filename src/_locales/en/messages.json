@@ -82,6 +82,9 @@
   "historyTitle": {
     "message": "History"
   },
+  "historyButton": {
+    "message": "History Button"
+  },
   "historyUnavailable": {
     "message": "History is not available"
   },
