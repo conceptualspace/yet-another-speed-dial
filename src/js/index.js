@@ -1111,43 +1111,6 @@ async function restoreRecentlyClosedTab(tab) {
     }
 }
 
-function renderRecentlyClosedTabs(tabs) {
-    recentTabsList.innerHTML = '';
-
-    if (!tabs.length) {
-        setRecentlyClosedStatus(getLocaleMessage('noRecentlyClosedTabs', 'No recently closed tabs'));
-        return;
-    }
-
-    recentTabsEmpty.style.display = "none";
-
-    for (const tab of tabs) {
-        const item = document.createElement('li');
-        const button = document.createElement('button');
-        const text = document.createElement('span');
-        const title = document.createElement('span');
-        const url = document.createElement('span');
-
-        button.type = 'button';
-        button.className = 'recent-tab';
-        button.title = tab.url || tab.title || getLocaleMessage('recentlyClosedTitle', 'Recently Closed');
-        button.addEventListener('click', () => restoreRecentlyClosedTab(tab));
-
-        text.className = 'recent-tab-text';
-        title.className = 'recent-tab-title';
-        title.textContent = tab.title || formatRecentTabUrl(tab.url) || getLocaleMessage('recentlyClosedUntitled', 'Untitled tab');
-        url.className = 'recent-tab-url';
-        url.textContent = formatRecentTabUrl(tab.url);
-
-        text.appendChild(title);
-        text.appendChild(url);
-        button.appendChild(createRecentTabFavicon(tab));
-        button.appendChild(text);
-        item.appendChild(button);
-        recentTabsList.appendChild(item);
-    }
-}
-
 async function openHistoryItem(item) {
     try {
         await chrome.tabs.create({ url: item.url });
@@ -1158,15 +1121,16 @@ async function openHistoryItem(item) {
     }
 }
 
-function renderHistory(items) {
-    historyList.innerHTML = '';
+function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFallback, buttonFallback, onClick }) {
+    listEl.innerHTML = '';
 
     if (!items.length) {
-        setHistoryStatus(getLocaleMessage('noHistoryItems', 'No history items'));
+        emptyEl.textContent = emptyMessage;
+        emptyEl.style.display = "block";
         return;
     }
 
-    historyEmpty.style.display = "none";
+    emptyEl.style.display = "none";
 
     for (const item of items) {
         const listItem = document.createElement('li');
@@ -1177,12 +1141,12 @@ function renderHistory(items) {
 
         button.type = 'button';
         button.className = 'recent-tab';
-        button.title = item.url || item.title || getLocaleMessage('historyTitle', 'History');
-        button.addEventListener('click', () => openHistoryItem(item));
+        button.title = item.url || item.title || buttonFallback;
+        button.addEventListener('click', () => onClick(item));
 
         text.className = 'recent-tab-text';
         title.className = 'recent-tab-title';
-        title.textContent = item.title || formatRecentTabUrl(item.url) || getLocaleMessage('historyUntitled', 'Untitled page');
+        title.textContent = item.title || formatRecentTabUrl(item.url) || itemFallback;
         url.className = 'recent-tab-url';
         url.textContent = formatRecentTabUrl(item.url);
 
@@ -1191,8 +1155,32 @@ function renderHistory(items) {
         button.appendChild(createRecentTabFavicon(item));
         button.appendChild(text);
         listItem.appendChild(button);
-        historyList.appendChild(listItem);
+        listEl.appendChild(listItem);
     }
+}
+
+function renderRecentlyClosedTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: recentTabsList,
+        emptyEl: recentTabsEmpty,
+        emptyMessage: getLocaleMessage('noRecentlyClosedTabs', 'No recently closed tabs'),
+        itemFallback: getLocaleMessage('recentlyClosedUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('recentlyClosedTitle', 'Recently Closed'),
+        onClick: restoreRecentlyClosedTab,
+    });
+}
+
+function renderHistory(items) {
+    renderHistoryPanelItems({
+        items,
+        listEl: historyList,
+        emptyEl: historyEmpty,
+        emptyMessage: getLocaleMessage('noHistoryItems', 'No history items'),
+        itemFallback: getLocaleMessage('historyUntitled', 'Untitled page'),
+        buttonFallback: getLocaleMessage('historyTitle', 'History'),
+        onClick: openHistoryItem,
+    });
 }
 
 async function loadHistory() {
