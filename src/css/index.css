@@ -8,6 +8,7 @@
     --settings: none;
     --search: block;
     --recent-tabs: block;
+    --history: block;
     --columns: 100%;
     --image-scaling: contain;
     --dial-width: 178px;
@@ -1011,12 +1012,18 @@ body:not(:has(.folderTitle)) #tileContainer {
     line-height: 1;
 }
 
+#historyBtn {
+    display: var(--history);
+    line-height: 1;
+}
+
 .right-align {
     float: right;
 }
 
 .settingsIcon svg,
-.recentTabsIcon svg {
+.recentTabsIcon svg,
+.historyIcon svg {
     height: 24px;
     width: 24px;
     fill: var(--color);
@@ -1026,7 +1033,8 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 .settingsIcon svg:hover,
-.recentTabsIcon svg:hover {
+.recentTabsIcon svg:hover,
+.historyIcon svg:hover {
     filter: opacity(1);
 }
 

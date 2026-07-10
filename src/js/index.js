@@ -75,6 +75,10 @@ const recentTabsNav = document.getElementById("recentTabsNav");
 const recentTabsBtn = document.getElementById("recentTabsBtn");
 const recentTabsList = document.getElementById("recentTabsList");
 const recentTabsEmpty = document.getElementById("recentTabsEmpty");
+const historyNav = document.getElementById("historyNav");
+const historyBtn = document.getElementById("historyBtn");
+const historyList = document.getElementById("historyList");
+const historyEmpty = document.getElementById("historyEmpty");
 const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
@@ -183,6 +187,8 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 const RECENTLY_CLOSED_MAX_RESULTS = 25;
+const HISTORY_MAX_RESULTS = 100;
+const HISTORY_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -919,6 +925,7 @@ function hideSideNav(nav) {
 
 function openSettings() {
     hideRecentlyClosedTabs();
+    hideHistory();
     openSideNav(sidenav);
 }
 
@@ -928,6 +935,7 @@ function hideSettings() {
 
 function openRecentlyClosedTabs() {
     hideSettings();
+    hideHistory();
     hideSearch();
     loadRecentlyClosedTabs();
     openSideNav(recentTabsNav);
@@ -935,6 +943,18 @@ function openRecentlyClosedTabs() {
 
 function hideRecentlyClosedTabs() {
     hideSideNav(recentTabsNav);
+}
+
+function openHistory() {
+    hideSettings();
+    hideRecentlyClosedTabs();
+    hideSearch();
+    loadHistory();
+    openSideNav(historyNav);
+}
+
+function hideHistory() {
+    hideSideNav(historyNav);
 }
 
 function hideModals() {
@@ -969,6 +989,7 @@ function hideModals() {
     // hide search
     hideSearch();
     hideRecentlyClosedTabs();
+    hideHistory();
 
 }
 
@@ -982,17 +1003,40 @@ function setRecentlyClosedStatus(message) {
     recentTabsEmpty.style.display = "block";
 }
 
+function setHistoryStatus(message) {
+    historyEmpty.textContent = message;
+    historyEmpty.style.display = "block";
+}
+
+function getFallbackFaviconUrl(url) {
+    if (!url) return null;
+
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return null;
+        return `${parsedUrl.origin}/favicon.ico`;
+    } catch (error) {
+        return null;
+    }
+}
+
+function renderDefaultFavicon(icon) {
+    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
+}
+
 function createRecentTabFavicon(tab) {
     const icon = document.createElement('span');
     icon.className = 'recent-tab-favicon';
+    const faviconUrl = tab.favIconUrl || getFallbackFaviconUrl(tab.url);
 
-    if (tab.favIconUrl) {
+    if (faviconUrl) {
         const image = document.createElement('img');
-        image.src = tab.favIconUrl;
+        image.src = faviconUrl;
         image.alt = '';
+        image.addEventListener('error', () => renderDefaultFavicon(icon), { once: true });
         icon.appendChild(image);
     } else {
-        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
+        renderDefaultFavicon(icon);
     }
 
     return icon;
@@ -1057,6 +1101,75 @@ function renderRecentlyClosedTabs(tabs) {
         button.appendChild(text);
         item.appendChild(button);
         recentTabsList.appendChild(item);
+    }
+}
+
+async function openHistoryItem(item) {
+    try {
+        await chrome.tabs.create({ url: item.url });
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to open history item:', error);
+        showToast(getLocaleMessage('historyOpenError', 'Unable to open history item'));
+    }
+}
+
+function renderHistory(items) {
+    historyList.innerHTML = '';
+
+    if (!items.length) {
+        setHistoryStatus(getLocaleMessage('noHistoryItems', 'No history items'));
+        return;
+    }
+
+    historyEmpty.style.display = "none";
+
+    for (const item of items) {
+        const listItem = document.createElement('li');
+        const button = document.createElement('button');
+        const text = document.createElement('span');
+        const title = document.createElement('span');
+        const url = document.createElement('span');
+
+        button.type = 'button';
+        button.className = 'recent-tab';
+        button.title = item.url || item.title || getLocaleMessage('historyTitle', 'History');
+        button.addEventListener('click', () => openHistoryItem(item));
+
+        text.className = 'recent-tab-text';
+        title.className = 'recent-tab-title';
+        title.textContent = item.title || formatRecentTabUrl(item.url) || getLocaleMessage('historyUntitled', 'Untitled page');
+        url.className = 'recent-tab-url';
+        url.textContent = formatRecentTabUrl(item.url);
+
+        text.appendChild(title);
+        text.appendChild(url);
+        button.appendChild(createRecentTabFavicon(item));
+        button.appendChild(text);
+        listItem.appendChild(button);
+        historyList.appendChild(listItem);
+    }
+}
+
+async function loadHistory() {
+    historyList.innerHTML = '';
+    setHistoryStatus(getLocaleMessage('historyLoading', 'Loading...'));
+
+    if (!chrome.history || !chrome.history.search) {
+        setHistoryStatus(getLocaleMessage('historyUnavailable', 'History is not available'));
+        return;
+    }
+
+    try {
+        const items = await chrome.history.search({
+            text: '',
+            startTime: Date.now() - HISTORY_LOOKBACK_MS,
+            maxResults: HISTORY_MAX_RESULTS,
+        });
+        renderHistory(items.filter(item => item && item.url));
+    } catch (error) {
+        console.error('Unable to load history:', error);
+        setHistoryStatus(getLocaleMessage('historyLoadError', 'Unable to load history'));
     }
 }
 
@@ -2364,6 +2477,7 @@ document.addEventListener("contextmenu", function (e) {
     }
     hideSettings();
     hideRecentlyClosedTabs();
+    hideHistory();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
@@ -2449,6 +2563,7 @@ window.addEventListener("mousedown", e => {
         case 'folders':
             hideSettings();
             hideRecentlyClosedTabs();
+            hideHistory();
             break;
         case 'modal':
             hideModals();
@@ -2529,6 +2644,7 @@ window.addEventListener("keydown", event => {
         hideModals();
         hideSettings();
         hideRecentlyClosedTabs();
+        hideHistory();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
         activateExpandableSearch();
@@ -2550,8 +2666,13 @@ recentTabsBtn.addEventListener("click", function() {
     openRecentlyClosedTabs();
 });
 
+historyBtn.addEventListener("click", function() {
+    openHistory();
+});
+
 function activateExpandableSearch() {
     hideRecentlyClosedTabs();
+    hideHistory();
     document.body.classList.add('search-active');
     searchContainer.classList.add('active');
     setTimeout(() => searchInput.focus(), 200);
@@ -2748,6 +2869,10 @@ document.getElementById('closeSettingsBtn').addEventListener('click', () => {
 
 document.getElementById('closeRecentTabsBtn').addEventListener('click', () => {
     hideRecentlyClosedTabs();
+});
+
+document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+    hideHistory();
 });
 
 
@@ -3656,6 +3781,7 @@ function init() {
 
     sidenav.style.display = "flex";
     recentTabsNav.style.display = "flex";
+    historyNav.style.display = "flex";
 
     // container-level drag listeners for expanding folder titles
     const foldersContainerEl = document.getElementById('foldersContainer');

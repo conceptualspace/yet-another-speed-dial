@@ -23,6 +23,15 @@
     display: none;
 }
 
+#historyDiv {
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+#historyDiv::-webkit-scrollbar {
+    display: none;
+}
+
 .sidenav h1 {
     font-weight: bold;
     font-size: large;
@@ -281,13 +290,15 @@
     transition: opacity 200ms ease-in-out;
 }
 
-.recent-tabs-list {
+.recent-tabs-list,
+.history-list {
     list-style: none;
     margin: 0.6em 0 0;
     padding: 0;
 }
 
-.recent-tabs-list li {
+.recent-tabs-list li,
+.history-list li {
     padding: 0;
 }
 
@@ -356,7 +367,8 @@
     font-size: 0.78rem;
 }
 
-.recent-tabs-empty {
+.recent-tabs-empty,
+.history-empty {
     margin-top: 1em;
     color: rgba(255, 255, 255, 0.65);
     line-height: 1.4;

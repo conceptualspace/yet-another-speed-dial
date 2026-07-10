@@ -16,6 +16,7 @@
   "permissions": [
     "bookmarks",
     "contextMenus",
+    "history",
     "offscreen",
     "sessions",
     "storage",

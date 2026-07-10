@@ -67,6 +67,27 @@
   "help": {
     "message": "Help"
   },
+  "historyLoadError": {
+    "message": "Unable to load history"
+  },
+  "historyLoading": {
+    "message": "Loading..."
+  },
+  "noHistoryItems": {
+    "message": "No history items"
+  },
+  "historyOpenError": {
+    "message": "Unable to open history item"
+  },
+  "historyTitle": {
+    "message": "History"
+  },
+  "historyUnavailable": {
+    "message": "History is not available"
+  },
+  "historyUntitled": {
+    "message": "Untitled page"
+  },
   "home": {
     "message": "Home"
   },
