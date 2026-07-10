@@ -188,6 +188,8 @@ const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
 const locale = navigator.language;
+const promptApiLanguages = ['de', 'en', 'es', 'fr', 'ja'];
+const promptApiLanguage = promptApiLanguages.includes(locale.split('-')[0]) ? locale.split('-')[0] : 'en';
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
@@ -976,6 +978,8 @@ function getLanguageModelApi() {
 async function createLanguageModelSession() {
     const languageModel = getLanguageModelApi();
     const createOptions = {
+        expectedInputs: [{ type: 'text', languages: [promptApiLanguage] }],
+        expectedOutputs: [{ type: 'text', languages: [promptApiLanguage] }],
         monitor(monitor) {
             monitor.addEventListener('downloadprogress', event => {
                 aiChatStatus.textContent = `Downloading Gemini... ${Math.round(event.loaded * 100)}%`;
@@ -988,7 +992,10 @@ async function createLanguageModelSession() {
     }
 
     if (typeof languageModel.availability === 'function') {
-        const availability = await languageModel.availability();
+        const availability = await languageModel.availability({
+            expectedInputs: createOptions.expectedInputs,
+            expectedOutputs: createOptions.expectedOutputs,
+        });
         if (availability === 'unavailable') {
             throw new Error('Gemini Prompt API is unavailable on this device.');
         }
