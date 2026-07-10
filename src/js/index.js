@@ -190,6 +190,8 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const ollamaBaseUrl = 'http://localhost:11434';
+const ollamaPreferredModels = ['gemma3:4b', 'dolphin3:latest', 'dolphin-raw:latest'];
 let isToastVisible = false;
 
 let folderIds = [];
@@ -1002,6 +1004,76 @@ async function createLanguageModelSession() {
     return languageModel.create(createOptions);
 }
 
+function isNativeAiUnavailableError(err) {
+    return !getLanguageModelApi()
+        || err.name === 'NotSupportedError'
+        || err.name === 'InvalidStateError'
+        || err.message?.toLowerCase().includes('unavailable')
+        || err.message?.toLowerCase().includes('not available');
+}
+
+async function getOllamaModel() {
+    const response = await fetch(`${ollamaBaseUrl}/api/tags`);
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            throw new Error('Ollama blocked this extension origin. Restart Ollama with OLLAMA_ORIGINS="chrome-extension://*".');
+        }
+
+        throw new Error(`Ollama returned ${response.status} while checking models.`);
+    }
+
+    const data = await response.json();
+    const models = data.models || [];
+
+    if (!models.length) {
+        throw new Error('Ollama is running, but no models are installed.');
+    }
+
+    const preferredModel = ollamaPreferredModels.find(modelName => models.some(model => model.name === modelName));
+    return preferredModel || models[0].name;
+}
+
+async function askOllama(prompt) {
+    aiChatStatus.textContent = 'Asking Ollama...';
+    const model = await getOllamaModel();
+
+    aiChatStatus.textContent = `Asking Ollama (${model})...`;
+    const response = await fetch(`${ollamaBaseUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model,
+            prompt,
+            stream: false,
+        }),
+    });
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            throw new Error('Ollama blocked this extension origin. Restart Ollama with OLLAMA_ORIGINS="chrome-extension://*".');
+        }
+
+        throw new Error(`Ollama returned ${response.status} while generating a response.`);
+    }
+
+    const data = await response.json();
+    return data.response || '';
+}
+
+async function askNativeAi(prompt) {
+    let session = null;
+
+    try {
+        session = await createLanguageModelSession();
+        return await session.prompt(prompt);
+    } finally {
+        session?.destroy?.();
+    }
+}
+
 async function askGemini() {
     const prompt = aiChatPrompt.value.trim();
 
@@ -1014,18 +1086,27 @@ async function askGemini() {
     aiChatStatus.textContent = 'Thinking...';
     aiChatResponse.textContent = '';
 
-    let session = null;
-
     try {
-        session = await createLanguageModelSession();
-        const response = await session.prompt(prompt);
+        let response = '';
+
+        try {
+            response = await askNativeAi(prompt);
+        } catch (err) {
+            if (!isNativeAiUnavailableError(err)) {
+                throw err;
+            }
+
+            console.log(err);
+            aiChatStatus.textContent = 'Gemini Prompt API unavailable. Trying Ollama...';
+            response = await askOllama(prompt);
+        }
+
         aiChatStatus.textContent = '';
         aiChatResponse.textContent = response;
     } catch (err) {
         console.log(err);
-        aiChatStatus.textContent = err.message || 'Gemini could not answer right now.';
+        aiChatStatus.textContent = err.message || 'AI chat could not answer right now.';
     } finally {
-        session?.destroy?.();
         aiChatSubmit.disabled = false;
     }
 }
