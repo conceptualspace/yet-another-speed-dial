@@ -1058,13 +1058,6 @@ function normalizeRecentTabKey(url) {
 
     try {
         const parsedUrl = new URL(url);
-        if ((parsedUrl.protocol === 'chrome:' || parsedUrl.protocol === 'edge:') && parsedUrl.hostname === 'newtab') {
-            return 'browser-newtab';
-        }
-        if (parsedUrl.protocol === 'about:' && parsedUrl.pathname === 'newtab') {
-            return 'browser-newtab';
-        }
-
         parsedUrl.hash = '';
         if (parsedUrl.pathname.length > 1) {
             parsedUrl.pathname = parsedUrl.pathname.replace(/\/$/, '');
@@ -1072,6 +1065,19 @@ function normalizeRecentTabKey(url) {
         return parsedUrl.toString();
     } catch (error) {
         return url.trim() || null;
+    }
+}
+
+function isNewTabUrl(url) {
+    if (!url) return false;
+
+    try {
+        const parsedUrl = new URL(url);
+        if ((parsedUrl.protocol === 'chrome:' || parsedUrl.protocol === 'edge:') && parsedUrl.hostname === 'newtab') return true;
+        if (parsedUrl.protocol === 'about:' && parsedUrl.pathname === 'newtab') return true;
+        return url === chrome.runtime.getURL('index.html');
+    } catch (error) {
+        return false;
     }
 }
 
@@ -1233,7 +1239,7 @@ async function loadRecentlyClosedTabs() {
             }
         }
 
-        renderRecentlyClosedTabs(dedupeRecentTabs(tabs.filter(tab => tab && tab.url)));
+        renderRecentlyClosedTabs(dedupeRecentTabs(tabs.filter(tab => tab && tab.url && !isNewTabUrl(tab.url))));
     } catch (error) {
         console.error('Unable to load recently closed tabs:', error);
         setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoadError', 'Unable to load recently closed tabs'));
