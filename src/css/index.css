@@ -7,6 +7,7 @@
     --clock: none;
     --settings: none;
     --search: block;
+    --recent-tabs: block;
     --columns: 100%;
     --image-scaling: contain;
     --dial-width: 178px;
@@ -1005,11 +1006,17 @@ body:not(:has(.folderTitle)) #tileContainer {
     line-height: 1;
 }
 
+#recentTabsBtn {
+    display: var(--recent-tabs);
+    line-height: 1;
+}
+
 .right-align {
     float: right;
 }
 
-.settingsIcon svg {
+.settingsIcon svg,
+.recentTabsIcon svg {
     height: 24px;
     width: 24px;
     fill: var(--color);
@@ -1018,7 +1025,8 @@ body:not(:has(.folderTitle)) #tileContainer {
     display: block;
 }
 
-.settingsIcon svg:hover {
+.settingsIcon svg:hover,
+.recentTabsIcon svg:hover {
     filter: opacity(1);
 }
 

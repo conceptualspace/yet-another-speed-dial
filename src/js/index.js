@@ -71,6 +71,10 @@ const toastContent = document.getElementById('toastContent');
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
+const recentTabsNav = document.getElementById("recentTabsNav");
+const recentTabsBtn = document.getElementById("recentTabsBtn");
+const recentTabsList = document.getElementById("recentTabsList");
+const recentTabsEmpty = document.getElementById("recentTabsEmpty");
 const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
@@ -178,6 +182,7 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
                                      // re-synced after this settles on a same-folder reorder.
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
+const RECENTLY_CLOSED_MAX_RESULTS = 25;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -902,14 +907,34 @@ function hideMenus() {
     }
 }
 
+function openSideNav(nav) {
+    nav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
+    nav.style.transform = "translateX(0%)";
+}
+
+function hideSideNav(nav) {
+    nav.style.transform = "translateX(100%)";
+    nav.style.boxShadow = "none";
+}
+
 function openSettings() {
-    sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
-    sidenav.style.transform = "translateX(0%)";
+    hideRecentlyClosedTabs();
+    openSideNav(sidenav);
 }
 
 function hideSettings() {
-    sidenav.style.transform = "translateX(100%)";
-    sidenav.style.boxShadow = "none";
+    hideSideNav(sidenav);
+}
+
+function openRecentlyClosedTabs() {
+    hideSettings();
+    hideSearch();
+    loadRecentlyClosedTabs();
+    openSideNav(recentTabsNav);
+}
+
+function hideRecentlyClosedTabs() {
+    hideSideNav(recentTabsNav);
 }
 
 function hideModals() {
@@ -943,7 +968,126 @@ function hideModals() {
 
     // hide search
     hideSearch();
+    hideRecentlyClosedTabs();
 
+}
+
+function getLocaleMessage(key, fallback) {
+    const message = chrome.i18n.getMessage(key);
+    return message || fallback;
+}
+
+function setRecentlyClosedStatus(message) {
+    recentTabsEmpty.textContent = message;
+    recentTabsEmpty.style.display = "block";
+}
+
+function createRecentTabFavicon(tab) {
+    const icon = document.createElement('span');
+    icon.className = 'recent-tab-favicon';
+
+    if (tab.favIconUrl) {
+        const image = document.createElement('img');
+        image.src = tab.favIconUrl;
+        image.alt = '';
+        icon.appendChild(image);
+    } else {
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
+    }
+
+    return icon;
+}
+
+function formatRecentTabUrl(url) {
+    if (!url) return '';
+
+    try {
+        const parsedUrl = new URL(url);
+        return parsedUrl.hostname || url;
+    } catch (error) {
+        return url;
+    }
+}
+
+async function restoreRecentlyClosedTab(tab) {
+    try {
+        if (tab.sessionId && chrome.sessions && chrome.sessions.restore) {
+            await chrome.sessions.restore(tab.sessionId);
+        } else if (tab.url) {
+            await chrome.tabs.create({ url: tab.url });
+        }
+        hideRecentlyClosedTabs();
+    } catch (error) {
+        console.error('Unable to restore recently closed tab:', error);
+        showToast(getLocaleMessage('recentlyClosedRestoreError', 'Unable to restore tab'));
+    }
+}
+
+function renderRecentlyClosedTabs(tabs) {
+    recentTabsList.innerHTML = '';
+
+    if (!tabs.length) {
+        setRecentlyClosedStatus(getLocaleMessage('noRecentlyClosedTabs', 'No recently closed tabs'));
+        return;
+    }
+
+    recentTabsEmpty.style.display = "none";
+
+    for (const tab of tabs) {
+        const item = document.createElement('li');
+        const button = document.createElement('button');
+        const text = document.createElement('span');
+        const title = document.createElement('span');
+        const url = document.createElement('span');
+
+        button.type = 'button';
+        button.className = 'recent-tab';
+        button.title = tab.url || tab.title || getLocaleMessage('recentlyClosedTitle', 'Recently Closed');
+        button.addEventListener('click', () => restoreRecentlyClosedTab(tab));
+
+        text.className = 'recent-tab-text';
+        title.className = 'recent-tab-title';
+        title.textContent = tab.title || formatRecentTabUrl(tab.url) || getLocaleMessage('recentlyClosedUntitled', 'Untitled tab');
+        url.className = 'recent-tab-url';
+        url.textContent = formatRecentTabUrl(tab.url);
+
+        text.appendChild(title);
+        text.appendChild(url);
+        button.appendChild(createRecentTabFavicon(tab));
+        button.appendChild(text);
+        item.appendChild(button);
+        recentTabsList.appendChild(item);
+    }
+}
+
+async function loadRecentlyClosedTabs() {
+    recentTabsList.innerHTML = '';
+    setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoading', 'Loading...'));
+
+    if (!chrome.sessions || !chrome.sessions.getRecentlyClosed) {
+        setRecentlyClosedStatus(getLocaleMessage('recentlyClosedUnavailable', 'Recently closed tabs are not available'));
+        return;
+    }
+
+    try {
+        const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: RECENTLY_CLOSED_MAX_RESULTS });
+        const tabs = [];
+
+        for (const session of sessions) {
+            if (session.tab) {
+                tabs.push(session.tab);
+            } else if (session.window && session.window.tabs) {
+                for (const tab of session.window.tabs) {
+                    tabs.push(tab);
+                }
+            }
+        }
+
+        renderRecentlyClosedTabs(tabs.filter(tab => tab && tab.url));
+    } catch (error) {
+        console.error('Unable to load recently closed tabs:', error);
+        setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoadError', 'Unable to load recently closed tabs'));
+    }
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -2219,6 +2363,7 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
+    hideRecentlyClosedTabs();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
@@ -2303,6 +2448,7 @@ window.addEventListener("mousedown", e => {
         case 'folders-content':
         case 'folders':
             hideSettings();
+            hideRecentlyClosedTabs();
             break;
         case 'modal':
             hideModals();
@@ -2381,6 +2527,8 @@ window.addEventListener("keydown", event => {
         }
         hideMenus();
         hideModals();
+        hideSettings();
+        hideRecentlyClosedTabs();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
         activateExpandableSearch();
@@ -2398,7 +2546,12 @@ searchBtn.addEventListener("click", function() {
     activateExpandableSearch();
 });
 
+recentTabsBtn.addEventListener("click", function() {
+    openRecentlyClosedTabs();
+});
+
 function activateExpandableSearch() {
+    hideRecentlyClosedTabs();
     document.body.classList.add('search-active');
     searchContainer.classList.add('active');
     setTimeout(() => searchInput.focus(), 200);
@@ -2591,6 +2744,10 @@ function setInputValue(inputElement, value) {
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     hideSettings();
+});
+
+document.getElementById('closeRecentTabsBtn').addEventListener('click', () => {
+    hideRecentlyClosedTabs();
 });
 
 
@@ -3449,12 +3606,14 @@ function onResize() {
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
-        elem.textContent = chrome.i18n.getMessage(elem.dataset.locale);
+        const message = chrome.i18n.getMessage(elem.dataset.locale);
+        if (message) elem.textContent = message;
     })
 
     // Handle placeholder translations separately
     document.querySelectorAll('[data-locale-placeholder]').forEach(elem => {
-        elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
+        const message = chrome.i18n.getMessage(elem.dataset.localePlaceholder);
+        if (message) elem.placeholder = message;
     })
 
     // init what used to be background work"
@@ -3496,6 +3655,7 @@ function init() {
 
 
     sidenav.style.display = "flex";
+    recentTabsNav.style.display = "flex";
 
     // container-level drag listeners for expanding folder titles
     const foldersContainerEl = document.getElementById('foldersContainer');

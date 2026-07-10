@@ -14,6 +14,15 @@
     display: none;
 }
 
+#recentTabsDiv {
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+#recentTabsDiv::-webkit-scrollbar {
+    display: none;
+}
+
 .sidenav h1 {
     font-weight: bold;
     font-size: large;
@@ -270,4 +279,85 @@
     opacity: 0;
     color: lightgreen;
     transition: opacity 200ms ease-in-out;
+}
+
+.recent-tabs-list {
+    list-style: none;
+    margin: 0.6em 0 0;
+    padding: 0;
+}
+
+.recent-tabs-list li {
+    padding: 0;
+}
+
+.recent-tab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 10px 0;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: #fff;
+    text-align: left;
+}
+
+.recent-tab:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.recent-tab-favicon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.recent-tab-favicon img {
+    width: 16px;
+    height: 16px;
+}
+
+.recent-tab-favicon svg {
+    width: 18px;
+    height: 18px;
+    fill: rgba(255, 255, 255, 0.7);
+}
+
+.recent-tab-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.recent-tab-title,
+.recent-tab-url {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-tab-title {
+    color: #fff;
+    font-size: 0.95rem;
+}
+
+.recent-tab-url {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.78rem;
+}
+
+.recent-tabs-empty {
+    margin-top: 1em;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.4;
 }

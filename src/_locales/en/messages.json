@@ -58,7 +58,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "a modern speed dial for chrome, edge, and firefox"
+    "message": "a modern new tab page for chrome, edge, and firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
@@ -136,8 +136,29 @@
   "newWin": {
     "message": "Open in new window"
   },
+  "noRecentlyClosedTabs": {
+    "message": "No recently closed tabs"
+  },
   "refresh": {
     "message": "Refresh Thumbnails"
+  },
+  "recentlyClosedLoadError": {
+    "message": "Unable to load recently closed tabs"
+  },
+  "recentlyClosedLoading": {
+    "message": "Loading..."
+  },
+  "recentlyClosedRestoreError": {
+    "message": "Unable to restore tab"
+  },
+  "recentlyClosedTitle": {
+    "message": "Recently Closed"
+  },
+  "recentlyClosedUnavailable": {
+    "message": "Recently closed tabs are not available"
+  },
+  "recentlyClosedUntitled": {
+    "message": "Untitled tab"
   },
   "remember": {
     "message": "Remember Last Folder"

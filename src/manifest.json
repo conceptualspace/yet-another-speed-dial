@@ -17,6 +17,7 @@
     "bookmarks",
     "contextMenus",
     "offscreen",
+    "sessions",
     "storage",
     "tabs",
     "unlimitedStorage"
