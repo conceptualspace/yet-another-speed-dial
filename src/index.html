@@ -510,11 +510,12 @@
 <!-- history nav -->
 <div class="sidenav" id="historyNav">
     <div class="settings history" id="historyDiv">
-        <button id="closeHistoryBtn" class="closeBtn" title="Close History">&times;</button>
-
-        <div class="history-panel-tabs" role="tablist">
-            <button id="recentTabsPanelBtn" class="history-panel-tab active" type="button" data-locale="recentlyClosedTitle">Recently Closed</button>
-            <button id="historyPanelBtn" class="history-panel-tab" type="button" data-locale="historyTitle">History</button>
+        <div class="history-panel-header">
+            <div class="history-panel-tabs" role="tablist">
+                <button id="recentTabsPanelBtn" class="history-panel-tab active" type="button" data-locale="recentlyClosedTitle">Recently Closed</button>
+                <button id="historyPanelBtn" class="history-panel-tab" type="button" data-locale="historyTitle">History</button>
+            </div>
+            <button id="closeHistoryBtn" class="closeBtn" title="Close History">&times;</button>
         </div>
 
         <div id="recentTabsView" class="history-panel-view active">

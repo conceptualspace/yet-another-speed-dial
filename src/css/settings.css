@@ -15,7 +15,9 @@
 }
 
 #historyDiv {
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     scrollbar-width: none;
 }
 
@@ -285,13 +287,29 @@
     padding: 0.3em 0;
 }
 
+.history-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    padding: 0;
+}
+
 .history-panel-tabs {
     display: flex;
+    flex: 1;
     gap: 4px;
-    margin: 0.7em 28px 0.5em 0;
+    margin: 0.7em 0 0.5em 0;
     padding: 3px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.08);
+}
+
+#closeHistoryBtn {
+    position: static;
+    top: auto;
+    right: auto;
+    flex: 0 0 auto;
 }
 
 .sidenav .history-panel-tab {
@@ -313,7 +331,16 @@
 }
 
 .history-panel-view.active {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.history-panel-view.active::-webkit-scrollbar {
+    display: none;
 }
 
 .recent-tabs-list,
