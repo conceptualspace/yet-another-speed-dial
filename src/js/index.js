@@ -1008,13 +1008,14 @@ function setHistoryStatus(message) {
     historyEmpty.style.display = "block";
 }
 
-function getFallbackFaviconUrl(url) {
+function getBrowserFaviconUrl(url) {
     if (!url) return null;
+    if (chrome.runtime.getBrowserInfo) return null;
 
     try {
         const parsedUrl = new URL(url);
         if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return null;
-        return `${parsedUrl.origin}/favicon.ico`;
+        return chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(url)}&size=32`);
     } catch (error) {
         return null;
     }
@@ -1027,7 +1028,7 @@ function renderDefaultFavicon(icon) {
 function createRecentTabFavicon(tab) {
     const icon = document.createElement('span');
     icon.className = 'recent-tab-favicon';
-    const faviconUrl = tab.favIconUrl || getFallbackFaviconUrl(tab.url);
+    const faviconUrl = tab.favIconUrl || getBrowserFaviconUrl(tab.url);
 
     if (faviconUrl) {
         const image = document.createElement('img');
