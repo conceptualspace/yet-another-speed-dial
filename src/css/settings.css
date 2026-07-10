@@ -334,7 +334,7 @@
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     background: #000;
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
     text-align: left;
 }
 
@@ -379,13 +379,13 @@
 }
 
 .recent-tab-title {
-    color: #fff;
+    color: rgba(255, 255, 255, 0.9);
     font-size: 0.95rem;
 }
 
 .recent-tab-url {
     margin-top: 3px;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.5);
     font-size: 0.78rem;
 }
 
