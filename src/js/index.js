@@ -71,12 +71,14 @@ const toastContent = document.getElementById('toastContent');
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
-const recentTabsNav = document.getElementById("recentTabsNav");
-const recentTabsBtn = document.getElementById("recentTabsBtn");
 const recentTabsList = document.getElementById("recentTabsList");
 const recentTabsEmpty = document.getElementById("recentTabsEmpty");
 const historyNav = document.getElementById("historyNav");
 const historyBtn = document.getElementById("historyBtn");
+const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
+const historyPanelBtn = document.getElementById("historyPanelBtn");
+const recentTabsView = document.getElementById("recentTabsView");
+const historyView = document.getElementById("historyView");
 const historyList = document.getElementById("historyList");
 const historyEmpty = document.getElementById("historyEmpty");
 const modalTitle = document.getElementById("modalTitle");
@@ -924,7 +926,6 @@ function hideSideNav(nav) {
 }
 
 function openSettings() {
-    hideRecentlyClosedTabs();
     hideHistory();
     openSideNav(sidenav);
 }
@@ -933,23 +934,23 @@ function hideSettings() {
     hideSideNav(sidenav);
 }
 
-function openRecentlyClosedTabs() {
-    hideSettings();
-    hideHistory();
-    hideSearch();
-    loadRecentlyClosedTabs();
-    openSideNav(recentTabsNav);
+function setHistoryPanelView(view) {
+    const showRecentTabs = view === 'recent';
+    recentTabsPanelBtn.classList.toggle('active', showRecentTabs);
+    historyPanelBtn.classList.toggle('active', !showRecentTabs);
+    recentTabsView.classList.toggle('active', showRecentTabs);
+    historyView.classList.toggle('active', !showRecentTabs);
 }
 
-function hideRecentlyClosedTabs() {
-    hideSideNav(recentTabsNav);
-}
-
-function openHistory() {
+function openHistory(view = 'recent') {
     hideSettings();
-    hideRecentlyClosedTabs();
     hideSearch();
-    loadHistory();
+    setHistoryPanelView(view);
+    if (view === 'recent') {
+        loadRecentlyClosedTabs();
+    } else {
+        loadHistory();
+    }
     openSideNav(historyNav);
 }
 
@@ -988,7 +989,6 @@ function hideModals() {
 
     // hide search
     hideSearch();
-    hideRecentlyClosedTabs();
     hideHistory();
 
 }
@@ -1060,7 +1060,7 @@ async function restoreRecentlyClosedTab(tab) {
         } else if (tab.url) {
             await chrome.tabs.create({ url: tab.url });
         }
-        hideRecentlyClosedTabs();
+        hideHistory();
     } catch (error) {
         console.error('Unable to restore recently closed tab:', error);
         showToast(getLocaleMessage('recentlyClosedRestoreError', 'Unable to restore tab'));
@@ -2476,7 +2476,6 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
-    hideRecentlyClosedTabs();
     hideHistory();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
@@ -2562,7 +2561,6 @@ window.addEventListener("mousedown", e => {
         case 'folders-content':
         case 'folders':
             hideSettings();
-            hideRecentlyClosedTabs();
             hideHistory();
             break;
         case 'modal':
@@ -2643,7 +2641,6 @@ window.addEventListener("keydown", event => {
         hideMenus();
         hideModals();
         hideSettings();
-        hideRecentlyClosedTabs();
         hideHistory();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
@@ -2662,16 +2659,19 @@ searchBtn.addEventListener("click", function() {
     activateExpandableSearch();
 });
 
-recentTabsBtn.addEventListener("click", function() {
-    openRecentlyClosedTabs();
+historyBtn.addEventListener("click", function() {
+    openHistory('recent');
 });
 
-historyBtn.addEventListener("click", function() {
-    openHistory();
+recentTabsPanelBtn.addEventListener("click", function() {
+    openHistory('recent');
+});
+
+historyPanelBtn.addEventListener("click", function() {
+    openHistory('history');
 });
 
 function activateExpandableSearch() {
-    hideRecentlyClosedTabs();
     hideHistory();
     document.body.classList.add('search-active');
     searchContainer.classList.add('active');
@@ -2865,10 +2865,6 @@ function setInputValue(inputElement, value) {
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     hideSettings();
-});
-
-document.getElementById('closeRecentTabsBtn').addEventListener('click', () => {
-    hideRecentlyClosedTabs();
 });
 
 document.getElementById('closeHistoryBtn').addEventListener('click', () => {
@@ -3780,7 +3776,6 @@ function init() {
 
 
     sidenav.style.display = "flex";
-    recentTabsNav.style.display = "flex";
     historyNav.style.display = "flex";
 
     // container-level drag listeners for expanding folder titles

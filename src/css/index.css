@@ -7,7 +7,6 @@
     --clock: none;
     --settings: none;
     --search: block;
-    --recent-tabs: block;
     --history: block;
     --columns: 100%;
     --image-scaling: contain;
@@ -1007,11 +1006,6 @@ body:not(:has(.folderTitle)) #tileContainer {
     line-height: 1;
 }
 
-#recentTabsBtn {
-    display: var(--recent-tabs);
-    line-height: 1;
-}
-
 #historyBtn {
     display: var(--history);
     line-height: 1;
@@ -1022,7 +1016,6 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 .settingsIcon svg,
-.recentTabsIcon svg,
 .historyIcon svg {
     height: 24px;
     width: 24px;
@@ -1033,7 +1026,6 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 .settingsIcon svg:hover,
-.recentTabsIcon svg:hover,
 .historyIcon svg:hover {
     filter: opacity(1);
 }

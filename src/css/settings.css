@@ -14,15 +14,6 @@
     display: none;
 }
 
-#recentTabsDiv {
-    overflow-y: auto;
-    scrollbar-width: none;
-}
-
-#recentTabsDiv::-webkit-scrollbar {
-    display: none;
-}
-
 #historyDiv {
     overflow-y: auto;
     scrollbar-width: none;
@@ -290,6 +281,37 @@
     transition: opacity 200ms ease-in-out;
 }
 
+.history-panel-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0.7em 28px 0.5em 0;
+    padding: 3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.sidenav .history-panel-tab {
+    flex: 1;
+    padding: 0.45em 0.6em;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.sidenav .history-panel-tab:hover,
+.sidenav .history-panel-tab.active {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.history-panel-view {
+    display: none;
+}
+
+.history-panel-view.active {
+    display: block;
+}
+
 .recent-tabs-list,
 .history-list {
     list-style: none;
@@ -302,7 +324,7 @@
     padding: 0;
 }
 
-.recent-tab {
+.sidenav .recent-tab {
     display: flex;
     align-items: center;
     gap: 12px;
@@ -311,13 +333,13 @@
     padding: 10px 0;
     border: none;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    background: transparent;
+    background: #000;
     color: #fff;
     text-align: left;
 }
 
-.recent-tab:hover {
-    background: rgba(255, 255, 255, 0.08);
+.sidenav .recent-tab:hover {
+    background: #111;
 }
 
 .recent-tab-favicon {
