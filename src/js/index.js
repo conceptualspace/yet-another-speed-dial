@@ -683,14 +683,11 @@ async function printNewSetup() {
         folderContainerEl.id = speedDialId;
         folderContainerEl.classList.add('container');
         folderContainerEl.style.display = currentFolder === speedDialId ? 'flex' : 'none';
-        //folderContainerEl.style.opacity = settings.rememberFolder && currentFolder === parentId ? '0' : '1';
-        folderContainerEl.style.opacity = "0";
+        // Show the container immediately without the opacity fade; the welcome card
+        // runs its own entrance animation. required for smooth backdrop filter
+        folderContainerEl.style.opacity = "1";
 
         if (currentFolder === speedDialId) {
-            setTimeout(() => {
-                folderContainerEl.style.opacity = "1";
-                animate();
-            }, 20);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
         }
         bookmarksContainerParent.append(folderContainerEl);
