@@ -2705,8 +2705,8 @@ function prepareExport() {
         // Get YASD settings and thumbnails from storage
         chrome.storage.local.get(null).then(items => {
             for (const [key, value] of Object.entries(items)) {
-                if (key.startsWith('settings')) {
-                    yasdJson.yasd.settings[key] = value;
+                if (key === 'settings') {
+                    yasdJson.yasd.settings = value;
                 } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
                     if (value.thumbnails && value.thumbnails.length) {
@@ -3018,8 +3018,11 @@ function importFromYASD(json) {
     // Clear previous settings and import new data
     chrome.storage.local.clear().then(() => {
         // Store settings
+        let settingsPromise = Promise.resolve();
         if (yasdData.settings) {
-            chrome.storage.local.set({ settings: yasdData.settings });
+            const importedSettings = yasdData.settings.settings || yasdData.settings;
+            settings = Object.assign({}, defaults, importedSettings);
+            settingsPromise = chrome.storage.local.set({ settings });
         }
 
         // Store dials
@@ -3067,10 +3070,14 @@ function importFromYASD(json) {
                 });
             });
 
-            Promise.all([...dialPromises, ...bookmarkPromises]).then(() => {
+            Promise.all([settingsPromise, ...dialPromises, ...bookmarkPromises]).then(() => {
                 hideModals();
                 // Refresh page
-                processRefresh();
+                if (yasdData.settings) {
+                    applySettings().then(() => processRefresh());
+                } else {
+                    processRefresh();
+                }
                 chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
             }).catch(err => {
                 console.log(err);
