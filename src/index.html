@@ -33,7 +33,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
         </div>
 
-        <div class="aiIcon" id="aiChatBtn" title="Ask Gemini">
+        <div class="aiIcon" id="aiChatBtn" title="AI Chat">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M480-80 420-280 220-340l200-60 60-200 60 200 200 60-200 60-60 200ZM180-520l-36-116-116-36 116-36 36-116 36 116 116 36-116 36-36 116Zm600 0-36-116-116-36 116-36 36-116 36 116 116 36-116 36-36 116Z"/></svg>
         </div>
         
@@ -151,24 +151,29 @@
     </div>
 </div>
 
-<!-- AI chat modal window -->
-<div class="modal" id="aiChatModal">
-    <div class="modal-content" id="aiChatModalContent">
-        <form action="" class="tileForm" id="aiChatForm">
-            <div class="formItem"><label for="aiChatPrompt">Ask Gemini</label></div>
-            <div class="formItem"><input id="aiChatPrompt" type="text" autocomplete="off"><div class="inputBorder"></div></div>
-            <div class="formItem">
-                <button class="save" id="aiChatSubmit" type="button">Ask</button>
+<!-- AI chat side panel -->
+<div class="sidenav" id="aiChatPanel" aria-label="AI Chat">
+    <section class="ai-chat" id="aiChatPanelContent">
+        <header class="ai-chat-header">
+            <div>
+                <h1>AI Chat</h1>
+                <p id="aiChatModel">Gemini with Ollama fallback</p>
             </div>
-            <div class="formItem">
-                <div id="aiChatStatus" aria-live="polite"></div>
-                <div id="aiChatResponse" aria-live="polite"></div>
-            </div>
-            <div class="formItem">
-                <button class="close" type="button" data-locale="cancel">Cancel</button>
+            <button id="aiChatCloseBtn" class="closeBtn" title="Close AI Chat" type="button">&times;</button>
+        </header>
+
+        <div id="aiChatMessages" class="ai-chat-messages" aria-live="polite"></div>
+        <div id="aiChatStatus" class="ai-chat-status" aria-live="polite"></div>
+
+        <form action="" class="ai-chat-form" id="aiChatForm">
+            <label for="aiChatPrompt">Message</label>
+            <textarea id="aiChatPrompt" rows="3" autocomplete="off" placeholder="Ask a follow-up..."></textarea>
+            <div class="ai-chat-actions">
+                <button class="default" id="aiChatClear" type="button">New chat</button>
+                <button id="aiChatSubmit" type="submit">Send</button>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 
 <!-- create dial modal window -->

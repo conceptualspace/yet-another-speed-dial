@@ -43,12 +43,15 @@ const createDialModalContent = document.getElementById('createDialModalContent')
 const createDialModalURL = document.getElementById('createDialModalURL');
 const createDialModalSave = document.getElementById('createDialModalSave');
 
-const aiChatModal = document.getElementById('aiChatModal');
-const aiChatModalContent = document.getElementById('aiChatModalContent');
+const aiChatPanel = document.getElementById('aiChatPanel');
+const aiChatForm = document.getElementById('aiChatForm');
 const aiChatPrompt = document.getElementById('aiChatPrompt');
 const aiChatSubmit = document.getElementById('aiChatSubmit');
+const aiChatClear = document.getElementById('aiChatClear');
+const aiChatCloseBtn = document.getElementById('aiChatCloseBtn');
 const aiChatStatus = document.getElementById('aiChatStatus');
-const aiChatResponse = document.getElementById('aiChatResponse');
+const aiChatMessagesEl = document.getElementById('aiChatMessages');
+const aiChatModel = document.getElementById('aiChatModel');
 
 const createFolderModal = document.getElementById('createFolderModal');
 const createFolderModalContent = document.getElementById('createFolderModalContent');
@@ -190,11 +193,10 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
-const ollamaBaseUrl = 'http://localhost:11434';
-const ollamaPreferredModels = ['gemma3:4b', 'dolphin3:latest', 'dolphin-raw:latest'];
 let isToastVisible = false;
 
 let folderIds = [];
+let aiChatHistory = [];
 
 let defaults = {
     wallpaper: true,
@@ -262,6 +264,21 @@ function displayClock() {
 }
 
 displayClock();
+
+function sendBackgroundMessage(message) {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage(message, response => {
+            const lastError = chrome.runtime.lastError;
+
+            if (lastError) {
+                reject(new Error(lastError.message));
+                return;
+            }
+
+            resolve(response);
+        });
+    });
+}
 
 function getBookmarks(folderId) {
     chrome.bookmarks.getChildren(folderId).then(result => {
@@ -913,6 +930,8 @@ function hideMenus() {
 }
 
 function openSettings() {
+    hideAiChat();
+    sidenav.style.display = "flex";
     sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
     sidenav.style.transform = "translateX(0%)";
 }
@@ -922,9 +941,28 @@ function hideSettings() {
     sidenav.style.boxShadow = "none";
 }
 
+function openAiChat() {
+    hideSettings();
+    renderAiChatMessages();
+    aiChatPanel.style.display = "flex";
+    aiChatPanel.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
+    aiChatPanel.style.transform = "translateX(0%)";
+    setTimeout(() => aiChatPrompt.focus(), 160);
+}
+
+function hideAiChat() {
+    aiChatPanel.style.transform = "translateX(100%)";
+    aiChatPanel.style.boxShadow = "none";
+}
+
+function hideSidePanels() {
+    hideSettings();
+    hideAiChat();
+}
+
 function hideModals() {
-    let modals = [modal, createDialModal, aiChatModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, aiChatModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -953,6 +991,8 @@ function hideModals() {
 
     // hide search
     hideSearch();
+
+    hideAiChat();
 
 }
 
@@ -1012,63 +1052,58 @@ function isNativeAiUnavailableError(err) {
         || err.message?.toLowerCase().includes('not available');
 }
 
-async function getOllamaModel() {
-    const response = await fetch(`${ollamaBaseUrl}/api/tags`);
+function renderAiChatMessages() {
+    aiChatMessagesEl.textContent = '';
 
-    if (!response.ok) {
-        if (response.status === 403) {
-            throw new Error('Ollama blocked this extension origin. Restart Ollama with OLLAMA_ORIGINS="chrome-extension://*".');
-        }
-
-        throw new Error(`Ollama returned ${response.status} while checking models.`);
+    if (!aiChatHistory.length) {
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'ai-chat-empty';
+        emptyMessage.textContent = 'Start a conversation from here.';
+        aiChatMessagesEl.appendChild(emptyMessage);
+        return;
     }
 
-    const data = await response.json();
-    const models = data.models || [];
-
-    if (!models.length) {
-        throw new Error('Ollama is running, but no models are installed.');
+    for (const message of aiChatHistory) {
+        const messageEl = document.createElement('div');
+        messageEl.className = `ai-chat-message ${message.role === 'assistant' ? 'assistant' : 'user'}`;
+        messageEl.textContent = message.content;
+        aiChatMessagesEl.appendChild(messageEl);
     }
 
-    const preferredModel = ollamaPreferredModels.find(modelName => models.some(model => model.name === modelName));
-    return preferredModel || models[0].name;
+    aiChatMessagesEl.scrollTop = aiChatMessagesEl.scrollHeight;
 }
 
-async function askOllama(prompt) {
-    aiChatStatus.textContent = 'Asking Ollama...';
-    const model = await getOllamaModel();
+function getConversationPrompt(messages) {
+    const transcript = messages
+        .map(message => `${message.role === 'assistant' ? 'Assistant' : 'User'}: ${message.content}`)
+        .join('\n\n');
 
-    aiChatStatus.textContent = `Asking Ollama (${model})...`;
-    const response = await fetch(`${ollamaBaseUrl}/api/generate`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            model,
-            prompt,
-            stream: false,
-        }),
+    return `Continue this conversation. Reply only as Assistant.\n\n${transcript}\n\nAssistant:`;
+}
+
+async function askOllama(messages) {
+    aiChatStatus.textContent = 'Asking Ollama...';
+    const result = await sendBackgroundMessage({
+        target: 'background',
+        type: 'askOllama',
+        data: { messages },
     });
 
-    if (!response.ok) {
-        if (response.status === 403) {
-            throw new Error('Ollama blocked this extension origin. Restart Ollama with OLLAMA_ORIGINS="chrome-extension://*".');
-        }
-
-        throw new Error(`Ollama returned ${response.status} while generating a response.`);
+    if (result?.error) {
+        throw new Error(result.error);
     }
 
-    const data = await response.json();
-    return data.response || '';
+    aiChatModel.textContent = `Ollama: ${result.model}`;
+    return result?.response || '';
 }
 
-async function askNativeAi(prompt) {
+async function askNativeAi(messages) {
     let session = null;
 
     try {
         session = await createLanguageModelSession();
-        return await session.prompt(prompt);
+        aiChatModel.textContent = 'Gemini Prompt API';
+        return await session.prompt(getConversationPrompt(messages));
     } finally {
         session?.destroy?.();
     }
@@ -1082,15 +1117,19 @@ async function askGemini() {
         return;
     }
 
+    const userMessage = { role: 'user', content: prompt };
+    aiChatHistory.push(userMessage);
+    renderAiChatMessages();
+    aiChatPrompt.value = '';
     aiChatSubmit.disabled = true;
+    aiChatClear.disabled = true;
     aiChatStatus.textContent = 'Thinking...';
-    aiChatResponse.textContent = '';
 
     try {
         let response = '';
 
         try {
-            response = await askNativeAi(prompt);
+            response = await askNativeAi(aiChatHistory);
         } catch (err) {
             if (!isNativeAiUnavailableError(err)) {
                 throw err;
@@ -1098,26 +1137,19 @@ async function askGemini() {
 
             console.log(err);
             aiChatStatus.textContent = 'Gemini Prompt API unavailable. Trying Ollama...';
-            response = await askOllama(prompt);
+            response = await askOllama(aiChatHistory);
         }
 
+        aiChatHistory.push({ role: 'assistant', content: response || '(No response)' });
+        renderAiChatMessages();
         aiChatStatus.textContent = '';
-        aiChatResponse.textContent = response;
     } catch (err) {
         console.log(err);
         aiChatStatus.textContent = err.message || 'AI chat could not answer right now.';
     } finally {
         aiChatSubmit.disabled = false;
+        aiChatClear.disabled = false;
     }
-}
-
-function openAiChat() {
-    hideSettings();
-    aiChatPrompt.value = '';
-    aiChatStatus.textContent = '';
-    aiChatResponse.textContent = '';
-    modalShowEffect(aiChatModalContent, aiChatModal);
-    setTimeout(() => aiChatPrompt.focus(), 160);
 }
 
 function hideToast() {
@@ -2377,7 +2409,7 @@ function saveSettings() {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
-    if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL' || e.target.id === 'aiChatPrompt')) {
+    if (e.target.closest?.('#aiChatPanel') || (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL'))) {
         return;
     }
     e.preventDefault();
@@ -2385,7 +2417,7 @@ document.addEventListener("contextmenu", function (e) {
     if (e.target.id === 'settingsDiv') {
         return;
     }
-    hideSettings();
+    hideSidePanels();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = e.target.parentElement.parentElement.href;
@@ -2407,6 +2439,9 @@ document.addEventListener("contextmenu", function (e) {
 
 // todo: tidy this up
 window.addEventListener("click", e => {
+    if (e.target.closest?.('#aiChatPanel')) {
+        return;
+    }
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
     }
@@ -2438,6 +2473,9 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
+    if (e.target.closest?.('#aiChatPanel')) {
+        return;
+    }
     if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
         return
     }
@@ -2470,6 +2508,7 @@ window.addEventListener("mousedown", e => {
         case 'folders-content':
         case 'folders':
             hideSettings();
+            hideAiChat();
             break;
         case 'modal':
             hideModals();
@@ -2548,6 +2587,7 @@ window.addEventListener("keydown", event => {
         }
         hideMenus();
         hideModals();
+        hideSidePanels();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
         activateExpandableSearch();
@@ -2612,15 +2652,28 @@ createDialModalURL.addEventListener('keydown', e => {
 });
 
 aiChatPrompt.addEventListener('keydown', e => {
-    if (e.code === "Enter") {
+    if (e.code === "Enter" && !e.shiftKey) {
         e.preventDefault();
         askGemini();
     }
 });
 
-aiChatSubmit.addEventListener('click', e => {
+aiChatForm.addEventListener('submit', e => {
     e.preventDefault();
     askGemini();
+});
+
+aiChatClear.addEventListener('click', e => {
+    e.preventDefault();
+    aiChatHistory = [];
+    aiChatStatus.textContent = '';
+    aiChatModel.textContent = 'Gemini with Ollama fallback';
+    renderAiChatMessages();
+    aiChatPrompt.focus();
+});
+
+aiChatCloseBtn.addEventListener('click', () => {
+    hideAiChat();
 });
 
 modalImgBtn.addEventListener('click', function () {

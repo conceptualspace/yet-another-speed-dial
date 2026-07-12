@@ -878,23 +878,6 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     position: relative;
 }
 
-#aiChatStatus,
-#aiChatResponse {
-    min-height: 1.5em;
-    line-height: 1.5;
-    user-select: text;
-}
-
-#aiChatStatus {
-    color: var(--yasd-blue);
-}
-
-#aiChatResponse {
-    max-height: 240px;
-    overflow-y: auto;
-    white-space: pre-wrap;
-}
-
 #fetchImageButton {
     flex: 0 0 26px; /* Make the button 25% of the container's width */
 }
@@ -954,6 +937,135 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     color: white;
     display: none;
     justify-content: center;
+}
+
+#aiChatPanel {
+    width: min(420px, 100vw);
+    background: rgba(12, 12, 12, 0.98);
+}
+
+#aiChatPanel div,
+#aiChatPanel header,
+#aiChatPanel section,
+#aiChatPanel form {
+    box-sizing: border-box;
+    padding: 0;
+}
+
+#aiChatPanel .ai-chat {
+    width: 100%;
+    height: 100%;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+}
+
+.ai-chat-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    padding-right: 36px;
+}
+
+.ai-chat-header h1 {
+    margin: 0;
+}
+
+.ai-chat-header p {
+    margin: 4px 0 0;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.85rem;
+}
+
+.ai-chat-messages {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+
+.ai-chat-empty {
+    margin: auto;
+    color: rgba(255, 255, 255, 0.56);
+    text-align: center;
+}
+
+.ai-chat-message {
+    max-width: 88%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    user-select: text;
+}
+
+.ai-chat-message.user {
+    align-self: flex-end;
+    background: #1681d9;
+}
+
+.ai-chat-message.assistant {
+    align-self: flex-start;
+    background: #262626;
+}
+
+.ai-chat-status {
+    min-height: 1.5em;
+    color: var(--yasd-blue);
+    line-height: 1.5;
+}
+
+.ai-chat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-chat-form label {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.ai-chat-form textarea {
+    width: 100%;
+    min-height: 78px;
+    max-height: 180px;
+    padding: 0.7em;
+    resize: vertical;
+    border: 1px solid #333;
+    border-radius: 6px;
+    outline: none;
+    background-color: #333;
+    color: #f2f2f2;
+    font-family: inherit;
+    font-size: medium;
+}
+
+.ai-chat-actions {
+    display: flex;
+    gap: 8px;
+}
+
+#aiChatPanel .ai-chat-actions button {
+    flex: 1;
+    width: auto;
+    border-radius: 6px;
+}
+
+#aiChatPanel #aiChatSubmit {
+    background-color: #1681d9;
+}
+
+#aiChatPanel #aiChatSubmit:hover {
+    background-color: #1692EA;
+}
+
+#aiChatPanel button:disabled {
+    opacity: 0.55;
 }
 
 #foldersContainer {

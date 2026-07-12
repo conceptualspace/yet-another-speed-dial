@@ -4,6 +4,10 @@
 
 'use strict';
 
+const ollamaBaseUrl = 'http://localhost:11434';
+const ollamaPreferredModels = ['gemma3:4b', 'dolphin3:latest', 'dolphin-raw:latest'];
+const ollamaOriginRuleId = 11434;
+
 
 // EVENT LISTENERS //
 
@@ -21,13 +25,15 @@ chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
+configureOllamaOriginRule();
+
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
 if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 
 // EVENT HANDLERS //
 
-async function handleMessages(message) {
+function handleMessages(message, sender, sendResponse) {
 	// Return early if this message isn't meant for the worker
 	if (message.target !== 'background') {
 	  return;
@@ -50,10 +56,115 @@ async function handleMessages(message) {
 		case 'getThumbs':
 			handleGetThumbs(message.data);
 			break;
+        case 'askOllama':
+            handleAskOllama(message.data)
+                .then(sendResponse)
+                .catch(err => sendResponse({ error: err.message || 'Ollama could not answer right now.' }));
+            return true;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
+}
+
+function configureOllamaOriginRule() {
+    if (!chrome.declarativeNetRequest?.updateDynamicRules) {
+        return;
+    }
+
+    try {
+        const updateResult = chrome.declarativeNetRequest.updateDynamicRules({
+            removeRuleIds: [ollamaOriginRuleId],
+            addRules: [{
+                id: ollamaOriginRuleId,
+                priority: 1,
+                action: {
+                    type: 'modifyHeaders',
+                    requestHeaders: [{
+                        header: 'Origin',
+                        operation: 'remove'
+                    }],
+                },
+                condition: {
+                    regexFilter: '^http://(localhost|127\\.0\\.0\\.1):11434/',
+                    resourceTypes: ['xmlhttprequest'],
+                },
+            }],
+        });
+
+        updateResult?.catch?.(err => console.warn('Could not configure Ollama origin rule.', err));
+    } catch (err) {
+        console.warn('Could not configure Ollama origin rule.', err);
+    }
+}
+
+function getOllamaCorsMessage() {
+    return 'Ollama blocked this extension origin. Update Ollama or allow extension origins with OLLAMA_ORIGINS="chrome-extension://*".';
+}
+
+async function getOllamaModel() {
+    const response = await fetch(`${ollamaBaseUrl}/api/tags`);
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            throw new Error(getOllamaCorsMessage());
+        }
+
+        throw new Error(`Ollama returned ${response.status} while checking models.`);
+    }
+
+    const data = await response.json();
+    const models = data.models || [];
+
+    if (!models.length) {
+        throw new Error('Ollama is running, but no models are installed.');
+    }
+
+    const preferredModel = ollamaPreferredModels.find(modelName => models.some(model => model.name === modelName));
+    return preferredModel || models[0].name;
+}
+
+async function handleAskOllama(data) {
+    const messages = Array.isArray(data?.messages)
+        ? data.messages
+            .map(message => ({
+                role: ['system', 'user', 'assistant'].includes(message?.role) ? message.role : 'user',
+                content: String(message?.content || '').trim(),
+            }))
+            .filter(message => message.content)
+        : [];
+    const prompt = data?.prompt?.trim();
+
+    if (!messages.length && !prompt) {
+        throw new Error('Enter a prompt first.');
+    }
+
+    const model = await getOllamaModel();
+    const response = await fetch(`${ollamaBaseUrl}/api/chat`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            model,
+            messages: messages.length ? messages : [{ role: 'user', content: prompt }],
+            stream: false,
+        }),
+    });
+
+    if (!response.ok) {
+        if (response.status === 403) {
+            throw new Error(getOllamaCorsMessage());
+        }
+
+        throw new Error(`Ollama returned ${response.status} while generating a response.`);
+    }
+
+    const responseData = await response.json();
+    return {
+        model,
+        response: responseData.message?.content || responseData.response || '',
+    };
 }
 
 async function handleGetThumbs(data, batchSize = 50) {
