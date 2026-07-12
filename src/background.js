@@ -24,6 +24,11 @@ chrome.runtime.onInstalled.addListener(handleInstalled);
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
 if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
+const REFRESH_ALL_SMALL_FOLDER_LIMIT = 75;
+const REFRESH_ALL_LARGE_FOLDER_LIMIT = 500;
+const REFRESH_ALL_RESPONSE_GRACE_MS = 9000;
+const pendingThumbnailRequests = new Map();
+
 
 // EVENT HANDLERS //
 
@@ -36,13 +41,13 @@ async function handleMessages(message) {
 	// Dispatch the message to an appropriate handler.
 	switch (message.type) {
 		case 'refreshThumbs':
-			handleManualRefresh(message.data);
+            handleManualRefresh(message.data).catch(err => console.log(err));
 			break;
 		case 'refreshAllThumbs':
-			handleRefreshAll(message.data);
+            handleRefreshAll(message.data).catch(err => console.log(err));
 			break;
 		case 'saveThumbnails':
-			handleOffscreenFetchDone(message.data, message.forcePageReload);
+            handleOffscreenFetchDone(message.data, message.forcePageReload).catch(err => console.log(err));
 			break;
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
@@ -202,12 +207,30 @@ function toggleBookmarkCreatedListener(data) {
 
 async function handleOffscreenFetchDone(data, forcePageReload) {
 	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+    let saved = false;
+
+    try {
+        saved = await saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+    } catch (err) {
+        console.log(err);
+    }
+
+    const request = data.requestId ? pendingThumbnailRequests.get(data.requestId) : null;
+
+    if (request) {
+        clearTimeout(request.timeoutId);
+        pendingThumbnailRequests.delete(data.requestId);
+        request.resolve({
+            ok: saved,
+            url: data.url,
+            id: data.id,
+            parentId: data.parentId
+        });
+    }
 }
 
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
-        await chrome.storage.local.remove(data.url);
         await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
 }
@@ -292,38 +315,57 @@ const capturePopupScreenshot = (url) => {
   })
 }
 
-async function handleRefreshAll(data) {
-    async function refreshBatch(bookmarks, index = 0, retries = 2) {
-        const batchSize = 200;
-        const delay = 10000;
-        const batch = bookmarks.slice(index, index + batchSize);
-    
-        if (batch.length) {
-            try {
-                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, { quickRefresh: true })));
-                // todo show progress in UI
-                // todo: we might need to refactor this to promises or timers so the worker doesnt kill the process with a batch scheduled
-                setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
-            } catch (err) {
-                console.log(err);
-                if (retries > 0) {
-                    //console.log(`Retrying batch at index ${index}...`);
-                    setTimeout(() => refreshBatch(bookmarks, index, retries - 1), delay);
-                } else {
-                    //console.log(`Failed to refresh batch at index ${index} after multiple attempts.`);
-                    setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
-                }
-            }
-        } else {
-            //refreshOpen(); // not needed here it happens when thumbnails are saved
+function getRefreshAllTuning(bookmarkCount) {
+    if (bookmarkCount <= REFRESH_ALL_SMALL_FOLDER_LIMIT) {
+        return { concurrency: 8, fetchTimeoutMs: 6000 };
+    }
+
+    if (bookmarkCount <= REFRESH_ALL_LARGE_FOLDER_LIMIT) {
+        return { concurrency: 16, fetchTimeoutMs: 4500 };
+    }
+
+    return { concurrency: 24, fetchTimeoutMs: 3000 };
+}
+
+async function runRefreshAllQueue(bookmarks, concurrency, worker) {
+    let nextIndex = 0;
+
+    async function runWorker() {
+        while (nextIndex < bookmarks.length) {
+            const bookmark = bookmarks[nextIndex++];
+            await worker(bookmark);
         }
     }
 
-    const urlsToRemove = data.bookmarks.map(bookmark => bookmark.url);
-    await chrome.storage.local.remove(urlsToRemove).catch((err) => {
-        console.log(err);
+    const workerCount = Math.min(concurrency, bookmarks.length);
+    await Promise.all(Array.from({ length: workerCount }, runWorker));
+}
+
+async function handleRefreshAll(data) {
+    const bookmarks = data.bookmarks || [];
+    if (!bookmarks.length) return;
+
+    const tuning = getRefreshAllTuning(bookmarks.length);
+    let failed = 0;
+
+    await runRefreshAllQueue(bookmarks, tuning.concurrency, async bookmark => {
+        const result = await getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, {
+            quickRefresh: true,
+            fetchTimeoutMs: tuning.fetchTimeoutMs,
+            requestTimeoutMs: tuning.fetchTimeoutMs + REFRESH_ALL_RESPONSE_GRACE_MS
+        }).catch(err => {
+            console.log(err);
+            return { ok: false };
+        });
+
+        if (!result || !result.ok) {
+            failed++;
+        }
     });
-    refreshBatch(data.bookmarks);
+
+    if (failed) {
+        console.log(`Refresh all thumbnails: ${failed} of ${bookmarks.length} dials did not produce a new thumbnail.`);
+    }
 }
 
 async function createBookmarkFromContextMenu(tab) {
@@ -464,11 +506,15 @@ async function migrateDialSizes() {
 
 // THUMBNAIL FUNCTIONS //
 
+function createThumbnailRequestId() {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
-		return
+        return { ok: false, reason: 'missing-data', url, id, parentId };
 	}
     
     let screenshot = null;
@@ -488,30 +534,54 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
 
-	chrome.runtime.sendMessage({
-		target: 'offscreen',
-		data: {
+    const requestId = createThumbnailRequestId();
+    const requestTimeoutMs = options.requestTimeoutMs || 15000;
+    let resolveRequest;
+    const responsePromise = new Promise(resolve => {
+        resolveRequest = resolve;
+        const timeoutId = setTimeout(() => {
+            pendingThumbnailRequests.delete(requestId);
+            resolve({ ok: false, reason: 'timeout', url, id, parentId });
+        }, requestTimeoutMs);
+
+        pendingThumbnailRequests.set(requestId, { resolve, timeoutId });
+    });
+
+    chrome.runtime.sendMessage({
+        target: 'offscreen',
+        data: {
+            requestId,
             url,
-			id,
-			parentId,
+            id,
+            parentId,
             screenshot,
-			quickRefresh: options.quickRefresh,
-			forcePageReload: options.forcePageReload,
+            quickRefresh: options.quickRefresh,
+            forcePageReload: options.forcePageReload,
+            fetchTimeoutMs: options.fetchTimeoutMs,
         }
-	});
+    }).catch(err => {
+        if (err?.message && err.message.includes('message port closed')) return;
+
+        const request = pendingThumbnailRequests.get(requestId);
+        if (request) {
+            clearTimeout(request.timeoutId);
+            pendingThumbnailRequests.delete(requestId);
+        }
+        console.log(err);
+        resolveRequest({ ok: false, reason: 'send-failed', url, id, parentId });
+    });
+
+    return responsePromise;
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
-	if (images && images.length) {
-		let thumbnails = [];
-		let result = await chrome.storage.local.get(url)
-		if (result[url] && result[url].thumbnails) {
-			thumbnails = result[url].thumbnails;
-		}
-		thumbnails.push(images);
-		thumbnails = thumbnails.flat();
-		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
-	}
+    if (!images || !images.length) {
+        return false;
+    }
+
+    const thumbnails = images.flat();
+    await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
+
 	// refresh open new tab page
 	if (forcePageReload) {
 		// we have new sites, reload the page
@@ -530,6 +600,8 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 			}]
 		});
 	}
+
+    return true;
 }
 
 function refreshOpen() {

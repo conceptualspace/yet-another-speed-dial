@@ -22,6 +22,8 @@ async function handleMessages(message) {
     let screenshot = message.data.screenshot;
     let quickRefresh = message.data.quickRefresh;
     let forcePageReload = message.data.forcePageReload;
+    let requestId = message.data.requestId;
+    let fetchTimeoutMs = message.data.fetchTimeoutMs;
     let id = message.data.id;
     let parentId = message.data.parentId;
     let resizedImages = [];
@@ -31,7 +33,7 @@ async function handleMessages(message) {
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh).catch(err => {
+    let images = await fetchImages(url, quickRefresh, fetchTimeoutMs).catch(err => {
         console.log(err);
     })
 
@@ -75,7 +77,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
+    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {requestId, url, id, parentId, thumbs, bgColor}, forcePageReload});
     //return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);
@@ -463,7 +465,7 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
-async function fetchImages(url, quickRefresh) {
+async function fetchImages(url, quickRefresh, fetchTimeoutMs) {
 
     if (url.startsWith('file://')) {
         return ['img/file.png'];
@@ -520,7 +522,7 @@ async function fetchImages(url, quickRefresh) {
 
          // Set up fetch timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
+        const timeoutId = setTimeout(() => controller.abort(), fetchTimeoutMs || (quickRefresh ? 3000 : 4000));
         
         try {
             // allows og images to work, with creds they are behind js
