@@ -3407,17 +3407,15 @@ function batchApplyImages(elements) {
 
 function handleMessages(message) {
     //console.log(message);
-    if (!message.target === 'newtab') {
+    if (message.target !== 'newtab') {
         return
     }
-
-    if (message.data.refresh) {
+    if (message.data?.refresh) {
         hideToast();
         processRefresh();
-    } else if(message.data.reloadFolders) {
+    } else if(message.data?.reloadFolders) {
         hideToast();
         processRefresh({ foldersOnly: true });
-
     } else if(message.type === 'thumbBatch') {
         // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
