@@ -76,6 +76,9 @@
   "noHistoryItems": {
     "message": "No history items"
   },
+  "noOtherDeviceTabs": {
+    "message": "No tabs from other devices"
+  },
   "historyOpenError": {
     "message": "Unable to open history item"
   },
@@ -90,6 +93,27 @@
   },
   "historyUntitled": {
     "message": "Untitled page"
+  },
+  "otherDeviceFallbackName": {
+    "message": "Other device"
+  },
+  "otherDevicesLoadError": {
+    "message": "Unable to load tabs from other devices"
+  },
+  "otherDevicesLoading": {
+    "message": "Loading..."
+  },
+  "otherDevicesOpenError": {
+    "message": "Unable to open tab"
+  },
+  "otherDevicesTitle": {
+    "message": "Other Devices"
+  },
+  "otherDevicesUnavailable": {
+    "message": "Other devices are not available"
+  },
+  "otherDevicesUntitled": {
+    "message": "Untitled tab"
   },
   "home": {
     "message": "Home"

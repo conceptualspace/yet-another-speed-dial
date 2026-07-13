@@ -77,10 +77,14 @@ const historyNav = document.getElementById("historyNav");
 const historyBtn = document.getElementById("historyBtn");
 const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
 const historyPanelBtn = document.getElementById("historyPanelBtn");
+const otherDevicesPanelBtn = document.getElementById("otherDevicesPanelBtn");
 const recentTabsView = document.getElementById("recentTabsView");
 const historyView = document.getElementById("historyView");
+const otherDevicesView = document.getElementById("otherDevicesView");
 const historyList = document.getElementById("historyList");
 const historyEmpty = document.getElementById("historyEmpty");
+const otherDevicesList = document.getElementById("otherDevicesList");
+const otherDevicesEmpty = document.getElementById("otherDevicesEmpty");
 const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
@@ -190,6 +194,7 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 const RECENTLY_CLOSED_MAX_RESULTS = 25;
+const OTHER_DEVICES_MAX_RESULTS = 25;
 const HISTORY_MAX_RESULTS = 100;
 const HISTORY_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 let hourCycle = 'h12';
@@ -938,10 +943,14 @@ function hideSettings() {
 
 function setHistoryPanelView(view) {
     const showRecentTabs = view === 'recent';
+    const showHistory = view === 'history';
+    const showOtherDevices = view === 'devices';
     recentTabsPanelBtn.classList.toggle('active', showRecentTabs);
-    historyPanelBtn.classList.toggle('active', !showRecentTabs);
+    historyPanelBtn.classList.toggle('active', showHistory);
+    otherDevicesPanelBtn.classList.toggle('active', showOtherDevices);
     recentTabsView.classList.toggle('active', showRecentTabs);
-    historyView.classList.toggle('active', !showRecentTabs);
+    historyView.classList.toggle('active', showHistory);
+    otherDevicesView.classList.toggle('active', showOtherDevices);
 }
 
 function openHistory(view = 'recent') {
@@ -950,8 +959,10 @@ function openHistory(view = 'recent') {
     setHistoryPanelView(view);
     if (view === 'recent') {
         loadRecentlyClosedTabs();
-    } else {
+    } else if (view === 'history') {
         loadHistory();
+    } else {
+        loadOtherDeviceTabs();
     }
     openSideNav(historyNav);
 }
@@ -1008,6 +1019,11 @@ function setRecentlyClosedStatus(message) {
 function setHistoryStatus(message) {
     historyEmpty.textContent = message;
     historyEmpty.style.display = "block";
+}
+
+function setOtherDevicesStatus(message) {
+    otherDevicesEmpty.textContent = message;
+    otherDevicesEmpty.style.display = "block";
 }
 
 function getBrowserFaviconUrl(url) {
@@ -1123,6 +1139,16 @@ async function openHistoryItem(item) {
     }
 }
 
+async function openOtherDeviceTab(tab) {
+    try {
+        await chrome.tabs.create({ url: tab.url });
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to open tab from other device:', error);
+        showToast(getLocaleMessage('otherDevicesOpenError', 'Unable to open tab'));
+    }
+}
+
 function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFallback, buttonFallback, onClick }) {
     listEl.innerHTML = '';
 
@@ -1150,7 +1176,7 @@ function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFal
         title.className = 'recent-tab-title';
         title.textContent = item.title || formatRecentTabUrl(item.url) || itemFallback;
         url.className = 'recent-tab-url';
-        url.textContent = formatRecentTabUrl(item.url);
+        url.textContent = item.subtitle || formatRecentTabUrl(item.url);
 
         text.appendChild(title);
         text.appendChild(url);
@@ -1182,6 +1208,45 @@ function renderHistory(items) {
         itemFallback: getLocaleMessage('historyUntitled', 'Untitled page'),
         buttonFallback: getLocaleMessage('historyTitle', 'History'),
         onClick: openHistoryItem,
+    });
+}
+
+function getSessionTabs(session) {
+    if (session.tab) return [session.tab];
+    if (session.window && session.window.tabs) return session.window.tabs;
+    return [];
+}
+
+function getOtherDeviceTabs(devices) {
+    const tabs = [];
+
+    for (const device of devices) {
+        const deviceName = device.deviceName || getLocaleMessage('otherDeviceFallbackName', 'Other device');
+
+        for (const session of device.sessions || []) {
+            for (const tab of getSessionTabs(session)) {
+                if (!tab || !tab.url || isNewTabUrl(tab.url)) continue;
+
+                tabs.push({
+                    ...tab,
+                    subtitle: `${formatRecentTabUrl(tab.url)} - ${deviceName}`,
+                });
+            }
+        }
+    }
+
+    return tabs;
+}
+
+function renderOtherDeviceTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: otherDevicesList,
+        emptyEl: otherDevicesEmpty,
+        emptyMessage: getLocaleMessage('noOtherDeviceTabs', 'No tabs from other devices'),
+        itemFallback: getLocaleMessage('otherDevicesUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Other Devices'),
+        onClick: openOtherDeviceTab,
     });
 }
 
@@ -1234,6 +1299,24 @@ async function loadRecentlyClosedTabs() {
     } catch (error) {
         console.error('Unable to load recently closed tabs:', error);
         setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoadError', 'Unable to load recently closed tabs'));
+    }
+}
+
+async function loadOtherDeviceTabs() {
+    otherDevicesList.innerHTML = '';
+    setOtherDevicesStatus(getLocaleMessage('otherDevicesLoading', 'Loading...'));
+
+    if (!chrome.sessions || !chrome.sessions.getDevices) {
+        setOtherDevicesStatus(getLocaleMessage('otherDevicesUnavailable', 'Other devices are not available'));
+        return;
+    }
+
+    try {
+        const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
+        renderOtherDeviceTabs(dedupeRecentTabs(getOtherDeviceTabs(devices)));
+    } catch (error) {
+        console.error('Unable to load tabs from other devices:', error);
+        setOtherDevicesStatus(getLocaleMessage('otherDevicesLoadError', 'Unable to load tabs from other devices'));
     }
 }
 
@@ -2711,6 +2794,10 @@ recentTabsPanelBtn.addEventListener("click", function() {
 
 historyPanelBtn.addEventListener("click", function() {
     openHistory('history');
+});
+
+otherDevicesPanelBtn.addEventListener("click", function() {
+    openHistory('devices');
 });
 
 function activateExpandableSearch() {

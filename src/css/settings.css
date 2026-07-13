@@ -344,14 +344,16 @@
 }
 
 .recent-tabs-list,
-.history-list {
+.history-list,
+.other-devices-list {
     list-style: none;
     margin: 0.6em 0 0;
     padding: 0;
 }
 
 .recent-tabs-list li,
-.history-list li {
+.history-list li,
+.other-devices-list li {
     padding: 0;
 }
 
@@ -421,7 +423,8 @@
 }
 
 .recent-tabs-empty,
-.history-empty {
+.history-empty,
+.other-devices-empty {
     margin-top: 1em;
     color: rgba(255, 255, 255, 0.65);
     line-height: 1.4;
