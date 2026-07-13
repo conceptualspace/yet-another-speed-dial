@@ -34,6 +34,31 @@
     flex-wrap: nowrap;
 }
 
+/* stack the image-url row and the button row so swapping them
+   cross-fades in place without changing the modal height */
+.modalImgSwap {
+    display: grid;
+    margin: .6em 0;
+}
+
+.modalImgSwap > #modalBtnContainer,
+.modalImgSwap > #imageUrlContainer {
+    grid-area: 1 / 1;
+    margin: 0;
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 160ms ease, transform 160ms ease, visibility 0s;
+}
+
+.modalImgSwap > #modalBtnContainer.is-hidden,
+.modalImgSwap > #imageUrlContainer:not(.is-visible) {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(6px);
+    visibility: hidden;
+    transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+}
+
 #modalBtnContainer .formItem {
     display: flex;
     flex: 1 1 0;
@@ -910,11 +935,9 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #imageUrlContainer {
-    display: none;
+    display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 74px;
-    margin: .6em 0;
     position: relative;
 }
 

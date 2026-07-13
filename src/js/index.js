@@ -76,7 +76,9 @@ const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
 const modalImgInput = document.getElementById("modalImgFile");
 const modalImgBtn = document.getElementById("modalImgBtn");
+const modalBtnContainer = document.getElementById("modalBtnContainer");
 const modalImgUrlBtn = document.getElementById("modalImgUrlBtn");
+const imageUrlContainer = document.getElementById("imageUrlContainer");
 const modalImageURLInput = document.getElementById("modalImageURLInput");
 const closeImgUrlBtn = document.getElementById("closeImgUrlBtn");
 const fetchImageButton = document.getElementById("fetchImageButton");
@@ -932,10 +934,7 @@ function hideModals() {
         }, 160);
     }
 
-    // Reset modalBtnContainer and imageUrlContainer
-    document.getElementById('modalBtnContainer').style.display = 'flex';
-    document.getElementById('imageUrlContainer').style.display = 'none';
-    modalImageURLInput.value = '';
+    hideImageUrlInput();
 
     // hide search
     hideSearch();
@@ -2470,9 +2469,7 @@ previewOverlay.onclick = function () {
 // add image from url button clicked, show the input field
 modalImgUrlBtn.addEventListener('click', function (event) {
     event.preventDefault();
-    document.getElementById('modalBtnContainer').style.display = 'none';
-    document.getElementById('imageUrlContainer').style.display = 'flex';
-    modalImageURLInput.focus();
+    showImageUrlInput();
 });
 
 closeImgUrlBtn.addEventListener('click', function (event) {
@@ -2496,9 +2493,15 @@ fetchImageButton.addEventListener('click', function (event) {
 });
 
 function hideImageUrlInput() {
-    document.getElementById('modalBtnContainer').style.display = 'flex';
-    document.getElementById('imageUrlContainer').style.display = 'none';
+    modalBtnContainer.classList.remove('is-hidden');
+    imageUrlContainer.classList.remove('is-visible');
     modalImageURLInput.value = '';
+}
+
+function showImageUrlInput() {
+    modalBtnContainer.classList.add('is-hidden');
+    imageUrlContainer.classList.add('is-visible');
+    modalImageURLInput.focus();
 }
 
 modalBgColorPickerBtn.addEventListener('click', function (e) {
