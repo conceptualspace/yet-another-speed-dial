@@ -1048,12 +1048,41 @@ function initModalCarousel(activeBgColor = null) {
     }
 }
 
+function getUniqueModalCarouselImageSrcs(excludeSrc = null) {
+    let images = [...modalImgContainer.querySelectorAll('#carousel .fc-slide:not(.fc-is-clone) img')];
+    if (!images.length) {
+        images = [...modalImgContainer.querySelectorAll('#carousel > div img')];
+    }
+
+    const excludedSrc = normalizeImageSrc(excludeSrc);
+    const imageSrcs = [];
+    const seenSrcs = new Set();
+
+    for (let image of images) {
+        const src = image.src;
+        const normalizedSrc = normalizeImageSrc(src);
+        if (!src || normalizedSrc === excludedSrc || seenSrcs.has(normalizedSrc)) continue;
+        seenSrcs.add(normalizedSrc);
+        imageSrcs.push(src);
+    }
+
+    return imageSrcs;
+}
+
+function normalizeImageSrc(src) {
+    if (!src) return null;
+
+    try {
+        return new URL(src, window.location.href).href;
+    } catch (error) {
+        return src;
+    }
+}
+
 function rebuildModalCarouselWithActiveImage(activeImageSrc) {
     let imageSrcs = [
         activeImageSrc,
-        ...[...modalImgContainer.querySelectorAll('#carousel img')]
-            .map(img => img.src)
-            .filter(src => src !== activeImageSrc)
+        ...getUniqueModalCarouselImageSrcs(activeImageSrc)
     ];
 
     let carousel = document.getElementById('carousel');
