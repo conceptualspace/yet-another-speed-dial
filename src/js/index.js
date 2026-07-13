@@ -1329,8 +1329,9 @@ function saveBookmarkSettings() {
             }
 
             // update tile
-            targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
-            //targetNode.children[0].children[0].style.backgroundColor = bgColor;
+            const targetTileContent = targetNode.children[0].children[0];
+            targetTileContent.style.backgroundColor = "unset";
+            targetTileContent.style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
             break;
         }
     }
