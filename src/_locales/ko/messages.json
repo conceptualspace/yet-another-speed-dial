@@ -15,7 +15,7 @@
       "message": "배경색"
     },
     "bgColor": {
-      "message": "배경 색상"
+      "message": "배경"
     },
     "browse": {
       "message": "찾아보기..."
@@ -71,7 +71,7 @@
       "message": "홈"
     },
     "image": {
-      "message": "이미지"
+      "message": "이미지 파일"
     },
     "imageURL": {
       "message": "이미지 URL"

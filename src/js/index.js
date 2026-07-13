@@ -82,7 +82,6 @@ const closeImgUrlBtn = document.getElementById("closeImgUrlBtn");
 const fetchImageButton = document.getElementById("fetchImageButton");
 const modalBgColorPickerInput = document.getElementById("modalBgColorPickerInput");
 const modalBgColorPickerBtn = document.getElementById("modalBgColorPickerBtn");
-const modalBgColorPreview = document.getElementById("modalBgColorPreview");
 const noBookmarks = document.getElementById('noBookmarks');
 
 // settings sidebar
@@ -981,14 +980,10 @@ async function buildModal(url, title) {
         modalImgContainer.removeChild(carousel);
     }
 
-    let customCarousel = document.getElementById("customCarousel");
-    if (customCarousel) {
-        modalImgContainer.removeChild(customCarousel);
-    }
-
     let newCarousel = document.createElement('div');
     newCarousel.setAttribute('id', 'carousel');
     modalImgContainer.appendChild(newCarousel);
+    updateModalBackgroundPreview(modalBgColorPickerInput.value);
 
     //let createdCarousel = document.getElementById('carousel');
     modalTitle.value = title;
@@ -997,18 +992,10 @@ async function buildModal(url, title) {
     if (images && images.thumbnails.length) {
         // clunky af
         let index = images.thumbIndex;
-        let imgDiv = document.createElement('div');
-        let img = document.createElement('img');
-        img.crossOrigin = 'Anonymous';
-        img.setAttribute('src', images.thumbnails[index]);
-        img.style.width = 'auto';
-        img.style.height = '144px';
-        img.style.objectFit = 'contain';
-        img.style.maxWidth = '260px';
+        let img = appendModalCarouselImage(newCarousel, images.thumbnails[index]);
         img.onerror = function () {
             img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
         };
-        imgDiv.appendChild(img);
 
         img.onload = function () {
             // read the bg color and set the color picker preview
@@ -1019,102 +1006,72 @@ async function buildModal(url, title) {
             }
         }
 
-        newCarousel.appendChild(imgDiv);
         for (let [i, image] of images.thumbnails.entries()) {
             if (i !== index) {
-                let imgDiv = document.createElement('div');
-                let img = document.createElement('img');
-                img.crossOrigin = 'Anonymous';
-                img.setAttribute('src', image);
-                img.style.width = 'auto';
-                img.style.height = '144px';
-                img.style.objectFit = 'contain';
-                img.style.maxWidth = '260px';
+                let img = appendModalCarouselImage(newCarousel, image);
                 img.onerror = function () {
                     img.setAttribute('src', 'img/default.png'); // todo: cleanup
                 };
-                imgDiv.appendChild(img);
-                newCarousel.appendChild(imgDiv);
             }
         }
-        $('#carousel').flexCarousel({ height: '180px' });
-
-        // listen for carousel navigation to updade the bg color button preview
-        let fcNext = document.querySelector('.fc-next');
-        if (fcNext) {
-            fcNext.addEventListener('click', function () {
-                let cc = document.getElementById('customCarousel');
-                if (cc) {
-                    selectedImageSrc = customCarousel.children[0].src;
-                    let bgColor = getBgColor(customCarousel.children[0]);
-                    if (bgColor) {
-                        setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                    }
-                } else {
-                    let imageNodes = document.getElementsByClassName('fc-slide');
-                    for (let node of imageNodes) {
-                        // div with order "2" is the one being displayed by the carousel
-                        if (node.style.order === '2') {
-                            
-                            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
-                            if (node.children[0].className === "fc-image") {
-                                //selectedImageSrc = node.children[0].children[0].src;
-                                let bgColor = getBgColor(node.children[0].children[0]);
-                                if (bgColor) {
-                                    //setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                }
-                            } else {
-                                //selectedImageSrc = node.children[0].src;
-                                let bgColor = getBgColor(node.children[0]);
-                                if (bgColor) {
-                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        let fcPrev = document.querySelector('.fc-prev');
-        if (fcPrev) {
-            fcPrev.addEventListener('click', function () {
-                let cc = document.getElementById('customCarousel');
-                if (cc) {
-                    selectedImageSrc = customCarousel.children[0].src;
-                    let bgColor = getBgColor(customCarousel.children[0]);
-                    if (bgColor) {
-                        setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                    }
-                } else {
-                    let imageNodes = document.getElementsByClassName('fc-slide');
-                    for (let node of imageNodes) {
-                        // div with order "2" is the one being displayed by the carousel
-                        if (node.style.order === '2') {
-                            
-                            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
-                            if (node.children[0].className === "fc-image") {
-                                //selectedImageSrc = node.children[0].children[0].src;
-                                let bgColor = getBgColor(node.children[0].children[0]);
-                                if (bgColor) {
-                                    //setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                }
-                            } else {
-                                //selectedImageSrc = node.children[0].src;
-                                let bgColor = getBgColor(node.children[0]);
-                                if (bgColor) {
-                                    setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        initModalCarousel(images.bgColor);
 
     }
+}
+
+function appendModalCarouselImage(carousel, src) {
+    let imgDiv = document.createElement('div');
+    let img = document.createElement('img');
+    img.crossOrigin = 'Anonymous';
+    img.setAttribute('src', src);
+    img.style.width = 'auto';
+    img.style.height = '144px';
+    img.style.objectFit = 'contain';
+    img.style.maxWidth = '260px';
+    imgDiv.appendChild(img);
+    carousel.appendChild(imgDiv);
+    return img;
+}
+
+function initModalCarousel(activeBgColor = null) {
+    $('#carousel').flexCarousel({ height: '180px' });
+    initModalCarouselPreviewPlates(activeBgColor);
+
+    let fcNext = document.querySelector('.fc-next');
+    if (fcNext) {
+        fcNext.addEventListener('click', syncModalBackgroundPreviewToActiveSlide);
+    }
+
+    let fcPrev = document.querySelector('.fc-prev');
+    if (fcPrev) {
+        fcPrev.addEventListener('click', syncModalBackgroundPreviewToActiveSlide);
+    }
+}
+
+function rebuildModalCarouselWithActiveImage(activeImageSrc) {
+    let imageSrcs = [
+        activeImageSrc,
+        ...[...modalImgContainer.querySelectorAll('#carousel img')]
+            .map(img => img.src)
+            .filter(src => src !== activeImageSrc)
+    ];
+
+    let carousel = document.getElementById('carousel');
+    if (carousel) {
+        modalImgContainer.removeChild(carousel);
+    }
+
+    let newCarousel = document.createElement('div');
+    newCarousel.setAttribute('id', 'carousel');
+    let activePreview = null;
+    imageSrcs.forEach((src, index) => {
+        let preview = appendModalCarouselImage(newCarousel, src);
+        if (index === 0) activePreview = preview;
+    });
+    modalImgContainer.appendChild(newCarousel);
+    updateModalBackgroundPreview(modalBgColorPickerInput.value);
+    initModalCarousel();
+    setModalPreviewPlateColorFromImage(activePreview, true);
 }
 
 function rectifyUrl(url) {
@@ -1324,86 +1281,50 @@ function saveBookmarkSettings() {
     let bgColor = null;
     let colorPickerColor = modalBgColorPickerInput.value;
 
-    let customCarousel = document.getElementById('customCarousel');
-    if (customCarousel) {
-        selectedImageSrc = customCarousel.children[0].src;
-        bgColor = getBgColor(customCarousel.children[0]);
-        if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
-            //console.log("colors dont match, using the picker!")
-            bgColor = hexToCssGradient(colorPickerColor);
-        } else {
-            bgColor = rgbaToCssGradient(bgColor);
+    for (let node of imageNodes) {
+        // div with order "2" is the one being displayed by the carousel
+        if (node.style.order === '2' || imageNodes.length === 1) {
+            // sometimes the carousel puts images inside a <figure class="fc-image"> elem
+            if (node.children[0].className === "fc-image") {
+                selectedImageSrc = node.children[0].children[0].src;
+                bgColor = getBgColor(node.children[0].children[0]);
+            } else {
+                selectedImageSrc = node.children[0].src;
+                bgColor = getBgColor(node.children[0]);
+            }
+
+            if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
+                bgColor = hexToCssGradient(colorPickerColor);
+            } else {
+                bgColor = rgbaToCssGradient(bgColor);
+            }
+
+            // update tile
+            targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
+            //targetNode.children[0].children[0].style.backgroundColor = bgColor;
+            break;
         }
-        targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
-        //targetNode.children[0].children[0].style.backgroundColor = bgColor;
-        chrome.storage.local.get(url)
-            .then(result => {
-                let thumbnails = [];
-                if (result[url]) {
-                    thumbnails = result[url].thumbnails;
+    }
+
+    chrome.storage.local.get(url)
+        .then(result => {
+            if (selectedImageSrc) {
+                let thumbnails = result[url]?.thumbnails || [];
+                thumbIndex = thumbnails.indexOf(selectedImageSrc);
+                if (thumbIndex < 0) {
                     thumbnails.push(selectedImageSrc);
-                    thumbIndex = thumbnails.indexOf(selectedImageSrc);
-                } else {
-                    thumbnails.push(selectedImageSrc);
-                    thumbIndex = 0;
+                    thumbIndex = thumbnails.length - 1;
                 }
                 chrome.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
                     //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
-                    if (title !== targetTileTitle) {
-                        updateTitle()
-                    }
-                });
-            });
-    } else {
-        for (let node of imageNodes) {
-            // div with order "2" is the one being displayed by the carousel
-            if (node.style.order === '2' || imageNodes.length === 1) {
-                // sometimes the carousel puts images inside a <figure class="fc-image"> elem
-                if (node.children[0].className === "fc-image") {
-                    selectedImageSrc = node.children[0].children[0].src;
-                    bgColor = getBgColor(node.children[0].children[0]);
-                } else {
-                    selectedImageSrc = node.children[0].src;
-                    bgColor = getBgColor(node.children[0]);
-                }
-
-                if (colorPickerColor && colorPickerColor !== rgbToHex(bgColor)) {
-                    bgColor = hexToCssGradient(colorPickerColor);
-                } else {
-                    bgColor = rgbaToCssGradient(bgColor);
-                }
-
-                // update tile
-                targetNode.children[0].children[0].style.backgroundImage = `url('${selectedImageSrc}'), ${bgColor}`;
-                //targetNode.children[0].children[0].style.backgroundColor = bgColor;
-                break;
-            }
-        }
-
-        chrome.storage.local.get(url)
-            .then(result => {
-                if (result[url]) {
-                    let thumbnails = result[url].thumbnails;
-                    thumbIndex = thumbnails.indexOf(selectedImageSrc);
-                    if (thumbIndex >= 0) {
-                        chrome.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
-                            //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
-                            if (title !== targetTileTitle || url !== newUrl) {
-                                updateTitle()
-                            }
-                        });
-                    } else {
-                        if (title !== targetTileTitle || url !== newUrl) {
-                            updateTitle()
-                        }
-                    }
-                } else {
                     if (title !== targetTileTitle || url !== newUrl) {
                         updateTitle()
                     }
-                }
-            });
-    }
+                });
+            } else if (title !== targetTileTitle || url !== newUrl) {
+                updateTitle()
+            }
+        });
 
     // find image index
     function updateTitle() {
@@ -1873,31 +1794,7 @@ function readImage(input) {
 function addImage(image) {
     let carousel = document.getElementById('carousel');
     if (carousel) {
-        carousel.style.display = "none";
-        let customCarousel = document.getElementById('customCarousel');
-        if (customCarousel) {
-            customCarousel.remove();
-        }
-        customCarousel = document.createElement('div');
-        customCarousel.setAttribute('id', 'customCarousel');
-        customCarousel.style.height = "180px";
-
-        let preview = document.createElement('img');
-        preview.style.height = '100%';
-        preview.style.width = '100%';
-        preview.style.objectFit = 'contain';
-        preview.setAttribute('src', image);
-
-        customCarousel.appendChild(preview);
-        modalImgContainer.appendChild(customCarousel);
-
-        // set the color picker to the new image bg color
-        preview.onload = function() {
-            let bgColor = getBgColor(preview);
-            if (bgColor) {
-                setInputValue(modalBgColorPickerInput, rgbToHex(bgColor))
-            }
-        };
+        rebuildModalCarouselWithActiveImage(image);
     }
 }
 
@@ -2550,9 +2447,7 @@ modalImgUrlBtn.addEventListener('click', function (event) {
 
 closeImgUrlBtn.addEventListener('click', function (event) {
     event.preventDefault();
-    document.getElementById('modalBtnContainer').style.display = 'flex';
-    document.getElementById('imageUrlContainer').style.display = 'none';
-    modalImageURLInput.value = '';
+    hideImageUrlInput();
 });
 
 // fetch the image from the url
@@ -2562,12 +2457,19 @@ fetchImageButton.addEventListener('click', function (event) {
     if (imageUrl) {
         resizeThumb(imageUrl).then(resizedImage => {
             addImage(resizedImage);
+            hideImageUrlInput();
         }).catch(error => {
             // todo: show error message to user in the modal
             console.error('Error adding image from URL:', error);
         });
     }
 });
+
+function hideImageUrlInput() {
+    document.getElementById('modalBtnContainer').style.display = 'flex';
+    document.getElementById('imageUrlContainer').style.display = 'none';
+    modalImageURLInput.value = '';
+}
 
 modalBgColorPickerBtn.addEventListener('click', function (e) {
     if (e.target === modalBgColorPickerInput) return;
@@ -2576,9 +2478,88 @@ modalBgColorPickerBtn.addEventListener('click', function (e) {
 
 modalBgColorPickerInput.addEventListener('input', function () {
     const color = this.value;
-    // set the our button color to match
-    modalBgColorPreview.style.fill = color;
+    updateModalBackgroundPreview(color);
 });
+
+function syncModalBackgroundPreviewToActiveSlide() {
+    const preview = getActiveModalPreviewImage();
+    const plateColor = cssColorToHex(getModalPreviewPlate(preview)?.style.backgroundColor);
+    if (plateColor) {
+        setInputValue(modalBgColorPickerInput, plateColor);
+        return;
+    }
+
+    const bgColor = preview ? getBgColor(preview) : null;
+    if (bgColor) setInputValue(modalBgColorPickerInput, rgbToHex(bgColor));
+}
+
+function updateModalBackgroundPreview(color) {
+    const previewColor = color || '#FFFFFF';
+    const isSquareDial = settings?.dialRatio === 'square';
+    setModalPreviewPlateColor(getActiveModalPreviewImage(), previewColor);
+    modalImgContainer.style.setProperty('--modal-preview-width', isSquareDial ? '180px' : '260px');
+    modalImgContainer.style.setProperty('--modal-preview-height', isSquareDial ? '180px' : '146px');
+}
+
+function initModalCarouselPreviewPlates(activeBgColor) {
+    const activePreviewColor = activeBgColor ? rgbToHex(cssGradientToHex(activeBgColor)) : null;
+    const previews = [...modalImgContainer.querySelectorAll('#carousel img')];
+    previews.forEach((preview, index) => {
+        if (index === 0 && activePreviewColor) {
+            setModalPreviewPlateColor(preview, activePreviewColor);
+            return;
+        }
+        setModalPreviewPlateColorFromImage(preview);
+    });
+}
+
+function setModalPreviewPlateColorFromImage(preview, syncPicker = false) {
+    if (!preview) return;
+
+    const setColor = () => {
+        const bgColor = getBgColor(preview);
+        if (bgColor) {
+            const color = rgbToHex(bgColor);
+            setModalPreviewPlateColor(preview, color);
+            if (syncPicker) setInputValue(modalBgColorPickerInput, color);
+        }
+    };
+
+    if (preview.complete && preview.naturalWidth) {
+        setColor();
+    } else {
+        preview.addEventListener('load', setColor, { once: true });
+    }
+}
+
+function getActiveModalPreviewImage() {
+    const imageNodes = document.getElementsByClassName('fc-slide');
+    for (let node of imageNodes) {
+        if (node.style.order === '2' || imageNodes.length === 1) return node.querySelector('img');
+    }
+
+    return null;
+}
+
+function setModalPreviewPlateColor(preview, color) {
+    if (!preview) return;
+
+    const plate = getModalPreviewPlate(preview);
+    if (plate) plate.style.backgroundColor = color;
+}
+
+function getModalPreviewPlate(preview) {
+    return preview?.closest('.fc-image') || (preview?.parentElement?.classList.contains('fc-slide') ? preview : null);
+}
+
+function cssColorToHex(color) {
+    if (!color || color.startsWith('#')) return color;
+
+    const match = color.match(/^rgba?\(([^)]+)\)$/);
+    if (!match) return color;
+
+    return rgbToHex(match[1].split(',').map(Number));
+}
 
 // helper function for when we set the color picker value programmatically to update our button
 function setInputValue(inputElement, value) {

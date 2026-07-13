@@ -15,7 +15,7 @@
     "message": "Kolor tła"
   },
   "bgColor": {
-    "message": "Kolor tła"
+    "message": "Tło"
   },
   "browse": {
     "message": "Przeglądaj..."
@@ -71,7 +71,7 @@
     "message": "Strona główna"
   },
   "image": {
-    "message": "Obraz"
+    "message": "Plik obrazu"
   },
   "imageURL": {
     "message": "URL obrazu"

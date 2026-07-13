@@ -15,7 +15,7 @@
     "message": "Цвет фона"
   },
   "bgColor": {
-    "message": "Цвет фона"
+    "message": "Фон"
   },
   "browse": {
     "message": "Обзор..."
@@ -71,10 +71,10 @@
     "message": "Домой"
   },
   "image": {
-    "message": "Изображение"
+    "message": "Файл изображения"
   },
   "imageURL": {
-    "message": "Изображение URL"
+    "message": "URL изображения"
   },
   "import": {
     "message": "Импорт настроек..."

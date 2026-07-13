@@ -15,7 +15,7 @@
     "message": "Colore di sfondo"
   },
   "bgColor": {
-    "message": "Colore BG"
+    "message": "Sfondo"
   },
   "browse": {
     "message": "Sfoglia..."
@@ -71,10 +71,10 @@
     "message": "Home"
   },
   "image": {
-    "message": "Immagine"
+    "message": "File immagine"
   },
   "imageURL": {
-    "message": "URL Immagine"
+    "message": "URL immagine"
   },
   "import": {
     "message": "Importa impostazioni..."

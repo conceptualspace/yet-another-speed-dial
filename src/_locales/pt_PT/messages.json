@@ -15,7 +15,7 @@
     "message": "Cor de fundo"
   },
   "bgColor": {
-    "message": "Cor BG"
+    "message": "Fundo"
   },
   "browse": {
     "message": "Procurar..."
@@ -71,10 +71,10 @@
     "message": "Início"
   },
   "image": {
-    "message": "Imagem"
+    "message": "Ficheiro de imagem"
   },
   "imageURL": {
-    "message": "URL Imagem"
+    "message": "URL da imagem"
   },
   "import": {
     "message": "Configurações de importação..."

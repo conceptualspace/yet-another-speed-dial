@@ -15,7 +15,7 @@
     "message": "Hintergrundfarbe"
   },
   "bgColor": {
-    "message": "BG-Farbe"
+    "message": "Hintergrund"
   },
   "browse": {
     "message": "Durchsuche..."
@@ -71,7 +71,7 @@
     "message": "Zuhause"
   },
   "image": {
-    "message": "Bild"
+    "message": "Bilddatei"
   },
   "imageURL": {
     "message": "Bild-URL"

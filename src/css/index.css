@@ -27,6 +27,19 @@
     margin: .6em 0;
 }
 
+#modalBtnContainer {
+    gap: .5em;
+    align-items: stretch;
+    justify-content: stretch;
+    flex-wrap: nowrap;
+}
+
+#modalBtnContainer .formItem {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: .25em;
+}
 
 @font-face {
     font-family: 'Noto Sans';
@@ -661,6 +674,9 @@ a {
 
 #modalImgContainer {
     padding-bottom: 1em;
+    --modal-preview-bg: #FFFFFF;
+    --modal-preview-width: 260px;
+    --modal-preview-height: 146px;
 }
 
 .modal [type="file"] {
@@ -768,6 +784,19 @@ a {
     background-color: #111111;
 }
 
+#modalBtnContainer .action {
+    flex-direction: column;
+    height: 100%;
+    min-height: 68px;
+    gap: .35em;
+    padding: .65em .5em;
+    line-height: 1.2;
+    white-space: normal;
+    text-align: center;
+    background-color: #171717;
+    /* border: 1px solid #2a2a2a; */
+}
+
 .formItem > .actionSecondary {
     background-color: #111111;
 }
@@ -807,6 +836,15 @@ a {
     vertical-align: middle;
 }
 
+#modalBtnContainer .action svg {
+    margin-right: 0;
+}
+
+#modalBgColorPreview {
+    transform: scale(0.88);
+    transform-origin: center;
+}
+
 .formItem > .save {
     /* background-color: #13ac4e; */
     background-color: #1681d9;
@@ -827,6 +865,10 @@ a {
 
 .formItem > .action:hover::after {
     transform: scaleX(1);
+}
+
+#modalBtnContainer .action:hover {
+    background-color: #1b1f24;
 }
 
 .formItem > .close:hover {
@@ -871,7 +913,13 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     display: none;
     align-items: center;
     justify-content: center;
+    min-height: 74px;
+    margin: .6em 0;
     position: relative;
+}
+
+#modalImageURLInput {
+    padding-right: 24px;
 }
 
 #fetchImageButton {
@@ -895,6 +943,29 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     padding: 0;
 }
 
+#modalImgContainer .fc-slide {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modalImgContainer .fc-image {
+    width: min(var(--modal-preview-width), 100%);
+    height: var(--modal-preview-height);
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--modal-preview-bg);
+    border-radius: 7px;
+}
+
+#modalImgContainer .fc-slide > img {
+    width: min(var(--modal-preview-width), 100%) !important;
+    height: var(--modal-preview-height) !important;
+    object-fit: contain;
+    background-color: var(--modal-preview-bg);
+    border-radius: 7px;
+}
+
 .fc-slide img {
     max-height: 180px;
     max-width: 100%;
@@ -903,6 +974,13 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 .fc-image img, .fc-image picture {
     max-height: 180px;
     max-width: 100%;
+}
+
+#modalImgContainer .fc-image img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain;
+    border-radius: inherit;
 }
 
 .fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {

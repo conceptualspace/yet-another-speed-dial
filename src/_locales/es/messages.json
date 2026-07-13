@@ -15,7 +15,7 @@
     "message": "Color de fondo"
   },
   "bgColor": {
-    "message": "Color BG"
+    "message": "Fondo"
   },
   "browse": {
     "message": "Navegar..."
@@ -71,10 +71,10 @@
     "message": "Inicio"
   },
   "image": {
-    "message": "Imagen"
+    "message": "Archivo de imagen"
   },
   "imageURL": {
-    "message": "Imagen URL"
+    "message": "URL de imagen"
   },
   "import": {
     "message": "Importar ajustes..."

@@ -15,7 +15,7 @@
     "message": "背景色"
   },
   "bgColor": {
-    "message": "BGカラー"
+    "message": "背景"
   },
   "browse": {
     "message": "参照..."
@@ -71,7 +71,7 @@
     "message": "ホーム"
   },
   "image": {
-    "message": "画像"
+    "message": "画像ファイル"
   },
   "imageURL": {
     "message": "画像URL"

@@ -15,7 +15,7 @@
     "message": "背景颜色"
   },
   "bgColor": {
-    "message": "背景色"
+    "message": "背景"
   },
   "browse": {
     "message": "浏览..."
@@ -71,10 +71,10 @@
     "message": "主页"
   },
   "image": {
-    "message": "图片"
+    "message": "图片文件"
   },
   "imageURL": {
-    "message": "图片URL"
+    "message": "图片 URL"
   },
   "import": {
     "message": "导入设置..."

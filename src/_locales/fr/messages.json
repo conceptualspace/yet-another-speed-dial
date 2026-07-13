@@ -15,7 +15,7 @@
     "message": "Contexte Couleur"
   },
   "bgColor": {
-    "message": "Couleur BG"
+    "message": "Arrière-plan"
   },
   "browse": {
     "message": "Feuilleter..."
@@ -71,10 +71,10 @@
     "message": "Accueil"
   },
   "image": {
-    "message": "Image"
+    "message": "Fichier image"
   },
   "imageURL": {
-    "message": "URL Image"
+    "message": "URL de l'image"
   },
   "import": {
     "message": "Importer les paramètres..."
