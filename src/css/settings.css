@@ -289,36 +289,48 @@
 }
 
 #historyDiv .history-panel-header {
-    padding: 0 25px;
+    margin: 0 25px;
+    padding: 3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .history-panel-header {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 4px;
     flex: 0 0 auto;
-    padding: 0;
 }
 
 .history-panel-tabs {
     display: flex;
     flex: 1;
     gap: 4px;
-    margin: 0.7em 0 0.5em 0;
-    padding: 3px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.08);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
 }
 
 #closeHistoryBtn {
     position: static;
     top: auto;
     right: auto;
-    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
+    flex: 0 0 42px;
+    border-radius: 4px;
+}
+
+#closeHistoryBtn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
 }
 
 .sidenav .history-panel-tab {
     flex: 1;
+    min-width: 0;
     padding: 0.45em 0.6em;
     border-radius: 4px;
     background: transparent;
