@@ -1574,7 +1574,8 @@ function flip(options = {}) {
     const span = anim.length > 1 ? anim.length - 1 : 1;
     for (let i = 0; i < anim.length; i++) {
         const node = anim[i].node;
-        const delay = (i / span) * staggerWindow;
+        const effectiveStaggerWindow = anim.length < 20 ? staggerWindow / 2 : staggerWindow;
+        const delay = (i / span) * effectiveStaggerWindow;
         node.style.transition = `transform ${duration}ms ${FLIP_EASING} ${delay}ms`;
         node.style.transform = '';
     }
