@@ -17,6 +17,7 @@
 #historyDiv {
     display: flex;
     flex-direction: column;
+    padding: 14px 0;
     overflow: hidden;
     scrollbar-width: none;
 }
@@ -287,6 +288,10 @@
     padding: 0.3em 0;
 }
 
+#historyDiv .history-panel-header {
+    padding: 0 25px;
+}
+
 .history-panel-header {
     display: flex;
     align-items: center;
@@ -358,12 +363,13 @@
 }
 
 .sidenav .recent-tab {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 12px;
     width: 100%;
     min-height: 56px;
-    padding: 10px 0;
+    padding: 10px 25px;
     border: none;
     border-bottom: 1px solid #222;
     background: #000;
@@ -425,6 +431,8 @@
 .recent-tabs-empty,
 .history-empty,
 .other-devices-empty {
+    margin-right: 25px;
+    margin-left: 25px;
     margin-top: 1em;
     color: rgba(255, 255, 255, 0.65);
     line-height: 1.4;
