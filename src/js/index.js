@@ -173,6 +173,7 @@ const FLIP_DURATION = 420;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
+const LARGE_FOLDER_RESIZE_FLIP_LIMIT = 1000; // skip resize FLIP above this count to keep resize responsive
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
@@ -3441,16 +3442,43 @@ function handleMessages(message) {
     }
 }
 
+function getCurrentFolderContainer() {
+    return document.getElementById(currentFolder || speedDialId);
+}
+
+function isLargeResizeFolder() {
+    const container = getCurrentFolderContainer();
+    return container && container.children.length > LARGE_FOLDER_RESIZE_FLIP_LIMIT;
+}
+
+function clearResizeHoldPins() {
+    for (const node of flipHoldPins.keys()) {
+        node.style.transition = 'none';
+        node.style.transform = '';
+    }
+    flipHoldPins.clear();
+    flipHoldAnchor = null;
+}
+
 function onResize() {
     // Every resize -- a maximize/snap (one event) or a slow edge-drag (many
     // events) -- pins each tile at its pre-drag spot via flipHold so the grid sits
     // still while the viewport changes, then plays one staggered settle wave (flip)
     // once the resize goes quiet. The hold keeps flipPrevRects on the original
     // layout so the settle wave has the full delta to stagger across.
+    if (isLargeResizeFolder()) {
+        resizeFlipScheduled = false;
+        clearResizeHoldPins();
+        clearTimeout(resizeSettleTimer);
+        resizeSettleTimer = setTimeout(recalcFlipRects, RESIZE_SETTLE_DELAY);
+        return;
+    }
+
     if (!resizeFlipScheduled) {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
             resizeFlipScheduled = false;
+            if (isLargeResizeFolder()) return;
             flipHold();
         });
     }
