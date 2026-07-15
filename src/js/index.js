@@ -1778,16 +1778,15 @@ function resizeThumb(dataURI) {
         let img = new Image();
         img.onload = async function () {
             if (this.height > 256 || this.width > 256) {
-                // when im less lazy check use optimal w/h based on image
-                // set height to 256 and scale
-                //let height = 256;
-                let height = 144;
+                // todo: maybe proper 2x hidpi check
+                let height = 288;
                 let ratio = height / this.height;
                 let width = Math.round(this.width * ratio);
 
                 let canvas = new OffscreenCanvas(width, height)
                 let ctx = canvas.getContext('2d', { willReadFrequently: true });
                 ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
                 ctx.drawImage(this, 0, 0, width, height);
 
                 // Use convertToBlob instead of toDataURL
