@@ -152,7 +152,7 @@ let layoutFolder = false;
 // positions, invert, then hand off to a `transform` transition), so per-frame
 // style recalc cost is independent of how many tiles are on screen.
 let flipGen = 0;                     // generation token so stale cleanups bail out
-let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
+let resizeFlipScheduled = false;     // rAF throttle: coalesce a burst of resize events into one pass/frame
 let flipCleanupTimer = null;         // pending transition teardown for the resize flip
 let lastResizeW = window.innerWidth;  // last seen viewport size, to measure each resize step
 let lastResizeH = window.innerHeight;
@@ -3202,13 +3202,26 @@ function handleMessages(message) {
 }
 
 function onResize() {
+    // The browser fires a burst of resize events per window drag/maximize -- often
+    // several per animation frame. Coalesce them into a single pass per frame so we
+    // measure the viewport and drive the FLIP once per paint, keeping the animation
+    // smooth (and avoiding layout thrash from reading innerWidth/Height per event).
+    if (resizeFlipScheduled) return;
+    resizeFlipScheduled = true;
+    requestAnimationFrame(() => {
+        resizeFlipScheduled = false;
+        processResize();
+    });
+}
+
+function processResize() {
     // A single large step -- maximize, un-maximize, or a tiling/snap -- arrives as
     // one big jump in viewport size and should play the staggered settle wave, just
     // as it did before the resize refactor (back then every resize ran the staggered
     // flip(); a maximize is essentially one event, so it got the full wave, while a
     // manual drag's stream of tiny events reset each other and snapped). A manual
     // edge-drag arrives as many small steps and should instead follow the cursor
-    // smoothly with no stagger. We tell them apart by the size of each step.
+    // smoothly with no stagger. We tell them apart by the size of each per-frame step.
     const w = window.innerWidth;
     const h = window.innerHeight;
     const step = Math.abs(w - lastResizeW) + Math.abs(h - lastResizeH);
@@ -3221,13 +3234,8 @@ function onResize() {
         return;
     }
 
-    // manual drag: smooth immediate follow, throttled to one pass per frame
-    if (resizeFlipScheduled) return;
-    resizeFlipScheduled = true;
-    requestAnimationFrame(() => {
-        resizeFlipScheduled = false;
-        flipResize();
-    });
+    // manual drag: smooth immediate follow
+    flipResize();
 }
 
 function init() {
