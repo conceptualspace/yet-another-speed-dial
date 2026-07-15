@@ -1480,6 +1480,9 @@ function flip(options = {}) {
     const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
     flipHoldAnchor = null;
 
+    clearTimeout(flipCleanupTimer);
+    flipCleanupTimer = null;
+
     // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
     // a later hold starts from a clean slate (the transforms themselves are
     // cleared by the read pass below).
@@ -1582,8 +1585,9 @@ function flip(options = {}) {
 
     // once settled, drop the transition so it can't interfere with drag/sort.
     // guarded by the generation token so a newer flip isn't clobbered.
-    setTimeout(() => {
+    flipCleanupTimer = setTimeout(() => {
         if (gen !== flipGen) return;
+        flipCleanupTimer = null;
         for (const item of anim) {
             if (item.node.style.transform === '') {
                 item.node.style.transition = '';
@@ -1636,6 +1640,20 @@ function flipHold() {
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     if (!nodes.length) return;
+
+    // A resize can interrupt a settle transition while getBoundingClientRect()
+    // still includes its transform. Return to the cached resting basis before
+    // measuring, otherwise the hold inverse mixes visual and layout positions.
+    if (flipCleanupTimer !== null) {
+        clearTimeout(flipCleanupTimer);
+        flipCleanupTimer = null;
+        ++flipGen;
+        flipHoldPins.clear();
+        for (const node of nodes) {
+            node.style.transition = 'none';
+            node.style.transform = '';
+        }
+    }
 
     if (!flipHoldAnchor) {
         flipHoldAnchor = captureFlipScrollAnchor(nodes);
