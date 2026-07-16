@@ -3440,13 +3440,13 @@ function handleMessages(message) {
     }
 }
 
+let resizeActive = false;
+
 function onResize() {
-    // Every resize -- a maximize/snap (one event) or a slow edge-drag (many
-    // events) -- pins each tile at its pre-drag spot via flipHold so the grid sits
-    // still while the viewport changes, then plays one staggered settle wave (flip)
-    // once the resize goes quiet. The hold keeps flipPrevRects on the original
-    // layout so the settle wave has the full delta to stagger across.
-    if (!resizeFlipScheduled) {
+    if (!resizeActive) {
+        resizeActive = true;
+        flipHold();
+    } else if (!resizeFlipScheduled) {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
             resizeFlipScheduled = false;
@@ -3454,11 +3454,10 @@ function onResize() {
         });
     }
 
-    // once the drag goes quiet, replay one staggered settle wave so a slow manual
-    // resize ends with the same flourish as a maximize/snap jump
     clearTimeout(resizeSettleTimer);
     resizeSettleTimer = setTimeout(() => {
-        flip();
+        resizeActive = false;
+        flip({ staggerWindow: 0 });
     }, RESIZE_SETTLE_DELAY);
 }
 
