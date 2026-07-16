@@ -153,17 +153,8 @@ let layoutFolder = false;
 // positions, invert, then hand off to a `transform` transition), so per-frame
 // style recalc cost is independent of how many tiles are on screen.
 let flipGen = 0;                     // generation token so stale cleanups bail out
-let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
-let flipCleanupTimer = null;         // pending transition teardown for the resize flip
-let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
-const RESIZE_SETTLE_DELAY = 80;     // ms of resize quiet before the settle wave plays. Must
-                                     // exceed the gaps between resize events on a slow edge-drag
-                                     // (the mouse pausing mid-drag while the button is held). A
-                                     // premature settle rewrites the frozen flipPrevRects and gets
-                                     // hard-cut by the next flipHold, which reads as snapping.
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
-const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
-let flipHoldAnchor = null;           // scroll anchor frozen for an in-progress resize hold
+let pendingFlipScrollAnchor = null;  // optional pre-layout anchor consumed by the next flip
 let flipPrevContainerTop = null;     // tileContainer's screen top for the layout stored in
                                      // flipPrevRects. Content coords subtract the container top,
                                      // so a shift of the whole tileContainer (folders header
@@ -172,7 +163,6 @@ let flipPrevContainerTop = null;     // tileContainer's screen top for the layou
 const FLIP_DURATION = 420;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
-const RESIZE_HOLD_MARGIN_MULTIPLIER = 3; // viewports of resize lookahead for dense folders
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
@@ -1477,13 +1467,8 @@ function flip(options = {}) {
     const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
-    const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
-    flipHoldAnchor = null;
-
-    // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
-    // a later hold starts from a clean slate (the transforms themselves are
-    // cleared by the read pass below).
-    flipHoldPins.clear();
+    const scrollAnchor = pendingFlipScrollAnchor || captureFlipScrollAnchor(nodes);
+    pendingFlipScrollAnchor = null;
 
     if (!nodes.length) {
         flipPrevRects.clear();
@@ -1628,105 +1613,6 @@ function recalcFlipRects() {
     }
 
     flipPrevContainerTop = containerRect.top;
-}
-
-// Resize HOLD. While the window is being dragged the flex grid reflows every
-// frame; for performance we dont let each tile chase the edge
-function flipHold() {
-    const parent = currentFolder || speedDialId;
-    const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
-    if (!nodes.length) return;
-
-    if (!flipHoldAnchor) {
-        flipHoldAnchor = captureFlipScrollAnchor(nodes);
-    }
-
-    const holdMargin = Math.max(FLIP_MARGIN, window.innerHeight * RESIZE_HOLD_MARGIN_MULTIPLIER);
-    const anchorScrollTop = flipHoldAnchor ? flipHoldAnchor.scrollTop : bookmarksContainerParent.scrollTop;
-    const anchorScrollLeft = flipHoldAnchor ? flipHoldAnchor.scrollLeft : bookmarksContainerParent.scrollLeft;
-    const viewportHeight = bookmarksContainerParent.clientHeight;
-    const candidates = [];
-
-    for (const node of nodes) {
-        const prev = flipPrevRects.get(node);
-        if (!prev) continue; // brand-new tile: leave at rest
-        candidates.push({ node, prev });
-    }
-
-    if (!candidates.length) return;
-
-    // READ pass: measure every candidate's current on-screen rect in one batch
-    const reads = [];
-    const containerRect = bookmarksContainerParent.getBoundingClientRect();
-    const readScrollLeft = bookmarksContainerParent.scrollLeft;
-    const readScrollTop = bookmarksContainerParent.scrollTop;
-    for (const item of candidates) {
-        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
-        if (r.width === 0 && r.height === 0) continue;
-
-        const applied = flipHoldPins.get(item.node);
-        const flexLeft = applied ? r.left - applied.dx : r.left;
-        const flexTop = applied ? r.top - applied.dy : r.top;
-        const current = {
-            left: flexLeft,
-            top: flexTop,
-            bottom: flexTop + r.height,
-            width: r.width,
-            height: r.height
-        };
-        const old = {
-            left: item.prev.left,
-            top: item.prev.top,
-            bottom: item.prev.top + item.prev.height,
-            width: item.prev.width,
-            height: item.prev.height
-        };
-        const read = {
-            node: item.node,
-            flexLeft,
-            flexTop,
-            prev: item.prev,
-            oldNearViewport: isContentRectNearViewport(old, anchorScrollTop, viewportHeight, holdMargin),
-            currentNearViewport: isContentRectNearViewport(current, readScrollTop, viewportHeight, holdMargin),
-            hadPin: !!applied
-        };
-        reads.push(read);
-    }
-
-    // Observe the browser's current scroll instead of writing it. The pin math
-    // below glues every tile to `prev.top - anchorScrollTop` in viewport space
-    // regardless of the scroll value, so we don't need to move the scrollbar to
-    // hold the grid still
-    const scrollState = { left: readScrollLeft, top: readScrollTop };
-
-    // WRITE pass: pin each tile back to its frozen pre-resize spot
-    for (const item of reads) {
-        if (!item.oldNearViewport && !item.currentNearViewport) {
-            if (item.hadPin) {
-                item.node.style.transform = '';
-                flipHoldPins.delete(item.node);
-            }
-            continue;
-        }
-
-        const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
-        // include the tileContainer's screen shift (folders header wrap) so tiles hold
-        // their on-screen spot, not just their spot relative to the moving container
-        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top)
-            + (flipPrevContainerTop != null ? flipPrevContainerTop - containerRect.top : 0);
-
-        if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
-            if (item.hadPin) {
-                item.node.style.transform = '';
-                flipHoldPins.delete(item.node);
-            }
-            continue;
-        }
-
-        if (!item.hadPin) item.node.style.transition = 'none';
-        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
-        flipHoldPins.set(item.node, { dx, dy });
-    }
 }
 
 const animate = debounce(() => {
@@ -1981,9 +1867,9 @@ function applySettings(options = {}) {
         // shorter and the browser instantly clamps scrollTop to the new, smaller max.
         // Reading the anchor after that clamp (flip()'s own fallback capture) uses the
         // already-clamped scroll, desyncs the FLIP scroll restore, and the dials jump up.
-        // Capturing here preserves the pre-reflow scroll; flip() consumes it via flipHoldAnchor.
+        // Capturing here preserves the pre-reflow scroll; flip() consumes it on this layout pass.
         const anchorParent = currentFolder || speedDialId;
-        flipHoldAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
+        pendingFlipScrollAnchor = captureFlipScrollAnchor(document.querySelectorAll(`[id="${anchorParent}"] > .tile`));
 
         // content-visilibity set here for perf on folder navigation. test flip animations arent borked
         // todo: clean up
@@ -3440,25 +3326,10 @@ function handleMessages(message) {
     }
 }
 
-let resizeActive = false;
-
 function onResize() {
-    if (!resizeActive) {
-        resizeActive = true;
-        flipHold();
-    } else if (!resizeFlipScheduled) {
-        resizeFlipScheduled = true;
-        requestAnimationFrame(() => {
-            resizeFlipScheduled = false;
-            flipHold();
-        });
-    }
-
-    clearTimeout(resizeSettleTimer);
-    resizeSettleTimer = setTimeout(() => {
-        resizeActive = false;
-        flip({ staggerWindow: 0 });
-    }, RESIZE_SETTLE_DELAY);
+    // Complete LAST/INVERT/PLAY before returning from the resize event. Deferring
+    // any phase lets Chrome paint the new flex layout before FLIP is installed.
+    flip({ staggerWindow: 300 });
 }
 
 function init() {
