@@ -1853,12 +1853,14 @@ function flipHold() {
     }
 
     // Observe the browser's current scroll instead of writing it. The pin math
-    // below glues every tile to `prev.top - anchorScrollTop` within the tile
-    // viewport regardless of the scroll value, while allowing the viewport
-    // itself to follow folder-header row changes.
+    // below holds each tile in screen space, including any tileContainer shift
+    // caused by the folders header wrapping or unwrapping.
     const scrollState = { left: readScrollLeft, top: readScrollTop };
+    const containerTopDelta = flipPrevContainerTop != null
+        ? flipPrevContainerTop - containerRect.top
+        : 0;
 
-    // WRITE pass: pin each tile back to its frozen spot within tileContainer
+    // WRITE pass: pin each tile back to its frozen pre-resize screen position
     for (const item of reads) {
         if (!item.oldNearViewport && !item.currentNearViewport) {
             if (item.hadPin) {
@@ -1869,7 +1871,8 @@ function flipHold() {
         }
 
         const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
-        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top);
+        const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top)
+            + containerTopDelta;
 
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
             if (item.hadPin) {
@@ -1883,11 +1886,6 @@ function flipHold() {
         item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
         flipHoldPins.set(item.node, { dx, dy });
     }
-
-    // Header wrapping moves tileContainer immediately during resize. Record that
-    // new screen position so the settle FLIP animates only tile-grid reflow, not
-    // the same common vertical shift once per visible tile.
-    flipPrevContainerTop = containerRect.top;
 }
 
 const animate = debounce(() => {
