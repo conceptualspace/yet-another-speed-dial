@@ -153,13 +153,18 @@ let layoutFolder = false;
 // positions, invert, then hand off the transform keyframes). Viewport culling
 // limits animation and style work for large folders.
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
+let resizeFrameAction = null;
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
 let flipAnimationCleanupTimer = null;
+let lastViewportWidth = window.innerWidth;
+let lastViewportHeight = window.innerHeight;
 const RESIZE_SETTLE_DELAY = 80;      // ms of resize quiet before the settle wave plays. This tunes
                                      // responsiveness only; if resizing resumes, flipHold adopts
                                      // the in-flight animation and returns to the pinned state.
 const LARGE_FOLDER_RESIZE_SETTLE_DELAY = 160;
 const LARGE_FOLDER_THRESHOLD = 500;  // total cached tiles before resize settling gets extra quiet time
+const RESIZE_JUMP_THRESHOLD = 160;    // px on either axis; maximize/restore/snap should animate before
+                                     // the resized grid's expensive first paint instead of after it
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
 const flipAnimations = new Map();    // node -> active WAAPI Animation
@@ -174,7 +179,7 @@ const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
-const FLIP_STAGGER_LIMIT = 500;      // large sets animate together to avoid hundreds of delayed
+const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hundreds of delayed
                                      // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
@@ -3597,18 +3602,40 @@ function handleMessages(message) {
 }
 
 function onResize() {
-    // Every resize -- a maximize/snap (one event) or a slow edge-drag (many
-    // events) -- pins each tile at its pre-drag spot via flipHold so the grid sits
-    // still while the viewport changes, then plays one staggered settle wave (flip)
-    // once the resize goes quiet. The hold keeps flipPrevRects on the original
-    // layout so the settle wave has the full delta to stagger across.
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const isViewportJump = Math.abs(viewportWidth - lastViewportWidth) >= RESIZE_JUMP_THRESHOLD
+        || Math.abs(viewportHeight - lastViewportHeight) >= RESIZE_JUMP_THRESHOLD;
+
+    // Install the animation before Chrome paints a large maximize/restore reflow.
+    // Events coalesced before the next frame compare against one shared baseline,
+    // while repeated small drag deltas across frames use the hold-and-settle path.
+    if (isViewportJump) {
+        resizeFrameAction = 'jump';
+        clearTimeout(resizeSettleTimer);
+        resizeSettleTimer = null;
+    } else if (!resizeFrameAction) {
+        resizeFrameAction = 'hold';
+    }
+
     if (!resizeFlipScheduled) {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
             resizeFlipScheduled = false;
-            flipHold();
+            lastViewportWidth = window.innerWidth;
+            lastViewportHeight = window.innerHeight;
+            const action = resizeFrameAction;
+            resizeFrameAction = null;
+            if (action === 'jump') {
+                if (flipAnimations.size) flipHold();
+                flip();
+            } else {
+                flipHold();
+            }
         });
     }
+
+    if (resizeFrameAction === 'jump') return;
 
     // once the drag goes quiet, replay one staggered settle wave so a slow manual
     // resize ends with the same flourish as a maximize/snap jump
@@ -3617,6 +3644,7 @@ function onResize() {
         ? LARGE_FOLDER_RESIZE_SETTLE_DELAY
         : RESIZE_SETTLE_DELAY;
     resizeSettleTimer = setTimeout(() => {
+        resizeSettleTimer = null;
         flip();
     }, settleDelay);
 }
