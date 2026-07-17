@@ -174,7 +174,7 @@ const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
-const FLIP_STAGGER_LIMIT = 500;      // large sets animate together to avoid hundreds of delayed
+const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hundreds of delayed
                                      // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
