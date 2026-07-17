@@ -159,6 +159,7 @@ const RESIZE_SETTLE_DELAY = 80;      // ms of resize quiet before the settle wav
                                      // responsiveness only; if resizing resumes, flipHold adopts
                                      // the in-flight animation and returns to the pinned state.
 const LARGE_FOLDER_RESIZE_SETTLE_DELAY = 160;
+const LARGE_FOLDER_THRESHOLD = 500;  // total cached tiles before resize settling gets extra quiet time
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
 const flipAnimations = new Map();    // node -> active WAAPI Animation
@@ -3612,7 +3613,7 @@ function onResize() {
     // once the drag goes quiet, replay one staggered settle wave so a slow manual
     // resize ends with the same flourish as a maximize/snap jump
     clearTimeout(resizeSettleTimer);
-    const settleDelay = flipPrevRects.size >= FLIP_STAGGER_LIMIT
+    const settleDelay = flipPrevRects.size >= LARGE_FOLDER_THRESHOLD
         ? LARGE_FOLDER_RESIZE_SETTLE_DELAY
         : RESIZE_SETTLE_DELAY;
     resizeSettleTimer = setTimeout(() => {
