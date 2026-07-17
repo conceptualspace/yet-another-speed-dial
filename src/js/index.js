@@ -1714,34 +1714,109 @@ function flipHold() {
     const anchorScrollTop = flipHoldAnchor ? flipHoldAnchor.scrollTop : bookmarksContainerParent.scrollTop;
     const anchorScrollLeft = flipHoldAnchor ? flipHoldAnchor.scrollLeft : bookmarksContainerParent.scrollLeft;
     const viewportHeight = bookmarksContainerParent.clientHeight;
-    const candidates = [];
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
+    const layoutItems = [];
 
     for (const node of nodes) {
         const prev = flipPrevRects.get(node);
         if (!prev) continue; // brand-new tile: leave at rest
-        candidates.push({ node, prev });
+
+        const isHidden = node.style.display === 'none'
+            || (!settings.showAddSite && node.classList.contains('createDial'));
+        if (isHidden) {
+            if (flipHoldPins.has(node)) {
+                node.style.transform = '';
+                flipHoldPins.delete(node);
+            }
+            continue;
+        }
+
+        layoutItems.push({ node, prev });
     }
 
-    if (!candidates.length) return;
+    if (!layoutItems.length) return;
+
+    // The dial grid has uniform tile dimensions and no gap, so the first row's
+    // length gives the exact current column count. Find its boundary with a
+    // logarithmic number of geometry reads, then project every other row. This
+    // keeps the per-frame read set bounded to tiles near either viewport.
+    const flexReads = new Map();
+    const readFlexRect = item => {
+        let read = flexReads.get(item.node);
+        if (read) return read;
+
+        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
+        const applied = flipHoldPins.get(item.node);
+        read = {
+            flexLeft: applied ? r.left - applied.dx : r.left,
+            flexTop: applied ? r.top - applied.dy : r.top,
+            width: r.width,
+            height: r.height
+        };
+        flexReads.set(item.node, read);
+        return read;
+    };
+
+    const firstRead = readFlexRect(layoutItems[0]);
+    let columns = layoutItems.length;
+    let canProjectRows = firstRead.width > 0 && firstRead.height > 0;
+
+    if (canProjectRows && layoutItems.length > 1) {
+        let low = 1;
+        let high = layoutItems.length;
+        while (low < high) {
+            const middle = Math.floor((low + high) / 2);
+            const middleRead = readFlexRect(layoutItems[middle]);
+            if (Math.abs(middleRead.flexTop - firstRead.flexTop) < 0.5) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+        columns = low;
+    }
+
+    let rowHeight = firstRead.height;
+    if (canProjectRows && columns < layoutItems.length) {
+        rowHeight = readFlexRect(layoutItems[columns]).flexTop - firstRead.flexTop;
+        canProjectRows = rowHeight > 0;
+    }
+
+    const candidates = [];
+    for (let index = 0; index < layoutItems.length; index++) {
+        const item = layoutItems[index];
+        const old = {
+            top: item.prev.top,
+            bottom: item.prev.top + item.prev.height
+        };
+        const projectedTop = firstRead.flexTop + Math.floor(index / columns) * rowHeight;
+        const projected = {
+            top: projectedTop,
+            bottom: projectedTop + item.prev.height
+        };
+
+        if (!canProjectRows
+            || flipHoldPins.has(item.node)
+            || isContentRectNearViewport(old, anchorScrollTop, viewportHeight, FLIP_MARGIN)
+            || isContentRectNearViewport(projected, readScrollTop, viewportHeight, FLIP_MARGIN)) {
+            candidates.push(item);
+        }
+    }
 
     // READ pass: measure every candidate's current on-screen rect in one batch
     const reads = [];
-    const containerRect = bookmarksContainerParent.getBoundingClientRect();
-    const readScrollLeft = bookmarksContainerParent.scrollLeft;
-    const readScrollTop = bookmarksContainerParent.scrollTop;
     for (const item of candidates) {
-        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
-        if (r.width === 0 && r.height === 0) continue;
+        const currentRead = readFlexRect(item);
+        if (currentRead.width === 0 && currentRead.height === 0) continue;
 
-        const applied = flipHoldPins.get(item.node);
-        const flexLeft = applied ? r.left - applied.dx : r.left;
-        const flexTop = applied ? r.top - applied.dy : r.top;
         const current = {
-            left: flexLeft,
-            top: flexTop,
-            bottom: flexTop + r.height,
-            width: r.width,
-            height: r.height
+            left: currentRead.flexLeft,
+            top: currentRead.flexTop,
+            bottom: currentRead.flexTop + currentRead.height,
+            width: currentRead.width,
+            height: currentRead.height
         };
         const old = {
             left: item.prev.left,
@@ -1752,12 +1827,12 @@ function flipHold() {
         };
         const read = {
             node: item.node,
-            flexLeft,
-            flexTop,
+            flexLeft: currentRead.flexLeft,
+            flexTop: currentRead.flexTop,
             prev: item.prev,
             oldNearViewport: isContentRectNearViewport(old, anchorScrollTop, viewportHeight, holdMargin),
             currentNearViewport: isContentRectNearViewport(current, readScrollTop, viewportHeight, holdMargin),
-            hadPin: !!applied
+            hadPin: flipHoldPins.has(item.node)
         };
         reads.push(read);
     }
