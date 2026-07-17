@@ -148,20 +148,19 @@ let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 let layoutFolder = false;
-// tile reflow (FLIP) animation state. The motion runs on the compositor via a
-// CSS transition: each relayout does a single main-thread pass (read resting
-// positions, invert, then hand off to a `transform` transition). Viewport
-// culling limits transition and style work for large folders.
-let flipGen = 0;                     // generation token so stale cleanups bail out
+// tile reflow (FLIP) animation state. The motion runs on the compositor via the
+// Web Animations API: each relayout does a single main-thread pass (read resting
+// positions, invert, then hand off the transform keyframes). Viewport culling
+// limits animation and style work for large folders.
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
-let flipCleanupTimer = null;         // pending transition teardown; non-null while a flip may be in flight
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
 const RESIZE_SETTLE_DELAY = 80;      // ms of resize quiet before the settle wave plays. This tunes
                                      // responsiveness only; if resizing resumes, flipHold adopts
-                                     // the in-flight transition and returns to the pinned state.
+                                     // the in-flight animation and returns to the pinned state.
 const LARGE_FOLDER_RESIZE_SETTLE_DELAY = 160;
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
+const flipAnimations = new Map();    // node -> active WAAPI Animation
 let flipHoldAnchor = null;           // scroll anchor frozen for an in-progress resize hold
 let flipPrevContainerTop = null;     // tileContainer's screen top for the layout stored in
                                      // flipPrevRects. Content coords subtract the container top,
@@ -173,8 +172,8 @@ const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
 const FLIP_STAGGER_WINDOW = 360;     // ms; total spread of the stagger wave, distributed
                                      // evenly across however many tiles are animating
-const FLIP_STAGGER_LIMIT = 150;      // large sets animate together to avoid hundreds of delayed
-                                     // transitions (the same cutoff used by the old GSAP path)
+const FLIP_STAGGER_LIMIT = 500;      // large sets animate together to avoid hundreds of delayed
+                                     // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
 const TITLE_TOGGLE_FLIP_DURATION = 300;
@@ -1480,8 +1479,10 @@ function flip(options = {}) {
     const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
     flipHoldAnchor = null;
 
-    clearTimeout(flipCleanupTimer);
-    flipCleanupTimer = null;
+    for (const [node, animation] of flipAnimations) {
+        flipAnimations.delete(node);
+        animation.cancel();
+    }
 
     // a settle flip ends any in-progress resize hold; drop the pin bookkeeping so
     // a later hold starts from a clean slate (the transforms themselves are
@@ -1556,8 +1557,10 @@ function flip(options = {}) {
         const scaled = Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && !scaled) continue;
 
-        item.node.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
-        anim.push(item);
+        anim.push({
+            ...item,
+            transform: `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`
+        });
     }
 
     // prune entries for tiles that no longer exist
@@ -1576,37 +1579,42 @@ function flip(options = {}) {
         return;
     }
 
-    // PLAY: transition every offset back to zero on the compositor. We commit the
-    // inverted transforms with one synchronous reflow and then start the transition
-    // in the same frame
-    void bookmarksContainerParent.offsetWidth; // commit the inverted positions
-    const gen = ++flipGen;
+    // PLAY: hand every inverted transform directly to WAAPI. Backwards fill keeps
+    // staggered tiles pinned at their start keyframe during the delay without a
+    // synchronous style/layout flush.
     const span = anim.length > 1 ? anim.length - 1 : 1;
     const effectiveStaggerWindow = anim.length >= FLIP_STAGGER_LIMIT
         ? 0
         : anim.length < 20 ? staggerWindow / 2 : staggerWindow;
-    const animNodes = new Set(anim.map(item => item.node));
     for (const node of resetNodes) {
-        if (!animNodes.has(node)) node.style.transition = '';
+        node.style.transition = '';
     }
     for (let i = 0; i < anim.length; i++) {
-        const node = anim[i].node;
+        const item = anim[i];
+        const node = item.node;
         const delay = (i / span) * effectiveStaggerWindow;
-        node.style.transition = `transform ${duration}ms ${FLIP_EASING} ${delay}ms`;
-        node.style.transform = '';
-    }
+        const animation = node.animate([
+            { transform: item.transform },
+            { transform: 'none' }
+        ], {
+            duration,
+            easing: FLIP_EASING,
+            delay,
+            fill: 'backwards'
+        });
 
-    // once settled, drop the transition so it can't interfere with drag/sort.
-    // guarded by the generation token so a newer flip isn't clobbered.
-    flipCleanupTimer = setTimeout(() => {
-        if (gen !== flipGen) return;
-        flipCleanupTimer = null;
-        for (const item of anim) {
-            if (item.node.style.transform === '') {
-                item.node.style.transition = '';
+        flipAnimations.set(node, animation);
+        animation.onfinish = () => {
+            if (flipAnimations.get(node) !== animation) return;
+            flipAnimations.delete(node);
+            animation.cancel();
+        };
+        animation.oncancel = () => {
+            if (flipAnimations.get(node) === animation) {
+                flipAnimations.delete(node);
             }
-        }
-    }, duration + effectiveStaggerWindow + 60);
+        };
+    }
 }
 
 // Public entry points used after a layout-affecting change. `layout` runs
@@ -1655,24 +1663,22 @@ function flipHold() {
     if (!nodes.length) return;
 
     // Chrome can resume a maximize/restore after the quiet timer has already
-    // started the settle transition. Carry that transition's current progress
+    // started the settle animation. Carry that animation's current progress
     // into the frozen rects before removing it, equivalent to GSAP's old
     // killTweensOf() + current-transform handoff. Otherwise the measurements
     // below mix transformed visual rects with bare flex positions and snap.
-    if (flipCleanupTimer !== null) {
-        clearTimeout(flipCleanupTimer);
-        flipCleanupTimer = null;
-        ++flipGen;
-
+    if (flipAnimations.size) {
         const renderedOffsets = [];
         for (const node of nodes) {
-            if (!node.style.transition || node.style.transition === 'none') continue;
+            const animation = flipAnimations.get(node);
+            if (!animation) continue;
             const transform = getComputedStyle(node).transform;
             const matrix = transform && transform !== 'none'
                 ? new DOMMatrixReadOnly(transform)
                 : null;
             renderedOffsets.push({
                 node,
+                animation,
                 dx: matrix ? matrix.m41 : 0,
                 dy: matrix ? matrix.m42 : 0
             });
@@ -1689,7 +1695,10 @@ function flipHold() {
                     top: prev.top + item.dy
                 });
             }
-            item.node.style.transition = 'none';
+            if (flipAnimations.get(item.node) === item.animation) {
+                flipAnimations.delete(item.node);
+                item.animation.cancel();
+            }
             item.node.style.transform = '';
         }
     }
