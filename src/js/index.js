@@ -154,6 +154,7 @@ let layoutFolder = false;
 // limits animation and style work for large folders.
 let resizeFlipScheduled = false;     // rAF throttle for resize-driven FLIP
 let resizeSettleTimer = null;        // fires the staggered settle wave once a drag goes idle
+let flipAnimationCleanupTimer = null;
 const RESIZE_SETTLE_DELAY = 80;      // ms of resize quiet before the settle wave plays. This tunes
                                      // responsiveness only; if resizing resumes, flipHold adopts
                                      // the in-flight animation and returns to the pinned state.
@@ -1479,6 +1480,8 @@ function flip(options = {}) {
     const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
     flipHoldAnchor = null;
 
+    clearTimeout(flipAnimationCleanupTimer);
+    flipAnimationCleanupTimer = null;
     for (const [node, animation] of flipAnimations) {
         flipAnimations.delete(node);
         animation.cancel();
@@ -1579,13 +1582,15 @@ function flip(options = {}) {
         return;
     }
 
-    // PLAY: hand every inverted transform directly to WAAPI. Backwards fill keeps
-    // staggered tiles pinned at their start keyframe during the delay without a
-    // synchronous style/layout flush.
+    // PLAY: start every animation on one shared timeline. Each tile holds its
+    // inverted transform until its stagger point, then moves for `duration` ms.
+    // Avoiding per-animation delays keeps Chrome from repeatedly revisiting the
+    // style tree as hundreds of effects enter and leave their active phases.
     const span = anim.length > 1 ? anim.length - 1 : 1;
     const effectiveStaggerWindow = anim.length >= FLIP_STAGGER_LIMIT
         ? 0
         : anim.length < 20 ? staggerWindow / 2 : staggerWindow;
+    const totalDuration = duration + effectiveStaggerWindow;
     for (const node of resetNodes) {
         node.style.transition = '';
     }
@@ -1593,28 +1598,32 @@ function flip(options = {}) {
         const item = anim[i];
         const node = item.node;
         const delay = (i / span) * effectiveStaggerWindow;
-        const animation = node.animate([
-            { transform: item.transform },
-            { transform: 'none' }
-        ], {
-            duration,
-            easing: FLIP_EASING,
-            delay,
-            fill: 'backwards'
-        });
+        const moveStart = totalDuration ? delay / totalDuration : 0;
+        const moveEnd = totalDuration ? (delay + duration) / totalDuration : 1;
+        const keyframes = [{ transform: item.transform, offset: 0 }];
+
+        if (moveStart > 0) {
+            keyframes.push({ transform: item.transform, offset: moveStart, easing: FLIP_EASING });
+        } else {
+            keyframes[0].easing = FLIP_EASING;
+        }
+        keyframes.push({ transform: 'none', offset: moveEnd });
+        if (moveEnd < 1) {
+            keyframes.push({ transform: 'none', offset: 1 });
+        }
+
+        const animation = node.animate(keyframes, { duration: totalDuration });
 
         flipAnimations.set(node, animation);
-        animation.onfinish = () => {
-            if (flipAnimations.get(node) !== animation) return;
+    }
+
+    flipAnimationCleanupTimer = setTimeout(() => {
+        flipAnimationCleanupTimer = null;
+        for (const [node, animation] of flipAnimations) {
             flipAnimations.delete(node);
             animation.cancel();
-        };
-        animation.oncancel = () => {
-            if (flipAnimations.get(node) === animation) {
-                flipAnimations.delete(node);
-            }
-        };
-    }
+        }
+    }, totalDuration + 60);
 }
 
 // Public entry points used after a layout-affecting change. `layout` runs
