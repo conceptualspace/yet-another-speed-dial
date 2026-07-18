@@ -158,8 +158,6 @@ let flipAnimationCleanupTimer = null;
 const RESIZE_SETTLE_DELAY = 80;      // ms of resize quiet before the settle wave plays. This tunes
                                      // responsiveness only; if resizing resumes, flipHold adopts
                                      // the in-flight animation and returns to the pinned state.
-const LARGE_FOLDER_RESIZE_SETTLE_DELAY = 160;
-const LARGE_FOLDER_THRESHOLD = 500;  // total cached tiles before resize settling gets extra quiet time
 const flipPrevRects = new Map();     // node -> last resting {left, top} in tileContainer content coords
 const flipHoldPins = new Map();      // node -> {dx, dy} currently applied during a resize hold
 const flipAnimations = new Map();    // node -> active WAAPI Animation
@@ -169,6 +167,7 @@ let flipPrevContainerTop = null;     // tileContainer's screen top for the layou
                                      // so a shift of the whole tileContainer (folders header
                                      // wrapping to more/fewer lines) is otherwise invisible to
                                      // FLIP and snaps; tracking it lets that shift animate too.
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const FLIP_DURATION = 420;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
@@ -1476,6 +1475,7 @@ function flip(options = {}) {
     const scaleTiles = options.scale !== false;
     const duration = options.duration ?? FLIP_DURATION;
     const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
+    const reduceMotion = reducedMotionQuery.matches;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
@@ -1543,6 +1543,8 @@ function flip(options = {}) {
         const prev = flipPrevRects.get(item.node);
         // record the new resting position AND size for the next relayout
         flipPrevRects.set(item.node, { left: item.left, top: item.top, width: item.width, height: item.height });
+
+        if (reduceMotion) continue;
 
         // Tiles well outside the viewport snap to rest. Geometry is still read
         // for every tile, but transition, layer, and per-frame style work stays
@@ -1668,6 +1670,8 @@ function recalcFlipRects() {
 // Resize HOLD. While the window is being dragged the flex grid reflows every
 // frame; for performance we dont let each tile chase the edge
 function flipHold() {
+    if (reducedMotionQuery.matches) return;
+
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     if (!nodes.length) return;
@@ -1717,116 +1721,39 @@ function flipHold() {
         flipHoldAnchor = captureFlipScrollAnchor(nodes);
     }
 
-    // Old/new viewport checks catch every tile visible before or after a large
-    // maximize/restore. Pinning offscreen margin tiles only multiplies style
-    // invalidation in dense folders without changing what the user can see.
+    // Tiles outside both the old and current viewport can snap without being seen.
     const holdMargin = 0;
     const anchorScrollTop = flipHoldAnchor ? flipHoldAnchor.scrollTop : bookmarksContainerParent.scrollTop;
     const anchorScrollLeft = flipHoldAnchor ? flipHoldAnchor.scrollLeft : bookmarksContainerParent.scrollLeft;
     const viewportHeight = bookmarksContainerParent.clientHeight;
-    const containerRect = bookmarksContainerParent.getBoundingClientRect();
-    const readScrollLeft = bookmarksContainerParent.scrollLeft;
-    const readScrollTop = bookmarksContainerParent.scrollTop;
-    const layoutItems = [];
+    const candidates = [];
 
     for (const node of nodes) {
         const prev = flipPrevRects.get(node);
         if (!prev) continue; // brand-new tile: leave at rest
-
-        const isHidden = node.style.display === 'none'
-            || (!settings.showAddSite && node.classList.contains('createDial'));
-        if (isHidden) {
-            if (flipHoldPins.has(node)) {
-                node.style.transform = '';
-                flipHoldPins.delete(node);
-            }
-            continue;
-        }
-
-        layoutItems.push({ node, prev });
+        candidates.push({ node, prev });
     }
 
-    if (!layoutItems.length) return;
-
-    // The dial grid has uniform tile dimensions and no gap, so the first row's
-    // length gives the exact current column count. Find its boundary with a
-    // logarithmic number of geometry reads, then project every other row. This
-    // keeps the per-frame read set bounded to tiles near either viewport.
-    const flexReads = new Map();
-    const readFlexRect = item => {
-        let read = flexReads.get(item.node);
-        if (read) return read;
-
-        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
-        const applied = flipHoldPins.get(item.node);
-        read = {
-            flexLeft: applied ? r.left - applied.dx : r.left,
-            flexTop: applied ? r.top - applied.dy : r.top,
-            width: r.width,
-            height: r.height
-        };
-        flexReads.set(item.node, read);
-        return read;
-    };
-
-    const firstRead = readFlexRect(layoutItems[0]);
-    let columns = layoutItems.length;
-    let canProjectRows = firstRead.width > 0 && firstRead.height > 0;
-
-    if (canProjectRows && layoutItems.length > 1) {
-        let low = 1;
-        let high = layoutItems.length;
-        while (low < high) {
-            const middle = Math.floor((low + high) / 2);
-            const middleRead = readFlexRect(layoutItems[middle]);
-            if (Math.abs(middleRead.flexTop - firstRead.flexTop) < 0.5) {
-                low = middle + 1;
-            } else {
-                high = middle;
-            }
-        }
-        columns = low;
-    }
-
-    let rowHeight = firstRead.height;
-    if (canProjectRows && columns < layoutItems.length) {
-        rowHeight = readFlexRect(layoutItems[columns]).flexTop - firstRead.flexTop;
-        canProjectRows = rowHeight > 0;
-    }
-
-    const candidates = [];
-    for (let index = 0; index < layoutItems.length; index++) {
-        const item = layoutItems[index];
-        const old = {
-            top: item.prev.top,
-            bottom: item.prev.top + item.prev.height
-        };
-        const projectedTop = firstRead.flexTop + Math.floor(index / columns) * rowHeight;
-        const projected = {
-            top: projectedTop,
-            bottom: projectedTop + item.prev.height
-        };
-
-        if (!canProjectRows
-            || flipHoldPins.has(item.node)
-            || isContentRectNearViewport(old, anchorScrollTop, viewportHeight, FLIP_MARGIN)
-            || isContentRectNearViewport(projected, readScrollTop, viewportHeight, FLIP_MARGIN)) {
-            candidates.push(item);
-        }
-    }
+    if (!candidates.length) return;
 
     // READ pass: measure every candidate's current on-screen rect in one batch
     const reads = [];
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const readScrollLeft = bookmarksContainerParent.scrollLeft;
+    const readScrollTop = bookmarksContainerParent.scrollTop;
     for (const item of candidates) {
-        const currentRead = readFlexRect(item);
-        if (currentRead.width === 0 && currentRead.height === 0) continue;
+        const r = getTileContentRect(item.node, containerRect, readScrollLeft, readScrollTop);
+        if (r.width === 0 && r.height === 0) continue;
 
+        const applied = flipHoldPins.get(item.node);
+        const flexLeft = applied ? r.left - applied.dx : r.left;
+        const flexTop = applied ? r.top - applied.dy : r.top;
         const current = {
-            left: currentRead.flexLeft,
-            top: currentRead.flexTop,
-            bottom: currentRead.flexTop + currentRead.height,
-            width: currentRead.width,
-            height: currentRead.height
+            left: flexLeft,
+            top: flexTop,
+            bottom: flexTop + r.height,
+            width: r.width,
+            height: r.height
         };
         const old = {
             left: item.prev.left,
@@ -1837,25 +1764,23 @@ function flipHold() {
         };
         const read = {
             node: item.node,
-            flexLeft: currentRead.flexLeft,
-            flexTop: currentRead.flexTop,
+            flexLeft,
+            flexTop,
             prev: item.prev,
             oldNearViewport: isContentRectNearViewport(old, anchorScrollTop, viewportHeight, holdMargin),
             currentNearViewport: isContentRectNearViewport(current, readScrollTop, viewportHeight, holdMargin),
-            hadPin: flipHoldPins.has(item.node)
+            hadPin: !!applied
         };
         reads.push(read);
     }
 
     // Observe the browser's current scroll instead of writing it. The pin math
-    // below holds each tile in screen space, including any tileContainer shift
-    // caused by the folders header wrapping or unwrapping.
+    // below glues every tile to `prev.top - anchorScrollTop` in viewport space
+    // regardless of the scroll value, so we don't need to move the scrollbar to
+    // hold the grid still
     const scrollState = { left: readScrollLeft, top: readScrollTop };
-    const containerTopDelta = flipPrevContainerTop != null
-        ? flipPrevContainerTop - containerRect.top
-        : 0;
 
-    // WRITE pass: pin each tile back to its frozen pre-resize screen position
+    // WRITE pass: pin each tile back to its frozen pre-resize spot
     for (const item of reads) {
         if (!item.oldNearViewport && !item.currentNearViewport) {
             if (item.hadPin) {
@@ -1866,8 +1791,10 @@ function flipHold() {
         }
 
         const dx = (item.prev.left - anchorScrollLeft) - (item.flexLeft - scrollState.left);
+        // include the tileContainer's screen shift (folders header wrap) so tiles hold
+        // their on-screen spot, not just their spot relative to the moving container
         const dy = (item.prev.top - anchorScrollTop) - (item.flexTop - scrollState.top)
-            + containerTopDelta;
+            + (flipPrevContainerTop != null ? flipPrevContainerTop - containerRect.top : 0);
 
         if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) {
             if (item.hadPin) {
@@ -3600,6 +3527,12 @@ function onResize() {
     // still while the viewport changes, then plays one staggered settle wave (flip)
     // once the resize goes quiet. The hold keeps flipPrevRects on the original
     // layout so the settle wave has the full delta to stagger across.
+    if (reducedMotionQuery.matches) {
+        clearTimeout(resizeSettleTimer);
+        resizeSettleTimer = setTimeout(flip, RESIZE_SETTLE_DELAY);
+        return;
+    }
+
     if (!resizeFlipScheduled) {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
@@ -3611,12 +3544,9 @@ function onResize() {
     // once the drag goes quiet, replay one staggered settle wave so a slow manual
     // resize ends with the same flourish as a maximize/snap jump
     clearTimeout(resizeSettleTimer);
-    const settleDelay = flipPrevRects.size >= LARGE_FOLDER_THRESHOLD
-        ? LARGE_FOLDER_RESIZE_SETTLE_DELAY
-        : RESIZE_SETTLE_DELAY;
     resizeSettleTimer = setTimeout(() => {
         flip();
-    }, settleDelay);
+    }, RESIZE_SETTLE_DELAY);
 }
 
 function init() {
