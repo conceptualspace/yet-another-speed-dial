@@ -264,8 +264,8 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
             return resolve();
         }
 
-        const targetWidth = 256;
-        const targetHeight = 144;
+        const targetWidth = 440;
+        const targetHeight = 248;
         const targetRatio = targetWidth / targetHeight;
         const tolerance = 0.25;
 
@@ -304,7 +304,7 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
                 
                 ctx.drawImage(this, x, y, this.width * scale, this.height * scale);
                 
-                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                const newDataURI = canvas.toDataURL('image/webp', 0.86);
                 resolve(newDataURI);
             };
             
