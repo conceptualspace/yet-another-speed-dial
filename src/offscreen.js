@@ -382,7 +382,7 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
                     sWidth -= 2 * crop;
                 } else {
                     nocrop = true;
-                    // image is not close to our target ratio. rescale to a max width/height of 256px without cropping
+                    // image is not close to our target ratio. rescale to target width/height without cropping
                     if (sWidth > sHeight) {
                         dHeight = Math.round(targetWidth / sRatio);
                         dWidth = targetWidth;
