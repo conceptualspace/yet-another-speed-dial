@@ -167,7 +167,8 @@ let flipPrevContainerTop = null;     // tileContainer's screen top for the layou
                                      // so a shift of the whole tileContainer (folders header
                                      // wrapping to more/fewer lines) is otherwise invisible to
                                      // FLIP and snaps; tracking it lets that shift animate too.
-const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+// todo: reenable this someday; unreliable in testing on linux
+//const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const FLIP_DURATION = 420;           // ms; compositor transition duration
 const FLIP_EASING = 'cubic-bezier(0.34, 1.3, 0.5, 1)'; // back-out: quick settle with a slight bounce
 const FLIP_MARGIN = 300;             // px of viewport slack; tiles outside it snap (no anim)
@@ -1475,7 +1476,7 @@ function flip(options = {}) {
     const scaleTiles = options.scale !== false;
     const duration = options.duration ?? FLIP_DURATION;
     const staggerWindow = options.staggerWindow ?? FLIP_STAGGER_WINDOW;
-    const reduceMotion = reducedMotionQuery.matches;
+    //const reduceMotion = reducedMotionQuery.matches;
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
     const scrollAnchor = flipHoldAnchor || captureFlipScrollAnchor(nodes);
@@ -1544,7 +1545,7 @@ function flip(options = {}) {
         // record the new resting position AND size for the next relayout
         flipPrevRects.set(item.node, { left: item.left, top: item.top, width: item.width, height: item.height });
 
-        if (reduceMotion) continue;
+        //if (reduceMotion) continue;
 
         // Tiles well outside the viewport snap to rest. Geometry is still read
         // for every tile, but transition, layer, and per-frame style work stays
@@ -1670,7 +1671,7 @@ function recalcFlipRects() {
 // Resize HOLD. While the window is being dragged the flex grid reflows every
 // frame; for performance we dont let each tile chase the edge
 function flipHold() {
-    if (reducedMotionQuery.matches) return;
+    //if (reducedMotionQuery.matches) return;
 
     const parent = currentFolder || speedDialId;
     const nodes = document.querySelectorAll(`[id="${parent}"] > .tile`);
@@ -3527,11 +3528,13 @@ function onResize() {
     // still while the viewport changes, then plays one staggered settle wave (flip)
     // once the resize goes quiet. The hold keeps flipPrevRects on the original
     // layout so the settle wave has the full delta to stagger across.
+    /*
     if (reducedMotionQuery.matches) {
         clearTimeout(resizeSettleTimer);
         resizeSettleTimer = setTimeout(flip, RESIZE_SETTLE_DELAY);
         return;
     }
+    */
 
     if (!resizeFlipScheduled) {
         resizeFlipScheduled = true;
