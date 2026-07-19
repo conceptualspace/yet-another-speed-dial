@@ -341,9 +341,7 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
 
                 const sRatio = sWidth / sHeight;
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = "high";
+                let ctx = canvas.getContext('2d');
 
                 let sX = 0, sY = 0, dWidth = targetWidth, dHeight = targetHeight;
 
@@ -394,13 +392,15 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
 
                 canvas.width = dWidth;
                 canvas.height = dHeight;
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
                 if (nocrop) {
                     ctx.drawImage(this, sX, sY, dWidth, dHeight);
                 } else {
                     ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
                 }
 
-                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                const newDataURI = canvas.toDataURL('image/webp', 0.86);
                 resolve(newDataURI);
             } else if (sHeight >= 96 || sWidth >= 96) {
                 resolve(image);
