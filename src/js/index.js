@@ -1855,38 +1855,63 @@ function resizeBackground(dataURI) {
 }
 
 // todo: completely offload this shit to the worker
-function resizeThumb(dataURI) {
-    return new Promise(function (resolve, reject) {
-        let img = new Image();
-        img.onload = async function () {
-            if (this.height > 256 || this.width > 256) {
-                // todo: maybe proper 2x hidpi check
-                let height = 288;
-                let ratio = height / this.height;
-                let width = Math.round(this.width * ratio);
+async function resizeThumb(dataURI) {
+    let imageSource = dataURI;
+    let objectUrl = null;
 
-                let canvas = new OffscreenCanvas(width, height)
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
-                ctx.imageSmoothingEnabled = true;
-                ctx.imageSmoothingQuality = "high";
-                ctx.drawImage(this, 0, 0, width, height);
+    if (/^https?:\/\//i.test(dataURI)) {
+        const response = await fetch(dataURI);
+        if (!response.ok) {
+            throw new Error(`Unable to fetch image: ${response.status}`);
+        }
+        objectUrl = URL.createObjectURL(await response.blob());
+        imageSource = objectUrl;
+    }
 
-                // Use convertToBlob instead of toDataURL
-                const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.86 });
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    resolve(e.target.result); // Resolve with the data URI
-                };
-                reader.onerror = function (err) {
-                    reject(err);
-                };
-                reader.readAsDataURL(blob)
-            } else {
-                resolve(dataURI);
-            }
-        };
-        img.src = dataURI;
-    })
+    try {
+        return await new Promise(function (resolve, reject) {
+            let img = new Image();
+            img.onload = async function () {
+                try {
+                    if (this.height > 256 || this.width > 256) {
+                        // todo: maybe proper 2x hidpi check
+                        let height = 288;
+                        let ratio = height / this.height;
+                        let width = Math.round(this.width * ratio);
+
+                        let canvas = new OffscreenCanvas(width, height)
+                        let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                        ctx.imageSmoothingEnabled = true;
+                        ctx.imageSmoothingQuality = "high";
+                        ctx.drawImage(this, 0, 0, width, height);
+
+                        // Use convertToBlob instead of toDataURL
+                        const blob = await canvas.convertToBlob({ type: 'image/webp', quality: 0.86 });
+                        const reader = new FileReader();
+                        reader.onload = function (e) {
+                            resolve(e.target.result); // Resolve with the data URI
+                        };
+                        reader.onerror = function (err) {
+                            reject(err);
+                        };
+                        reader.readAsDataURL(blob)
+                    } else {
+                        resolve(dataURI);
+                    }
+                } catch (error) {
+                    reject(error);
+                }
+            };
+            img.onerror = function () {
+                reject(new Error('Unable to decode image'));
+            };
+            img.src = imageSource;
+        })
+    } finally {
+        if (objectUrl) {
+            URL.revokeObjectURL(objectUrl);
+        }
+    }
 }
 
 function readImage(input) {

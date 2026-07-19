@@ -1,5 +1,3 @@
-chrome.runtime.onMessage.addListener(handleMessages);
-
 const imageRatio = 1.54;
 
 function offscreenCanvasShim(w=1, h=1) {
@@ -14,22 +12,18 @@ function offscreenCanvasShim(w=1, h=1) {
     }
 }
 
-async function handleMessages(message) {
-    if (message.target !== 'offscreen') {
-        return;
-    }
-
-    let screenshot = message.data.screenshot;
-    let quickRefresh = message.data.quickRefresh;
-    let forcePageReload = message.data.forcePageReload;
-    let id = message.data.id;
-    let parentId = message.data.parentId;
+async function processThumbnails(data) {
+    let screenshot = data.screenshot;
+    let quickRefresh = data.quickRefresh;
+    let forcePageReload = data.forcePageReload;
+    let id = data.id;
+    let parentId = data.parentId;
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
     let title = null;
 
-    let url = message.data.url;
+    let url = data.url;
 
     let images = await fetchImages(url, quickRefresh).catch(err => {
         console.log(err);
@@ -75,10 +69,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
-    //return title; //todo: why did i do this?
-
-      //chrome.runtime.sendMessage(images);
+    await saveThumbnails(url, id, parentId, thumbs, bgColor, forcePageReload);
 }
 
 

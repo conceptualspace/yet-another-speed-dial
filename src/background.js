@@ -41,9 +41,6 @@ async function handleMessages(message) {
 		case 'refreshAllThumbs':
 			handleRefreshAll(message.data);
 			break;
-		case 'saveThumbnails':
-			handleOffscreenFetchDone(message.data, message.forcePageReload);
-			break;
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
@@ -198,11 +195,6 @@ function toggleBookmarkCreatedListener(data) {
     } else {
         chrome.bookmarks.onCreated.removeListener(handleBookmarkChanged);
     }
-}
-
-async function handleOffscreenFetchDone(data, forcePageReload) {
-	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
 }
 
 async function handleManualRefresh(data) {
@@ -485,20 +477,14 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         }
     }
 
-	// cant parse images from dom in service worker: delegate to offscreen document
-	await setupOffscreenDocument('offscreen.html');
-
-	chrome.runtime.sendMessage({
-		target: 'offscreen',
-		data: {
-            url,
-			id,
-			parentId,
-            screenshot,
-			quickRefresh: options.quickRefresh,
-			forcePageReload: options.forcePageReload,
-        }
-	});
+    await processThumbnails({
+        url,
+        id,
+        parentId,
+        screenshot,
+        quickRefresh: options.quickRefresh,
+        forcePageReload: options.forcePageReload,
+    });
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
@@ -565,33 +551,4 @@ async function handleTabCreated(tab) {
 function isOpera() {
     // navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
     return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
-}
-
-// offscreen document setup
-let creating; // A global promise to avoid concurrency issues
-async function setupOffscreenDocument(path) {
-  // Check all windows controlled by the service worker to see if one
-  // of them is the offscreen document with the given path
-  const offscreenUrl = chrome.runtime.getURL(path);
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-    documentUrls: [offscreenUrl]
-  });
-
-  if (existingContexts.length > 0) {
-    return;
-  }
-
-  // create offscreen document
-  if (creating) {
-    await creating;
-  } else {
-    creating = chrome.offscreen.createDocument({
-      url: path,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'parse document for image tags to use as thumbnail'
-    });
-    await creating;
-    creating = null;
-  }
 }
