@@ -495,8 +495,8 @@ async function fetchImages(url, quickRefresh) {
             return(images);
         }
     } else {
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/logo/fallback/404/?c=key`);
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/icon/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
     }
 
     // avoid duplicates and preserve the precedence of images
