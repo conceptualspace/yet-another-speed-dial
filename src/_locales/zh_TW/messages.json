@@ -1,0 +1,226 @@
+{
+  "addFolderButton": {
+    "message": "新增資料夾按鈕"
+  },
+  "address": {
+    "message": "網址"
+  },
+  "addSiteButton": {
+    "message": "新增網站按鈕"
+  },
+  "addTo": {
+    "message": "新增至快速撥號"
+  },
+  "backgroundColor": {
+    "message": "背景顏色"
+  },
+  "bgColor": {
+    "message": "背景"
+  },
+  "browse": {
+    "message": "瀏覽..."
+  },
+  "cancel": {
+    "message": "取消"
+  },
+  "captureMessage": {
+    "message": "這會暫時在新分頁開啟網站以擷取圖片"
+  },
+  "clock": {
+    "message": "時鐘"
+  },
+  "confirmDelete": {
+    "message": "確定要永久刪除此資料夾嗎？"
+  },
+  "createFolder": {
+    "message": "建立資料夾"
+  },
+  "defaultSort": {
+    "message": "預設排序"
+  },
+  "delete": {
+    "message": "刪除"
+  },
+  "dialRatio": {
+    "message": "撥號格式"
+  },
+  "dialSize": {
+    "message": "撥號大小"
+  },
+  "edit": {
+    "message": "編輯"
+  },
+  "editFolder": {
+    "message": "編輯資料夾..."
+  },
+  "export": {
+    "message": "匯出設定..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "適用於 Chrome、Edge 和 Firefox 的現代新分頁"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
+  },
+  "help": {
+    "message": "說明"
+  },
+  "home": {
+    "message": "首頁"
+  },
+  "image": {
+    "message": "圖片檔案"
+  },
+  "imageURL": {
+    "message": "圖片網址"
+  },
+  "import": {
+    "message": "匯入設定..."
+  },
+  "importExport": {
+    "message": "這會備份或還原 YASD 的書籤、縮圖和設定。\n\n建議您也透過瀏覽器另外備份書籤。\n\n請注意，YASD 可從 Speed Dial 2 和 FVD 等常見快速撥號工具匯入（支援情況可能有所不同）。"
+  },
+  "importExportLink": {
+    "message": "匯入與匯出..."
+  },
+  "labels": {
+    "message": "標籤"
+  },
+  "largeTiles": {
+    "message": "大型方塊"
+  },
+  "maxColumns": {
+    "message": "最大欄數"
+  },
+  "name": {
+    "message": "名稱"
+  },
+  "newBackgroundTab": {
+    "message": "在背景分頁開啟"
+  },
+  "newDial": {
+    "message": "新增快速撥號..."
+  },
+  "newFolder": {
+    "message": "新增資料夾..."
+  },
+  "newInstallTitleLine1": {
+    "message": "開始使用"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial！"
+  },
+  "newInstall2": {
+    "message": "只要將書籤新增至快速撥號資料夾，它們就會顯示在這裡"
+  },
+  "newInstall3": {
+    "message": "您可以將書籤整理到子資料夾中"
+  },
+  "newInstall4": {
+    "message": "在撥號上按右鍵即可編輯，也可以拖放來重新排列"
+  },
+  "newInstallAddSite": {
+    "message": "新增網站"
+  },
+  "newInstallImport": {
+    "message": "匯入"
+  },
+  "newPrivate": {
+    "message": "在新的無痕視窗開啟"
+  },
+  "newTab": {
+    "message": "在新分頁開啟"
+  },
+  "newWin": {
+    "message": "在新視窗開啟"
+  },
+  "refresh": {
+    "message": "重新整理縮圖"
+  },
+  "remember": {
+    "message": "記住上次的資料夾"
+  },
+  "resetSettings": {
+    "message": "重設設定"
+  },
+  "remove": {
+    "message": "移除"
+  },
+  "save": {
+    "message": "儲存"
+  },
+  "saveToast": {
+    "message": "設定已儲存！"
+  },
+  "scaleImages": {
+    "message": "縮放圖片"
+  },
+  "searchButton": {
+    "message": "搜尋按鈕"
+  },
+  "searchPlaceholder": {
+    "message": "搜尋..."
+  },
+  "settings": {
+    "message": "設定..."
+  },
+  "settingsButton": {
+    "message": "設定按鈕"
+  },
+  "settingsTitle": {
+    "message": "設定"
+  },
+  "textColor": {
+    "message": "文字顏色"
+  },
+  "tileTitle": {
+    "message": "標題"
+  },
+  "title": {
+    "message": "快速撥號"
+  },
+  "uploadImage": {
+    "message": "新增圖片..."
+  },
+  "wallpaper": {
+    "message": "桌布"
+  },
+  "optionSquare": {
+    "message": "正方形"
+  },
+  "optionWide": {
+    "message": "寬幅"
+  },
+  "optionXXSmall": {
+    "message": "極小"
+  },
+  "optionXSmall": {
+    "message": "特小"
+  },
+  "optionSmall": {
+    "message": "小"
+  },
+  "optionMedium": {
+    "message": "中"
+  },
+  "optionLarge": {
+    "message": "大"
+  },
+  "optionXLarge": {
+    "message": "特大"
+  },
+  "optionXXLarge": {
+    "message": "極大"
+  },
+  "optionUnlimited": {
+    "message": "不限"
+  },
+  "optionNewDialsLast": {
+    "message": "新的撥號排在最後"
+  },
+  "optionNewDialsFirst": {
+    "message": "新的撥號排在最前"
+  }
+}

@@ -1,0 +1,226 @@
+{
+  "addFolderButton": {
+    "message": "Кнопка додавання папки"
+  },
+  "address": {
+    "message": "Адреса"
+  },
+  "addSiteButton": {
+    "message": "Кнопка додавання сайту"
+  },
+  "addTo": {
+    "message": "Додати до швидкого набору"
+  },
+  "backgroundColor": {
+    "message": "Колір тла"
+  },
+  "bgColor": {
+    "message": "Тло"
+  },
+  "browse": {
+    "message": "Огляд..."
+  },
+  "cancel": {
+    "message": "Скасувати"
+  },
+  "captureMessage": {
+    "message": "Сайт буде тимчасово відкрито в новій вкладці для захоплення зображення"
+  },
+  "clock": {
+    "message": "Годинник"
+  },
+  "confirmDelete": {
+    "message": "Ви впевнені, що хочете остаточно видалити цю папку?"
+  },
+  "createFolder": {
+    "message": "Створити папку"
+  },
+  "defaultSort": {
+    "message": "Типове сортування"
+  },
+  "delete": {
+    "message": "Видалити"
+  },
+  "dialRatio": {
+    "message": "Формат плиток"
+  },
+  "dialSize": {
+    "message": "Розмір плиток"
+  },
+  "edit": {
+    "message": "Редагувати"
+  },
+  "editFolder": {
+    "message": "Редагувати папку..."
+  },
+  "export": {
+    "message": "Експортувати налаштування..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "Сучасна сторінка нової вкладки для Chrome, Edge і Firefox"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
+  },
+  "help": {
+    "message": "Довідка"
+  },
+  "home": {
+    "message": "Головна"
+  },
+  "image": {
+    "message": "Файл зображення"
+  },
+  "imageURL": {
+    "message": "URL-адреса зображення"
+  },
+  "import": {
+    "message": "Імпортувати налаштування..."
+  },
+  "importExport": {
+    "message": "Це створить резервну копію або відновить закладки, мініатюри та налаштування YASD.\n\nРадимо також окремо створити резервну копію закладок у браузері.\n\nЗверніть увагу: YASD може імпортувати дані з більшості популярних панелей швидкого доступу, як-от Speed Dial 2 і FVD (підтримка може відрізнятися)."
+  },
+  "importExportLink": {
+    "message": "Імпорт та експорт..."
+  },
+  "labels": {
+    "message": "Підписи"
+  },
+  "largeTiles": {
+    "message": "Великі плитки"
+  },
+  "maxColumns": {
+    "message": "Максимум стовпців"
+  },
+  "name": {
+    "message": "Назва"
+  },
+  "newBackgroundTab": {
+    "message": "Відкрити в новій фоновій вкладці"
+  },
+  "newDial": {
+    "message": "Новий швидкий набір..."
+  },
+  "newFolder": {
+    "message": "Нова папка..."
+  },
+  "newInstallTitleLine1": {
+    "message": "Почніть роботу з"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
+  },
+  "newInstall2": {
+    "message": "Просто додайте закладки до папки швидкого набору, і вони з’являться тут"
+  },
+  "newInstall3": {
+    "message": "Ви можете впорядковувати закладки у вкладених папках"
+  },
+  "newInstall4": {
+    "message": "Клацніть правою кнопкою миші плитку, щоб редагувати її. Також можна перетягувати плитки для впорядкування"
+  },
+  "newInstallAddSite": {
+    "message": "Додати сайт"
+  },
+  "newInstallImport": {
+    "message": "Імпорт"
+  },
+  "newPrivate": {
+    "message": "Відкрити в новому приватному вікні"
+  },
+  "newTab": {
+    "message": "Відкрити в новій вкладці"
+  },
+  "newWin": {
+    "message": "Відкрити в новому вікні"
+  },
+  "refresh": {
+    "message": "Оновити мініатюри"
+  },
+  "remember": {
+    "message": "Запам’ятовувати останню папку"
+  },
+  "resetSettings": {
+    "message": "Скинути налаштування"
+  },
+  "remove": {
+    "message": "Прибрати"
+  },
+  "save": {
+    "message": "Зберегти"
+  },
+  "saveToast": {
+    "message": "Налаштування збережено!"
+  },
+  "scaleImages": {
+    "message": "Масштабувати зображення"
+  },
+  "searchButton": {
+    "message": "Кнопка пошуку"
+  },
+  "searchPlaceholder": {
+    "message": "Пошук..."
+  },
+  "settings": {
+    "message": "Налаштування..."
+  },
+  "settingsButton": {
+    "message": "Кнопка налаштувань"
+  },
+  "settingsTitle": {
+    "message": "Налаштування"
+  },
+  "textColor": {
+    "message": "Колір тексту"
+  },
+  "tileTitle": {
+    "message": "Назва"
+  },
+  "title": {
+    "message": "Швидкий набір"
+  },
+  "uploadImage": {
+    "message": "Додати зображення..."
+  },
+  "wallpaper": {
+    "message": "Шпалери"
+  },
+  "optionSquare": {
+    "message": "Квадрат"
+  },
+  "optionWide": {
+    "message": "Широкий"
+  },
+  "optionXXSmall": {
+    "message": "Дуже-дуже малий"
+  },
+  "optionXSmall": {
+    "message": "Дуже малий"
+  },
+  "optionSmall": {
+    "message": "Малий"
+  },
+  "optionMedium": {
+    "message": "Середній"
+  },
+  "optionLarge": {
+    "message": "Великий"
+  },
+  "optionXLarge": {
+    "message": "Дуже великий"
+  },
+  "optionXXLarge": {
+    "message": "Дуже-дуже великий"
+  },
+  "optionUnlimited": {
+    "message": "Без обмежень"
+  },
+  "optionNewDialsLast": {
+    "message": "Нові плитки в кінці"
+  },
+  "optionNewDialsFirst": {
+    "message": "Нові плитки на початку"
+  }
+}
