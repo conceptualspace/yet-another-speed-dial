@@ -1,0 +1,226 @@
+{
+  "addFolderButton": {
+    "message": "Klasör Ekle Düğmesi"
+  },
+  "address": {
+    "message": "Adres"
+  },
+  "addSiteButton": {
+    "message": "Site Ekle Düğmesi"
+  },
+  "addTo": {
+    "message": "Hızlı Aramaya Ekle"
+  },
+  "backgroundColor": {
+    "message": "Arka Plan Rengi"
+  },
+  "bgColor": {
+    "message": "Arka Plan"
+  },
+  "browse": {
+    "message": "Gözat..."
+  },
+  "cancel": {
+    "message": "İptal"
+  },
+  "captureMessage": {
+    "message": "Görüntüyü yakalamak için site geçici olarak yeni bir sekmede açılacak"
+  },
+  "clock": {
+    "message": "Saat"
+  },
+  "confirmDelete": {
+    "message": "Bu klasörü kalıcı olarak kaldırmak istediğinizden emin misiniz?"
+  },
+  "createFolder": {
+    "message": "Klasör Oluştur"
+  },
+  "defaultSort": {
+    "message": "Varsayılan Sıralama"
+  },
+  "delete": {
+    "message": "Sil"
+  },
+  "dialRatio": {
+    "message": "Kısayol Biçimi"
+  },
+  "dialSize": {
+    "message": "Kısayol Boyutu"
+  },
+  "edit": {
+    "message": "Düzenle"
+  },
+  "editFolder": {
+    "message": "Klasörü Düzenle..."
+  },
+  "export": {
+    "message": "Ayarları Dışa Aktar..."
+  },
+  "extensionDescription": {
+    "description": "description of the app, displayed in store",
+    "message": "Chrome, Edge ve Firefox için modern bir yeni sekme sayfası"
+  },
+  "extensionName": {
+    "description": "title of the app, displayed in store",
+    "message": "Yet Another Speed Dial"
+  },
+  "help": {
+    "message": "Yardım"
+  },
+  "home": {
+    "message": "Ana Sayfa"
+  },
+  "image": {
+    "message": "Görüntü Dosyası"
+  },
+  "imageURL": {
+    "message": "Görüntü URL'si"
+  },
+  "import": {
+    "message": "Ayarları İçe Aktar..."
+  },
+  "importExport": {
+    "message": "Bu işlem YASD yer imlerini, küçük resimlerini ve ayarlarını yedekler veya geri yükler.\n\nYer imlerinizi tarayıcı aracılığıyla ayrıca yedeklemeniz de iyi bir fikirdir.\n\nYASD; Speed Dial 2 ve FVD gibi yaygın hızlı arama araçlarından içe aktarabilir (destek değişiklik gösterebilir)."
+  },
+  "importExportLink": {
+    "message": "İçe Aktar ve Dışa Aktar..."
+  },
+  "labels": {
+    "message": "Etiketler"
+  },
+  "largeTiles": {
+    "message": "Büyük Kutucuklar"
+  },
+  "maxColumns": {
+    "message": "En Fazla Sütun"
+  },
+  "name": {
+    "message": "Ad"
+  },
+  "newBackgroundTab": {
+    "message": "Arka planda yeni sekmede aç"
+  },
+  "newDial": {
+    "message": "Yeni Hızlı Arama..."
+  },
+  "newFolder": {
+    "message": "Yeni Klasör..."
+  },
+  "newInstallTitleLine1": {
+    "message": "Başlamak için"
+  },
+  "newInstallTitleLine2": {
+    "message": "Yet Another Speed Dial!"
+  },
+  "newInstall2": {
+    "message": "Yer imlerini Hızlı Arama klasörüne eklemeniz yeterli; burada görünürler"
+  },
+  "newInstall3": {
+    "message": "Yer imlerinizi alt klasörlerde düzenleyebilirsiniz"
+  },
+  "newInstall4": {
+    "message": "Düzenlemek için bir kısayola sağ tıklayın. Sıralamak için sürükleyip bırakabilirsiniz"
+  },
+  "newInstallAddSite": {
+    "message": "Site Ekle"
+  },
+  "newInstallImport": {
+    "message": "İçe Aktar"
+  },
+  "newPrivate": {
+    "message": "Yeni gizli pencerede aç"
+  },
+  "newTab": {
+    "message": "Yeni sekmede aç"
+  },
+  "newWin": {
+    "message": "Yeni pencerede aç"
+  },
+  "refresh": {
+    "message": "Küçük Resimleri Yenile"
+  },
+  "remember": {
+    "message": "Son Klasörü Hatırla"
+  },
+  "resetSettings": {
+    "message": "Ayarları Sıfırla"
+  },
+  "remove": {
+    "message": "Kaldır"
+  },
+  "save": {
+    "message": "Kaydet"
+  },
+  "saveToast": {
+    "message": "Ayarlar kaydedildi!"
+  },
+  "scaleImages": {
+    "message": "Görüntüleri Ölçekle"
+  },
+  "searchButton": {
+    "message": "Arama Düğmesi"
+  },
+  "searchPlaceholder": {
+    "message": "Ara..."
+  },
+  "settings": {
+    "message": "Ayarlar..."
+  },
+  "settingsButton": {
+    "message": "Ayarlar Düğmesi"
+  },
+  "settingsTitle": {
+    "message": "Ayarlar"
+  },
+  "textColor": {
+    "message": "Metin Rengi"
+  },
+  "tileTitle": {
+    "message": "Başlık"
+  },
+  "title": {
+    "message": "Hızlı Arama"
+  },
+  "uploadImage": {
+    "message": "Görüntü Ekle..."
+  },
+  "wallpaper": {
+    "message": "Duvar Kâğıdı"
+  },
+  "optionSquare": {
+    "message": "Kare"
+  },
+  "optionWide": {
+    "message": "Geniş"
+  },
+  "optionXXSmall": {
+    "message": "Çok Çok Küçük"
+  },
+  "optionXSmall": {
+    "message": "Çok Küçük"
+  },
+  "optionSmall": {
+    "message": "Küçük"
+  },
+  "optionMedium": {
+    "message": "Orta"
+  },
+  "optionLarge": {
+    "message": "Büyük"
+  },
+  "optionXLarge": {
+    "message": "Çok Büyük"
+  },
+  "optionXXLarge": {
+    "message": "Çok Çok Büyük"
+  },
+  "optionUnlimited": {
+    "message": "Sınırsız"
+  },
+  "optionNewDialsLast": {
+    "message": "Yeni kısayollar sonda"
+  },
+  "optionNewDialsFirst": {
+    "message": "Yeni kısayollar başta"
+  }
+}

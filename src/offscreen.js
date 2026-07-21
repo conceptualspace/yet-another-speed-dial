@@ -391,7 +391,7 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
                     ctx.drawImage(this, sX, sY, sWidth, sHeight, 0, 0, dWidth, dHeight);
                 }
 
-                const newDataURI = canvas.toDataURL('image/webp', 0.9);
+                const newDataURI = canvas.toDataURL('image/webp', 0.87);
                 resolve(newDataURI);
             } else if (sHeight >= 96 || sWidth >= 96) {
                 resolve(image);
@@ -486,8 +486,8 @@ async function fetchImages(url, quickRefresh) {
             return(images);
         }
     } else {
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/logo/fallback/404/?c=key`);
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/256/h/256/icon/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
+        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
     }
 
     // avoid duplicates and preserve the precedence of images
