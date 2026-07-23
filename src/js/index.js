@@ -2168,9 +2168,8 @@ function applySettings(options = {}) {
     });
 }
 
-function saveSettings() {
+function saveSettings(nextWallpaperSrc) {
     const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
-    const nextWallpaperSrc = imgPreview.getAttribute('src');
     let wallpaperChanged = false;
     if (nextWallpaperSrc && nextWallpaperSrc !== wallpaperSrc) {
         wallpaperSrc = nextWallpaperSrc;
@@ -2541,7 +2540,7 @@ reader.onload = function (e) {
             document.documentElement.style.setProperty('--color', textColor);
         });
          */
-        saveSettings()
+        saveSettings(imagedata)
     })
 };
 
