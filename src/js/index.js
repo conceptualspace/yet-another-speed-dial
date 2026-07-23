@@ -1834,6 +1834,7 @@ function resizeBackground(dataURI) {
                 let canvas = document.createElement('canvas');
                 let ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
 
                 canvas.width = width;
                 canvas.height = height;
