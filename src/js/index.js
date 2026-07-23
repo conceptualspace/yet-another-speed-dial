@@ -1832,7 +1832,7 @@ function resizeBackground(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                let ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
 
                 canvas.width = width;
@@ -1861,7 +1861,7 @@ function resizeThumb(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = new OffscreenCanvas(width, height)
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                let ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = "high";
                 ctx.drawImage(this, 0, 0, width, height);
