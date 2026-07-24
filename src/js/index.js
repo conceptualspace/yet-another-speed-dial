@@ -76,13 +76,9 @@ const recentTabsEmpty = document.getElementById("recentTabsEmpty");
 const historyNav = document.getElementById("historyNav");
 const historyBtn = document.getElementById("historyBtn");
 const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
-const historyPanelBtn = document.getElementById("historyPanelBtn");
 const otherDevicesPanelBtn = document.getElementById("otherDevicesPanelBtn");
 const recentTabsView = document.getElementById("recentTabsView");
-const historyView = document.getElementById("historyView");
 const otherDevicesView = document.getElementById("otherDevicesView");
-const historyList = document.getElementById("historyList");
-const historyEmpty = document.getElementById("historyEmpty");
 const otherDevicesList = document.getElementById("otherDevicesList");
 const otherDevicesEmpty = document.getElementById("otherDevicesEmpty");
 const modalTitle = document.getElementById("modalTitle");
@@ -195,8 +191,6 @@ const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 const RECENTLY_CLOSED_MAX_RESULTS = 25;
 const OTHER_DEVICES_MAX_RESULTS = 25;
-const HISTORY_MAX_RESULTS = 100;
-const HISTORY_LOOKBACK_MS = 30 * 24 * 60 * 60 * 1000;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -943,14 +937,36 @@ function hideSettings() {
 
 function setHistoryPanelView(view) {
     const showRecentTabs = view === 'recent';
-    const showHistory = view === 'history';
     const showOtherDevices = view === 'devices';
     recentTabsPanelBtn.classList.toggle('active', showRecentTabs);
-    historyPanelBtn.classList.toggle('active', showHistory);
     otherDevicesPanelBtn.classList.toggle('active', showOtherDevices);
     recentTabsView.classList.toggle('active', showRecentTabs);
-    historyView.classList.toggle('active', showHistory);
     otherDevicesView.classList.toggle('active', showOtherDevices);
+}
+
+function setOtherDevicesAvailable(available) {
+    otherDevicesPanelBtn.hidden = !available;
+
+    if (!available && otherDevicesView.classList.contains('active')) {
+        setHistoryPanelView('recent');
+        loadRecentlyClosedTabs();
+    }
+}
+
+async function refreshOtherDevicesAvailability() {
+    if (!chrome.sessions || !chrome.sessions.getDevices) {
+        setOtherDevicesAvailable(false);
+        return [];
+    }
+
+    try {
+        const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
+        setOtherDevicesAvailable(devices.length > 0);
+        return devices;
+    } catch (error) {
+        setOtherDevicesAvailable(false);
+        return [];
+    }
 }
 
 function openHistory(view = 'recent') {
@@ -959,11 +975,10 @@ function openHistory(view = 'recent') {
     setHistoryPanelView(view);
     if (view === 'recent') {
         loadRecentlyClosedTabs();
-    } else if (view === 'history') {
-        loadHistory();
     } else {
         loadOtherDeviceTabs();
     }
+    if (view !== 'devices') refreshOtherDevicesAvailability();
     openSideNav(historyNav);
 }
 
@@ -1014,11 +1029,6 @@ function getLocaleMessage(key, fallback) {
 function setRecentlyClosedStatus(message) {
     recentTabsEmpty.textContent = message;
     recentTabsEmpty.style.display = "block";
-}
-
-function setHistoryStatus(message) {
-    historyEmpty.textContent = message;
-    historyEmpty.style.display = "block";
 }
 
 function setOtherDevicesStatus(message) {
@@ -1129,16 +1139,6 @@ async function restoreRecentlyClosedTab(tab) {
     }
 }
 
-async function openHistoryItem(item) {
-    try {
-        await chrome.tabs.create({ url: item.url });
-        hideHistory();
-    } catch (error) {
-        console.error('Unable to open history item:', error);
-        showToast(getLocaleMessage('historyOpenError', 'Unable to open history item'));
-    }
-}
-
 async function openOtherDeviceTab(tab) {
     try {
         await chrome.tabs.create({ url: tab.url });
@@ -1199,18 +1199,6 @@ function renderRecentlyClosedTabs(tabs) {
     });
 }
 
-function renderHistory(items) {
-    renderHistoryPanelItems({
-        items,
-        listEl: historyList,
-        emptyEl: historyEmpty,
-        emptyMessage: getLocaleMessage('noHistoryItems', 'No history items'),
-        itemFallback: getLocaleMessage('historyUntitled', 'Untitled page'),
-        buttonFallback: getLocaleMessage('historyTitle', 'History'),
-        onClick: openHistoryItem,
-    });
-}
-
 function getSessionTabs(session) {
     if (session.tab) return [session.tab];
     if (session.window && session.window.tabs) return session.window.tabs;
@@ -1248,28 +1236,6 @@ function renderOtherDeviceTabs(tabs) {
         buttonFallback: getLocaleMessage('otherDevicesTitle', 'Other Devices'),
         onClick: openOtherDeviceTab,
     });
-}
-
-async function loadHistory() {
-    historyList.innerHTML = '';
-    setHistoryStatus(getLocaleMessage('historyLoading', 'Loading...'));
-
-    if (!chrome.history || !chrome.history.search) {
-        setHistoryStatus(getLocaleMessage('historyUnavailable', 'History is not available'));
-        return;
-    }
-
-    try {
-        const items = await chrome.history.search({
-            text: '',
-            startTime: Date.now() - HISTORY_LOOKBACK_MS,
-            maxResults: HISTORY_MAX_RESULTS,
-        });
-        renderHistory(items.filter(item => item && item.url));
-    } catch (error) {
-        console.error('Unable to load history:', error);
-        setHistoryStatus(getLocaleMessage('historyLoadError', 'Unable to load history'));
-    }
 }
 
 async function loadRecentlyClosedTabs() {
@@ -1313,8 +1279,10 @@ async function loadOtherDeviceTabs() {
 
     try {
         const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
+        setOtherDevicesAvailable(devices.length > 0);
         renderOtherDeviceTabs(dedupeRecentTabs(getOtherDeviceTabs(devices)));
     } catch (error) {
+        setOtherDevicesAvailable(false);
         console.error('Unable to load tabs from other devices:', error);
         setOtherDevicesStatus(getLocaleMessage('otherDevicesLoadError', 'Unable to load tabs from other devices'));
     }
@@ -2790,10 +2758,6 @@ historyBtn.addEventListener("click", function() {
 
 recentTabsPanelBtn.addEventListener("click", function() {
     openHistory('recent');
-});
-
-historyPanelBtn.addEventListener("click", function() {
-    openHistory('history');
 });
 
 otherDevicesPanelBtn.addEventListener("click", function() {

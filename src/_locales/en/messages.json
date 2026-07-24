@@ -67,32 +67,11 @@
   "help": {
     "message": "Help"
   },
-  "historyLoadError": {
-    "message": "Unable to load history"
-  },
-  "historyLoading": {
-    "message": "Loading..."
-  },
-  "noHistoryItems": {
-    "message": "No history items"
-  },
   "noOtherDeviceTabs": {
     "message": "No tabs from other devices"
   },
-  "historyOpenError": {
-    "message": "Unable to open history item"
-  },
-  "historyTitle": {
-    "message": "Full History"
-  },
   "historyButton": {
     "message": "History Button"
-  },
-  "historyUnavailable": {
-    "message": "History is not available"
-  },
-  "historyUntitled": {
-    "message": "Untitled page"
   },
   "otherDeviceFallbackName": {
     "message": "Other device"

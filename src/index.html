@@ -513,8 +513,7 @@
         <div class="history-panel-header">
             <div class="history-panel-tabs" role="tablist">
                 <button id="recentTabsPanelBtn" class="history-panel-tab active" type="button" data-locale="recentlyClosedTitle">Recently Closed</button>
-                <button id="historyPanelBtn" class="history-panel-tab" type="button" data-locale="historyTitle">Full History</button>
-                <button id="otherDevicesPanelBtn" class="history-panel-tab" type="button" data-locale="otherDevicesTitle">Other Devices</button>
+                <button id="otherDevicesPanelBtn" class="history-panel-tab" type="button" data-locale="otherDevicesTitle" hidden>Other Devices</button>
             </div>
             <button id="closeHistoryBtn" class="closeBtn" title="Close History">&times;</button>
         </div>
@@ -522,11 +521,6 @@
         <div id="recentTabsView" class="history-panel-view active">
             <ul id="recentTabsList" class="recent-tabs-list"></ul>
             <div id="recentTabsEmpty" class="recent-tabs-empty" data-locale="noRecentlyClosedTabs">No recently closed tabs</div>
-        </div>
-
-        <div id="historyView" class="history-panel-view">
-            <ul id="historyList" class="history-list"></ul>
-            <div id="historyEmpty" class="history-empty" data-locale="noHistoryItems">No history items</div>
         </div>
 
         <div id="otherDevicesView" class="history-panel-view">
