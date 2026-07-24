@@ -133,6 +133,8 @@ chrome.runtime.onMessage.addListener(handleMessages);
 
 let cache = {};
 let settings = null;
+const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
+let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
@@ -190,7 +192,6 @@ let folderIds = [];
 
 let defaults = {
     wallpaper: true,
-    wallpaperSrc: 'img/bg.jpg',
     backgroundColor: '#111111',
     largeTiles: true,
     rememberFolder: false,
@@ -521,8 +522,10 @@ function folderLink(title, id) {
         bookmarksContainerParent.scrollTop = scrollPos;
 
         settings.currentFolder = id;
-        chrome.storage.local.set({ settings });
-        //tabMessagePort.postMessage({currentFolder: id});
+        if (settings.rememberFolder) {
+            chrome.storage.local.set({ settings });
+            //tabMessagePort.postMessage({currentFolder: id});
+        }
     };
 
     a.ondragenter = dragenterHandler;
@@ -1831,21 +1834,16 @@ function resizeBackground(dataURI) {
                 let width = Math.round(this.width * ratio);
 
                 let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d', { willReadFrequently: true });
+                let ctx = canvas.getContext('2d');
                 ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = "high";
 
                 canvas.width = width;
                 canvas.height = height;
                 ctx.drawImage(this, 0, 0, width, height);
 
-                // todo: remove this whenever firefox supports webp. in meantime we fallback to jpg for speed
-                if (chrome.runtime.getBrowserInfo) {
-                    const newDataURI = canvas.toDataURL('image/jpeg', 0.8);
-                    resolve(newDataURI);
-                } else {
-                    const newDataURI = canvas.toDataURL('image/webp', 0.87);
-                    resolve(newDataURI);
-                }
+                const newDataURI = canvas.toDataURL('image/webp', 0.87);
+                resolve(newDataURI);
             } else {
                 resolve(dataURI);
             }
@@ -1938,9 +1936,9 @@ function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
-        if (settings.wallpaper && settings.wallpaperSrc) {
+        if (settings.wallpaper && wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
-            if (settings.wallpaperSrc.length < 65) {
+            if (wallpaperSrc.length < 65) {
                 // Remove any existing background styles and add the animated gradient class
                 document.body.style.background = '';
                 document.body.style.backgroundSize = '';
@@ -1948,7 +1946,7 @@ function applySettings(options = {}) {
             } else {
                 // Remove the gradient class and apply custom background
                 document.body.classList.remove('gradientBackground');
-                document.body.style.background = `url("${settings.wallpaperSrc}") no-repeat top center`;
+                document.body.style.background = `url("${wallpaperSrc}") no-repeat top center`;
                 document.body.style.backgroundSize = 'cover';
             }
         } else {
@@ -2171,8 +2169,7 @@ function applySettings(options = {}) {
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
-        if (settings.wallpaperSrc) {
-            imgPreview.setAttribute('src', settings.wallpaperSrc);
+        if (wallpaperSrc) {
             //imgPreview.style.display = 'block';
             imgPreview.onload = function (e) {
                 if (settings.wallpaper) {
@@ -2189,20 +2186,25 @@ function applySettings(options = {}) {
             }
             imgPreview.onerror = function (e) {
                 // reset to default on error with user image
-                settings.wallpaperSrc = 'img/bg.jpg';
-                imgPreview.setAttribute('src', settings.wallpaperSrc);
-                chrome.storage.local.set({ settings });
+                wallpaperSrc = DEFAULT_WALLPAPER_SRC;
+                imgPreview.setAttribute('src', wallpaperSrc);
+                chrome.storage.local.set({ wallpaperSrc });
             }
+            imgPreview.setAttribute('src', wallpaperSrc);
         }
 
     });
 }
 
-function saveSettings() {
+function saveSettings(nextWallpaperSrc) {
     const showTitlesChanged = settings.showTitles !== showTitlesInput.checked;
+    let wallpaperChanged = false;
+    if (nextWallpaperSrc && nextWallpaperSrc !== wallpaperSrc) {
+        wallpaperSrc = nextWallpaperSrc;
+        wallpaperChanged = true;
+    }
 
     settings.wallpaper = wallPaperEnabled.checked;
-    settings.wallpaperSrc = imgPreview.src;
     settings.backgroundColor = color_picker.value;
     settings.textColor = textColor_picker.value;
     settings.showTitles = showTitlesInput.checked;
@@ -2225,7 +2227,12 @@ function saveSettings() {
         flipStaggerWindow: showTitlesChanged ? TITLE_TOGGLE_STAGGER_WINDOW : undefined
     });
 
-    chrome.storage.local.set({ settings })
+    const storageUpdates = { settings };
+    if (wallpaperChanged) {
+        storageUpdates.wallpaperSrc = wallpaperSrc;
+    }
+
+    chrome.storage.local.set(storageUpdates)
         .then(() => {
             /*
             settingsToast.style.opacity = "1";
@@ -2561,7 +2568,7 @@ reader.onload = function (e) {
             document.documentElement.style.setProperty('--color', textColor);
         });
          */
-        saveSettings()
+        saveSettings(imagedata)
     })
 };
 
@@ -2767,6 +2774,7 @@ function prepareExport() {
                 "showClock":true,
                 "backgroundImage":""
             },
+            "wallpaperSrc": "img/bg.jpg",
             "dials": [
                 {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}},
                 {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}}
@@ -2781,6 +2789,7 @@ function prepareExport() {
             bookmarks: [],
             folders: [],
             settings: {},
+            wallpaperSrc: DEFAULT_WALLPAPER_SRC,
             dials: []
         }
     };
@@ -2824,7 +2833,9 @@ function prepareExport() {
         chrome.storage.local.get(null).then(items => {
             for (const [key, value] of Object.entries(items)) {
                 if (key === 'settings') {
-                    yasdJson.yasd.settings = value;
+                    yasdJson.yasd.settings = { ...value };
+                } else if (key === 'wallpaperSrc') {
+                    yasdJson.yasd.wallpaperSrc = value || DEFAULT_WALLPAPER_SRC;
                 } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
                     if (value.thumbnails && value.thumbnails.length) {
@@ -2868,7 +2879,8 @@ helpBtn.onclick = function () {
 resetSettingsBtn.onclick = function () {
     if (confirm('Are you sure you want to reset all settings to their defaults? This will not modify your site thumbnails.')) {
         settings = JSON.parse(JSON.stringify(defaults));
-        chrome.storage.local.set({ settings }).then(() => {
+        wallpaperSrc = DEFAULT_WALLPAPER_SRC;
+        chrome.storage.local.set({ settings, wallpaperSrc }).then(() => {
             applySettings();
         });
     }
@@ -3139,8 +3151,12 @@ function importFromYASD(json) {
         let settingsPromise = Promise.resolve();
         if (yasdData.settings) {
             const importedSettings = yasdData.settings.settings || yasdData.settings;
+            // wallpaperSrc is exported as a top-level sibling of settings; fall back to the
+            // legacy location (nested inside settings) for older backups.
+            wallpaperSrc = yasdData.wallpaperSrc || importedSettings.wallpaperSrc || DEFAULT_WALLPAPER_SRC;
+            delete importedSettings.wallpaperSrc;
             settings = Object.assign({}, defaults, importedSettings);
-            settingsPromise = chrome.storage.local.set({ settings });
+            settingsPromise = chrome.storage.local.set({ settings, wallpaperSrc });
         }
 
         // Store dials
@@ -3591,12 +3607,19 @@ function init() {
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs
     // todo: slow; lets get the current tab first
-    chrome.storage.local.get('settings').then(result => {
+    chrome.storage.local.get(['settings', 'wallpaperSrc']).then(async result => {
         if (result) {
             if (result.settings) {
                 settings = Object.assign({}, defaults, result.settings);
             } else {
                 settings = defaults;
+            }
+
+            const hasLegacyWallpaper = Object.prototype.hasOwnProperty.call(settings, 'wallpaperSrc');
+            wallpaperSrc = result.wallpaperSrc || settings.wallpaperSrc || DEFAULT_WALLPAPER_SRC;
+            if (hasLegacyWallpaper) {
+                delete settings.wallpaperSrc;
+                await chrome.storage.local.set({ settings, wallpaperSrc });
             }
             /*
             const entries = Object.entries(result);
