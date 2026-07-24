@@ -3577,11 +3577,8 @@ function onResize() {
     }, RESIZE_SETTLE_DELAY);
 }
 
-// Reads settings resiliently against Firefox's cold-start storage race, where
-// storage.local can resolve empty before its backend has finished loading
-// during browser startup. The background script writes an `initialized` marker
-// on install/update, so if the whole store reads empty we know storage isn't
-// ready yet (rather than a genuinely fresh profile) and re-read until it settles.
+// reads settings resiliently against ff cold-start storage race, where
+// storage.local can resolve empty when we invoke it from chrome_settings_overrides.homepage
 async function loadSettings(maxAttempts = 10, delayMs = 150) {
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const result = await chrome.storage.local.get(['settings', 'initialized']);
