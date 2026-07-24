@@ -404,7 +404,7 @@ async function handleInstalled(details) {
          chrome.contextMenus.create({
             title: "Add to Speed Dial",
             contexts: ["page"],
-            documentUrlPatterns: ["https://*/*", "http://*/*", "file://*/*", "chrome://*/*"],
+            documentUrlPatterns: browser?.runtime?.getBrowserInfo ? ["https://*/*", "http://*/*", "file://*/*"] :  ["https://*/*", "http://*/*", "file://*/*", "chrome://*/*"],
             id: "addToSpeedDial",
         });
     } catch (error) {
