@@ -85,7 +85,9 @@
 
 .sidenav #preview {
     width: 270px;
-    max-height: 160px;
+    height: 152px;
+    object-fit: cover;
+    object-position: top center;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
 }
