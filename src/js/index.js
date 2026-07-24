@@ -1049,6 +1049,18 @@ function getBrowserFaviconUrl(url) {
     }
 }
 
+function getGoogleFaviconUrl(url) {
+    if (!url) return null;
+
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return null;
+        return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(parsedUrl.origin)}&sz=32`;
+    } catch (error) {
+        return null;
+    }
+}
+
 function renderDefaultFavicon(icon) {
     icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
 }
@@ -1217,6 +1229,7 @@ function getOtherDeviceTabs(devices) {
 
                 tabs.push({
                     ...tab,
+                    favIconUrl: tab.favIconUrl || getGoogleFaviconUrl(tab.url),
                     subtitle: `${formatRecentTabUrl(tab.url)} - ${deviceName}`,
                 });
             }
