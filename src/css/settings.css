@@ -289,7 +289,7 @@
 }
 
 #historyDiv .history-panel-header {
-    margin: 0 25px;
+    margin: 0 20px;
     padding: 3px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.08);
@@ -329,12 +329,31 @@
 }
 
 .sidenav .history-panel-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex: 1;
     min-width: 0;
+    min-height: 34px;
+    gap: 0.3em;
     padding: 0.45em 0.6em;
     border-radius: 4px;
     background: transparent;
     color: rgba(255, 255, 255, 0.72);
+    font-family: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.history-panel-tab svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: currentColor;
+}
+
+.history-panel-tab[hidden] {
+    display: none;
 }
 
 .sidenav .history-panel-tab:hover,
@@ -384,6 +403,7 @@
     border-bottom: 1px solid #222;
     background: #000;
     color: rgba(255, 255, 255, 0.9);
+    font-family: inherit;
     text-align: left;
 }
 
@@ -434,8 +454,8 @@
 
 .recent-tab-url {
     margin-top: 3px;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.8rem;
 }
 
 .recent-tabs-empty,

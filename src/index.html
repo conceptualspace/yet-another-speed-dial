@@ -512,8 +512,14 @@
     <div class="settings history" id="historyDiv">
         <div class="history-panel-header">
             <div class="history-panel-tabs" role="tablist">
-                <button id="recentTabsPanelBtn" class="history-panel-tab active" type="button" data-locale="recentlyClosedTitle">Recently Closed</button>
-                <button id="otherDevicesPanelBtn" class="history-panel-tab" type="button" data-locale="otherDevicesTitle" hidden>Other Devices</button>
+                <button id="recentTabsPanelBtn" class="history-panel-tab active" type="button" aria-label="Recently Closed" title="Recently Closed">
+                    <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M480-120q-138 0-240.5-91T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-96 88h105v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm120-200L440-480v-200h80v167l136 137-56 56Z"/></svg>
+                    <span data-locale="recentlyClosedTitle">Recent Tabs</span>
+                </button>
+                <button id="otherDevicesPanelBtn" class="history-panel-tab" type="button" aria-label="Other Devices" title="Other Devices" hidden>
+                    <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M160-120q-33 0-56.5-23.5T80-200v-480q0-33 23.5-56.5T160-760h640q33 0 56.5 23.5T880-680v280h-80v-280H160v480h360v80H160Zm480 0q-17 0-28.5-11.5T600-160v-240q0-17 11.5-28.5T640-440h200q17 0 28.5 11.5T880-400v240q0 17-11.5 28.5T840-120H640Zm40-80h120v-160H680v160Zm-520 0v-480 480Zm520 0h120-120Z"/></svg>
+                    <span data-locale="otherDevicesTitle">Synced Tabs</span>
+                </button>
             </div>
             <button id="closeHistoryBtn" class="closeBtn" title="Close History">&times;</button>
         </div>

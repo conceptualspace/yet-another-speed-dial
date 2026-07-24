@@ -1194,7 +1194,7 @@ function renderRecentlyClosedTabs(tabs) {
         emptyEl: recentTabsEmpty,
         emptyMessage: getLocaleMessage('noRecentlyClosedTabs', 'No recently closed tabs'),
         itemFallback: getLocaleMessage('recentlyClosedUntitled', 'Untitled tab'),
-        buttonFallback: getLocaleMessage('recentlyClosedTitle', 'Recently Closed'),
+        buttonFallback: getLocaleMessage('recentlyClosedTitle', 'Recent Tabs'),
         onClick: restoreRecentlyClosedTab,
     });
 }
@@ -1233,7 +1233,7 @@ function renderOtherDeviceTabs(tabs) {
         emptyEl: otherDevicesEmpty,
         emptyMessage: getLocaleMessage('noOtherDeviceTabs', 'No tabs from other devices'),
         itemFallback: getLocaleMessage('otherDevicesUntitled', 'Untitled tab'),
-        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Other Devices'),
+        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Synced Tabs'),
         onClick: openOtherDeviceTab,
     });
 }
