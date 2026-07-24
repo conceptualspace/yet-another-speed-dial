@@ -2143,7 +2143,6 @@ function applySettings(options = {}) {
         rememberFolderInput.checked = settings.rememberFolder;
 
         if (wallpaperSrc) {
-            imgPreview.setAttribute('src', wallpaperSrc);
             //imgPreview.style.display = 'block';
             imgPreview.onload = function (e) {
                 if (settings.wallpaper) {
@@ -2164,6 +2163,7 @@ function applySettings(options = {}) {
                 imgPreview.setAttribute('src', wallpaperSrc);
                 chrome.storage.local.set({ wallpaperSrc });
             }
+            imgPreview.setAttribute('src', wallpaperSrc);
         }
 
     });
