@@ -481,7 +481,11 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
         
         if (tabs && tabs.length && tabs[0].url === url) {
-            screenshot = await chrome.tabs.captureVisibleTab()
+            try {
+                screenshot = await chrome.tabs.captureVisibleTab()
+            } catch (e) {
+                console.log("screenshot error: ", e.message || e)
+            }
         }
     }
 
