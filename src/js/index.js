@@ -2186,6 +2186,7 @@ function applySettings(options = {}) {
             }
             imgPreview.onerror = function (e) {
                 // reset to default on error with user image
+                console.error('Error loading wallpaper image, resetting to default', e);
                 wallpaperSrc = DEFAULT_WALLPAPER_SRC;
                 imgPreview.setAttribute('src', wallpaperSrc);
                 chrome.storage.local.set({ wallpaperSrc });
@@ -3613,6 +3614,7 @@ function init() {
                 settings = Object.assign({}, defaults, result.settings);
             } else {
                 settings = defaults;
+                console.log("settings not found; loading defaults");
             }
 
             const hasLegacyWallpaper = Object.prototype.hasOwnProperty.call(settings, 'wallpaperSrc');
