@@ -2747,6 +2747,7 @@ function prepareExport() {
                 "showClock":true,
                 "backgroundImage":""
             },
+            "wallpaperSrc": "img/bg.jpg",
             "dials": [
                 {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}},
                 {"https://361114779041.signin.aws.amazon.com/console":{"thumbnails":["data:image/webp;asdfasdf.png","sdfsdfsdfsdfsdf"],"thumbIndex":0,"bgColor":"red"}}
@@ -2761,6 +2762,7 @@ function prepareExport() {
             bookmarks: [],
             folders: [],
             settings: {},
+            wallpaperSrc: DEFAULT_WALLPAPER_SRC,
             dials: []
         }
     };
@@ -2804,7 +2806,9 @@ function prepareExport() {
         chrome.storage.local.get(null).then(items => {
             for (const [key, value] of Object.entries(items)) {
                 if (key === 'settings') {
-                    yasdJson.yasd.settings = { ...value, wallpaperSrc: items.wallpaperSrc || DEFAULT_WALLPAPER_SRC };
+                    yasdJson.yasd.settings = { ...value };
+                } else if (key === 'wallpaperSrc') {
+                    yasdJson.yasd.wallpaperSrc = value || DEFAULT_WALLPAPER_SRC;
                 } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
                     if (value.thumbnails && value.thumbnails.length) {
@@ -3120,7 +3124,9 @@ function importFromYASD(json) {
         let settingsPromise = Promise.resolve();
         if (yasdData.settings) {
             const importedSettings = yasdData.settings.settings || yasdData.settings;
-            wallpaperSrc = importedSettings.wallpaperSrc || DEFAULT_WALLPAPER_SRC;
+            // wallpaperSrc is exported as a top-level sibling of settings; fall back to the
+            // legacy location (nested inside settings) for older backups.
+            wallpaperSrc = yasdData.wallpaperSrc || importedSettings.wallpaperSrc || DEFAULT_WALLPAPER_SRC;
             delete importedSettings.wallpaperSrc;
             settings = Object.assign({}, defaults, importedSettings);
             settingsPromise = chrome.storage.local.set({ settings, wallpaperSrc });
