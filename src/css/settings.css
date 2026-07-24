@@ -318,9 +318,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    align-self: stretch;
-    flex: 0 0 42px;
+    align-self: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
     border-radius: 4px;
+}
+
+#closeHistoryBtn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
 #closeHistoryBtn:hover {
