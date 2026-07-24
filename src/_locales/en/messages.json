@@ -73,6 +73,9 @@
   "historyButton": {
     "message": "History Button"
   },
+  "historySearchPlaceholder": {
+    "message": "Search tabs"
+  },
   "otherDeviceFallbackName": {
     "message": "Other device"
   },
@@ -163,8 +166,32 @@
   "newWin": {
     "message": "Open in new window"
   },
+  "noMatchingTabs": {
+    "message": "No matching tabs"
+  },
+  "noOpenTabs": {
+    "message": "No open tabs"
+  },
   "noRecentlyClosedTabs": {
     "message": "No recently closed tabs"
+  },
+  "openTabsFocusError": {
+    "message": "Unable to switch to tab"
+  },
+  "openTabsLoadError": {
+    "message": "Unable to load open tabs"
+  },
+  "openTabsLoading": {
+    "message": "Loading..."
+  },
+  "openTabsTitle": {
+    "message": "Open Tabs"
+  },
+  "openTabsUnavailable": {
+    "message": "Open tabs are not available"
+  },
+  "openTabsUntitled": {
+    "message": "Untitled tab"
   },
   "refresh": {
     "message": "Refresh Thumbnails"
@@ -180,6 +207,9 @@
   },
   "recentlyClosedTitle": {
     "message": "Recent"
+  },
+  "recentlyClosedSectionTitle": {
+    "message": "Recently Closed"
   },
   "recentlyClosedUnavailable": {
     "message": "Recently closed tabs are not available"

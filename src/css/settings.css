@@ -387,10 +387,65 @@
     display: none;
 }
 
+.history-panel-search {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 9px;
+    height: 36px;
+    margin: 10px 20px 2px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.history-panel-search:focus-within {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.history-panel-search svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    fill: rgba(255, 255, 255, 0.65);
+}
+
+#historySearchInput {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+}
+
+#historySearchInput::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.history-panel-section {
+    margin: 0;
+    padding: 0;
+}
+
+.history-panel-section h2 {
+    margin: 14px 25px 5px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
 .recent-tabs-list,
 .other-devices-list {
     list-style: none;
-    margin: 0.6em 0 0;
+    margin: 0;
     padding: 0;
 }
 
@@ -471,6 +526,13 @@
     margin-right: 25px;
     margin-left: 25px;
     margin-top: 1em;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.4;
+}
+
+.history-filter-empty {
+    display: none;
+    margin: 1em 25px 0;
     color: rgba(255, 255, 255, 0.65);
     line-height: 1.4;
 }

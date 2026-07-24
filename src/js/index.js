@@ -71,9 +71,12 @@ const toastContent = document.getElementById('toastContent');
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
+const openTabsList = document.getElementById("openTabsList");
+const openTabsEmpty = document.getElementById("openTabsEmpty");
 const recentTabsList = document.getElementById("recentTabsList");
 const recentTabsEmpty = document.getElementById("recentTabsEmpty");
 const historyNav = document.getElementById("historyNav");
+const historySearchInput = document.getElementById("historySearchInput");
 const historyBtn = document.getElementById("historyBtn");
 const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
 const otherDevicesPanelBtn = document.getElementById("otherDevicesPanelBtn");
@@ -942,6 +945,7 @@ function setHistoryPanelView(view) {
     otherDevicesPanelBtn.classList.toggle('active', showOtherDevices);
     recentTabsView.classList.toggle('active', showRecentTabs);
     otherDevicesView.classList.toggle('active', showOtherDevices);
+    filterHistoryPanelItems();
 }
 
 function setOtherDevicesAvailable(available) {
@@ -949,7 +953,7 @@ function setOtherDevicesAvailable(available) {
 
     if (!available && otherDevicesView.classList.contains('active')) {
         setHistoryPanelView('recent');
-        loadRecentlyClosedTabs();
+        loadRecentTabs();
     }
 }
 
@@ -974,7 +978,7 @@ function openHistory(view = 'recent') {
     hideSearch();
     setHistoryPanelView(view);
     if (view === 'recent') {
-        loadRecentlyClosedTabs();
+        loadRecentTabs();
     } else {
         loadOtherDeviceTabs();
     }
@@ -984,6 +988,10 @@ function openHistory(view = 'recent') {
 
 function hideHistory() {
     hideSideNav(historyNav);
+    if (historySearchInput.value) {
+        historySearchInput.value = '';
+        filterHistoryPanelItems();
+    }
 }
 
 function hideModals() {
@@ -1029,11 +1037,19 @@ function getLocaleMessage(key, fallback) {
 function setRecentlyClosedStatus(message) {
     recentTabsEmpty.textContent = message;
     recentTabsEmpty.style.display = "block";
+    filterHistoryPanelItems();
+}
+
+function setOpenTabsStatus(message) {
+    openTabsEmpty.textContent = message;
+    openTabsEmpty.style.display = "block";
+    filterHistoryPanelItems();
 }
 
 function setOtherDevicesStatus(message) {
     otherDevicesEmpty.textContent = message;
     otherDevicesEmpty.style.display = "block";
+    filterHistoryPanelItems();
 }
 
 function getBrowserFaviconUrl(url) {
@@ -1151,6 +1167,19 @@ async function restoreRecentlyClosedTab(tab) {
     }
 }
 
+async function focusOpenTab(tab) {
+    try {
+        await chrome.tabs.update(tab.id, { active: true });
+        if (chrome.windows && chrome.windows.update) {
+            await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to focus open tab:', error);
+        showToast(getLocaleMessage('openTabsFocusError', 'Unable to switch to tab'));
+    }
+}
+
 async function openOtherDeviceTab(tab) {
     try {
         await chrome.tabs.create({ url: tab.url });
@@ -1167,6 +1196,7 @@ function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFal
     if (!items.length) {
         emptyEl.textContent = emptyMessage;
         emptyEl.style.display = "block";
+        filterHistoryPanelItems();
         return;
     }
 
@@ -1182,6 +1212,7 @@ function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFal
         button.type = 'button';
         button.className = 'recent-tab';
         button.title = item.url || item.title || buttonFallback;
+        button.dataset.searchText = `${item.title || ''} ${item.url || ''} ${item.subtitle || ''}`.toLocaleLowerCase();
         button.addEventListener('click', () => onClick(item));
 
         text.className = 'recent-tab-text';
@@ -1197,6 +1228,38 @@ function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFal
         listItem.appendChild(button);
         listEl.appendChild(listItem);
     }
+
+    filterHistoryPanelItems();
+}
+
+function filterHistoryPanelItems() {
+    const query = historySearchInput.value.trim().toLocaleLowerCase();
+
+    for (const view of [recentTabsView, otherDevicesView]) {
+        const buttons = view.querySelectorAll('.recent-tab');
+        let visibleItems = 0;
+
+        for (const button of buttons) {
+            const matches = !query || button.dataset.searchText.includes(query);
+            button.parentElement.hidden = !matches;
+            if (matches) visibleItems++;
+        }
+
+        const filterEmpty = view.querySelector('.history-filter-empty');
+        filterEmpty.style.display = query && buttons.length && !visibleItems ? 'block' : 'none';
+    }
+}
+
+function renderOpenTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: openTabsList,
+        emptyEl: openTabsEmpty,
+        emptyMessage: getLocaleMessage('noOpenTabs', 'No open tabs'),
+        itemFallback: getLocaleMessage('openTabsUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('openTabsTitle', 'Open Tabs'),
+        onClick: focusOpenTab,
+    });
 }
 
 function renderRecentlyClosedTabs(tabs) {
@@ -1249,6 +1312,28 @@ function renderOtherDeviceTabs(tabs) {
         buttonFallback: getLocaleMessage('otherDevicesTitle', 'Synced Tabs'),
         onClick: openOtherDeviceTab,
     });
+}
+
+async function loadOpenTabs() {
+    openTabsList.innerHTML = '';
+    setOpenTabsStatus(getLocaleMessage('openTabsLoading', 'Loading...'));
+
+    if (!chrome.tabs || !chrome.tabs.query) {
+        setOpenTabsStatus(getLocaleMessage('openTabsUnavailable', 'Open tabs are not available'));
+        return;
+    }
+
+    try {
+        const tabs = await chrome.tabs.query({});
+        renderOpenTabs(tabs.filter(tab => tab && tab.url && !isNewTabUrl(tab.url)));
+    } catch (error) {
+        console.error('Unable to load open tabs:', error);
+        setOpenTabsStatus(getLocaleMessage('openTabsLoadError', 'Unable to load open tabs'));
+    }
+}
+
+function loadRecentTabs() {
+    return Promise.all([loadOpenTabs(), loadRecentlyClosedTabs()]);
 }
 
 async function loadRecentlyClosedTabs() {
@@ -2776,6 +2861,8 @@ recentTabsPanelBtn.addEventListener("click", function() {
 otherDevicesPanelBtn.addEventListener("click", function() {
     openHistory('devices');
 });
+
+historySearchInput.addEventListener('input', filterHistoryPanelItems);
 
 function activateExpandableSearch() {
     hideHistory();

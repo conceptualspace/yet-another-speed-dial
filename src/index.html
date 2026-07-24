@@ -526,14 +526,29 @@
             </button>
         </div>
 
+        <label class="history-panel-search" for="historySearchInput">
+            <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
+            <input id="historySearchInput" type="search" autocomplete="off" data-locale-placeholder="historySearchPlaceholder" placeholder="Search tabs">
+        </label>
+
         <div id="recentTabsView" class="history-panel-view active">
+            <section class="history-panel-section">
+                <h2 data-locale="openTabsTitle">Open Tabs</h2>
+                <ul id="openTabsList" class="recent-tabs-list"></ul>
+                <div id="openTabsEmpty" class="recent-tabs-empty" data-locale="noOpenTabs">No open tabs</div>
+            </section>
+            <section class="history-panel-section">
+                <h2 data-locale="recentlyClosedSectionTitle">Recently Closed</h2>
             <ul id="recentTabsList" class="recent-tabs-list"></ul>
             <div id="recentTabsEmpty" class="recent-tabs-empty" data-locale="noRecentlyClosedTabs">No recently closed tabs</div>
+            </section>
+            <div class="history-filter-empty" data-locale="noMatchingTabs">No matching tabs</div>
         </div>
 
         <div id="otherDevicesView" class="history-panel-view">
             <ul id="otherDevicesList" class="other-devices-list"></ul>
             <div id="otherDevicesEmpty" class="other-devices-empty" data-locale="noOtherDeviceTabs">No tabs from other devices</div>
+            <div class="history-filter-empty" data-locale="noMatchingTabs">No matching tabs</div>
         </div>
     </div>
 </div>
