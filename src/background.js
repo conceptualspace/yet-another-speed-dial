@@ -367,6 +367,16 @@ function isPreviousVersion(a, b) {
 }
 
 async function handleInstalled(details) {
+    // Persist a readiness marker so the new tab page can distinguish a genuinely
+    // empty profile from Firefox's cold-start storage race (where storage.local
+    // can resolve empty before the backend has finished loading). This runs on
+    // install and update, so any user reaching this version will have the marker.
+    try {
+        await chrome.storage.local.set({ initialized: true });
+    } catch (error) {
+        console.log("Error writing initialized marker:", error.message);
+    }
+
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");

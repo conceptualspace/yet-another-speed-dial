@@ -3577,6 +3577,29 @@ function onResize() {
     }, RESIZE_SETTLE_DELAY);
 }
 
+// Reads settings resiliently against Firefox's cold-start storage race, where
+// storage.local can resolve empty before its backend has finished loading
+// during browser startup. The background script writes an `initialized` marker
+// on install/update, so if the whole store reads empty we know storage isn't
+// ready yet (rather than a genuinely fresh profile) and re-read until it settles.
+async function loadSettings(maxAttempts = 15, delayMs = 150) {
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const result = await chrome.storage.local.get(['settings', 'initialized']);
+        if (result.settings) {
+            // real settings are available
+            return Object.assign({}, defaults, result.settings);
+        }
+        if (result.initialized) {
+            // storage is ready and there simply are no saved settings yet
+            return Object.assign({}, defaults);
+        }
+        // whole store read empty -> backend not ready yet; wait and retry
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    // safety net: stop waiting and fall back to defaults
+    return Object.assign({}, defaults);
+}
+
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
@@ -3591,25 +3614,8 @@ function init() {
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs
     // todo: slow; lets get the current tab first
-    chrome.storage.local.get('settings').then(result => {
-        if (result) {
-            if (result.settings) {
-                settings = Object.assign({}, defaults, result.settings);
-            } else {
-                settings = defaults;
-            }
-            /*
-            const entries = Object.entries(result);
-            for (let e of entries) {
-                //console.log(e);
-                // todo: filter folder ids
-                if (e[0] !== "settings" && e[1].thumbnails) {
-                    let index = e[1].thumbIndex;
-                    cache[e[0]] = [e[1].thumbnails[index], e[1].bgColor];
-                }
-            }
-            */
-        }
+    loadSettings().then(loaded => {
+        settings = loaded;
 
         getSpeedDialId().then(() => {
             if (settings.rememberFolder && settings.currentFolder
