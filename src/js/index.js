@@ -522,8 +522,10 @@ function folderLink(title, id) {
         bookmarksContainerParent.scrollTop = scrollPos;
 
         settings.currentFolder = id;
-        chrome.storage.local.set({ settings });
-        //tabMessagePort.postMessage({currentFolder: id});
+        if (settings.rememberFolder) {
+            chrome.storage.local.set({ settings });
+            //tabMessagePort.postMessage({currentFolder: id});
+        }
     };
 
     a.ondragenter = dragenterHandler;
