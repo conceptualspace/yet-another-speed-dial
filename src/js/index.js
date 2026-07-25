@@ -35,8 +35,14 @@ document.head.appendChild(dialSizeStyleEl);
 const menu = document.getElementById('contextMenu');
 const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
+const openAllFolderGroup = document.getElementById('openAllFolderGroup');
+const supportsTabGroups = typeof chrome.tabs.group === 'function';
 const modal = document.getElementById('tileModal');
 const modalContent = document.getElementById('tileModalContent');
+
+if (!supportsTabGroups) {
+    openAllFolderGroup.style.display = 'none';
+}
 
 const createDialModal = document.getElementById('createDialModal');
 const createDialModalContent = document.getElementById('createDialModalContent');
@@ -1127,20 +1133,33 @@ function createDial() {
     });
 }
 
-function openAllTabs() {
-    let folder = currentFolder ? document.getElementById(currentFolder) : document.getElementById('wrap');
+async function openAllTabs(folderId = currentFolder, groupTabs = false) {
+    let folder = document.getElementById(folderId || speedDialId);
 
     if (folder) {
         let dials = [...folder.getElementsByClassName('tile')];
 
-        dials?.forEach(dial => {
-            if (dial.href) {
-                chrome.tabs.create({
-                    url: dial.href,
-                    active: false
-                });
+        if (groupTabs && supportsTabGroups) {
+            // Grouping needs the created tabs' ids, so await them here.
+            let tabs = await Promise.all(
+                dials
+                    .filter(dial => dial.href)
+                    .map(dial => chrome.tabs.create({ url: dial.href, active: false }))
+            );
+            let tabIds = tabs.map(tab => tab.id).filter(Number.isInteger);
+            if (tabIds.length) {
+                await chrome.tabs.group({ tabIds });
             }
-        });
+        } else {
+            dials.forEach(dial => {
+                if (dial.href) {
+                    chrome.tabs.create({
+                        url: dial.href,
+                        active: false
+                    });
+                }
+            });
+        }
     }
 }
 
@@ -2366,6 +2385,12 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'openAll':
                     openAllTabs();
+                    break;
+                case 'openAllFolder':
+                    openAllTabs(targetFolder);
+                    break;
+                case 'openAllFolderGroup':
+                    openAllTabs(targetFolder, true);
                     break;
                 case 'edit':
                     buildModal(targetTileHref, targetTileTitle).then(() => {
