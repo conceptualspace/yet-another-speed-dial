@@ -4,6 +4,14 @@
 
 'use strict';
 
+// A capture stores up to 6 candidate images per url, but the dial only ever
+// paints one of them -- the rest exist so the edit modal carousel can offer
+// alternates. Those alternates are worth keeping while a dial is new and the
+// user may still want to pick a different image; once they've settled, the
+// extras are pure read amplification on the startup path. So writes stay at
+// full fidelity and compactThumbnails() reclaims them on every update.
+const MAX_STORED_THUMBNAILS = 2;
+
 
 // EVENT LISTENERS //
 
@@ -426,6 +434,58 @@ async function handleInstalled(details) {
 async function runMigrations(previousVersion) {
     if (isPreviousVersion(previousVersion, '3.11')) {
         await migrateDialSizes();
+    }
+    // deliberately unversioned: this is maintenance, not a one-shot migration.
+    // running it every update is what keeps records from re-accumulating, since
+    // captures are written at full fidelity
+    await compactThumbnails();
+}
+
+function isThumbnailKey(key) {
+    return key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:');
+}
+
+// Trim records down to MAX_STORED_THUMBNAILS, keeping whichever image the dial
+// actually displays. Same shape as the filtering prepareExportV1() already does
+// to keep exports small. Runs on every update; a record that a user has since
+// added images to simply gets trimmed again next time.
+async function compactThumbnails() {
+    try {
+        // one bulk read rather than per-key lookups: a sequential scan beats a
+        // few hundred random seeks, and this only runs once per update
+        const items = await chrome.storage.local.get(null);
+        let batch = {};
+        let pending = 0;
+
+        for (const [key, value] of Object.entries(items)) {
+            if (!isThumbnailKey(key)) continue;
+            if (!value || !value.thumbnails || value.thumbnails.length <= MAX_STORED_THUMBNAILS) continue;
+
+            // move the displayed image to index 0 so the trim can never drop it,
+            // then backfill with the remaining captures up to the cap
+            const selected = value.thumbnails[value.thumbIndex || 0] || value.thumbnails[0];
+            const thumbnails = [selected];
+            for (const thumbnail of value.thumbnails) {
+                if (thumbnails.length >= MAX_STORED_THUMBNAILS) break;
+                if (thumbnail !== selected) thumbnails.push(thumbnail);
+            }
+
+            batch[key] = { ...value, thumbnails, thumbIndex: 0 };
+
+            // write incrementally so a worker teardown mid-pass still makes
+            // progress; compaction is idempotent and resumes safely next update
+            if (++pending >= 50) {
+                await chrome.storage.local.set(batch);
+                batch = {};
+                pending = 0;
+            }
+        }
+
+        if (pending) {
+            await chrome.storage.local.set(batch);
+        }
+    } catch (error) {
+        console.error('Error during thumbnail compaction:', error);
     }
 }
 
