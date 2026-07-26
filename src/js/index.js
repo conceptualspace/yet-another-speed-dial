@@ -155,7 +155,6 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
-let layoutFolder = false;
 // tile reflow (FLIP) animation state. The motion runs on the compositor via the
 // Web Animations API: each relayout does a single main-thread pass (read resting
 // positions, invert, then hand off the transform keyframes). Viewport culling
@@ -366,7 +365,7 @@ function removeBookmark(url) {
     let id = targetNode.dataset.id;
     // animate removal
     targetNode.style.display = "none";
-    layout(true);
+    flip();
     // remove dial
     targetNode.remove();
     // nb: cache cleanup is handled by handleBookmarkRemoved in background script
@@ -473,12 +472,10 @@ function showFolder(id) {
         if (folder.id === id) {
             folder.style.display = "flex"
             folder.style.opacity = "0";
-            layoutFolder = true;
             // transition between folders. todo more elegant solution
             setTimeout(function () {
-                //layoutFolder = id;
                 folder.style.opacity = "1";
-                animate()
+                scheduleFlip()
             }, 20);
         } else {
             folder.style.display = "none";
@@ -847,7 +844,7 @@ async function printBookmarks(bookmarks, parentId) {
         if (currentFolder === parentId) {
             setTimeout(() => {
                 folderContainerEl.style.opacity = "1";
-                animate();
+                scheduleFlip();
             }, 20);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
         }
@@ -1652,13 +1649,6 @@ function flip(options = {}) {
     }, totalDuration + 60);
 }
 
-// Public entry points used after a layout-affecting change. `layout` runs
-// immediately; `animate` is debounced for high-frequency callers.
-// todo: clean this up its confusing af
-function layout(options = {}) {
-    flip(options);
-}
-
 // Re-seed the FLIP position cache from the tiles' current resting positions without animating
 // currently only needed after dnd
 function recalcFlipRects() {
@@ -1833,7 +1823,7 @@ function flipHold() {
     }
 }
 
-const animate = debounce(() => {
+const scheduleFlip = debounce(() => {
     requestAnimationFrame(flip);
 }, 300)
 
@@ -2100,7 +2090,7 @@ function applySettings(options = {}) {
         }
 
         // All layout-affecting changes applied; trigger the FLIP reflow exactly once.
-        layout({
+        flip({
             scale: options.scaleTiles,
             duration: options.flipDuration,
             staggerWindow: options.flipStaggerWindow
@@ -3402,7 +3392,7 @@ const processRefresh = debounce(({ foldersOnly = false } = {}) => {
         //getBookmarks(speedDialId)
         buildDialPages(speedDialId, currentFolder).then(() => {
             // re-measure resting positions for the new dom nodes and animate
-            animate();
+            scheduleFlip();
         });
     }
 }, 650, true);
