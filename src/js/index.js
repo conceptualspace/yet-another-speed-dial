@@ -146,6 +146,7 @@ let sortable = null;
 let folderNavTimeout = null;
 let targetTileHref = null;
 let targetTileId = null;
+let targetTileParentId = null;
 let targetTileTitle = null;
 let targetNode = null;
 let targetFolder = null;
@@ -573,12 +574,7 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url, tileid) {
-    //tabMessagePort.postMessage({refreshThumbs: true, url});
-    // the div id is "folderid-boookmarkid"
-    let parentId = tileid.split("-")[0];
-    let id = tileid.split("-")[1];
-
+function refreshThumbnails(url, id, parentId) {
     showToast(' Capturing images...')
     // gives the ui time to animate before blocking the process with the bg work
     setTimeout(() => {
@@ -803,7 +799,7 @@ async function printBookmarks(bookmarks, parentId) {
                 main.classList.add('tile-main');
 
                 let content = document.createElement('div');
-                content.setAttribute('id', bookmark.parentId + "-" + bookmark.id);
+                content.id = bookmark.id;
                 content.classList.add('tile-content');
                 //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
                 //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
@@ -2242,8 +2238,9 @@ document.addEventListener("contextmenu", function (e) {
     hideSettings();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
-        targetTileHref = e.target.parentElement.parentElement.href;
-        targetTileId = e.target.id;
+        targetTileHref = targetNode.href;
+        targetTileId = targetNode.dataset.id;
+        targetTileParentId = targetNode.closest('.container').id;
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
@@ -2362,7 +2359,7 @@ window.addEventListener("mousedown", e => {
                     });
                     break;
                 case 'refresh':
-                    refreshThumbnails(targetTileHref, targetTileId);
+                    refreshThumbnails(targetTileHref, targetTileId, targetTileParentId);
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
@@ -3441,54 +3438,12 @@ function preloadImage(url) {
     });
 }
 
-/*
-// replaced by setBackgroundImages()
-function setBackgroundImage(thumb) {
-    const setImage = async (element) => {
-        if (element) {
-            try {
-                //await preloadImage(thumb.thumbnail);
-                // todo: use a solid color not this gradient shit failed experiment
-                element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
-                // unset the existing bg color
-                element.style.backgroundColor = "unset";
-            } catch (error) {
-                console.error('Error preloading image:', error);
-            }
-        }
-    };
-
-    const id = thumb.parentId + "-" + thumb.id;
-    let element = document.getElementById(id);
-
-    if (element) {
-        setImage(element);
-    } else {
-        const observer = new MutationObserver((mutations, obs) => {
-            element = document.getElementById(id);
-            if (element) {
-                setImage(element);
-                obs.disconnect();
-            }
-        });
-
-        const parentElement = document.getElementById(thumb.parentId);
-
-        observer.observe(parentElement, {
-            childList: true,
-            subtree: true
-        });
-    }
-}
-*/
-
 function setBackgroundImages(thumbnails) {
     const elementsToUpdate = [];
     const observers = new Map();
 
     thumbnails.forEach(thumb => {
-        const id = thumb.parentId + "-" + thumb.id;
-        let element = document.getElementById(id);
+        const element = document.getElementById(thumb.id);
 
         if (element) {
             elementsToUpdate.push({ element, thumb });
@@ -3500,7 +3455,7 @@ function setBackgroundImages(thumbnails) {
 
                 observer = new MutationObserver((mutations, obs) => {
                     thumbnails.forEach(t => {
-                        const el = document.getElementById(t.parentId + "-" + t.id);
+                        const el = document.getElementById(t.id);
                         if (el) {
                             elementsToUpdate.push({ element: el, thumb: t });
                         }
