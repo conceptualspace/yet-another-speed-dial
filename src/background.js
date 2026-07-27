@@ -273,8 +273,8 @@ const capturePopupScreenshot = (url) => {
                     hasScreenshot = true;
                     cleanup(screenshot);
                   })
-                  .catch(() => {
-                    console.log("Error capturing screenshot");
+                  .catch((e) => {
+                    console.log("Error capturing screenshot ", e.message || e);
                     cleanup();
                   })
               }, 2000))
