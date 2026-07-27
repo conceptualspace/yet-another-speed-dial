@@ -17,7 +17,6 @@ async function processThumbnails(data) {
     let quickRefresh = data.quickRefresh;
     let forcePageReload = data.forcePageReload;
     let id = data.id;
-    let parentId = data.parentId;
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
@@ -69,7 +68,7 @@ async function processThumbnails(data) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    await saveThumbnails(url, id, parentId, thumbs, bgColor, forcePageReload);
+    await saveThumbnails(url, id, thumbs, bgColor, forcePageReload);
 }
 
 

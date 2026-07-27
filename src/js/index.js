@@ -146,7 +146,6 @@ let sortable = null;
 let folderNavTimeout = null;
 let targetTileHref = null;
 let targetTileId = null;
-let targetTileParentId = null;
 let targetTileTitle = null;
 let targetNode = null;
 let targetFolder = null;
@@ -577,11 +576,11 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url, id, parentId) {
+function refreshThumbnails(url, id) {
     showToast(' Capturing images...')
     // gives the ui time to animate before blocking the process with the bg work
     setTimeout(() => {
-        chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
+        chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id } });
     }, 200);
 }
 
@@ -628,7 +627,7 @@ function refreshAllThumbnails() {
                 if (child.url && (child.url.startsWith('https://') || child.url.startsWith('http://') || child.url.startsWith('file://') || child.url.startsWith('chrome://'))) {
                     //urls.push(child.url);
                     // push an object with the url and the id
-                    bookmarks.push({ url: child.url, id: child.id, parentId: child.parentId });
+                    bookmarks.push({ url: child.url, id: child.id });
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
@@ -647,7 +646,7 @@ function refreshAllThumbnails() {
 function refreshImportedThumbnails(nodes) {
     let bookmarks = (nodes || [])
         .filter(node => node && node.url && (node.url.startsWith('https://') || node.url.startsWith('http://') || node.url.startsWith('file://') || node.url.startsWith('chrome://')))
-        .map(node => ({ url: node.url, id: node.id, parentId: node.parentId }));
+        .map(node => ({ url: node.url, id: node.id }));
 
     if (!bookmarks.length) return;
 
@@ -2276,7 +2275,6 @@ document.addEventListener("contextmenu", function (e) {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = targetNode.href;
         targetTileId = targetNode.dataset.id;
-        targetTileParentId = targetNode.closest('.container').id;
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
@@ -2395,7 +2393,7 @@ window.addEventListener("mousedown", e => {
                     });
                     break;
                 case 'refresh':
-                    refreshThumbnails(targetTileHref, targetTileId, targetTileParentId);
+                    refreshThumbnails(targetTileHref, targetTileId);
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
@@ -3476,7 +3474,7 @@ function preloadImage(url) {
 
 function setBackgroundImages(thumbnails) {
     const elementsToUpdate = [];
-    const observers = new Map();
+    const pendingThumbnails = [];
 
     thumbnails.forEach(thumb => {
         const element = document.getElementById(thumb.id);
@@ -3484,33 +3482,36 @@ function setBackgroundImages(thumbnails) {
         if (element) {
             elementsToUpdate.push({ element, thumb });
         } else {
-            let observer = observers.get(thumb.parentId);
-            if (!observer) {
-                const parentElement = document.getElementById(thumb.parentId);
-                if (!parentElement) return; // Skip if parent is missing
-
-                observer = new MutationObserver((mutations, obs) => {
-                    thumbnails.forEach(t => {
-                        const el = document.getElementById(t.id);
-                        if (el) {
-                            elementsToUpdate.push({ element: el, thumb: t });
-                        }
-                    });
-
-                    if (elementsToUpdate.length) {
-                        batchApplyImages(elementsToUpdate);
-                        obs.disconnect();
-                    }
-                });
-
-                observer.observe(parentElement, { childList: true, subtree: true });
-                observers.set(thumb.parentId, observer);
-            }
+            pendingThumbnails.push(thumb);
         }
     });
 
     if (elementsToUpdate.length) {
         batchApplyImages(elementsToUpdate);
+    }
+
+    if (pendingThumbnails.length) {
+        const observer = new MutationObserver((mutations, obs) => {
+            const newlyAvailable = [];
+
+            for (let index = pendingThumbnails.length - 1; index >= 0; index--) {
+                const thumb = pendingThumbnails[index];
+                const element = document.getElementById(thumb.id);
+                if (!element) continue;
+
+                newlyAvailable.push({ element, thumb });
+                pendingThumbnails.splice(index, 1);
+            }
+
+            if (newlyAvailable.length) {
+                batchApplyImages(newlyAvailable);
+            }
+            if (!pendingThumbnails.length) {
+                obs.disconnect();
+            }
+        });
+
+        observer.observe(bookmarksContainerParent, { childList: true, subtree: true });
     }
 }
 
@@ -3535,8 +3536,7 @@ function handleMessages(message) {
         hideToast();
         processRefresh({ foldersOnly: true });
     } else if(message.type === 'thumbBatch') {
-        // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
-        // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor
+        // Update each tile by its bookmark id.
         //console.log(message.data);
         // todo: background not working?
         setBackgroundImages(message.data);

@@ -73,7 +73,6 @@ async function handleGetThumbs(data, batchSize = 50) {
 
                 return {
                     id: bookmark.id,
-                    parentId: bookmark.parentId,
                     url: bookmark.url,
                     thumbnail: storedData.thumbnails[storedData.thumbIndex || 0],
                     bgColor: storedData.bgColor
@@ -112,7 +111,6 @@ async function handleBookmarkChanged(id, info) {
     if (bookmark[0].url) {
     	const bookmarkUrl = bookmark[0].url
 		const bookmarkId = bookmark[0].id
-		const parentId = bookmark[0].parentId
     	if (bookmarkUrl !== "data:" && bookmarkUrl !== "about:blank") {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
@@ -120,7 +118,7 @@ async function handleBookmarkChanged(id, info) {
     			refreshOpen();
     		} else {
     			// new bookmark needs images
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
+                getThumbnails(bookmarkUrl, bookmarkId, {forcePageReload: true});
     		}
     	}
     } else {
@@ -200,7 +198,7 @@ function toggleBookmarkCreatedListener(data) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(data.url);
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        await getThumbnails(data.url, data.id, {forceScreenshot: true, forcePageReload: true});
     }
 }
 
@@ -292,7 +290,7 @@ async function handleRefreshAll(data) {
     
         if (batch.length) {
             try {
-                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, { quickRefresh: true })));
+                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, { quickRefresh: true })));
                 // todo show progress in UI
                 // todo: we might need to refactor this to promises or timers so the worker doesnt kill the process with a batch scheduled
                 setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
@@ -456,7 +454,7 @@ async function migrateDialSizes() {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
+async function getThumbnails(url, id, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
@@ -480,14 +478,13 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
     await processThumbnails({
         url,
         id,
-        parentId,
         screenshot,
         quickRefresh: options.quickRefresh,
         forcePageReload: options.forcePageReload,
     });
 }
 
-async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
+async function saveThumbnails(url, id, images, bgColor, forcePageReload=false) {
 	if (images && images.length) {
 		let thumbnails = [];
 		let result = await chrome.storage.local.get(url)
@@ -509,7 +506,6 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 			type: 'thumbBatch',
 			data: [{
 				id,
-				parentId,
 				url,
 				thumbnail: images[0],
 				bgColor
