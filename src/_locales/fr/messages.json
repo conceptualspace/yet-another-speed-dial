@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "Cela ouvrira temporairement le site dans un nouvel onglet pour capturer l'image"
   },
+  "capturingImages": {
+    "message": "Capture des images..."
+  },
   "clock": {
     "message": "L'horloge"
   },

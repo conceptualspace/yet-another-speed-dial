@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "這會暫時在新分頁開啟網站以擷取圖片"
   },
+  "capturingImages": {
+    "message": "正在擷取圖片..."
+  },
   "clock": {
     "message": "時鐘"
   },

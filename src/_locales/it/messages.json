@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "Questo aprirà temporaneamente il sito in una nuova scheda per catturare l'immagine"
   },
+  "capturingImages": {
+    "message": "Acquisizione immagini..."
+  },
   "clock": {
     "message": "Orologio"
   },

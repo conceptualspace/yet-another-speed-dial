@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "Dadurch wird die Seite vorübergehend in einer neuen Registerkarte geöffnet, um das Bild aufzunehmen"
   },
+  "capturingImages": {
+    "message": "Bilder werden aufgenommen..."
+  },
   "clock": {
     "message": "Uhr"
   },

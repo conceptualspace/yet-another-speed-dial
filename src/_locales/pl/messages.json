@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "To tymczasowo otworzy stronę w nowej karcie, aby przechwycić obraz"
   },
+  "capturingImages": {
+    "message": "Przechwytywanie obrazów..."
+  },
   "clock": {
     "message": "Zegar"
   },

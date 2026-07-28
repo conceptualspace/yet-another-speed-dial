@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "这将临时在新标签页中打开网站以捕获图像"
   },
+  "capturingImages": {
+    "message": "正在获取图片..."
+  },
   "clock": {
     "message": "时钟"
   },

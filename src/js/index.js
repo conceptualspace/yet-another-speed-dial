@@ -156,6 +156,7 @@ let folders = [];
 let currentFolder = null;
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
+const capturingImagesMessage = ' ' + chrome.i18n.getMessage('capturingImages');
 // tile reflow (FLIP) animation state. The motion runs on the compositor via the
 // Web Animations API: each relayout does a single main-thread pass (read resting
 // positions, invert, then hand off the transform keyframes). Viewport culling
@@ -575,7 +576,7 @@ function editFolder() {
 }
 
 function refreshThumbnails(url, id, parentId) {
-    showToast(' Capturing images...')
+    showToast(capturingImagesMessage)
     // gives the ui time to animate before blocking the process with the bg work
     setTimeout(() => {
         chrome.runtime.sendMessage({ target: 'background', type: 'refreshThumbs', data: { url, id, parentId } });
@@ -629,7 +630,7 @@ function refreshAllThumbnails() {
                 }
             }
             //tabMessagePort.postMessage({refreshAll: true, urls});
-            showToast(' Capturing images...')
+            showToast(capturingImagesMessage)
             // gives the ui time to animate before blocking the process with the bg work
             setTimeout(() => {
                 chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
@@ -648,7 +649,7 @@ function refreshImportedThumbnails(nodes) {
 
     if (!bookmarks.length) return;
 
-    showToast(' Capturing images...')
+    showToast(capturingImagesMessage)
 
     setTimeout(() => {
         chrome.runtime.sendMessage({ target: 'background', type: 'refreshAllThumbs', data: { bookmarks } });
@@ -1122,7 +1123,7 @@ function createDial() {
         parentId: createDialModalURL.parentId
     }).then(node => {
         hideModals();
-        showToast(' Capturing images...')
+        showToast(capturingImagesMessage)
     });
 }
 
@@ -1395,7 +1396,7 @@ function saveBookmarkSettings() {
                     }
 
                     if (url !== newUrl && toastContent.innerText === '') {
-                        showToast(' Capturing images...')
+                        showToast(capturingImagesMessage)
                     }
                 }
             })

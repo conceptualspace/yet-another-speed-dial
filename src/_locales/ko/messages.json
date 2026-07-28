@@ -26,6 +26,9 @@
     "captureMessage": {
       "message": "이미지를 캡처하기 위해 사이트를 새 탭에서 일시적으로 엽니다"
     },
+    "capturingImages": {
+      "message": "이미지를 캡처하는 중..."
+    },
     "clock": {
       "message": "시계"
     },

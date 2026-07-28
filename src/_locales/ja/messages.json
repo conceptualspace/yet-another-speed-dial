@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "画像を取得するために一時的に新しいタブでサイトを開きます"
   },
+  "capturingImages": {
+    "message": "画像を取得しています..."
+  },
   "clock": {
     "message": "時計"
   },

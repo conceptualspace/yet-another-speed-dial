@@ -26,6 +26,9 @@
   "captureMessage": {
     "message": "Görüntüyü yakalamak için site geçici olarak yeni bir sekmede açılacak"
   },
+  "capturingImages": {
+    "message": "Görüntüler yakalanıyor..."
+  },
   "clock": {
     "message": "Saat"
   },
