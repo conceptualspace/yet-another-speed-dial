@@ -52,6 +52,7 @@ async function migrateLegacyThumbnailRecords(results) {
         };
         updates[getThumbnailCandidatesKey(url)] = {
             thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
+                .slice(0, 4)
         };
     }
 
