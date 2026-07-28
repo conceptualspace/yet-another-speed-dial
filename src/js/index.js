@@ -494,12 +494,40 @@ function showFolder(id) {
     }
 }
 
+const THUMBNAIL_SCHEMA_VERSION = 2;
+const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+
+function getThumbnailCandidatesKey(url) {
+    return `${THUMBNAIL_CANDIDATES_KEY_PREFIX}${url}`;
+}
+
+function getThumbnailStorageKeys(url) {
+    return [url, getThumbnailCandidatesKey(url)];
+}
+
+function getSelectedThumbnail(storedData) {
+    if (!storedData) return null;
+    if (storedData.thumbnail) return storedData.thumbnail;
+
+    const thumbIndex = Number.isInteger(storedData.thumbIndex) ? storedData.thumbIndex : 0;
+    return storedData.thumbnails?.[thumbIndex] || null;
+}
+
 function getThumbs(bookmarkUrl) {
-    return chrome.storage.local.get(bookmarkUrl)
+    const candidatesKey = getThumbnailCandidatesKey(bookmarkUrl);
+
+    return chrome.storage.local.get([bookmarkUrl, candidatesKey])
         .then(result => {
-            if (result[bookmarkUrl]) {
-                return result[bookmarkUrl];
-            }
+            const storedData = result[bookmarkUrl];
+            if (!storedData) return;
+            if (!storedData.thumbnail) return storedData;
+
+            const candidates = result[candidatesKey]?.thumbnails || [];
+            return {
+                thumbnails: [...new Set([storedData.thumbnail, ...candidates])],
+                thumbIndex: 0,
+                bgColor: storedData.bgColor
+            };
         });
 }
 
@@ -1321,7 +1349,6 @@ function saveBookmarkSettings() {
     let url = targetTileHref;
     let newUrl = rectifyUrl(modalURL.value.trim());
     let selectedImageSrc = null;
-    let thumbIndex = 0;
     let imageNodes = document.getElementsByClassName('fc-slide');
     let bgColor = null;
     let colorPickerColor = modalBgColorPickerInput.value;
@@ -1352,17 +1379,22 @@ function saveBookmarkSettings() {
         }
     }
 
-    chrome.storage.local.get(url)
-        .then(result => {
+    getThumbs(url)
+        .then(images => {
             if (selectedImageSrc) {
-                let thumbnails = result[url]?.thumbnails || [];
-                thumbIndex = thumbnails.indexOf(selectedImageSrc);
-                if (thumbIndex < 0) {
-                    thumbnails.push(selectedImageSrc);
-                    thumbIndex = thumbnails.length - 1;
-                }
-                chrome.storage.local.set({ [newUrl]: { thumbnails, thumbIndex, bgColor } }).then(result => {
-                    //tabMessagePort.postMessage({updateCache: true, url: newUrl, i: thumbIndex});
+                const alternatives = [...new Set((images?.thumbnails || [])
+                    .filter(image => image && image !== selectedImageSrc))];
+                chrome.storage.local.set({
+                    [newUrl]: {
+                        schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+                        thumbnail: selectedImageSrc,
+                        bgColor
+                    },
+                    [getThumbnailCandidatesKey(newUrl)]: {
+                        schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+                        thumbnails: alternatives
+                    }
+                }).then(() => {
                     if (title !== targetTileTitle || url !== newUrl) {
                         updateTitle()
                     }
@@ -1384,7 +1416,7 @@ function saveBookmarkSettings() {
             .then(bookmarks => {
                 if (bookmarks.length <= 1 && (url !== newUrl)) {
                     // cleanup unused thumbnails
-                    chrome.storage.local.remove(url)
+                    chrome.storage.local.remove(getThumbnailStorageKeys(url))
                 }
                 for (let bookmark of bookmarks) {
                     let currentParent = currentFolder ? currentFolder : speedDialId
@@ -2717,8 +2749,9 @@ function prepareExportV1() {
                 let thumbIndex = 0;
                 let bgColor = null;
 
-                if (value.thumbnails && value.thumbnails.length) {
-                    thumbnails.push(value.thumbnails[value.thumbIndex]);
+                const thumbnail = getSelectedThumbnail(value);
+                if (thumbnail) {
+                    thumbnails.push(thumbnail);
                 }
                 if (value.bgColor) {
                     bgColor = value.bgColor;
@@ -2826,8 +2859,9 @@ function prepareExport() {
                     yasdJson.yasd.wallpaperSrc = value || DEFAULT_WALLPAPER_SRC;
                 } else if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
                     let thumbnails = [];
-                    if (value.thumbnails && value.thumbnails.length) {
-                        thumbnails.push(value.thumbnails[value.thumbIndex]);
+                    const thumbnail = getSelectedThumbnail(value);
+                    if (thumbnail) {
+                        thumbnails.push(thumbnail);
                     }
                     yasdJson.yasd.dials.push({
                         [key]: {

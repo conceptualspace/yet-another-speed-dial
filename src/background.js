@@ -4,6 +4,67 @@
 
 'use strict';
 
+const THUMBNAIL_SCHEMA_VERSION = 2;
+const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+
+function getThumbnailCandidatesKey(url) {
+    return `${THUMBNAIL_CANDIDATES_KEY_PREFIX}${url}`;
+}
+
+function getThumbnailStorageKeys(url) {
+    return [url, getThumbnailCandidatesKey(url)];
+}
+
+function getSelectedThumbnail(storedData) {
+    if (!storedData) return null;
+    if (storedData.thumbnail) return storedData.thumbnail;
+
+    const thumbIndex = Number.isInteger(storedData.thumbIndex) ? storedData.thumbIndex : 0;
+    return storedData.thumbnails?.[thumbIndex] || null;
+}
+
+function buildThumbnailStorageUpdate(url, images, bgColor) {
+    const thumbnails = [...new Set(images.flat().filter(image => typeof image === 'string' && image))];
+    if (!thumbnails.length) return null;
+
+    return {
+        [url]: {
+            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+            thumbnail: thumbnails[0],
+            bgColor
+        },
+        [getThumbnailCandidatesKey(url)]: {
+            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+            thumbnails: thumbnails.slice(1)
+        }
+    };
+}
+
+async function migrateLegacyThumbnailRecords(results) {
+    const updates = {};
+
+    for (const [url, storedData] of Object.entries(results)) {
+        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
+
+        const thumbnail = getSelectedThumbnail(storedData);
+        if (!thumbnail) continue;
+
+        updates[url] = {
+            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+            thumbnail,
+            bgColor: storedData.bgColor
+        };
+        updates[getThumbnailCandidatesKey(url)] = {
+            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
+            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
+        };
+    }
+
+    if (Object.keys(updates).length) {
+        await chrome.storage.local.set(updates);
+    }
+}
+
 
 // EVENT LISTENERS //
 
@@ -73,12 +134,14 @@ async function handleGetThumbs(data, batchSize = 50) {
             .map(bookmark => {
                 let storedData = results[bookmark.url];
                 if (!storedData) return null;
+				const thumbnail = getSelectedThumbnail(storedData);
+				if (!thumbnail) return null;
 
                 return {
                     id: bookmark.id,
                     parentId: bookmark.parentId,
                     url: bookmark.url,
-                    thumbnail: storedData.thumbnails[storedData.thumbIndex || 0],
+                    thumbnail,
                     bgColor: storedData.bgColor
                 };
             })
@@ -91,6 +154,8 @@ async function handleGetThumbs(data, batchSize = 50) {
                 data: thumbs
             });
         }
+
+		await migrateLegacyThumbnailRecords(results);
 
 		// todo: maybe replace this with a message port so we dont blast every tab
     	// Short delay to avoid overwhelming message passing
@@ -159,7 +224,7 @@ async function handleBookmarkRemoved(id, info) {
 		// remove the thumbnail from local storage if no other bookmarks share this URL
 		const others = await chrome.bookmarks.search({ url: info.node.url });
 		if (others.length === 0) {
-			await chrome.storage.local.remove(info.node.url).catch((err) => {
+            await chrome.storage.local.remove(getThumbnailStorageKeys(info.node.url)).catch((err) => {
 				console.log(err)
 			});
 		}
@@ -207,7 +272,7 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
-        await chrome.storage.local.remove(data.url);
+        await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
         await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
     }
 }
@@ -319,10 +384,6 @@ async function handleRefreshAll(data) {
         }
     }
 
-    const urlsToRemove = data.bookmarks.map(bookmark => bookmark.url);
-    await chrome.storage.local.remove(urlsToRemove).catch((err) => {
-        console.log(err);
-    });
     refreshBatch(data.bookmarks);
 }
 
@@ -507,14 +568,10 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
 	if (images && images.length) {
-		let thumbnails = [];
-		let result = await chrome.storage.local.get(url)
-		if (result[url] && result[url].thumbnails) {
-			thumbnails = result[url].thumbnails;
-		}
-		thumbnails.push(images);
-		thumbnails = thumbnails.flat();
-		await chrome.storage.local.set({[url]: {thumbnails, thumbIndex: 0, bgColor}})
+        const storageUpdate = buildThumbnailStorageUpdate(url, images, bgColor);
+        if (storageUpdate) {
+            await chrome.storage.local.set(storageUpdate);
+        }
 	}
 	// refresh open new tab page
 	if (forcePageReload) {
