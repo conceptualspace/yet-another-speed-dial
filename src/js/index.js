@@ -494,7 +494,6 @@ function showFolder(id) {
     }
 }
 
-const THUMBNAIL_SCHEMA_VERSION = 2;
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 
 function getThumbnailCandidatesKey(url) {
@@ -1386,12 +1385,10 @@ function saveBookmarkSettings() {
                     .filter(image => image && image !== selectedImageSrc))];
                 chrome.storage.local.set({
                     [newUrl]: {
-                        schemaVersion: THUMBNAIL_SCHEMA_VERSION,
                         thumbnail: selectedImageSrc,
                         bgColor
                     },
                     [getThumbnailCandidatesKey(newUrl)]: {
-                        schemaVersion: THUMBNAIL_SCHEMA_VERSION,
                         thumbnails: alternatives
                     }
                 }).then(() => {

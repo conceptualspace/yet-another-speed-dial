@@ -4,7 +4,6 @@
 
 'use strict';
 
-const THUMBNAIL_SCHEMA_VERSION = 2;
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 
 function getThumbnailCandidatesKey(url) {
@@ -29,12 +28,10 @@ function buildThumbnailStorageUpdate(url, images, bgColor) {
 
     return {
         [url]: {
-            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
             thumbnail: thumbnails[0],
             bgColor
         },
         [getThumbnailCandidatesKey(url)]: {
-            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
             thumbnails: thumbnails.slice(1)
         }
     };
@@ -50,12 +47,10 @@ async function migrateLegacyThumbnailRecords(results) {
         if (!thumbnail) continue;
 
         updates[url] = {
-            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
             thumbnail,
             bgColor: storedData.bgColor
         };
         updates[getThumbnailCandidatesKey(url)] = {
-            schemaVersion: THUMBNAIL_SCHEMA_VERSION,
             thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
         };
     }
