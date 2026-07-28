@@ -136,8 +136,17 @@
   "newWin": {
     "message": "在新窗口中打开"
   },
+  "openAll": {
+    "message": "全部打开"
+  },
+  "openAllTabGroup": {
+    "message": "在新标签组中打开全部"
+  },
   "refresh": {
     "message": "刷新缩略图"
+  },
+  "refreshAll": {
+    "message": "刷新所有缩略图..."
   },
   "remember": {
     "message": "记住上次文件夹"

@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Abrir en nueva ventana"
   },
+  "openAll": {
+    "message": "Abrir todo"
+  },
+  "openAllTabGroup": {
+    "message": "Abrir todo en un nuevo grupo de pestañas"
+  },
   "refresh": {
     "message": "Actualizar Miniaturas"
+  },
+  "refreshAll": {
+    "message": "Actualizar Todas las Miniaturas..."
   },
   "remember": {
     "message": "Recordar última carpeta"

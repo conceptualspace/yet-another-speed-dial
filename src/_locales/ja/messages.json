@@ -136,8 +136,17 @@
   "newWin": {
     "message": "新しいウィンドウで開く"
   },
+  "openAll": {
+    "message": "すべて開く"
+  },
+  "openAllTabGroup": {
+    "message": "すべてを新しいタブグループで開く"
+  },
   "refresh": {
     "message": "サムネイルを更新"
+  },
+  "refreshAll": {
+    "message": "すべてのサムネイルを更新..."
   },
   "remember": {
     "message": "最後のフォルダを記憶"

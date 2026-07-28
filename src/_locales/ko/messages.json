@@ -136,8 +136,17 @@
     "newWin": {
       "message": "새 창에서 열기"
     },
+    "openAll": {
+      "message": "모두 열기"
+    },
+    "openAllTabGroup": {
+      "message": "새 탭 그룹에서 모두 열기"
+    },
     "refresh": {
       "message": "썸네일 새로고침"
+    },
+    "refreshAll": {
+      "message": "모든 썸네일 새로고침..."
     },
     "remember": {
       "message": "마지막 폴더 기억"

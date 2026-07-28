@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Yeni pencerede aç"
   },
+  "openAll": {
+    "message": "Tümünü aç"
+  },
+  "openAllTabGroup": {
+    "message": "Tümünü yeni sekme grubunda aç"
+  },
   "refresh": {
     "message": "Küçük Resimleri Yenile"
+  },
+  "refreshAll": {
+    "message": "Tüm Küçük Resimleri Yenile..."
   },
   "remember": {
     "message": "Son Klasörü Hatırla"

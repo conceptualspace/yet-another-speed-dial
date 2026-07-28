@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Ouvrir dans une nouvelle fenêtre"
   },
+  "openAll": {
+    "message": "Tout ouvrir"
+  },
+  "openAllTabGroup": {
+    "message": "Tout ouvrir dans un nouveau groupe d'onglets"
+  },
   "refresh": {
     "message": "Actualiser les miniatures"
+  },
+  "refreshAll": {
+    "message": "Actualiser toutes les miniatures..."
   },
   "remember": {
     "message": "Mémoriser les derniers dossiers"

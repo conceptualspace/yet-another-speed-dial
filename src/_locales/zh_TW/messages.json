@@ -136,8 +136,17 @@
   "newWin": {
     "message": "在新視窗開啟"
   },
+  "openAll": {
+    "message": "全部開啟"
+  },
+  "openAllTabGroup": {
+    "message": "在新分頁群組中開啟全部"
+  },
   "refresh": {
     "message": "重新整理縮圖"
+  },
+  "refreshAll": {
+    "message": "重新整理所有縮圖..."
   },
   "remember": {
     "message": "記住上次的資料夾"

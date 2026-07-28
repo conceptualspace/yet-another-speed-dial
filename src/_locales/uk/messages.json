@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Відкрити в новому вікні"
   },
+  "openAll": {
+    "message": "Відкрити все"
+  },
+  "openAllTabGroup": {
+    "message": "Відкрити все в новій групі вкладок"
+  },
   "refresh": {
     "message": "Оновити мініатюри"
+  },
+  "refreshAll": {
+    "message": "Оновити всі мініатюри..."
   },
   "remember": {
     "message": "Запам’ятовувати останню папку"

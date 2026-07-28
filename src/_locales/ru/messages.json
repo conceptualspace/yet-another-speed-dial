@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Открыть в новом окне"
   },
+  "openAll": {
+    "message": "Открыть все"
+  },
+  "openAllTabGroup": {
+    "message": "Открыть все в новой группе вкладок"
+  },
   "refresh": {
     "message": "Обновить миниатюры"
+  },
+  "refreshAll": {
+    "message": "Обновить все миниатюры..."
   },
   "remove": {
     "message": "Удалить"

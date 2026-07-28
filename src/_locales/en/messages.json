@@ -136,8 +136,17 @@
   "newWin": {
     "message": "Open in new window"
   },
+  "openAll": {
+    "message": "Open all"
+  },
+  "openAllTabGroup": {
+    "message": "Open all in new tab group"
+  },
   "refresh": {
     "message": "Refresh Thumbnails"
+  },
+  "refreshAll": {
+    "message": "Refresh All Thumbnails..."
   },
   "remember": {
     "message": "Remember Last Folder"
