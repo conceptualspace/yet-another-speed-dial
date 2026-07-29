@@ -72,7 +72,7 @@ async function handleGetThumbs(data, batchSize = 50) {
         let thumbs = batch
             .map(bookmark => {
                 let storedData = results[bookmark.url];
-                if (!storedData) return null;
+                if (!storedData?.thumbnails) return null;
 
                 return {
                     id: bookmark.id,

@@ -992,9 +992,9 @@ async function buildModal(url, title) {
     modalTitle.value = title;
     modalURL.value = url;
     let images = await getThumbs(url);
-    if (images && images.thumbnails.length) {
+    if (images?.thumbnails?.length) {
         // clunky af
-        let index = images.thumbIndex;
+        let index = images.thumbIndex || 0;
         let img = appendModalCarouselImage(newCarousel, images.thumbnails[index]);
         img.onerror = function () {
             img.setAttribute('src', 'img/default.png'); // todo: image is borked, cleanup
@@ -2717,8 +2717,8 @@ function prepareExportV1() {
                 let thumbIndex = 0;
                 let bgColor = null;
 
-                if (value.thumbnails && value.thumbnails.length) {
-                    thumbnails.push(value.thumbnails[value.thumbIndex]);
+                if (value.thumbnails?.length) {
+                    thumbnails.push(value.thumbnails[value.thumbIndex] ?? value.thumbnails[0]);
                 }
                 if (value.bgColor) {
                     bgColor = value.bgColor;
