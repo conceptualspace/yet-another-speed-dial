@@ -24,6 +24,8 @@ async function handleMessages(message) {
     let forcePageReload = message.data.forcePageReload;
     let id = message.data.id;
     let parentId = message.data.parentId;
+    let jobId = message.data.jobId;
+    let pageSnapshot = message.data.pageSnapshot;
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
@@ -31,7 +33,7 @@ async function handleMessages(message) {
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh).catch(err => {
+    let images = await fetchImages(url, quickRefresh, pageSnapshot).catch(err => {
         console.log(err);
     })
 
@@ -75,7 +77,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
+    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, jobId, thumbs, bgColor}, forcePageReload});
     //return title; //todo: why did i do this?
 
       //chrome.runtime.sendMessage(images);
@@ -463,7 +465,26 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
-async function fetchImages(url, quickRefresh) {
+async function fetchManifestIcon(manifestUrl, signal) {
+    const manifestResponse = await fetch(manifestUrl, { signal });
+    if (!manifestResponse.ok) return null;
+
+    const manifest = await manifestResponse.json();
+    if (!manifest.icons || !Array.isArray(manifest.icons)) return null;
+
+    const getSizeValue = sizes => {
+        if (!sizes) return 0;
+        const match = sizes.match(/(\d+)x(\d+)/);
+        return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
+    };
+    const icon = manifest.icons
+        .filter(item => item.src)
+        .sort((a, b) => getSizeValue(b.sizes) - getSizeValue(a.sizes))[0];
+
+    return icon ? convertUrlToAbsolute(manifestUrl, icon.src) : null;
+}
+
+async function fetchImages(url, quickRefresh, pageSnapshot = null) {
 
     if (url.startsWith('file://')) {
         return ['img/file.png'];
@@ -516,7 +537,34 @@ async function fetchImages(url, quickRefresh) {
 
     if (whitelist.includes(hostname)) {
         return(['img/' + hostname + '.png']);
-    } else {
+    }
+
+    // A snapshot means the page DOM was inspected successfully, including the
+    // valid case where it contained no useful images. Merge rendered candidates
+    // with generic fallbacks, but do not fetch and parse the page HTML again.
+    if (pageSnapshot) {
+        const liveCandidates = Array.isArray(pageSnapshot.candidates) ? pageSnapshot.candidates : [];
+        for (let index = liveCandidates.length - 1; index >= 0; index--) {
+            insert(liveCandidates[index]);
+        }
+
+        if (images.length < 5 && pageSnapshot.manifestUrl) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 3000);
+            try {
+                const manifestIcon = await fetchManifestIcon(pageSnapshot.manifestUrl, controller.signal);
+                if (manifestIcon) images.push(manifestIcon);
+            } catch (err) {
+                console.warn(`Could not fetch manifest: ${pageSnapshot.manifestUrl}`, err);
+            } finally {
+                clearTimeout(timeoutId);
+            }
+        }
+
+        return images;
+    }
+
+    {
 
          // Set up fetch timeout
         const controller = new AbortController();
@@ -554,11 +602,12 @@ async function fetchImages(url, quickRefresh) {
             // check for svg logo and convert to data url
             let svgElements = doc.querySelectorAll('svg');
             for (let svg of svgElements) {
+                console.log(svg)
                 // heuristic to find relevant svg (logo class or large size)
                 let isLogo = svg.getAttribute('aria-label')?.toLowerCase().includes(hostname.split('.')[0]) ||
                         svg.getAttribute('class')?.toLowerCase().includes('logo') ||
                         svg.id?.toLowerCase().includes('logo') ||
-                        (svg.getAttribute('role') === 'img' && svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
+                        (svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
                 if (isLogo) { 
                     try {
                         // Convert SVG to data URL
@@ -670,31 +719,8 @@ async function fetchImages(url, quickRefresh) {
                 if (manifestLink && manifestLink.getAttribute('href')) {
                     try {
                         let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
-                        const manifestResponse = await fetch(manifestUrl, {
-                            signal: controller.signal
-                        });
-                        if (manifestResponse.ok) {
-                            const manifest = await manifestResponse.json();
-                            if (manifest.icons && Array.isArray(manifest.icons)) {
-                                // Sort icons by size (largest first) and get the best ones
-                                const sortedIcons = manifest.icons
-                                    .filter(icon => icon.src) // Only icons with src
-                                    .sort((a, b) => {
-                                        // Extract numeric size for comparison
-                                        const getSizeValue = (sizes) => {
-                                            if (!sizes) return 0;
-                                            const match = sizes.match(/(\d+)x(\d+)/);
-                                            return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
-                                        };
-                                        return getSizeValue(b.sizes) - getSizeValue(a.sizes);
-                                    });
-                                // take the largest
-                                if (sortedIcons.length > 0) {
-                                    let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
-                                    images.push(iconUrl);
-                                }
-                            }
-                        }
+                        const manifestIcon = await fetchManifestIcon(manifestUrl, controller.signal);
+                        if (manifestIcon) images.push(manifestIcon);
                     } catch (manifestError) {
                         console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
                     }

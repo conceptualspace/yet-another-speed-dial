@@ -4,6 +4,276 @@
 
 'use strict';
 
+const THUMBNAIL_SOURCE = Object.freeze({
+    AUTO: 'auto',
+    FRESH_POPUP: 'fresh-popup',
+    NETWORK: 'network'
+});
+const MAX_LIVE_IMAGE_CANDIDATES = 16;
+const PENDING_TAB_SOURCE_TTL = 10000;
+const THUMBNAIL_JOB_TTL = 45000;
+const pendingTabSources = new Map();
+const activeThumbnailJobs = new Map();
+let thumbnailJobSequence = 0;
+
+
+// LIVE PAGE EXTRACTION //
+
+function normalizePageUrl(url) {
+    try {
+        const normalized = new URL(url);
+        normalized.hash = '';
+        return normalized.href;
+    } catch (err) {
+        return null;
+    }
+}
+
+function canInspectPageUrl(url) {
+    try {
+        const protocol = new URL(url).protocol;
+        return protocol === 'http:' || protocol === 'https:';
+    } catch (err) {
+        return false;
+    }
+}
+
+// This function is serialized by chrome.scripting and runs in the page. Keep it
+// self-contained: it cannot close over values from the service worker.
+function collectLivePageSnapshot(maxCandidates) {
+    const candidates = [];
+    const seen = new Set();
+    const baseUrl = document.baseURI;
+
+    function toAbsoluteUrl(value) {
+        if (!value) return null;
+
+        try {
+            const absoluteUrl = new URL(value, baseUrl);
+            if (absoluteUrl.protocol === 'http:' || absoluteUrl.protocol === 'https:') {
+                return absoluteUrl.href;
+            }
+            if (absoluteUrl.protocol === 'data:' && absoluteUrl.href.startsWith('data:image/')) {
+                return absoluteUrl.href;
+            }
+        } catch (err) {
+            return null;
+        }
+
+        return null;
+    }
+
+    function addCandidate(value) {
+        if (candidates.length >= maxCandidates) return;
+
+        const imageUrl = toAbsoluteUrl(value);
+        if (!imageUrl || imageUrl.length > 500000 || seen.has(imageUrl)) return;
+        seen.add(imageUrl);
+        candidates.push(imageUrl);
+    }
+
+    function getLinkSize(link) {
+        const sizes = link.getAttribute('sizes') || '';
+        let largest = 0;
+        for (const size of sizes.matchAll(/(\d+)x(\d+)/gi)) {
+            largest = Math.max(largest, Number(size[1]) * Number(size[2]));
+        }
+        return largest;
+    }
+
+    for (const meta of document.querySelectorAll('meta[property="og:image"], meta[name="og:image"]')) {
+        addCandidate(meta.getAttribute('content'));
+    }
+
+    for (const meta of document.querySelectorAll('meta[itemprop="image"]')) {
+        addCandidate(meta.getAttribute('content'));
+    }
+
+    const iconLinks = Array.from(document.querySelectorAll('link[rel~="apple-touch-icon"], link[rel~="icon"]'));
+    iconLinks.sort((a, b) => getLinkSize(b) - getLinkSize(a));
+    for (const icon of iconLinks) {
+        addCandidate(icon.getAttribute('href'));
+    }
+
+    const amazonImages = Array.from(document.querySelectorAll('#main-image-container img'));
+    const amazonImage = amazonImages.find(image => image.id !== 'sitbLogoImg');
+    if (amazonImage) {
+        addCandidate(amazonImage.currentSrc || amazonImage.src);
+    }
+
+    const meaningfulImages = Array.from(document.images)
+        .filter(image => {
+            const source = image.currentSrc || image.src || '';
+            const filtered = source.includes('fxxj3ttftm5ltcqnto1o4baovyl') || source.includes('nav-sprite-global');
+            return !filtered && image.complete && image.naturalWidth >= 64 && image.naturalHeight >= 64;
+        })
+        .map(image => {
+            const rect = image.getBoundingClientRect();
+            const visible = rect.bottom > 0 && rect.right > 0 && rect.top < innerHeight && rect.left < innerWidth;
+            return {
+                image,
+                score: (visible ? 100000000 : 0) + (rect.width * rect.height) + (image.naturalWidth * image.naturalHeight)
+            };
+        })
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 4);
+
+    for (const item of meaningfulImages) {
+        addCandidate(item.image.currentSrc || item.image.src);
+    }
+
+    const hostnameParts = location.hostname.split('.');
+    const hostnameLabel = (hostnameParts.length >= 2 ? hostnameParts[hostnameParts.length - 2] : hostnameParts[0]).toLowerCase();
+    for (const svg of document.querySelectorAll('svg')) {
+        const label = (svg.getAttribute('aria-label') || '').toLowerCase();
+        const className = (svg.getAttribute('class') || '').toLowerCase();
+        const id = (svg.id || '').toLowerCase();
+        const width = Number.parseInt(svg.getAttribute('width') || '0', 10);
+        if (!label.includes(hostnameLabel) && !className.includes('logo') && !id.includes('logo') && width < 96) continue;
+
+        try {
+            const svgText = new XMLSerializer().serializeToString(svg);
+            addCandidate(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgText)}`);
+        } catch (err) {
+            // Ignore SVGs that cannot be serialized.
+        }
+        break;
+    }
+
+    if (candidates.length < maxCandidates) {
+        let inspected = 0;
+        let backgroundCount = 0;
+        for (const element of document.querySelectorAll('body *')) {
+            if (inspected++ >= 600 || backgroundCount >= 4 || candidates.length >= maxCandidates) break;
+
+            const rect = element.getBoundingClientRect();
+            if (rect.width < 64 || rect.height < 64 || rect.bottom <= 0 || rect.right <= 0 || rect.top >= innerHeight || rect.left >= innerWidth) continue;
+
+            const backgroundImage = getComputedStyle(element).backgroundImage;
+            if (!backgroundImage || backgroundImage === 'none') continue;
+            for (const match of backgroundImage.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
+                const previousLength = candidates.length;
+                addCandidate(match[1]);
+                if (candidates.length > previousLength) backgroundCount++;
+                if (backgroundCount >= 4 || candidates.length >= maxCandidates) break;
+            }
+        }
+    }
+
+    const manifestLink = document.querySelector('link[rel="manifest"]');
+    return {
+        documentUrl: location.href,
+        candidates,
+        manifestUrl: manifestLink ? toAbsoluteUrl(manifestLink.getAttribute('href')) : null
+    };
+}
+
+async function extractLivePageSnapshot(tabId, expectedUrl, allowRedirect = false) {
+    if (!chrome.scripting || typeof chrome.scripting.executeScript !== 'function' || !canInspectPageUrl(expectedUrl)) {
+        return null;
+    }
+
+    try {
+        const results = await chrome.scripting.executeScript({
+            target: { tabId, allFrames: false },
+            func: collectLivePageSnapshot,
+            args: [MAX_LIVE_IMAGE_CANDIDATES]
+        });
+        const snapshot = results && results[0] ? results[0].result : null;
+        if (!snapshot || !Array.isArray(snapshot.candidates) || !snapshot.documentUrl) return null;
+
+        if (!allowRedirect && normalizePageUrl(snapshot.documentUrl) !== normalizePageUrl(expectedUrl)) {
+            return null;
+        }
+
+        return snapshot;
+    } catch (err) {
+        console.warn('Unable to inspect live page for thumbnails:', err);
+        return null;
+    }
+}
+
+async function findMatchingTab(url) {
+    const normalizedUrl = normalizePageUrl(url);
+    if (!normalizedUrl) return null;
+
+    const tabs = await chrome.tabs.query({});
+    const matches = tabs.filter(tab => tab.id && normalizePageUrl(tab.url) === normalizedUrl);
+    matches.sort((a, b) => {
+        if (a.active !== b.active) return a.active ? -1 : 1;
+        if (a.status !== b.status) return a.status === 'complete' ? -1 : 1;
+        return (b.lastAccessed || 0) - (a.lastAccessed || 0);
+    });
+    return matches[0] || null;
+}
+
+function rememberPendingTabSource(tab) {
+    const key = normalizePageUrl(tab && tab.url);
+    if (!key || !tab.id) return;
+    const source = { tabId: tab.id, createdAt: Date.now() };
+    pendingTabSources.set(key, source);
+    setTimeout(() => {
+        if (pendingTabSources.get(key) === source) pendingTabSources.delete(key);
+    }, PENDING_TAB_SOURCE_TTL);
+}
+
+function clearPendingTabSource(url) {
+    const key = normalizePageUrl(url);
+    if (key) pendingTabSources.delete(key);
+}
+
+function consumePendingTabSource(url) {
+    const key = normalizePageUrl(url);
+    if (!key) return null;
+
+    const pending = pendingTabSources.get(key);
+    pendingTabSources.delete(key);
+    if (!pending || Date.now() - pending.createdAt > PENDING_TAB_SOURCE_TTL) return null;
+    return pending.tabId;
+}
+
+function beginThumbnailJob(url, deduplicate) {
+    const key = normalizePageUrl(url) || url;
+    const existing = activeThumbnailJobs.get(key);
+    if (deduplicate && existing && Date.now() - existing.startedAt < THUMBNAIL_JOB_TTL) {
+        return null;
+    }
+    if (existing) activeThumbnailJobs.delete(key);
+
+    const job = {
+        id: `${Date.now()}-${++thumbnailJobSequence}`,
+        key,
+        deduplicate,
+        startedAt: Date.now()
+    };
+    if (deduplicate) {
+        activeThumbnailJobs.set(key, job);
+        setTimeout(() => {
+            if (activeThumbnailJobs.get(key) === job) activeThumbnailJobs.delete(key);
+        }, THUMBNAIL_JOB_TTL);
+    }
+    return job;
+}
+
+function completeThumbnailJob(url, jobId) {
+    if (!jobId) return;
+
+    const key = normalizePageUrl(url) || url;
+    const current = activeThumbnailJobs.get(key);
+    if (current && current.id === jobId) activeThumbnailJobs.delete(key);
+}
+
+async function captureTabScreenshot(tabId, expectedUrl) {
+    try {
+        const tab = await chrome.tabs.get(tabId);
+        if (!tab.active || normalizePageUrl(tab.url) !== normalizePageUrl(expectedUrl)) return null;
+        return await chrome.tabs.captureVisibleTab(tab.windowId);
+    } catch (err) {
+        console.warn('Unable to capture live tab screenshot:', err);
+        return null;
+    }
+}
+
 
 // EVENT LISTENERS //
 
@@ -123,7 +393,12 @@ async function handleBookmarkChanged(id, info) {
     			refreshOpen();
     		} else {
     			// new bookmark needs images
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
+                const tabId = consumePendingTabSource(bookmarkUrl);
+                await getThumbnails(bookmarkUrl, bookmarkId, parentId, {
+                    source: THUMBNAIL_SOURCE.AUTO,
+                    tabId,
+                    forcePageReload: true
+                });
     		}
     	}
     } else {
@@ -193,104 +468,114 @@ function handleBrowserAction(tab) {
 
 // Function to enable or disable the bookmarks.onCreated listener
 function toggleBookmarkCreatedListener(data) {
+	chrome.bookmarks.onCreated.removeListener(handleBookmarkChanged);
     if (data.enable) {
         chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
-    } else {
-        chrome.bookmarks.onCreated.removeListener(handleBookmarkChanged);
     }
 }
 
 async function handleOffscreenFetchDone(data, forcePageReload) {
-	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+    try {
+        await saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+    } catch (err) {
+        console.error('Unable to save thumbnails:', err);
+    } finally {
+        completeThumbnailJob(data.url, data.jobId);
+    }
 }
 
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(data.url);
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        await getThumbnails(data.url, data.id, data.parentId, {
+            source: THUMBNAIL_SOURCE.FRESH_POPUP,
+            deduplicate: false,
+            forcePageReload: true
+        });
     }
 }
 
-const capturePopupScreenshot = (url) => {
-  
-  return new Promise((resolve, reject) => {
+const capturePopupPage = (url) => new Promise(resolve => {
+    let popupId = null;
+    let tabId = null;
+    let loadingInterval = null;
+    let renderTimer = null;
+    let focusTimer = null;
+    let timeoutTimer = null;
     let finished = false;
+    let captureStarted = false;
+
+    const cleanup = (result = { screenshot: null, pageSnapshot: null }) => {
+        if (finished) return;
+        finished = true;
+        clearInterval(loadingInterval);
+        clearTimeout(renderTimer);
+        clearTimeout(focusTimer);
+        clearTimeout(timeoutTimer);
+        if (popupId !== null) chrome.windows.remove(popupId).catch(() => {});
+        resolve(result);
+    };
+
     chrome.windows.create({
-        url: url,
+        url,
         focused: false,
         width: 1,
         height: 1,
         left: 0,
         top: 0,
         type: 'popup'
-      }).then((popup) => {
+    }).then(popup => {
+        popupId = popup.id;
         if (!popup.tabs || !popup.tabs.length) {
-          chrome.windows.remove(popup.id)
-          return resolve(null)
+            cleanup();
+            return;
         }
 
-        const tabId = popup.tabs[0].id
-        let loadingInterval;
-        let hasScreenshot = false;
+        tabId = popup.tabs[0].id;
+        chrome.tabs.update(tabId, { muted: true, active: true }).catch(() => {});
+        chrome.windows.update(popupId, {
+            focused: false,
+            width: 1280,
+            height: 720,
+            left: 0,
+            top: 0
+        }).catch(() => {});
 
-        const cleanup = (result = null) => {
-            if (finished) return;
-            finished = true;
-
-            clearInterval(loadingInterval);
-            clearTimeout(focusTimeout);
-            clearTimeout(timeout);
-
-            chrome.windows.remove(popup.id).catch(() => {});
-            resolve(result);
-        };
-        
-        chrome.tabs.update(tabId, {
-          muted: true,
-          active: true
-        })
-        chrome.windows.update(popup.id, {
-          focused: false,
-          width: 1280,
-          height: 720,
-          left: 0,
-          top: 0
-        })
-
-        const timeout = setTimeout(() => {
-          cleanup();
-        }, 10000)
-
-        // Focus window after 5s if we don't have a screenshot yet
-        const focusTimeout = setTimeout(() => {
-          if (!hasScreenshot && !finished) {
-            chrome.windows.update(popup.id, { focused: true });
-          }
+        timeoutTimer = setTimeout(cleanup, 10000);
+        focusTimer = setTimeout(() => {
+            if (!finished) {
+                chrome.windows.update(popupId, { focused: true }).catch(() => {});
+            }
         }, 5000);
 
-        loadingInterval = setInterval(() => {
-          chrome.tabs.get(tabId).then((tab) => {
-            'complete' === tab.status &&
-              (clearInterval(loadingInterval),
-              setTimeout(() => {
-                // delay to let page render
-                chrome.tabs
-                  .captureVisibleTab(popup.id)
-                  .then((screenshot) => {
-                    hasScreenshot = true;
-                    cleanup(screenshot);
-                  })
-                  .catch(() => {
-                    console.log("Error capturing screenshot");
-                    cleanup();
-                  })
-              }, 2000))
-          })
-        }, 200)
-      })
-  })
-}
+        loadingInterval = setInterval(async () => {
+            if (captureStarted || finished) return;
+
+            try {
+                const tab = await chrome.tabs.get(tabId);
+                if (tab.status !== 'complete') return;
+                captureStarted = true;
+                clearInterval(loadingInterval);
+                renderTimer = setTimeout(async () => {
+                    const pageSnapshot = await extractLivePageSnapshot(tabId, url, true);
+                    if (finished) return;
+                    let screenshot = await chrome.tabs.captureVisibleTab(popupId).catch(() => null);
+                    if (!screenshot && !finished) {
+                        await chrome.windows.update(popupId, { focused: true }).catch(() => {});
+                        if (finished) return;
+                        screenshot = await chrome.tabs.captureVisibleTab(popupId).catch(() => null);
+                    }
+                    cleanup({ screenshot, pageSnapshot });
+                }, 2000);
+            } catch (err) {
+                cleanup();
+            }
+        }, 200);
+    }).catch(err => {
+        console.warn('Unable to open thumbnail capture popup:', err);
+        cleanup();
+    });
+});
 
 async function handleRefreshAll(data) {
     async function refreshBatch(bookmarks, index = 0, retries = 2) {
@@ -300,7 +585,11 @@ async function handleRefreshAll(data) {
     
         if (batch.length) {
             try {
-                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, { quickRefresh: true })));
+                await Promise.all(batch.map(bookmark => getThumbnails(bookmark.url, bookmark.id, bookmark.parentId, {
+                    source: THUMBNAIL_SOURCE.NETWORK,
+                    deduplicate: false,
+                    quickRefresh: true
+                })));
                 // todo show progress in UI
                 // todo: we might need to refactor this to promises or timers so the worker doesnt kill the process with a batch scheduled
                 setTimeout(() => refreshBatch(bookmarks, index + batchSize, retries), delay);
@@ -339,25 +628,23 @@ async function createBookmarkFromContextMenu(tab) {
 		}
 	}
 
-    // check for doopz
-	if (speedDialId) {
-		let match = false;
-		chrome.bookmarks.getSubTree(speedDialId).then(node => {
-			for (const bookmark of node[0].children) {
-				if (tab.url === bookmark.url) {
-					match = true;
-					break;
-				}
-			}
-			if (!match) {
-				chrome.bookmarks.create({
-					parentId: speedDialId,
-					title: tab.title,
-					url: tab.url
-				})
-			}
-		});
-	}
+    if (!speedDialId) return;
+
+    try {
+        const node = await chrome.bookmarks.getSubTree(speedDialId);
+        const match = node[0].children.some(bookmark => tab.url === bookmark.url);
+        if (match) return;
+
+        rememberPendingTabSource(tab);
+        await chrome.bookmarks.create({
+            parentId: speedDialId,
+            title: tab.title,
+            url: tab.url
+        });
+    } catch (err) {
+        clearPendingTabSource(tab.url);
+        console.error('Unable to add bookmark to Speed Dial:', err);
+    }
 }
 
 
@@ -464,41 +751,58 @@ async function migrateDialSizes() {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
+async function getThumbnails(url, id, parentId, options = {}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
 		return
 	}
-    
-    let screenshot = null;
-    
-    if (options.forceScreenshot) {
-        // Force popup screenshot for manual refresh
-        screenshot = await capturePopupScreenshot(url);
-    } else {
-        // take screenshot if applicable (current active tab)
-        const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-        
-        if (tabs && tabs.length && tabs[0].url === url) {
-            screenshot = await chrome.tabs.captureVisibleTab()
+
+    const source = options.source || THUMBNAIL_SOURCE.AUTO;
+    const deduplicate = options.deduplicate !== false;
+    const job = beginThumbnailJob(url, deduplicate);
+    if (!job) return;
+
+    try {
+        let screenshot = null;
+        let pageSnapshot = null;
+
+        if (source === THUMBNAIL_SOURCE.FRESH_POPUP) {
+            const popupResult = await capturePopupPage(url);
+            screenshot = popupResult.screenshot;
+            pageSnapshot = popupResult.pageSnapshot;
+        } else if (source === THUMBNAIL_SOURCE.AUTO) {
+            let tab = null;
+            if (options.tabId) {
+                tab = await chrome.tabs.get(options.tabId).catch(() => null);
+            } else {
+                tab = await findMatchingTab(url);
+            }
+
+            if (tab && normalizePageUrl(tab.url) === normalizePageUrl(url)) {
+                pageSnapshot = await extractLivePageSnapshot(tab.id, url);
+                screenshot = await captureTabScreenshot(tab.id, url);
+            }
         }
+
+        await setupOffscreenDocument('offscreen.html');
+        await chrome.runtime.sendMessage({
+            target: 'offscreen',
+            data: {
+                url,
+                id,
+                parentId,
+                jobId: job.id,
+                screenshot,
+                pageSnapshot,
+                quickRefresh: options.quickRefresh,
+                forcePageReload: options.forcePageReload
+            }
+        });
+    } catch (err) {
+        completeThumbnailJob(url, job.id);
+        console.error('Unable to collect thumbnails:', err);
     }
-
-	// cant parse images from dom in service worker: delegate to offscreen document
-	await setupOffscreenDocument('offscreen.html');
-
-	chrome.runtime.sendMessage({
-		target: 'offscreen',
-		data: {
-            url,
-			id,
-			parentId,
-            screenshot,
-			quickRefresh: options.quickRefresh,
-			forcePageReload: options.forcePageReload,
-        }
-	});
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
@@ -586,12 +890,15 @@ async function setupOffscreenDocument(path) {
   if (creating) {
     await creating;
   } else {
-    creating = chrome.offscreen.createDocument({
-      url: path,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'parse document for image tags to use as thumbnail'
-    });
-    await creating;
-    creating = null;
+	try {
+	  creating = chrome.offscreen.createDocument({
+		url: path,
+		reasons: [chrome.offscreen.Reason.DOM_PARSER],
+		justification: 'parse document for image tags to use as thumbnail'
+	  });
+	  await creating;
+	} finally {
+	  creating = null;
+	}
   }
 }
