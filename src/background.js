@@ -14,14 +14,6 @@ function getThumbnailStorageKeys(url) {
     return [url, getThumbnailCandidatesKey(url)];
 }
 
-function getSelectedThumbnail(storedData) {
-    if (!storedData) return null;
-    if (storedData.thumbnail) return storedData.thumbnail;
-
-    const thumbIndex = Number.isInteger(storedData.thumbIndex) ? storedData.thumbIndex : 0;
-    return storedData.thumbnails?.[thumbIndex] || null;
-}
-
 function buildThumbnailStorageUpdate(url, images, bgColor) {
     const thumbnails = [...new Set(images.flat().filter(image => typeof image === 'string' && image))];
     if (!thumbnails.length) return null;
@@ -36,31 +28,6 @@ function buildThumbnailStorageUpdate(url, images, bgColor) {
         }
     };
 }
-
-async function migrateLegacyThumbnailRecords(results) {
-    const updates = {};
-
-    for (const [url, storedData] of Object.entries(results)) {
-        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
-
-        const thumbnail = getSelectedThumbnail(storedData);
-        if (!thumbnail) continue;
-
-        updates[url] = {
-            thumbnail,
-            bgColor: storedData.bgColor
-        };
-        updates[getThumbnailCandidatesKey(url)] = {
-            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
-                .slice(0, 4)
-        };
-    }
-
-    if (Object.keys(updates).length) {
-        await chrome.storage.local.set(updates);
-    }
-}
-
 
 // EVENT LISTENERS //
 
@@ -104,59 +71,10 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
-		case 'getThumbs':
-			handleGetThumbs(message.data);
-			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
-}
-
-async function handleGetThumbs(data, batchSize = 50) {
-    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
-
-    if (!bookmarks.length) return;
-
-    // Fetch all thumbnails in batches
-    for (let i = 0; i < bookmarks.length; i += batchSize) {
-        let batch = bookmarks.slice(i, i + batchSize);
-
-        // Get multiple URLs at once
-        let urls = batch.map(bookmark => bookmark.url);
-        let results = await chrome.storage.local.get(urls);
-
-        let thumbs = batch
-            .map(bookmark => {
-                let storedData = results[bookmark.url];
-                if (!storedData) return null;
-				const thumbnail = getSelectedThumbnail(storedData);
-				if (!thumbnail) return null;
-
-                return {
-                    id: bookmark.id,
-                    parentId: bookmark.parentId,
-                    url: bookmark.url,
-                    thumbnail,
-                    bgColor: storedData.bgColor
-                };
-            })
-            .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
-
-        if (thumbs.length) {
-            chrome.runtime.sendMessage({
-                target: 'newtab',
-                type: 'thumbBatch',
-                data: thumbs
-            });
-        }
-
-		await migrateLegacyThumbnailRecords(results);
-
-		// todo: maybe replace this with a message port so we dont blast every tab
-    	// Short delay to avoid overwhelming message passing
-    	await new Promise(resolve => setTimeout(resolve, 5));
-    }
 }
 
 async function handleBookmarkChanged(id, info) {

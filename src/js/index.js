@@ -512,6 +512,50 @@ function getSelectedThumbnail(storedData) {
     return storedData.thumbnails?.[thumbIndex] || null;
 }
 
+async function loadStoredThumbnails(bookmarks, batchSize = 50) {
+    const supportedBookmarks = bookmarks.filter(bookmark =>
+        bookmark.url?.startsWith("http") ||
+        bookmark.url?.startsWith("file:") ||
+        bookmark.url?.startsWith("chrome:")
+    );
+    for (let index = 0; index < supportedBookmarks.length; index += batchSize) {
+        const batch = supportedBookmarks.slice(index, index + batchSize);
+        const results = await chrome.storage.local.get([...new Set(batch.map(bookmark => bookmark.url))]);
+        const updates = {};
+
+        const thumbnails = batch.flatMap(bookmark => {
+            const storedData = results[bookmark.url];
+            const thumbnail = getSelectedThumbnail(storedData);
+            if (!thumbnail) return [];
+
+            if (Array.isArray(storedData.thumbnails) && !storedData.thumbnail) {
+                updates[bookmark.url] = {
+                    thumbnail,
+                    bgColor: storedData.bgColor
+                };
+                updates[getThumbnailCandidatesKey(bookmark.url)] = {
+                    thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
+                        .slice(0, 4)
+                };
+            }
+
+            return [{
+                id: bookmark.id,
+                parentId: bookmark.parentId,
+                url: bookmark.url,
+                thumbnail,
+                bgColor: storedData.bgColor
+            }];
+        });
+
+        setBackgroundImages(thumbnails);
+
+        if (Object.keys(updates).length) {
+            await chrome.storage.local.set(updates);
+        }
+    }
+}
+
 function getThumbs(bookmarkUrl) {
     const candidatesKey = getThumbnailCandidatesKey(bookmarkUrl);
 
@@ -684,26 +728,6 @@ function refreshImportedThumbnails(nodes) {
 }
 
 
-// assumes 'bookmarks' param is content of a folder (from getBookmarks)
-function batchInsert(parent, fragment, batchSize = 100, onComplete) {
-    const nodes = Array.from(fragment.childNodes);
-    let index = 0;
-
-    function insertBatch() {
-        let slice = nodes.slice(index, index + batchSize);
-        parent.append(...slice);
-        index += batchSize;
-
-        if (index < nodes.length) {
-            requestAnimationFrame(insertBatch);
-        } else if (onComplete) {
-            requestAnimationFrame(onComplete); // Ensures it runs after DOM updates
-        }
-    }
-
-    insertBatch();
-}
-
 async function printNewSetup() {
     console.log("new install")
     let fragment = document.createDocumentFragment();
@@ -795,29 +819,18 @@ function createNewDialButton(parentId) {
 
 async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
-
-    // Collect URLs for batch thumbnail fetching
-    //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
-
-    // lets message the background script to do it  
+    const thumbnailsPromise = loadStoredThumbnails(bookmarks);
     
     // reverse the bookmarks if settings.defaultSort === "first")
     if (settings.defaultSort === "first") {
         bookmarks = bookmarks.reverse();
     }
-    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
-    //let thumbnails = await chrome.storage.local.get(urls);
-
     // Process bookmarks
     if (bookmarks) {
         for (let bookmark of bookmarks) {
             if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
 
             if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
-                //let images = thumbnails[bookmark.url] || {};
-                //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
-                //let thumbBg = images.bgColor || null;
-
                 let a = document.createElement('a');
                 a.classList.add('tile');
                 a.href = bookmark.url;
@@ -829,8 +842,6 @@ async function printBookmarks(bookmarks, parentId) {
                 let content = document.createElement('div');
                 content.id = bookmark.id;
                 content.classList.add('tile-content');
-                //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
-                //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
                 content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
 
                 let title = document.createElement('div');
@@ -901,9 +912,11 @@ async function printBookmarks(bookmarks, parentId) {
     }
         */
 
-    // Optimize container update using batch insert
+    // Replace the folder contents in one DOM operation.
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
-    batchInsert(folderContainerEl, fragment)
+    folderContainerEl.append(fragment)
+
+    thumbnailsPromise.catch(error => console.error('Failed to load thumbnails:', error));
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
@@ -3471,39 +3484,9 @@ function preloadImage(url) {
 }
 
 function setBackgroundImages(thumbnails) {
-    const elementsToUpdate = [];
-    const observers = new Map();
-
-    thumbnails.forEach(thumb => {
-        const element = document.getElementById(thumb.id);
-
-        if (element) {
-            elementsToUpdate.push({ element, thumb });
-        } else {
-            let observer = observers.get(thumb.parentId);
-            if (!observer) {
-                const parentElement = document.getElementById(thumb.parentId);
-                if (!parentElement) return; // Skip if parent is missing
-
-                observer = new MutationObserver((mutations, obs) => {
-                    thumbnails.forEach(t => {
-                        const el = document.getElementById(t.id);
-                        if (el) {
-                            elementsToUpdate.push({ element: el, thumb: t });
-                        }
-                    });
-
-                    if (elementsToUpdate.length) {
-                        batchApplyImages(elementsToUpdate);
-                        obs.disconnect();
-                    }
-                });
-
-                observer.observe(parentElement, { childList: true, subtree: true });
-                observers.set(thumb.parentId, observer);
-            }
-        }
-    });
+    const elementsToUpdate = thumbnails
+        .map(thumb => ({ element: document.getElementById(thumb.id), thumb }))
+        .filter(({ element }) => element);
 
     if (elementsToUpdate.length) {
         batchApplyImages(elementsToUpdate);
