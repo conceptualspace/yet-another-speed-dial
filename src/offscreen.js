@@ -24,28 +24,36 @@ async function handleMessages(message) {
     let forcePageReload = message.data.forcePageReload;
     let id = message.data.id;
     let parentId = message.data.parentId;
-    let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
     let title = null;
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh).catch(err => {
+    let categories = await fetchImages(url, quickRefresh).catch(err => {
         console.log(err);
-    })
+    }) || { social: [], page: [], brand: [] };
 
     const topCropGoogleThumb = shouldTopCropGoogleThumb(url);
 
-    if (images && images.length) {
-        resizedImages = await Promise.all(images.map(async (image, index) => {
+    // resize candidates in preference order, keeping the first that survives per category
+    async function selectCategoryThumb(candidates) {
+        for (const image of (candidates || [])) {
             const topCrop = topCropGoogleThumb && typeof image === 'string' && image.startsWith('https://drive.google.com/thumbnail?id=');
-            const result = await resizeImage(image, false, false, topCrop).catch(err => {
+            const resized = await resizeImage(image, false, false, topCrop).catch(err => {
                 console.log(err);
+                return null;
             });
-            return result
-        }))
+            if (resized) return resized;
+        }
+        return null;
     }
+
+    const [socialThumb, pageThumb, brandThumb] = await Promise.all([
+        selectCategoryThumb(categories.social),
+        selectCategoryThumb(categories.page),
+        selectCategoryThumb(categories.brand)
+    ]);
 
     let processedScreenshot = null;
     if (screenshot) {
@@ -55,18 +63,10 @@ async function handleMessages(message) {
         });
     }
 
-    if (resizedImages && resizedImages.length) {
-        // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
-        const maxWebpageImages = processedScreenshot ? 5 : 6;
-        thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
-        
-        // Always add the screenshot as the last image if available
-        if (processedScreenshot) {
-            thumbs.push(processedScreenshot);
-        }
-    } else if (processedScreenshot) {
-        // No webpage images, but we have a screenshot
-        thumbs = [processedScreenshot];
+    // one thumbnail per category: social, page, brand, then screenshot (max 4)
+    thumbs = [socialThumb, pageThumb, brandThumb].filter(Boolean);
+    if (processedScreenshot) {
+        thumbs.push(processedScreenshot);
     }
 
     if (thumbs.length) {
@@ -465,11 +465,37 @@ function shouldTopCropGoogleThumb(url) {
 
 async function fetchImages(url, quickRefresh) {
 
+    // each category contributes at most one thumbnail (social, page, brand, screenshot)
+    // within a category the first surviving candidate wins, so order = preference
+    const social = { og: null, twitter: null, schema: null };
+    const page = { drive: null, amazonMain: null, firstImage: null };
+    const brand = {
+        touchIconLarge: null, touchIcon: null,
+        brandfetchLogo: null, brandfetchIcon: null,
+        svgLogo: null, iconLarge: null, icon: null,
+        manifestIcon: null, favicon: null, cssLogo: null
+    };
+
+    function finalize() {
+        return {
+            social: [social.og, social.twitter, social.schema].filter(Boolean),
+            page: [page.drive, page.amazonMain, page.firstImage].filter(Boolean),
+            brand: [
+                brand.touchIconLarge, brand.touchIcon,
+                brand.brandfetchLogo, brand.brandfetchIcon,
+                brand.svgLogo, brand.iconLarge, brand.icon,
+                brand.manifestIcon, brand.favicon, brand.cssLogo
+            ].filter(Boolean)
+        };
+    }
+
     if (url.startsWith('file://')) {
-        return ['img/file.png'];
+        page.firstImage = 'img/file.png';
+        return finalize();
     }
     if (url.startsWith('chrome://')) {
-        return ['img/widget.png'];
+        page.firstImage = 'img/widget.png';
+        return finalize();
     }
 
     const whitelist = [
@@ -482,40 +508,29 @@ async function fetchImages(url, quickRefresh) {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
-    let images = [];
-
-    // default favicons
-    images.push(urlObj.origin + "/favicon.ico")
+    // default favicon as a last-resort brand image
+    brand.favicon = urlObj.origin + "/favicon.ico";
     
     // amazon hack
     if (hostname.includes('amazon')) {
-        images.push('img/amazon.com.png');
+        brand.brandfetchLogo = 'img/amazon.com.png';
         // dont fetch other images for the root page
         if (hostname.startsWith('amazon') && hostname.length < 14) {
-            return(images);
+            return finalize();
         }
     } else {
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
-    }
-
-    // avoid duplicates and preserve the precedence of images
-    function insert(imageUrl) {
-        let existingIndex = images.indexOf(imageUrl);
-        if (existingIndex !== -1) {
-            images.splice(existingIndex, 1);
-        }
-        images.unshift(imageUrl);
+        brand.brandfetchLogo = `https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`;
+        brand.brandfetchIcon = `https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`;
     }
 
     const googleDriveThumbnailUrl = getGoogleDriveThumbnailUrl(urlObj);
     if (googleDriveThumbnailUrl) {
-        insert(googleDriveThumbnailUrl);
-        return images;
+        page.drive = googleDriveThumbnailUrl;
+        return finalize();
     }
 
     if (whitelist.includes(hostname)) {
-        return(['img/' + hostname + '.png']);
+        return { social: [], page: [], brand: ['img/' + hostname + '.png'] };
     } else {
 
          // Set up fetch timeout
@@ -544,7 +559,7 @@ async function fetchImages(url, quickRefresh) {
             }
 
             if (!response.ok) {
-                return(images);
+                return finalize();
             }
 
             const text = await response.text();
@@ -564,7 +579,7 @@ async function fetchImages(url, quickRefresh) {
                         // Convert SVG to data URL
                         let svgString = new XMLSerializer().serializeToString(svg);
                         let svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
-                        images.push(svgDataUrl);
+                        brand.svgLogo = svgDataUrl;
                         break; // take the first svg logo we find
                     } catch (svgError) {
                         console.warn(`[fetchImages] Error processing SVG:`, svgError);
@@ -579,7 +594,7 @@ async function fetchImages(url, quickRefresh) {
                 const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
                 if (!filters.some(element => firstImage.src.includes(element))) {
                     let imageUrl = convertUrlToAbsolute(url, firstImage.getAttribute('src')); // can't use .src directly in offscreen doc
-                    insert(imageUrl);
+                    page.firstImage = imageUrl;
                 }
             }
 
@@ -590,10 +605,10 @@ async function fetchImages(url, quickRefresh) {
                 if (mainImage.id === 'sitbLogoImg') {
                     let newMainImage = doc.querySelectorAll('#main-image-container img')[1];
                     if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
-                        insert(newMainImage.src);
+                        page.amazonMain = newMainImage.src;
                     }
                 } else {
-                    insert(mainImage.src);
+                    page.amazonMain = mainImage.src;
                 }
             }
 
@@ -611,14 +626,14 @@ async function fetchImages(url, quickRefresh) {
             let appleIcon = doc.querySelector('link[rel="apple-touch-icon"]');
             if (appleIcon && appleIcon.getAttribute('href')) {
                 let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                insert(imageUrl);
+                brand.touchIcon = imageUrl;
             }
 
             // get x-icon
             let xIcon = doc.querySelector('link[rel="icon"]');
             if (xIcon && xIcon.getAttribute('href')) {
                 let imageUrl = convertUrlToAbsolute(url, xIcon.getAttribute('href'));
-                insert(imageUrl);
+                brand.icon = imageUrl;
             }
             
             // get large apple touch icon
@@ -626,7 +641,7 @@ async function fetchImages(url, quickRefresh) {
                 let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
                 if (appleIcon && appleIcon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                    insert(imageUrl);
+                    brand.touchIconLarge = imageUrl;
                     break;
                 }
             }
@@ -636,7 +651,7 @@ async function fetchImages(url, quickRefresh) {
                 let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
                 if (icon && icon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
-                    insert(imageUrl);
+                    brand.iconLarge = imageUrl;
                     break;
                 }
             }
@@ -646,25 +661,33 @@ async function fetchImages(url, quickRefresh) {
             for (let meta of structuredImages) {
                 let content = meta.getAttribute('content');
                 if (content) {
-                    let imageUrl = convertUrlToAbsolute(url, content);
-                    insert(imageUrl);
+                    social.schema = convertUrlToAbsolute(url, content);
                     break;
                 }
             }
 
-            // get open graph images
+            // get social images (open graph preferred, then twitter)
             let metas = doc.getElementsByTagName("meta");
             for (let meta of metas) {
-                const ogType = meta.getAttribute("property") || meta.getAttribute("name");
-                if (ogType?.toLowerCase() === "og:image" && meta.getAttribute("content")) {
-                    let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
-                    insert(imageUrl);
+                const metaKey = (meta.getAttribute("property") || meta.getAttribute("name") || "").toLowerCase();
+                const content = meta.getAttribute("content");
+                if (!content) continue;
+                if (metaKey === "og:image" && !social.og) {
+                    social.og = convertUrlToAbsolute(url, content);
+                } else if ((metaKey === "twitter:image" || metaKey === "twitter:image:src") && !social.twitter) {
+                    social.twitter = convertUrlToAbsolute(url, content);
                 }
             }
 
-            // if we havent had much luck with images, lets check the manifest and style sheets
+            // if we havent had much luck with real images, check the manifest and style sheets
             // we dont do so during a quick refresh to avoid fetching extra resources
-            if (images.length < 5 && !quickRefresh) {
+            const realImageCount = [
+                social.og, social.twitter, social.schema,
+                page.drive, page.amazonMain, page.firstImage,
+                brand.touchIconLarge, brand.touchIcon, brand.svgLogo,
+                brand.iconLarge, brand.icon
+            ].filter(Boolean).length;
+            if (realImageCount < 3 && !quickRefresh) {
                 // web application manifest icon
                 let manifestLink = doc.querySelector('link[rel="manifest"]');
                 if (manifestLink && manifestLink.getAttribute('href')) {
@@ -691,7 +714,7 @@ async function fetchImages(url, quickRefresh) {
                                 // take the largest
                                 if (sortedIcons.length > 0) {
                                     let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
-                                    images.push(iconUrl);
+                                    brand.manifestIcon = iconUrl;
                                 }
                             }
                         }
@@ -713,11 +736,9 @@ async function fetchImages(url, quickRefresh) {
                         const cssImages = extractBackgroundImages(cssText)
                             .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
 
-                        if (cssImages.length) {
+                        if (cssImages.length && !brand.cssLogo) {
                             // todo: fix the absolute url conversion -- i think urls that jump a couple of levels are busted
-                            cssImages.forEach(cssImage => {
-                                images.push(convertUrlToAbsolute(sheetUrl, cssImage));
-                            });
+                            brand.cssLogo = convertUrlToAbsolute(sheetUrl, cssImages[0]);
                         }
 
                     } catch (err) {
@@ -726,12 +747,12 @@ async function fetchImages(url, quickRefresh) {
                 }
             }
 
-            return images;
+            return finalize();
 
         } catch (error) {
             //console.log("fetch error: ", error)
             // return the images we have:
-            return images;
+            return finalize();
         } finally {
             clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
         }
