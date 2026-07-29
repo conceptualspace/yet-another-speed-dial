@@ -548,7 +548,7 @@ async function loadStoredThumbnails(bookmarks, batchSize = 50) {
             }];
         });
 
-        setBackgroundImages(thumbnails);
+        setBackgroundImages(thumbnails, false);
 
         if (Object.keys(updates).length) {
             await chrome.storage.local.set(updates);
@@ -819,12 +819,13 @@ function createNewDialButton(parentId) {
 
 async function printBookmarks(bookmarks, parentId) {
     let fragment = document.createDocumentFragment();
-    const thumbnailsPromise = loadStoredThumbnails(bookmarks);
-    
+
     // reverse the bookmarks if settings.defaultSort === "first")
     if (settings.defaultSort === "first") {
-        bookmarks = bookmarks.reverse();
+        bookmarks = [...bookmarks].reverse();
     }
+    const thumbnailsPromise = loadStoredThumbnails(bookmarks);
+
     // Process bookmarks
     if (bookmarks) {
         for (let bookmark of bookmarks) {
@@ -3483,22 +3484,24 @@ function preloadImage(url) {
     });
 }
 
-function setBackgroundImages(thumbnails) {
+function setBackgroundImages(thumbnails, defer = true) {
     const elementsToUpdate = thumbnails
         .map(thumb => ({ element: document.getElementById(thumb.id), thumb }))
         .filter(({ element }) => element);
 
     if (elementsToUpdate.length) {
-        batchApplyImages(elementsToUpdate);
+        if (defer) {
+            requestAnimationFrame(() => applyBackgroundImages(elementsToUpdate));
+        } else {
+            applyBackgroundImages(elementsToUpdate);
+        }
     }
 }
 
-function batchApplyImages(elements) {
-    requestAnimationFrame(() => {
-        elements.forEach(({ element, thumb }) => {
-            element.style.backgroundColor = "unset";
-            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
-        });
+function applyBackgroundImages(elements) {
+    elements.forEach(({ element, thumb }) => {
+        element.style.backgroundColor = "unset";
+        element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
     });
 }
 
