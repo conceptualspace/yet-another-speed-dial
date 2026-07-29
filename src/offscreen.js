@@ -403,7 +403,12 @@ function resizeImage(image, screenshot = false, isFallback = false, topCrop = fa
                 const newDataURI = canvas.toDataURL('image/webp', 0.87);
                 resolve(newDataURI);
             } else if (sHeight >= 96 || sWidth >= 96) {
-                resolve(image);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = sWidth;
+                canvas.height = sHeight;
+                ctx.drawImage(this, 0, 0, sWidth, sHeight);
+                resolve(canvas.toDataURL('image/webp', 0.87));
             } else {
                 // discard images < 96px
                 resolve();
