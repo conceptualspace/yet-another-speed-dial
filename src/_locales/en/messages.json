@@ -61,7 +61,7 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "a modern new tab page for chrome, edge, and firefox"
+    "message": "a better new tab page for chrome, edge, and firefox"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
