@@ -646,6 +646,10 @@ h1 {
     transition: filter 120ms ease-out;
 }
 
+.folderDial-preview--placeholder {
+    background-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+
 .tile-title {
     opacity: var(--title-opacity);
     text-align: center;

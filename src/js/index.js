@@ -1008,6 +1008,13 @@ async function printBookmarks(bookmarks, parentId) {
                     content.appendChild(preview);
                 }
 
+                const placeholderCount = 4 - (bookmark.previewDials?.length ?? 0);
+                for (let index = 0; index < placeholderCount; index++) {
+                    let placeholder = document.createElement('div');
+                    placeholder.classList.add('folderDial-preview', 'folderDial-preview--placeholder');
+                    content.appendChild(placeholder);
+                }
+
                 let title = document.createElement('div');
                 title.classList.add('tile-title', 'folderDial-title');
                 if (!settings.showTitles) {
