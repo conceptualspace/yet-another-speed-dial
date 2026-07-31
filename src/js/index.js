@@ -883,19 +883,26 @@ function batchInsert(parent, fragment, batchSize = 100, onComplete) {
     const nodes = Array.from(fragment.childNodes);
     let index = 0;
 
-    function insertBatch() {
-        let slice = nodes.slice(index, index + batchSize);
-        parent.append(...slice);
-        index += batchSize;
+    return new Promise(resolve => {
+        function insertBatch() {
+            let slice = nodes.slice(index, index + batchSize);
+            parent.append(...slice);
+            index += batchSize;
 
-        if (index < nodes.length) {
-            requestAnimationFrame(insertBatch);
-        } else if (onComplete) {
-            requestAnimationFrame(onComplete); // Ensures it runs after DOM updates
+            if (index < nodes.length) {
+                requestAnimationFrame(insertBatch);
+            } else if (onComplete) {
+                requestAnimationFrame(() => {
+                    onComplete();
+                    resolve();
+                });
+            } else {
+                resolve();
+            }
         }
-    }
 
-    insertBatch();
+        insertBatch();
+    });
 }
 
 async function printNewSetup() {
@@ -1164,7 +1171,10 @@ async function printBookmarks(bookmarks, parentId) {
     // Optimize container update using batch insert
     unregisterThumbnailPreviews(folderContainerEl);
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
-    batchInsert(folderContainerEl, fragment)
+    const insertionComplete = batchInsert(folderContainerEl, fragment);
+    if (parentId === currentFolder) {
+        await insertionComplete;
+    }
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
@@ -2799,7 +2809,7 @@ folderStyleInput.oninput = function () {
 
     settings.folderStyle = folderStyleInput.value;
     chrome.storage.local.set({ settings });
-    processRefresh();
+    processRefresh({ transitionFolderStyle: true });
 }
 
 defaultSortInput.oninput = function (e) {
@@ -3853,24 +3863,39 @@ function onEndHandler(evt) {
     }
 }
 
-const processRefresh = debounce(({ foldersOnly = false } = {}) => {
+const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = false } = {}) => {
     if (foldersOnly) {
         buildFolderPages(speedDialId)
     } else {
-        // prevent page scroll on refresh
-        // react where are you...
-        scrollPos = bookmarksContainerParent.scrollTop;
-        //noBookmarks.style.display = 'none';
-        addFolderButton.style.display = 'inline';
-        searchBtn.style.display = '';
+        const refreshDialPages = async () => {
+            // prevent page scroll on refresh
+            // react where are you...
+            scrollPos = bookmarksContainerParent.scrollTop;
+            //noBookmarks.style.display = 'none';
+            addFolderButton.style.display = 'inline';
+            searchBtn.style.display = '';
 
-        //bookmarksContainer.style.opacity = "0";
+            //bookmarksContainer.style.opacity = "0";
 
-        //getBookmarks(speedDialId)
-        buildDialPages(speedDialId, currentFolder).then(() => {
+            //getBookmarks(speedDialId)
+            await buildDialPages(speedDialId, currentFolder);
             // re-measure resting positions for the new dom nodes and animate
             scheduleFlip();
-        });
+        };
+
+        const canTransition = transitionFolderStyle
+            && typeof document.startViewTransition === 'function'
+            && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (!canTransition) {
+            refreshDialPages();
+            return;
+        }
+
+        document.documentElement.classList.add('folder-style-transition');
+        const transition = document.startViewTransition(refreshDialPages);
+        const finishTransition = () => document.documentElement.classList.remove('folder-style-transition');
+        transition.finished.then(finishTransition, finishTransition);
     }
 }, 650, true);
 

@@ -1145,6 +1145,56 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     gap: 20px;
 }
 
+.folder-style-transition #foldersContainer {
+    view-transition-name: folder-style-header;
+}
+
+.folder-style-transition #tileContainer {
+    view-transition-name: folder-style-grid;
+}
+
+.folder-style-transition #sidenav {
+    view-transition-name: folder-style-settings;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+
+::view-transition-group(folder-style-settings) {
+    z-index: 1;
+}
+
+::view-transition-old(folder-style-settings),
+::view-transition-new(folder-style-settings) {
+    animation: none;
+}
+
+::view-transition-old(folder-style-header),
+::view-transition-old(folder-style-grid) {
+    animation: folder-style-out 180ms ease-in both;
+}
+
+::view-transition-new(folder-style-header),
+::view-transition-new(folder-style-grid) {
+    animation: folder-style-in 240ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes folder-style-out {
+    to {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes folder-style-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
 /* when the folders header is empty add padding to tileContainer so speed dials appear visually centered  */
 body:not(:has(.folderTitle)) #tileContainer {
     padding-bottom: 82px; /* counters foldersContainer height */
