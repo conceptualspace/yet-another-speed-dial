@@ -282,6 +282,10 @@ async function buildDialPages(speedDialId, currentFolderId) {
         return await chrome.bookmarks.getChildren(folderId);
     }
 
+    function isSupportedDial(bookmark) {
+        return bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:");
+    }
+
     const children = await getChildren(speedDialId);
     if (!children.length) {
         // new install
@@ -301,6 +305,29 @@ async function buildDialPages(speedDialId, currentFolderId) {
         return (a.index || 0) - (b.index || 0);
     });
 
+    const folderChildren = new Map([[speedDialId, children]]);
+    if (settings.folderStyle === 'dials') {
+        const previewFolders = folders.filter(folder => folder.id !== speedDialId);
+
+        await Promise.all(previewFolders.map(async folder => {
+            const children = await getChildren(folder.id);
+            const displayOrder = settings.defaultSort === "first" ? [...children].reverse() : children;
+            folderChildren.set(folder.id, children);
+            folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
+        }));
+
+        const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
+        const storedThumbnails = await chrome.storage.local.get(previewUrls);
+
+        for (const folder of previewFolders) {
+            for (const dial of folder.previewDials) {
+                const storedData = storedThumbnails[dial.url];
+                dial.previewThumbnail = getSelectedThumbnail(storedData);
+                dial.previewColor = storedData?.bgColor;
+            }
+        }
+    }
+
     // clear any existing data so we can refresh
     foldersContainer.innerHTML = '';
 
@@ -313,7 +340,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     }
 
     // Process the current folder's children first
-    const currentChildren = await getChildren(currentFolderId);
+    const currentChildren = folderChildren.get(currentFolderId) || await getChildren(currentFolderId);
     await printBookmarks(currentChildren, currentFolderId);
 
 
@@ -321,7 +348,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     if (folders.length > 1) {
         for (let folder of folders) {
             if (folder.id !== currentFolderId) {
-                const children = await getChildren(folder.id);
+                const children = folderChildren.get(folder.id) || await getChildren(folder.id);
                 await printBookmarks(children, folder.id);
             }
         }
@@ -834,9 +861,21 @@ async function printBookmarks(bookmarks, parentId) {
 
                 let content = document.createElement('div');
                 content.classList.add('tile-content', 'folderDial-content');
+                content.setAttribute('data-preview-count', bookmark.previewDials.length);
+
+                for (const previewDial of bookmark.previewDials) {
+                    let preview = document.createElement('div');
+                    preview.classList.add('folderDial-preview');
+                    preview.setAttribute('data-thumbnail-id', previewDial.id);
+                    preview.style.backgroundColor = previewDial.previewColor || 'rgba(255, 255, 255, 0.12)';
+                    if (previewDial.previewThumbnail) {
+                        preview.style.backgroundImage = `url('${previewDial.previewThumbnail}')`;
+                    }
+                    content.appendChild(preview);
+                }
 
                 let title = document.createElement('div');
-                title.classList.add('tile-title');
+                title.classList.add('tile-title', 'folderDial-title');
                 if (!settings.showTitles) {
                     title.classList.add('hide');
                 }
@@ -3527,10 +3566,14 @@ function setBackgroundImages(thumbnails) {
 
     thumbnails.forEach(thumb => {
         const element = document.getElementById(thumb.id);
+        const previewElements = document.querySelectorAll(`[data-thumbnail-id="${CSS.escape(thumb.id)}"]`);
 
+        if (element || previewElements.length) {
+            previewElements.forEach(previewElement => elementsToUpdate.push({ element: previewElement, thumb }));
+        }
         if (element) {
             elementsToUpdate.push({ element, thumb });
-        } else {
+        } else if (!previewElements.length) {
             let observer = observers.get(thumb.parentId);
             if (!observer) {
                 const parentElement = document.getElementById(thumb.parentId);

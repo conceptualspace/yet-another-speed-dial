@@ -574,16 +574,22 @@ h1 {
 
 .folderDial-content {
     display: grid;
-    place-items: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: hidden;
+    padding: 8px;
+    box-sizing: border-box;
+    background-color: color-mix(in srgb, currentColor 50%, transparent);
 }
 
-.folderDial-content::before {
-    width: min(56%, 144px);
-    aspect-ratio: 1;
-    background-color: currentColor;
-    content: '';
-    -webkit-mask: url('../img/folder.svg') center / contain no-repeat;
-    mask: url('../img/folder.svg') center / contain no-repeat;
+.folderDial-preview {
+    min-width: 0;
+    min-height: 0;
+    border-radius: 4px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
 .tile-title {
@@ -594,6 +600,22 @@ h1 {
     text-overflow: ellipsis;
     padding: 5px 10px 0 10px;
     transition: opacity 160ms ease;
+}
+
+.folderDial-title::before {
+    display: inline-block;
+    width: 1.15em;
+    height: 1.15em;
+    margin-right: 5px;
+    vertical-align: -0.15em;
+    background-color: currentColor;
+    content: '';
+    -webkit-mask: url('../img/folder.svg') center / contain no-repeat;
+    mask: url('../img/folder.svg') center / contain no-repeat;
+}
+
+.folderDial-title {
+    font-weight: 500;
 }
 
 .createDial {
