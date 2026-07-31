@@ -615,6 +615,22 @@ h1 {
     background-color: color-mix(in srgb, currentColor 50%, transparent);
 }
 
+.folderDial.folderDial-drop-hover .tile-main {
+    transform: scale(1.02);
+}
+
+.folderDial.folderDial-drop-target .tile-main {
+    transform: scale(1.04);
+}
+
+.folderDial.folderDial-drop-target .folderDial-content {
+    box-shadow: inset 0 0 0 3px color-mix(in srgb, currentColor 78%, transparent);
+}
+
+.folderDial.folderDial-drop-target .folderDial-preview {
+    filter: brightness(0.78);
+}
+
 .folderDial-preview {
     min-width: 0;
     min-height: 0;
@@ -622,6 +638,7 @@ h1 {
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+    transition: filter 160ms ease;
 }
 
 .tile-title {

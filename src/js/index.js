@@ -145,6 +145,8 @@ let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
+let folderDialDropTarget = null;
+let folderDialDropTimer = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -192,6 +194,7 @@ const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hu
                                      // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
+const FOLDER_DIAL_DROP_DELAY = 180;
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
@@ -957,6 +960,12 @@ async function printBookmarks(bookmarks, parentId) {
     // reverse the bookmarks if settings.defaultSort === "first")
     if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
+    }
+    if (settings.folderStyle === 'dials') {
+        bookmarks = [
+            ...bookmarks.filter(bookmark => !bookmark.url),
+            ...bookmarks.filter(bookmark => bookmark.url)
+        ];
     }
     chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
     //let thumbnails = await chrome.storage.local.get(urls);
@@ -3542,8 +3551,80 @@ function dragleaveHandler(ev) {
 }
 
 // Sortable helper fns
+function clearFolderDialDropTarget() {
+    clearTimeout(folderDialDropTimer);
+    folderDialDropTimer = null;
+    folderDialDropTarget?.classList.remove('folderDial-drop-hover', 'folderDial-drop-target');
+    folderDialDropTarget = null;
+}
+
+function isFolderDialDropZone(evt, folderDial) {
+    const originalEvent = evt.originalEvent;
+    const pointer = originalEvent?.touches?.[0] || originalEvent?.changedTouches?.[0] || originalEvent;
+    if (!Number.isFinite(pointer?.clientX) || !Number.isFinite(pointer?.clientY)) return true;
+
+    const rect = evt.relatedRect || folderDial.getBoundingClientRect();
+    const horizontalInset = rect.width * 0.15;
+    const verticalInset = rect.height * 0.15;
+    return pointer.clientX >= rect.left + horizontalInset
+        && pointer.clientX <= rect.right - horizontalInset
+        && pointer.clientY >= rect.top + verticalInset
+        && pointer.clientY <= rect.bottom - verticalInset;
+}
+
+function setFolderDialDropTarget(folderDial) {
+    if (folderDialDropTarget === folderDial) return;
+
+    clearFolderDialDropTarget();
+    folderDialDropTarget = folderDial;
+    folderDial.classList.add('folderDial-drop-hover');
+    folderDialDropTimer = setTimeout(() => {
+        if (folderDialDropTarget === folderDial) {
+            folderDial.classList.add('folderDial-drop-target');
+        }
+    }, FOLDER_DIAL_DROP_DELAY);
+}
+
+function getNextSiblingOfSameType(item) {
+    const itemIsFolder = item.dataset.type === 'folder';
+    let sibling = item.nextElementSibling;
+
+    while (sibling) {
+        if (!sibling.classList.contains('createDial')
+            && (sibling.dataset.type === 'folder') === itemIsFolder) {
+            return sibling;
+        }
+        sibling = sibling.nextElementSibling;
+    }
+
+    return null;
+}
+
+function moveBookmarkToFolder(id, folderId) {
+    chrome.bookmarks.move(id, { parentId: folderId }).catch(err => {
+        console.log(err);
+    });
+}
+
 function onMoveHandler(evt) {
     if (evt.related) {
+        if (settings.folderStyle === 'dials') {
+            const draggedIsFolder = evt.dragged.dataset.type === 'folder';
+            const relatedFolder = evt.related.closest?.('.folderDial');
+
+            if (!draggedIsFolder && relatedFolder) {
+                if (isFolderDialDropZone(evt, relatedFolder)) {
+                    setFolderDialDropTarget(relatedFolder);
+                } else {
+                    clearFolderDialDropTarget();
+                }
+                return false;
+            }
+
+            clearFolderDialDropTarget();
+            if (draggedIsFolder && !relatedFolder) return false;
+        }
+
         if (evt.to.children.length > 1) {
             // when no bookmarks are present we keep the createdial enabled so we have a drop target for dials dragged into folder
             return !evt.related.classList.contains('createDial');
@@ -3566,6 +3647,11 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
+    const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
+        ? folderDialDropTarget
+        : null;
+    clearFolderDialDropTarget();
+
     // clean up folder drag-hover state
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
@@ -3574,10 +3660,18 @@ function onEndHandler(evt) {
         let id = evt.clone.dataset.id;
         let fromParentId = dewrap(evt.from.id);
         let toParentId = dewrap(evt.to.id);
-        let newSiblingId = evt.item.nextElementSibling ? evt.item.nextElementSibling.dataset.id : null;
-        let newSiblingParentId = newSiblingId ? dewrap(evt.item.nextElementSibling.parentElement.id) : null;
+        let nextSibling = settings.folderStyle === 'dials'
+            ? getNextSiblingOfSameType(evt.item)
+            : evt.item.nextElementSibling;
+        let newSiblingId = nextSibling ? nextSibling.dataset.id : null;
+        let newSiblingParentId = newSiblingId ? dewrap(nextSibling.parentElement.id) : null;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
+
+        if (folderDropTarget && evt.clone.href) {
+            moveBookmarkToFolder(id, folderDropTarget.dataset.id);
+            return;
+        }
 
         // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires)
         let dropTarget = evt.originalEvent.target;
