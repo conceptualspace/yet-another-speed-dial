@@ -521,12 +521,17 @@ h1 {
     display: inline-flex;
     align-items: center;
     margin: 8px 2px;
-    padding: 4px 2px;
     color: var(--color);
 }
 
 .folderBreadcrumbSeparator {
+    padding: 4px 2px;
     opacity: 0.55;
+}
+
+.folderBreadcrumbLink,
+.folderBreadcrumbCurrent {
+    padding: 4px 6px;
 }
 
 .folderBreadcrumbLink {
