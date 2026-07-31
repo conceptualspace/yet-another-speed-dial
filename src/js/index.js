@@ -248,10 +248,15 @@ const debounce = (func, delay = 500, immediate = false) => {
         const args = arguments
         if (immediate && !inDebounce) {
             func.apply(context, args);
-            inDebounce = setTimeout(() => clearTimeout(inDebounce), delay)
+            inDebounce = setTimeout(() => {
+                inDebounce = null;
+            }, delay)
         } else {
             clearTimeout(inDebounce)
-            inDebounce = setTimeout(() => func.apply(context, args), delay)
+            inDebounce = setTimeout(() => {
+                inDebounce = null;
+                func.apply(context, args);
+            }, delay)
         }
     }
 }
@@ -2790,7 +2795,10 @@ dialRatioInput.oninput = function (e) {
 }
 
 folderStyleInput.oninput = function () {
-    saveSettings();
+    if (settings.folderStyle === folderStyleInput.value) return;
+
+    settings.folderStyle = folderStyleInput.value;
+    chrome.storage.local.set({ settings });
     processRefresh();
 }
 
