@@ -615,16 +615,21 @@ h1 {
     background-color: color-mix(in srgb, currentColor 50%, transparent);
 }
 
-.folderDial.folderDial-drop-hover .tile-main {
-    transform: scale(1.02);
+.folderDial {
+    transition: scale 120ms ease-out, translate 120ms ease-out;
 }
 
-.folderDial.folderDial-drop-target .tile-main {
-    transform: scale(1.04);
+.folderDial.folderDial-drop-hover {
+    z-index: 2;
+    scale: 1.025;
+    translate: -1.25% -1.25%;
 }
 
-.folderDial.folderDial-drop-target .folderDial-content {
-    box-shadow: inset 0 0 0 3px color-mix(in srgb, currentColor 78%, transparent);
+.folderDial.folderDial-drop-target {
+    /* .tile uses a top-left transform origin for FLIP. Center independent scale
+       with translate = -(scale - 1) / 2: (1.56 - 1) / -2 = -28%. */
+    scale: 1.56;
+    translate: -28% -28%;
 }
 
 .folderDial.folderDial-drop-target .folderDial-preview {
@@ -638,7 +643,7 @@ h1 {
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
-    transition: filter 160ms ease;
+    transition: filter 120ms ease-out;
 }
 
 .tile-title {

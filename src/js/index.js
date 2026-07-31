@@ -147,6 +147,7 @@ let sortable = null;
 let folderNavTimeout = null;
 let folderDialDropTarget = null;
 let folderDialDropTimer = null;
+let folderDialDropTracking = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -194,7 +195,7 @@ const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hu
                                      // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
-const FOLDER_DIAL_DROP_DELAY = 180;
+const FOLDER_DIAL_DROP_DELAY = 120;
 const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
@@ -3570,19 +3571,6 @@ function getDragPointer(event) {
     return { clientX: pointer.clientX, clientY: pointer.clientY };
 }
 
-function isFolderDialDropZone(event, folderDial) {
-    const pointer = getDragPointer(event);
-    if (!pointer) return false;
-
-    const rect = folderDial.getBoundingClientRect();
-    const horizontalInset = rect.width * 0.15;
-    const verticalInset = rect.height * 0.15;
-    return pointer.clientX >= rect.left + horizontalInset
-        && pointer.clientX <= rect.right - horizontalInset
-        && pointer.clientY >= rect.top + verticalInset
-        && pointer.clientY <= rect.bottom - verticalInset;
-}
-
 function setFolderDialDropTarget(folderDial) {
     if (folderDialDropTarget === folderDial) return;
 
@@ -3596,30 +3584,76 @@ function setFolderDialDropTarget(folderDial) {
     }, FOLDER_DIAL_DROP_DELAY);
 }
 
-function getFolderDialAtPointer(event) {
-    const pointer = getDragPointer(event);
-    if (!pointer) return null;
+function captureFolderDialDropZones(container) {
+    const zones = [];
+    for (const folderDial of container.querySelectorAll('.folderDial')) {
+        const rect = folderDial.getBoundingClientRect();
+        const horizontalInset = rect.width * 0.15;
+        const verticalInset = rect.height * 0.15;
+        zones.push({
+            folderDial,
+            left: rect.left + horizontalInset,
+            right: rect.right - horizontalInset,
+            top: rect.top + verticalInset,
+            bottom: rect.bottom - verticalInset
+        });
+    }
 
-    for (const element of document.elementsFromPoint(pointer.clientX, pointer.clientY)) {
-        const folderDial = element.closest?.('.folderDial');
-        if (folderDial && isFolderDialDropZone(event, folderDial)) return folderDial;
+    folderDialDropTracking = {
+        zones,
+        scrollLeft: bookmarksContainerParent.scrollLeft,
+        scrollTop: bookmarksContainerParent.scrollTop,
+        pointer: null,
+        raf: null
+    };
+}
+
+function getFolderDialAtPointer(pointer) {
+    if (!pointer || !folderDialDropTracking) return null;
+
+    const scrollDeltaX = bookmarksContainerParent.scrollLeft - folderDialDropTracking.scrollLeft;
+    const scrollDeltaY = bookmarksContainerParent.scrollTop - folderDialDropTracking.scrollTop;
+    for (const zone of folderDialDropTracking.zones) {
+        if (pointer.clientX >= zone.left - scrollDeltaX
+            && pointer.clientX <= zone.right - scrollDeltaX
+            && pointer.clientY >= zone.top - scrollDeltaY
+            && pointer.clientY <= zone.bottom - scrollDeltaY) {
+            return zone.folderDial;
+        }
     }
 
     return null;
 }
 
 function trackFolderDialDropTarget(event) {
-    const folderDial = getFolderDialAtPointer(event);
-    if (folderDial) {
-        setFolderDialDropTarget(folderDial);
-    } else {
+    if (!folderDialDropTracking) return;
+
+    folderDialDropTracking.pointer = getDragPointer(event);
+    if (!folderDialDropTracking.pointer) {
         clearFolderDialDropTarget();
+        return;
     }
+
+    if (folderDialDropTracking.raf != null) return;
+    const tracking = folderDialDropTracking;
+    tracking.raf = requestAnimationFrame(() => {
+        tracking.raf = null;
+        if (folderDialDropTracking !== tracking) return;
+
+        const folderDial = getFolderDialAtPointer(tracking.pointer);
+        if (folderDial) {
+            setFolderDialDropTarget(folderDial);
+        } else {
+            clearFolderDialDropTarget();
+        }
+    });
 }
 
 function onStartHandler(evt) {
+    stopFolderDialDropTracking();
     clearFolderDialDropTarget();
     if (settings.folderStyle === 'dials' && evt.item.dataset.type !== 'folder') {
+        captureFolderDialDropZones(evt.from);
         FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
             document.addEventListener(eventName, trackFolderDialDropTarget, { passive: true });
         });
@@ -3630,6 +3664,10 @@ function stopFolderDialDropTracking() {
     FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
         document.removeEventListener(eventName, trackFolderDialDropTarget);
     });
+    if (folderDialDropTracking?.raf != null) {
+        cancelAnimationFrame(folderDialDropTracking.raf);
+    }
+    folderDialDropTracking = null;
 }
 
 function getNextSiblingOfSameType(item) {
@@ -3690,11 +3728,12 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
-    stopFolderDialDropTracking();
+    const folderAtRelease = getFolderDialAtPointer(getDragPointer(evt?.originalEvent));
     const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
-        && isFolderDialDropZone(evt?.originalEvent, folderDialDropTarget)
+        && folderAtRelease === folderDialDropTarget
         ? folderDialDropTarget
         : null;
+    stopFolderDialDropTracking();
     clearFolderDialDropTarget();
 
     // clean up folder drag-hover state
