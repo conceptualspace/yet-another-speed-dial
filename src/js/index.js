@@ -195,6 +195,7 @@ const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hu
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
 const FOLDER_DIAL_DROP_DELAY = 180;
+const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
@@ -1101,6 +1102,7 @@ async function printBookmarks(bookmarks, parentId) {
         filter: ".createDial",
         delay: 500,
         delayOnTouchOnly: true,
+        onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
     });
@@ -3561,12 +3563,18 @@ function clearFolderDialDropTarget() {
     folderDialDropTarget = null;
 }
 
-function isFolderDialDropZone(evt, folderDial) {
-    const originalEvent = evt.originalEvent;
-    const pointer = originalEvent?.touches?.[0] || originalEvent?.changedTouches?.[0] || originalEvent;
-    if (!Number.isFinite(pointer?.clientX) || !Number.isFinite(pointer?.clientY)) return true;
+function getDragPointer(event) {
+    const pointer = event?.touches?.[0] || event?.changedTouches?.[0] || event;
+    if (!Number.isFinite(pointer?.clientX) || !Number.isFinite(pointer?.clientY)) return null;
 
-    const rect = evt.relatedRect || folderDial.getBoundingClientRect();
+    return { clientX: pointer.clientX, clientY: pointer.clientY };
+}
+
+function isFolderDialDropZone(event, folderDial) {
+    const pointer = getDragPointer(event);
+    if (!pointer) return false;
+
+    const rect = folderDial.getBoundingClientRect();
     const horizontalInset = rect.width * 0.15;
     const verticalInset = rect.height * 0.15;
     return pointer.clientX >= rect.left + horizontalInset
@@ -3586,6 +3594,42 @@ function setFolderDialDropTarget(folderDial) {
             folderDial.classList.add('folderDial-drop-target');
         }
     }, FOLDER_DIAL_DROP_DELAY);
+}
+
+function getFolderDialAtPointer(event) {
+    const pointer = getDragPointer(event);
+    if (!pointer) return null;
+
+    for (const element of document.elementsFromPoint(pointer.clientX, pointer.clientY)) {
+        const folderDial = element.closest?.('.folderDial');
+        if (folderDial && isFolderDialDropZone(event, folderDial)) return folderDial;
+    }
+
+    return null;
+}
+
+function trackFolderDialDropTarget(event) {
+    const folderDial = getFolderDialAtPointer(event);
+    if (folderDial) {
+        setFolderDialDropTarget(folderDial);
+    } else {
+        clearFolderDialDropTarget();
+    }
+}
+
+function onStartHandler(evt) {
+    clearFolderDialDropTarget();
+    if (settings.folderStyle === 'dials' && evt.item.dataset.type !== 'folder') {
+        FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
+            document.addEventListener(eventName, trackFolderDialDropTarget, { passive: true });
+        });
+    }
+}
+
+function stopFolderDialDropTracking() {
+    FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
+        document.removeEventListener(eventName, trackFolderDialDropTarget);
+    });
 }
 
 function getNextSiblingOfSameType(item) {
@@ -3616,11 +3660,7 @@ function onMoveHandler(evt) {
             const relatedFolder = evt.related.closest?.('.folderDial');
 
             if (!draggedIsFolder && relatedFolder) {
-                if (isFolderDialDropZone(evt, relatedFolder)) {
-                    setFolderDialDropTarget(relatedFolder);
-                } else {
-                    clearFolderDialDropTarget();
-                }
+                trackFolderDialDropTarget(evt.originalEvent);
                 return false;
             }
 
@@ -3650,7 +3690,9 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
+    stopFolderDialDropTracking();
     const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
+        && isFolderDialDropZone(evt?.originalEvent, folderDialDropTarget)
         ? folderDialDropTarget
         : null;
     clearFolderDialDropTarget();
