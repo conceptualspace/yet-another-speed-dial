@@ -2737,6 +2737,9 @@ document.addEventListener("contextmenu", function (e) {
 
 // todo: tidy this up
 window.addEventListener("click", e => {
+    if (e.target.type === 'text' || e.target.type === 'search') {
+        return;
+    }
     if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
         return;
     }
@@ -2768,7 +2771,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
+    if (e.target.type === 'text' || e.target.type === 'search' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
