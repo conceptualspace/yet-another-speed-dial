@@ -157,6 +157,8 @@ let folders = [];
 let currentFolder = null;
 let folderNodeMap = new Map();
 let rootFolderIds = [];
+let speedDialRootNode = null;
+let thumbnailPreviewElements = new Map();
 let scrollPos = 0;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 const capturingImagesMessage = ' ' + chrome.i18n.getMessage('capturingImages');
@@ -279,12 +281,51 @@ function getBookmarks(folderId) {
     });
 }
 
-async function buildDialPages(speedDialId, currentFolderId) {
-    function isSupportedDial(bookmark) {
-        return bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:");
+function isSupportedDial(bookmark) {
+    return bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:");
+}
+
+async function prepareFolderPreviews(children) {
+    const previewFolders = children.filter(child => !child.url);
+
+    for (const folder of previewFolders) {
+        const folderChildren = folder.children || [];
+        const displayOrder = settings.defaultSort === "first" ? [...folderChildren].reverse() : folderChildren;
+        folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
     }
 
+    const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
+    const storedThumbnails = previewUrls.length ? await chrome.storage.local.get(previewUrls) : {};
+
+    for (const folder of previewFolders) {
+        for (const dial of folder.previewDials) {
+            const storedData = storedThumbnails[dial.url];
+            dial.previewThumbnail = getSelectedThumbnail(storedData);
+            dial.previewColor = storedData?.bgColor;
+        }
+    }
+}
+
+function unregisterThumbnailPreviews(container) {
+    container.querySelectorAll('[data-thumbnail-id]').forEach(preview => {
+        const previewElements = thumbnailPreviewElements.get(preview.dataset.thumbnailId);
+        previewElements?.delete(preview);
+        if (!previewElements?.size) {
+            thumbnailPreviewElements.delete(preview.dataset.thumbnailId);
+        }
+    });
+}
+
+function removeFolderContainer(container) {
+    unregisterThumbnailPreviews(container);
+    Sortable.get(container)?.destroy();
+    container.remove();
+}
+
+async function buildDialPages(speedDialId, currentFolderId) {
+
     const [rootNode] = await chrome.bookmarks.getSubTree(speedDialId);
+    speedDialRootNode = rootNode;
     const children = rootNode.children || [];
     if (!children.length) {
         // new install
@@ -327,26 +368,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
         chrome.storage.local.set({ settings });
     }
 
-    if (settings.folderStyle === 'dials') {
-        const previewFolders = [...folderNodeMap.values()];
-
-        for (const folder of previewFolders) {
-            const folderChildren = folder.children || [];
-            const displayOrder = settings.defaultSort === "first" ? [...folderChildren].reverse() : folderChildren;
-            folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
-        }
-
-        const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
-        const storedThumbnails = await chrome.storage.local.get(previewUrls);
-
-        for (const folder of previewFolders) {
-            for (const dial of folder.previewDials) {
-                const storedData = storedThumbnails[dial.url];
-                dial.previewThumbnail = getSelectedThumbnail(storedData);
-                dial.previewColor = storedData?.bgColor;
-            }
-        }
-    } else if (currentFolderId !== speedDialId && !rootFolderIds.includes(currentFolderId)) {
+    if (settings.folderStyle !== 'dials' && currentFolderId !== speedDialId && !rootFolderIds.includes(currentFolderId)) {
         currentFolderId = speedDialId;
         currentFolder = speedDialId;
         settings.currentFolder = speedDialId;
@@ -355,19 +377,29 @@ async function buildDialPages(speedDialId, currentFolderId) {
 
     buildFolderHeader(folders, currentFolderId);
 
-    const renderFolders = settings.folderStyle === 'dials'
-        ? [rootNode, ...folderNodeMap.values()]
-        : [rootNode, ...directFolders];
+    const currentNode = currentFolderId === speedDialId ? rootNode : folderNodeMap.get(currentFolderId);
+
+    if (settings.folderStyle === 'dials') {
+        bookmarksContainerParent.querySelectorAll('.container').forEach(container => {
+            if (container.id !== currentFolderId) {
+                removeFolderContainer(container);
+            }
+        });
+
+        await prepareFolderPreviews(currentNode?.children || []);
+        await printBookmarks(currentNode?.children || [], currentFolderId);
+        bookmarksContainerParent.scrollTop = scrollPos;
+        return;
+    }
+
+    const renderFolders = [rootNode, ...directFolders];
     const renderFolderIds = new Set(renderFolders.map(folder => folder.id));
 
     bookmarksContainerParent.querySelectorAll('.container').forEach(container => {
         if (!renderFolderIds.has(container.id)) {
-            Sortable.get(container)?.destroy();
-            container.remove();
+            removeFolderContainer(container);
         }
     });
-
-    const currentNode = currentFolderId === speedDialId ? rootNode : folderNodeMap.get(currentFolderId);
 
     if (currentNode) {
         await printBookmarks(currentNode.children || [], currentFolderId);
@@ -639,12 +671,28 @@ function buildFolderHeader(folderNodes, currentFolderId) {
     }
 }
 
-function openFolder(id) {
+async function openFolder(id) {
+    if (settings.folderStyle === 'dials' && !document.getElementById(id)) {
+        const folder = id === speedDialId ? speedDialRootNode : folderNodeMap.get(id);
+        if (!folder) return;
+
+        await prepareFolderPreviews(folder.children || []);
+        await printBookmarks(folder.children || [], id);
+    }
+
     showFolder(id);
     currentFolder = id;
     scrollPos = 0;
     bookmarksContainerParent.scrollTop = scrollPos;
     updateFolderBreadcrumb(id);
+
+    if (settings.folderStyle === 'dials') {
+        bookmarksContainerParent.querySelectorAll('.container').forEach(container => {
+            if (container.id !== id) {
+                removeFolderContainer(container);
+            }
+        });
+    }
 
     settings.currentFolder = id;
     if (settings.rememberFolder) {
@@ -908,7 +956,7 @@ async function printBookmarks(bookmarks, parentId) {
     
     // reverse the bookmarks if settings.defaultSort === "first")
     if (settings.defaultSort === "first") {
-        bookmarks = bookmarks.reverse();
+        bookmarks = [...bookmarks].reverse();
     }
     chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
     //let thumbnails = await chrome.storage.local.get(urls);
@@ -938,6 +986,10 @@ async function printBookmarks(bookmarks, parentId) {
                     let preview = document.createElement('div');
                     preview.classList.add('folderDial-preview');
                     preview.setAttribute('data-thumbnail-id', previewDial.id);
+                    if (!thumbnailPreviewElements.has(previewDial.id)) {
+                        thumbnailPreviewElements.set(previewDial.id, new Set());
+                    }
+                    thumbnailPreviewElements.get(previewDial.id).add(preview);
                     preview.style.backgroundColor = previewDial.previewColor || 'rgba(255, 255, 255, 0.12)';
                     if (previewDial.previewThumbnail) {
                         preview.style.backgroundImage = `url('${previewDial.previewThumbnail}')`;
@@ -1049,6 +1101,7 @@ async function printBookmarks(bookmarks, parentId) {
         */
 
     // Optimize container update using batch insert
+    unregisterThumbnailPreviews(folderContainerEl);
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
     batchInsert(folderContainerEl, fragment)
 
@@ -3604,24 +3657,7 @@ function getSpeedDialId() {
                 }
             }
             if (speedDialId) {
-                chrome.bookmarks.getSubTree(speedDialId).then(([rootNode]) => {
-                    folderIds = [];
-                    rootFolderIds = [];
-
-                    function collectFolders(nodes, isRootLevel = false) {
-                        for (const node of nodes) {
-                            if (node.url || !node.title) continue;
-                            folderIds.push(node.id);
-                            if (isRootLevel) {
-                                rootFolderIds.push(node.id);
-                            }
-                            collectFolders(node.children || []);
-                        }
-                    }
-
-                    collectFolders(rootNode.children || [], true);
-                    resolve()
-                })
+                resolve();
             } else {
                 chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
                     speedDialId = result.id;
@@ -3652,14 +3688,16 @@ function setBackgroundImages(thumbnails) {
 
     thumbnails.forEach(thumb => {
         const element = document.getElementById(thumb.id);
-        const previewElements = document.querySelectorAll(`[data-thumbnail-id="${CSS.escape(thumb.id)}"]`);
+        const previewElements = thumbnailPreviewElements.get(thumb.id);
 
-        if (element || previewElements.length) {
-            previewElements.forEach(previewElement => elementsToUpdate.push({ element: previewElement, thumb }));
+        if (previewElements?.size) {
+            previewElements.forEach(previewElement => {
+                elementsToUpdate.push({ element: previewElement, thumb });
+            });
         }
         if (element) {
             elementsToUpdate.push({ element, thumb });
-        } else if (!previewElements.length) {
+        } else if (!previewElements?.size) {
             let observer = observers.get(thumb.parentId);
             if (!observer) {
                 const parentElement = document.getElementById(thumb.parentId);
@@ -3792,8 +3830,7 @@ function init() {
         }
 
         getSpeedDialId().then(() => {
-            if (settings.rememberFolder && settings.currentFolder
-                && folderIds.includes(settings.currentFolder)) {
+            if (settings.rememberFolder && settings.currentFolder) {
                 currentFolder = settings.currentFolder;
             } else {
                 currentFolder = speedDialId;
