@@ -197,6 +197,7 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
                                      // re-synced after this settles on a same-folder reorder.
 const FOLDER_DIAL_DROP_DELAY = 120;
 const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
+const FOLDER_HISTORY_STATE_KEY = 'yasdFolderId';
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
 let hourCycle = 'h12';
@@ -394,6 +395,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
         await prepareFolderPreviews(currentNode?.children || []);
         await printBookmarks(currentNode?.children || [], currentFolderId);
         bookmarksContainerParent.scrollTop = scrollPos;
+        setFolderHistoryState(currentFolderId, 'replace');
         return;
     }
 
@@ -676,7 +678,20 @@ function buildFolderHeader(folderNodes, currentFolderId) {
     }
 }
 
-async function openFolder(id) {
+function setFolderHistoryState(id, mode) {
+    if (settings.folderStyle !== 'dials') return;
+
+    const state = { ...(history.state || {}), [FOLDER_HISTORY_STATE_KEY]: id };
+    if (mode === 'replace') {
+        history.replaceState(state, '');
+    } else if (mode === 'push') {
+        history.pushState(state, '');
+    }
+}
+
+async function openFolder(id, { historyMode = 'push' } = {}) {
+    const folderChanged = id !== currentFolder;
+
     if (settings.folderStyle === 'dials' && !document.getElementById(id)) {
         const folder = id === speedDialId ? speedDialRootNode : folderNodeMap.get(id);
         if (!folder) return;
@@ -703,6 +718,22 @@ async function openFolder(id) {
     if (settings.rememberFolder) {
         chrome.storage.local.set({ settings });
     }
+
+    if (historyMode === 'replace' || (historyMode === 'push' && folderChanged)) {
+        setFolderHistoryState(id, historyMode);
+    }
+}
+
+function handleFolderHistoryNavigation(event) {
+    if (settings?.folderStyle !== 'dials') return;
+
+    const historyFolderId = event.state?.[FOLDER_HISTORY_STATE_KEY];
+    if (!historyFolderId) return;
+
+    const folderId = historyFolderId === speedDialId || folderNodeMap.has(historyFolderId)
+        ? historyFolderId
+        : speedDialId;
+    openFolder(folderId, { historyMode: null });
 }
 
 function folderLink(title, id) {
@@ -784,7 +815,7 @@ function removeFolder() {
         }
 
         if (currentFolder === targetFolder) {
-            openFolder(parentId);
+            openFolder(parentId, { historyMode: 'replace' });
         }
 
         processRefresh();
@@ -2671,6 +2702,8 @@ window.addEventListener("keydown", event => {
         activateExpandableSearch();
     }
 });
+
+window.addEventListener('popstate', handleFolderHistoryNavigation);
 
 modalSave.addEventListener("click", saveBookmarkSettings);
 createDialModalSave.addEventListener("click", createDial);
