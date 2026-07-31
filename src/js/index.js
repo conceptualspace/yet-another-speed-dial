@@ -1051,7 +1051,10 @@ async function printBookmarks(bookmarks, parentId) {
                 if (!settings.showTitles) {
                     title.classList.add('hide');
                 }
-                title.textContent = bookmark.title;
+                let titleText = document.createElement('span');
+                titleText.classList.add('folderDial-titleText');
+                titleText.textContent = bookmark.title;
+                title.appendChild(titleText);
 
                 main.append(content, title);
                 a.appendChild(main);

@@ -661,11 +661,9 @@ h1 {
 }
 
 .folderDial-title::before {
-    display: inline-block;
-    width: 1.15em;
+    flex: 0 0 1.15em;
     height: 1.15em;
     margin-right: 5px;
-    vertical-align: -0.15em;
     background-color: currentColor;
     content: '';
     -webkit-mask: url('../img/folder.svg') center / contain no-repeat;
@@ -673,7 +671,16 @@ h1 {
 }
 
 .folderDial-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 500;
+}
+
+.folderDial-titleText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .createDial {
