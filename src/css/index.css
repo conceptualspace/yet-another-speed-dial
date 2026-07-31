@@ -515,6 +515,24 @@ h1 {
     opacity: 1;
 }
 
+.folderBreadcrumbSeparator,
+.folderBreadcrumbCurrent {
+    display: inline-flex;
+    align-items: center;
+    margin: 8px 2px;
+    padding: 4px 2px;
+    color: var(--color);
+}
+
+.folderBreadcrumbSeparator {
+    opacity: 0.55;
+}
+
+.folderBreadcrumbCurrent {
+    font-weight: 500;
+    opacity: 1;
+}
+
 /* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
 .folders-drag-active .folderTitle {
     padding: var(--folder-drop-padding, 60px);

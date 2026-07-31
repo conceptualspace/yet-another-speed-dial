@@ -328,16 +328,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
         }
     }
 
-    // clear any existing data so we can refresh
-    foldersContainer.innerHTML = '';
-
-    // Build folder header links
-    if (folders && folders.length > 1) {
-        for (let folder of folders) {
-            if (settings.folderStyle === 'dials' && folder.id !== speedDialId) continue;
-            folderLink(folder.title, folder.id);
-        }
-    }
+    buildFolderHeader(folders, currentFolderId);
 
     // Process the current folder's children first
     const currentChildren = folderChildren.get(currentFolderId) || await getChildren(currentFolderId);
@@ -379,16 +370,7 @@ async function buildFolderPages(speedDialId) {
         return (a.index || 0) - (b.index || 0);
     });
 
-    // clear any existing data so we can refresh
-    foldersContainer.innerHTML = '';
-
-    // Build folder header links
-    if (folders && folders.length > 1) {
-        for (let folder of folders) {
-            if (settings.folderStyle === 'dials' && folder.id !== speedDialId) continue;
-            folderLink(folder.title, folder.id);
-        }
-    }
+    buildFolderHeader(folders, currentFolder);
 
     return
 }
@@ -567,11 +549,50 @@ function printFolderBookmarks() {
     }
 }
 
-function openFolder(id) {
+function updateFolderBreadcrumb(id, title) {
+    if (settings.folderStyle !== 'dials') return;
+
+    foldersContainer.querySelector('.folderBreadcrumbSeparator')?.remove();
+    foldersContainer.querySelector('.folderBreadcrumbCurrent')?.remove();
+
+    if (id === speedDialId) return;
+
+    let separator = document.createElement('span');
+    separator.classList.add('folderBreadcrumbSeparator');
+    separator.setAttribute('aria-hidden', 'true');
+    separator.textContent = '›';
+
+    let current = document.createElement('span');
+    current.classList.add('folderBreadcrumbCurrent');
+    current.setAttribute('aria-current', 'page');
+    current.textContent = title;
+
+    foldersContainer.append(separator, current);
+}
+
+function buildFolderHeader(folderNodes, currentFolderId) {
+    foldersContainer.innerHTML = '';
+    if (!folderNodes || folderNodes.length <= 1) return;
+
+    if (settings.folderStyle === 'dials') {
+        const homeFolder = folderNodes.find(folder => folder.id === speedDialId);
+        const activeFolder = folderNodes.find(folder => folder.id === currentFolderId);
+        folderLink(homeFolder.title, homeFolder.id);
+        updateFolderBreadcrumb(currentFolderId, activeFolder?.title || '');
+        return;
+    }
+
+    for (let folder of folderNodes) {
+        folderLink(folder.title, folder.id);
+    }
+}
+
+function openFolder(id, title) {
     showFolder(id);
     currentFolder = id;
     scrollPos = 0;
     bookmarksContainerParent.scrollTop = scrollPos;
+    updateFolderBreadcrumb(id, title);
 
     settings.currentFolder = id;
     if (settings.rememberFolder) {
@@ -591,7 +612,7 @@ function folderLink(title, id) {
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
-        openFolder(id);
+        openFolder(id, title);
     };
 
     a.ondragenter = dragenterHandler;
@@ -853,7 +874,7 @@ async function printBookmarks(bookmarks, parentId) {
                 a.setAttribute('data-id', bookmark.id);
                 a.setAttribute('data-type', 'folder');
                 a.onclick = function () {
-                    openFolder(bookmark.id);
+                    openFolder(bookmark.id, bookmark.title);
                 };
 
                 let main = document.createElement('div');
@@ -3732,7 +3753,7 @@ function init() {
         animation: 150,
         forceFallback: true,
         fallbackTolerance: 4,
-        filter: "#homeFolderLink",
+        filter: "#homeFolderLink, .folderBreadcrumbSeparator, .folderBreadcrumbCurrent",
         ghostClass: 'selected',
         onMove: function (evt) {
             return evt.related.id !== 'homeFolderLink';
