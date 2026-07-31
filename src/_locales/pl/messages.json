@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Nowe na początku"
+  },
+  "folderStyle": {
+    "message": "Styl folderów"
+  },
+  "optionFolderTabs": {
+    "message": "Karty"
+  },
+  "optionFolderDials": {
+    "message": "Kafelki"
   }
 }

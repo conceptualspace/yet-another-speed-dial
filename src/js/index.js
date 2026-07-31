@@ -124,6 +124,7 @@ const helpBtn = document.getElementById("help");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
+const folderStyleInput = document.getElementById("folderStyle");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -213,6 +214,7 @@ let defaults = {
     textColor: '#ffffff',
     dialSize: 'large',
     dialRatio: 'wide',
+    folderStyle: 'tabs',
     currentFolder: null,
 };
 
@@ -305,6 +307,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     // Build folder header links
     if (folders && folders.length > 1) {
         for (let folder of folders) {
+            if (settings.folderStyle === 'dials' && folder.id !== speedDialId) continue;
             folderLink(folder.title, folder.id);
         }
     }
@@ -355,6 +358,7 @@ async function buildFolderPages(speedDialId) {
     // Build folder header links
     if (folders && folders.length > 1) {
         for (let folder of folders) {
+            if (settings.folderStyle === 'dials' && folder.id !== speedDialId) continue;
             folderLink(folder.title, folder.id);
         }
     }
@@ -536,6 +540,18 @@ function printFolderBookmarks() {
     }
 }
 
+function openFolder(id) {
+    showFolder(id);
+    currentFolder = id;
+    scrollPos = 0;
+    bookmarksContainerParent.scrollTop = scrollPos;
+
+    settings.currentFolder = id;
+    if (settings.rememberFolder) {
+        chrome.storage.local.set({ settings });
+    }
+}
+
 function folderLink(title, id) {
     let a = document.createElement('a');
     if (id === speedDialId) {
@@ -548,16 +564,7 @@ function folderLink(title, id) {
     a.appendChild(linkText);
     //a.href = "#"+bookmark.id;
     a.onclick = function () {
-        showFolder(id);
-        currentFolder = id;
-        scrollPos = 0;
-        bookmarksContainerParent.scrollTop = scrollPos;
-
-        settings.currentFolder = id;
-        if (settings.rememberFolder) {
-            chrome.storage.local.set({ settings });
-            //tabMessagePort.postMessage({currentFolder: id});
-        }
+        openFolder(id);
     };
 
     a.ondragenter = dragenterHandler;
@@ -811,7 +818,35 @@ async function printBookmarks(bookmarks, parentId) {
     // Process bookmarks
     if (bookmarks) {
         for (let bookmark of bookmarks) {
-            if (!bookmark.url && bookmark.title && bookmark.parentId === speedDialId) continue;
+            if (!bookmark.url && bookmark.title) {
+                if (bookmark.parentId !== speedDialId || settings.folderStyle !== 'dials') continue;
+
+                let a = document.createElement('a');
+                a.classList.add('tile', 'folderDial');
+                a.setAttribute('data-id', bookmark.id);
+                a.setAttribute('data-type', 'folder');
+                a.onclick = function () {
+                    openFolder(bookmark.id);
+                };
+
+                let main = document.createElement('div');
+                main.classList.add('tile-main');
+
+                let content = document.createElement('div');
+                content.classList.add('tile-content', 'folderDial-content');
+
+                let title = document.createElement('div');
+                title.classList.add('tile-title');
+                if (!settings.showTitles) {
+                    title.classList.add('hide');
+                }
+                title.textContent = bookmark.title;
+
+                main.append(content, title);
+                a.appendChild(main);
+                fragment.appendChild(a);
+                continue;
+            }
 
             if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
                 //let images = thumbnails[bookmark.url] || {};
@@ -885,6 +920,8 @@ async function printBookmarks(bookmarks, parentId) {
     new Sortable(folderContainerEl, {
         group: 'shared',
         animation: SORTABLE_ANIMATION,
+        forceFallback: settings.folderStyle === 'dials' && parentId === speedDialId,
+        fallbackTolerance: 4,
         ghostClass: 'selected',
         dragClass: 'dragging',
         filter: ".createDial",
@@ -2176,6 +2213,7 @@ function applySettings(options = {}) {
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
+        folderStyleInput.value = settings.folderStyle;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -2227,6 +2265,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
+    settings.folderStyle = folderStyleInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
@@ -2266,7 +2305,14 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
-    if (e.target.className === 'tile-content') {
+    const folderDial = e.target.closest?.('.folderDial');
+    if (folderDial) {
+        targetFolderLink = folderDial;
+        targetFolder = folderDial.dataset.id;
+        targetFolderName = folderDial.querySelector('.tile-title').textContent;
+        showContextMenu(folderMenu, e.pageY, e.pageX);
+        return false;
+    } else if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = targetNode.href;
         targetTileId = targetNode.dataset.id;
@@ -2319,7 +2365,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -2520,6 +2566,11 @@ dialSizeInput.oninput = function (e) {
 
 dialRatioInput.oninput = function (e) {
     saveSettings()
+}
+
+folderStyleInput.oninput = function () {
+    saveSettings();
+    processRefresh();
 }
 
 defaultSortInput.oninput = function (e) {
@@ -2900,7 +2951,7 @@ resetSettingsBtn.onclick = function () {
         settings = JSON.parse(JSON.stringify(defaults));
         wallpaperSrc = DEFAULT_WALLPAPER_SRC;
         chrome.storage.local.set({ settings, wallpaperSrc }).then(() => {
-            applySettings();
+            applySettings().then(() => processRefresh());
         });
     }
 }
@@ -3351,7 +3402,7 @@ function onEndHandler(evt) {
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
 
-    if (evt && evt.clone.href) {
+    if (evt && (evt.clone.href || evt.clone.dataset.type === 'folder')) {
         let id = evt.clone.dataset.id;
         let fromParentId = dewrap(evt.from.id);
         let toParentId = dewrap(evt.to.id);
@@ -3529,7 +3580,7 @@ function handleMessages(message) {
         processRefresh();
     } else if(message.data?.reloadFolders) {
         hideToast();
-        processRefresh({ foldersOnly: true });
+        processRefresh({ foldersOnly: settings.folderStyle !== 'dials' });
     } else if(message.type === 'thumbBatch') {
         // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor

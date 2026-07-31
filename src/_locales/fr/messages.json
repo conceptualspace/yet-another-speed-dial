@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Nouveaux au début"
+  },
+  "folderStyle": {
+    "message": "Style des dossiers"
+  },
+  "optionFolderTabs": {
+    "message": "Onglets"
+  },
+  "optionFolderDials": {
+    "message": "Vignettes"
   }
 }

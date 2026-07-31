@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Novos no início"
+  },
+  "folderStyle": {
+    "message": "Estilo das pastas"
+  },
+  "optionFolderTabs": {
+    "message": "Separadores"
+  },
+  "optionFolderDials": {
+    "message": "Marcadores"
   }
 }

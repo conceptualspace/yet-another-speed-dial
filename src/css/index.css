@@ -572,6 +572,20 @@ h1 {
     background-size: var(--image-scaling);
 }
 
+.folderDial-content {
+    display: grid;
+    place-items: center;
+}
+
+.folderDial-content::before {
+    width: min(56%, 144px);
+    aspect-ratio: 1;
+    background-color: currentColor;
+    content: '';
+    -webkit-mask: url('../img/folder.svg') center / contain no-repeat;
+    mask: url('../img/folder.svg') center / contain no-repeat;
+}
+
 .tile-title {
     opacity: var(--title-opacity);
     text-align: center;

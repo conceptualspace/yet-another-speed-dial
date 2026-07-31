@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Nuovi all'inizio"
+  },
+  "folderStyle": {
+    "message": "Stile cartella"
+  },
+  "optionFolderTabs": {
+    "message": "Schede"
+  },
+  "optionFolderDials": {
+    "message": "Riquadri"
   }
 }

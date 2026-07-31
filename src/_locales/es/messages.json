@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Nuevos al inicio"
+  },
+  "folderStyle": {
+    "message": "Estilo de carpeta"
+  },
+  "optionFolderTabs": {
+    "message": "Pestañas"
+  },
+  "optionFolderDials": {
+    "message": "Marcadores"
   }
 }
