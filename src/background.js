@@ -206,9 +206,8 @@ async function handleBookmarkChanged(id, info) {
         		for (let child of children) {
         			handleBookmarkChanged(child.id)
         		}
-        	} else {
-        		reloadFolders()
         	}
+            reloadFolders()
         }
     }
 }
@@ -225,8 +224,7 @@ async function handleBookmarkRemoved(id, info) {
 			});
 		}
 	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
-		// folder removed, refresh the tab?
-		//refreshOpen()
+        reloadFolders()
 	}
 	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
 	//refreshOpen();
