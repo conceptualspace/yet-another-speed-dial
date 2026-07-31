@@ -234,5 +234,83 @@
   },
   "optionNewDialsFirst": {
     "message": "New dials first"
+  },
+  "historyButton": {
+    "message": "History Button"
+  },
+  "historySearchPlaceholder": {
+    "message": "Search tabs"
+  },
+  "noMatchingTabs": {
+    "message": "No matching tabs"
+  },
+  "noOpenTabs": {
+    "message": "No open tabs"
+  },
+  "noOtherDeviceTabs": {
+    "message": "No tabs from other devices"
+  },
+  "noRecentlyClosedTabs": {
+    "message": "No recently closed tabs"
+  },
+  "openTabsFocusError": {
+    "message": "Unable to switch to tab"
+  },
+  "openTabsLoadError": {
+    "message": "Unable to load open tabs"
+  },
+  "openTabsLoading": {
+    "message": "Loading..."
+  },
+  "openTabsTitle": {
+    "message": "Open Tabs"
+  },
+  "openTabsUnavailable": {
+    "message": "Open tabs are not available"
+  },
+  "openTabsUntitled": {
+    "message": "Untitled tab"
+  },
+  "otherDeviceFallbackName": {
+    "message": "Other device"
+  },
+  "otherDevicesLoadError": {
+    "message": "Unable to load tabs from other devices"
+  },
+  "otherDevicesLoading": {
+    "message": "Loading..."
+  },
+  "otherDevicesOpenError": {
+    "message": "Unable to open tab"
+  },
+  "otherDevicesTitle": {
+    "message": "Synced"
+  },
+  "otherDevicesUnavailable": {
+    "message": "Other devices are not available"
+  },
+  "otherDevicesUntitled": {
+    "message": "Untitled tab"
+  },
+  "recentlyClosedLoadError": {
+    "message": "Unable to load recently closed tabs"
+  },
+  "recentlyClosedLoading": {
+    "message": "Loading..."
+  },
+  "recentlyClosedRestoreError": {
+    "message": "Unable to restore tab"
+  },
+  "recentlyClosedSectionTitle": {
+    "message": "Recently Closed"
+  },
+  "recentlyClosedTitle": {
+    "message": "Recent"
+  },
+  "recentlyClosedUnavailable": {
+    "message": "Recently closed tabs are not available"
+  },
+  "recentlyClosedUntitled": {
+    "message": "Untitled tab"
   }
 }
