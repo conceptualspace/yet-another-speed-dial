@@ -77,6 +77,19 @@ const toastContent = document.getElementById('toastContent');
 const closeModal = document.getElementsByClassName("close");
 const modalSave = document.getElementById('modalSave');
 const sidenav = document.getElementById("sidenav");
+const openTabsList = document.getElementById("openTabsList");
+const openTabsEmpty = document.getElementById("openTabsEmpty");
+const recentTabsList = document.getElementById("recentTabsList");
+const recentTabsEmpty = document.getElementById("recentTabsEmpty");
+const historyNav = document.getElementById("historyNav");
+const historySearchInput = document.getElementById("historySearchInput");
+const historyBtn = document.getElementById("historyBtn");
+const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
+const otherDevicesPanelBtn = document.getElementById("otherDevicesPanelBtn");
+const recentTabsView = document.getElementById("recentTabsView");
+const otherDevicesView = document.getElementById("otherDevicesView");
+const otherDevicesList = document.getElementById("otherDevicesList");
+const otherDevicesEmpty = document.getElementById("otherDevicesEmpty");
 const modalTitle = document.getElementById("modalTitle");
 const modalURL = document.getElementById("modalURL");
 const modalImgContainer = document.getElementById("modalImgContainer");
@@ -113,6 +126,7 @@ const showFoldersInput = document.getElementById("showFolders");
 const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const showSearchBtnInput = document.getElementById("showSearchBtn");
+const showHistoryBtnInput = document.getElementById("showHistoryBtn");
 const maxColsInput = document.getElementById("maxcols");
 const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
@@ -189,6 +203,8 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
                                      // re-synced after this settles on a same-folder reorder.
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
+const RECENTLY_CLOSED_MAX_RESULTS = 25;
+const OTHER_DEVICES_MAX_RESULTS = 25;
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
@@ -208,6 +224,7 @@ let defaults = {
     showSettingsBtn: true,
     showClock: false,
     showSearchBtn: true,
+    showHistoryBtn: true,
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
@@ -931,14 +948,79 @@ function hideMenus() {
     }
 }
 
+function openSideNav(nav) {
+    nav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
+    nav.style.transform = "translateX(0%)";
+}
+
+function hideSideNav(nav) {
+    nav.style.transform = "translateX(100%)";
+    nav.style.boxShadow = "none";
+}
+
 function openSettings() {
-    sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
-    sidenav.style.transform = "translateX(0%)";
+    hideHistory();
+    openSideNav(sidenav);
 }
 
 function hideSettings() {
-    sidenav.style.transform = "translateX(100%)";
-    sidenav.style.boxShadow = "none";
+    hideSideNav(sidenav);
+}
+
+function setHistoryPanelView(view) {
+    const showRecentTabs = view === 'recent';
+    const showOtherDevices = view === 'devices';
+    recentTabsPanelBtn.classList.toggle('active', showRecentTabs);
+    otherDevicesPanelBtn.classList.toggle('active', showOtherDevices);
+    recentTabsView.classList.toggle('active', showRecentTabs);
+    otherDevicesView.classList.toggle('active', showOtherDevices);
+    filterHistoryPanelItems();
+}
+
+function setOtherDevicesAvailable(available) {
+    otherDevicesPanelBtn.hidden = !available;
+
+    if (!available && otherDevicesView.classList.contains('active')) {
+        setHistoryPanelView('recent');
+        loadRecentTabs();
+    }
+}
+
+async function refreshOtherDevicesAvailability() {
+    if (!chrome.sessions || !chrome.sessions.getDevices) {
+        setOtherDevicesAvailable(false);
+        return [];
+    }
+
+    try {
+        const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
+        setOtherDevicesAvailable(devices.length > 0);
+        return devices;
+    } catch (error) {
+        setOtherDevicesAvailable(false);
+        return [];
+    }
+}
+
+function openHistory(view = 'recent') {
+    hideSettings();
+    hideSearch();
+    setHistoryPanelView(view);
+    if (view === 'recent') {
+        loadRecentTabs();
+    } else {
+        loadOtherDeviceTabs();
+    }
+    if (view !== 'devices') refreshOtherDevicesAvailability();
+    openSideNav(historyNav);
+}
+
+function hideHistory() {
+    hideSideNav(historyNav);
+    if (historySearchInput.value) {
+        historySearchInput.value = '';
+        filterHistoryPanelItems();
+    }
 }
 
 function hideModals() {
@@ -969,7 +1051,365 @@ function hideModals() {
 
     // hide search
     hideSearch();
+    hideHistory();
 
+}
+
+function getLocaleMessage(key, fallback) {
+    const message = chrome.i18n.getMessage(key);
+    return message || fallback;
+}
+
+function setRecentlyClosedStatus(message) {
+    recentTabsEmpty.textContent = message;
+    recentTabsEmpty.style.display = "block";
+    filterHistoryPanelItems();
+}
+
+function setOpenTabsStatus(message) {
+    openTabsEmpty.textContent = message;
+    openTabsEmpty.style.display = "block";
+    filterHistoryPanelItems();
+}
+
+function setOtherDevicesStatus(message) {
+    otherDevicesEmpty.textContent = message;
+    otherDevicesEmpty.style.display = "block";
+    filterHistoryPanelItems();
+}
+
+function getBrowserFaviconUrl(url) {
+    if (!url) return null;
+    if (chrome.runtime.getBrowserInfo) return null;
+
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return null;
+        return chrome.runtime.getURL(`/_favicon/?pageUrl=${encodeURIComponent(url)}&size=32`);
+    } catch (error) {
+        return null;
+    }
+}
+
+function getGoogleFaviconUrl(url) {
+    if (!url) return null;
+
+    try {
+        const parsedUrl = new URL(url);
+        if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') return null;
+        return `https://www.google.com/s2/favicons?domain_url=${encodeURIComponent(parsedUrl.origin)}&sz=32`;
+    } catch (error) {
+        return null;
+    }
+}
+
+function renderDefaultFavicon(icon) {
+    icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M200-120q-33 0-56.5-23.5T120-200v-560q0-33 23.5-56.5T200-840h560q33 0 56.5 23.5T840-760v560q0 33-23.5 56.5T760-120H200Zm0-80h560v-400H200v400Zm0-480h560v-80H200v80Zm0 0v-80 80Z"/></svg>';
+}
+
+function createRecentTabFavicon(tab) {
+    const icon = document.createElement('span');
+    icon.className = 'recent-tab-favicon';
+    const faviconUrl = tab.favIconUrl || getBrowserFaviconUrl(tab.url);
+
+    if (faviconUrl) {
+        const image = document.createElement('img');
+        image.src = faviconUrl;
+        image.alt = '';
+        image.addEventListener('error', () => renderDefaultFavicon(icon), { once: true });
+        icon.appendChild(image);
+    } else {
+        renderDefaultFavicon(icon);
+    }
+
+    return icon;
+}
+
+function formatRecentTabUrl(url) {
+    if (!url) return '';
+
+    try {
+        const parsedUrl = new URL(url);
+        return parsedUrl.hostname || url;
+    } catch (error) {
+        return url;
+    }
+}
+
+function normalizeRecentTabKey(url) {
+    if (!url) return null;
+
+    try {
+        const parsedUrl = new URL(url);
+        parsedUrl.hash = '';
+        if (parsedUrl.pathname.length > 1) {
+            parsedUrl.pathname = parsedUrl.pathname.replace(/\/$/, '');
+        }
+        return parsedUrl.toString();
+    } catch (error) {
+        return url.trim() || null;
+    }
+}
+
+function isNewTabUrl(url) {
+    if (!url) return false;
+
+    try {
+        const parsedUrl = new URL(url);
+        if ((parsedUrl.protocol === 'chrome:' || parsedUrl.protocol === 'edge:') && parsedUrl.hostname === 'newtab') return true;
+        if (parsedUrl.protocol === 'about:' && parsedUrl.pathname === 'newtab') return true;
+        return url === chrome.runtime.getURL('index.html');
+    } catch (error) {
+        return false;
+    }
+}
+
+function dedupeRecentTabs(tabs) {
+    const seen = new Set();
+    const deduped = [];
+
+    for (const tab of tabs) {
+        const key = normalizeRecentTabKey(tab.url);
+        if (!key || seen.has(key)) continue;
+
+        seen.add(key);
+        deduped.push(tab);
+    }
+
+    return deduped;
+}
+
+async function restoreRecentlyClosedTab(tab) {
+    try {
+        if (tab.sessionId && chrome.sessions && chrome.sessions.restore) {
+            await chrome.sessions.restore(tab.sessionId);
+        } else if (tab.url) {
+            await chrome.tabs.create({ url: tab.url });
+        }
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to restore recently closed tab:', error);
+        showToast(getLocaleMessage('recentlyClosedRestoreError', 'Unable to restore tab'));
+    }
+}
+
+async function focusOpenTab(tab) {
+    try {
+        await chrome.tabs.update(tab.id, { active: true });
+        if (chrome.windows && chrome.windows.update) {
+            await chrome.windows.update(tab.windowId, { focused: true });
+        }
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to focus open tab:', error);
+        showToast(getLocaleMessage('openTabsFocusError', 'Unable to switch to tab'));
+    }
+}
+
+async function openOtherDeviceTab(tab) {
+    try {
+        await chrome.tabs.create({ url: tab.url });
+        hideHistory();
+    } catch (error) {
+        console.error('Unable to open tab from other device:', error);
+        showToast(getLocaleMessage('otherDevicesOpenError', 'Unable to open tab'));
+    }
+}
+
+function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFallback, buttonFallback, onClick }) {
+    listEl.innerHTML = '';
+
+    if (!items.length) {
+        emptyEl.textContent = emptyMessage;
+        emptyEl.style.display = "block";
+        filterHistoryPanelItems();
+        return;
+    }
+
+    emptyEl.style.display = "none";
+
+    for (const item of items) {
+        const listItem = document.createElement('li');
+        const button = document.createElement('button');
+        const text = document.createElement('span');
+        const title = document.createElement('span');
+        const url = document.createElement('span');
+
+        button.type = 'button';
+        button.className = 'recent-tab';
+        button.title = item.url || item.title || buttonFallback;
+        button.dataset.searchText = `${item.title || ''} ${item.url || ''} ${item.subtitle || ''}`.toLocaleLowerCase();
+        button.addEventListener('click', () => onClick(item));
+
+        text.className = 'recent-tab-text';
+        title.className = 'recent-tab-title';
+        title.textContent = item.title || formatRecentTabUrl(item.url) || itemFallback;
+        url.className = 'recent-tab-url';
+        url.textContent = item.subtitle || formatRecentTabUrl(item.url);
+
+        text.appendChild(title);
+        text.appendChild(url);
+        button.appendChild(createRecentTabFavicon(item));
+        button.appendChild(text);
+        listItem.appendChild(button);
+        listEl.appendChild(listItem);
+    }
+
+    filterHistoryPanelItems();
+}
+
+function filterHistoryPanelItems() {
+    const query = historySearchInput.value.trim().toLocaleLowerCase();
+
+    for (const view of [recentTabsView, otherDevicesView]) {
+        const buttons = view.querySelectorAll('.recent-tab');
+        let visibleItems = 0;
+
+        for (const button of buttons) {
+            const matches = !query || button.dataset.searchText.includes(query);
+            button.parentElement.hidden = !matches;
+            if (matches) visibleItems++;
+        }
+
+        const filterEmpty = view.querySelector('.history-filter-empty');
+        filterEmpty.style.display = query && buttons.length && !visibleItems ? 'block' : 'none';
+    }
+}
+
+function renderOpenTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: openTabsList,
+        emptyEl: openTabsEmpty,
+        emptyMessage: getLocaleMessage('noOpenTabs', 'No open tabs'),
+        itemFallback: getLocaleMessage('openTabsUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('openTabsTitle', 'Open Tabs'),
+        onClick: focusOpenTab,
+    });
+}
+
+function renderRecentlyClosedTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: recentTabsList,
+        emptyEl: recentTabsEmpty,
+        emptyMessage: getLocaleMessage('noRecentlyClosedTabs', 'No recently closed tabs'),
+        itemFallback: getLocaleMessage('recentlyClosedUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('recentlyClosedTitle', 'Recent Tabs'),
+        onClick: restoreRecentlyClosedTab,
+    });
+}
+
+function getSessionTabs(session) {
+    if (session.tab) return [session.tab];
+    if (session.window && session.window.tabs) return session.window.tabs;
+    return [];
+}
+
+function getOtherDeviceTabs(devices) {
+    const tabs = [];
+
+    for (const device of devices) {
+        const deviceName = device.deviceName || getLocaleMessage('otherDeviceFallbackName', 'Other device');
+
+        for (const session of device.sessions || []) {
+            for (const tab of getSessionTabs(session)) {
+                if (!tab || !tab.url || isNewTabUrl(tab.url)) continue;
+
+                tabs.push({
+                    ...tab,
+                    favIconUrl: tab.favIconUrl || getGoogleFaviconUrl(tab.url),
+                    subtitle: `${formatRecentTabUrl(tab.url)} - ${deviceName}`,
+                });
+            }
+        }
+    }
+
+    return tabs;
+}
+
+function renderOtherDeviceTabs(tabs) {
+    renderHistoryPanelItems({
+        items: tabs,
+        listEl: otherDevicesList,
+        emptyEl: otherDevicesEmpty,
+        emptyMessage: getLocaleMessage('noOtherDeviceTabs', 'No tabs from other devices'),
+        itemFallback: getLocaleMessage('otherDevicesUntitled', 'Untitled tab'),
+        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Synced Tabs'),
+        onClick: openOtherDeviceTab,
+    });
+}
+
+async function loadOpenTabs() {
+    openTabsList.innerHTML = '';
+    setOpenTabsStatus(getLocaleMessage('openTabsLoading', 'Loading...'));
+
+    if (!chrome.tabs || !chrome.tabs.query) {
+        setOpenTabsStatus(getLocaleMessage('openTabsUnavailable', 'Open tabs are not available'));
+        return;
+    }
+
+    try {
+        const tabs = await chrome.tabs.query({});
+        renderOpenTabs(tabs.filter(tab => tab && tab.url && !isNewTabUrl(tab.url)));
+    } catch (error) {
+        console.error('Unable to load open tabs:', error);
+        setOpenTabsStatus(getLocaleMessage('openTabsLoadError', 'Unable to load open tabs'));
+    }
+}
+
+function loadRecentTabs() {
+    return Promise.all([loadOpenTabs(), loadRecentlyClosedTabs()]);
+}
+
+async function loadRecentlyClosedTabs() {
+    recentTabsList.innerHTML = '';
+    setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoading', 'Loading...'));
+
+    if (!chrome.sessions || !chrome.sessions.getRecentlyClosed) {
+        setRecentlyClosedStatus(getLocaleMessage('recentlyClosedUnavailable', 'Recently closed tabs are not available'));
+        return;
+    }
+
+    try {
+        const sessions = await chrome.sessions.getRecentlyClosed({ maxResults: RECENTLY_CLOSED_MAX_RESULTS });
+        const tabs = [];
+
+        for (const session of sessions) {
+            if (session.tab) {
+                tabs.push(session.tab);
+            } else if (session.window && session.window.tabs) {
+                for (const tab of session.window.tabs) {
+                    tabs.push(tab);
+                }
+            }
+        }
+
+        renderRecentlyClosedTabs(dedupeRecentTabs(tabs.filter(tab => tab && tab.url && !isNewTabUrl(tab.url))));
+    } catch (error) {
+        console.error('Unable to load recently closed tabs:', error);
+        setRecentlyClosedStatus(getLocaleMessage('recentlyClosedLoadError', 'Unable to load recently closed tabs'));
+    }
+}
+
+async function loadOtherDeviceTabs() {
+    otherDevicesList.innerHTML = '';
+    setOtherDevicesStatus(getLocaleMessage('otherDevicesLoading', 'Loading...'));
+
+    if (!chrome.sessions || !chrome.sessions.getDevices) {
+        setOtherDevicesStatus(getLocaleMessage('otherDevicesUnavailable', 'Other devices are not available'));
+        return;
+    }
+
+    try {
+        const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
+        setOtherDevicesAvailable(devices.length > 0);
+        renderOtherDeviceTabs(dedupeRecentTabs(getOtherDeviceTabs(devices)));
+    } catch (error) {
+        setOtherDevicesAvailable(false);
+        console.error('Unable to load tabs from other devices:', error);
+        setOtherDevicesStatus(getLocaleMessage('otherDevicesLoadError', 'Unable to load tabs from other devices'));
+    }
 }
 
 function modalShowEffect(contentEl, modalEl) {
@@ -2146,6 +2586,12 @@ function applySettings(options = {}) {
             searchBtn.style.setProperty('--search', 'none');
         }
 
+        if (settings.showHistoryBtn) {
+            historyBtn.style.setProperty('--history', 'block');
+        } else {
+            historyBtn.style.setProperty('--history', 'none');
+        }
+
         // Position search icon based on what's visible
         updateSearchIconPosition();
 
@@ -2173,6 +2619,7 @@ function applySettings(options = {}) {
         showClockInput.checked = settings.showClock;
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         showSearchBtnInput.checked = settings.showSearchBtn;
+        showHistoryBtnInput.checked = settings.showHistoryBtn;
         maxColsInput.value = settings.maxCols;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
@@ -2224,6 +2671,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.showClock = showClock.checked;
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.showSearchBtn = showSearchBtnInput.checked;
+    settings.showHistoryBtn = showHistoryBtnInput.checked;
     settings.maxCols = maxColsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
@@ -2266,6 +2714,7 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
+    hideHistory();
     if (e.target.className === 'tile-content') {
         targetNode = e.target.parentElement.parentElement;
         targetTileHref = targetNode.href;
@@ -2351,6 +2800,7 @@ window.addEventListener("mousedown", e => {
         case 'folders-content':
         case 'folders':
             hideSettings();
+            hideHistory();
             break;
         case 'modal':
             hideModals();
@@ -2435,6 +2885,8 @@ window.addEventListener("keydown", event => {
         }
         hideMenus();
         hideModals();
+        hideSettings();
+        hideHistory();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
         activateExpandableSearch();
@@ -2452,7 +2904,22 @@ searchBtn.addEventListener("click", function() {
     activateExpandableSearch();
 });
 
+historyBtn.addEventListener("click", function() {
+    openHistory('recent');
+});
+
+recentTabsPanelBtn.addEventListener("click", function() {
+    openHistory('recent');
+});
+
+otherDevicesPanelBtn.addEventListener("click", function() {
+    openHistory('devices');
+});
+
+historySearchInput.addEventListener('input', filterHistoryPanelItems);
+
 function activateExpandableSearch() {
+    hideHistory();
     document.body.classList.add('search-active');
     searchContainer.classList.add('active');
     setTimeout(() => searchInput.focus(), 200);
@@ -2570,6 +3037,10 @@ showSettingsBtnInput.oninput = function (e) {
 }
 
 showSearchBtnInput.oninput = function (e) {
+    saveSettings()
+}
+
+showHistoryBtnInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -2733,6 +3204,10 @@ function setInputValue(inputElement, value) {
 
 document.getElementById('closeSettingsBtn').addEventListener('click', () => {
     hideSettings();
+});
+
+document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+    hideHistory();
 });
 
 
@@ -3573,12 +4048,14 @@ function onResize() {
 function init() {
 
     document.querySelectorAll('[data-locale]').forEach(elem => {
-        elem.textContent = chrome.i18n.getMessage(elem.dataset.locale);
+        const message = chrome.i18n.getMessage(elem.dataset.locale);
+        if (message) elem.textContent = message;
     })
 
     // Handle placeholder translations separately
     document.querySelectorAll('[data-locale-placeholder]').forEach(elem => {
-        elem.placeholder = chrome.i18n.getMessage(elem.dataset.localePlaceholder)
+        const message = chrome.i18n.getMessage(elem.dataset.localePlaceholder);
+        if (message) elem.placeholder = message;
     })
 
     // init what used to be background work"
@@ -3627,6 +4104,7 @@ function init() {
 
 
     sidenav.style.display = "flex";
+    historyNav.style.display = "flex";
 
     // container-level drag listeners for expanding folder titles
     const foldersContainerEl = document.getElementById('foldersContainer');

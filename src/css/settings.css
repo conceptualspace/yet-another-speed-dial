@@ -14,6 +14,18 @@
     display: none;
 }
 
+#historyDiv {
+    display: flex;
+    flex-direction: column;
+    padding: 14px 0;
+    overflow: hidden;
+    scrollbar-width: none;
+}
+
+#historyDiv::-webkit-scrollbar {
+    display: none;
+}
+
 .sidenav h1 {
     font-weight: bold;
     font-size: large;
@@ -272,4 +284,257 @@
     opacity: 0;
     color: lightgreen;
     transition: opacity 200ms ease-in-out;
+}
+
+.sidenav .history div {
+    padding: 0.3em 0;
+}
+
+#historyDiv .history-panel-header {
+    margin: 0 20px;
+    padding: 3px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.history-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 0 0 auto;
+}
+
+.history-panel-tabs {
+    display: flex;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+#closeHistoryBtn {
+    position: static;
+    top: auto;
+    right: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    flex: 0 0 34px;
+    width: 34px;
+    height: 34px;
+    border-radius: 4px;
+}
+
+#closeHistoryBtn svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+#closeHistoryBtn:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.sidenav .history-panel-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    min-height: 34px;
+    gap: 0.3em;
+    padding: 0.45em 0.6em;
+    border-radius: 4px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.72);
+    font-family: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.history-panel-tab svg {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 16px;
+    fill: currentColor;
+}
+
+.history-panel-tab[hidden] {
+    display: none;
+}
+
+.sidenav .history-panel-tab:hover,
+.sidenav .history-panel-tab.active {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+}
+
+.history-panel-view {
+    display: none;
+}
+
+.history-panel-view.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.history-panel-view.active::-webkit-scrollbar {
+    display: none;
+}
+
+.history-panel-search {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 9px;
+    height: 36px;
+    margin: 10px 20px 2px;
+    padding: 0 11px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.history-panel-search:focus-within {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.history-panel-search svg {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 17px;
+    fill: rgba(255, 255, 255, 0.65);
+}
+
+#historySearchInput {
+    min-width: 0;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #fff;
+    font: inherit;
+}
+
+#historySearchInput::placeholder {
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.history-panel-section {
+    margin: 0;
+    padding: 0;
+}
+
+.history-panel-section h2 {
+    margin: 14px 25px 5px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.recent-tabs-list,
+.other-devices-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.recent-tabs-list li,
+.other-devices-list li {
+    padding: 0;
+}
+
+.sidenav .recent-tab {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 56px;
+    padding: 10px 25px;
+    border: none;
+    border-bottom: 1px solid #222;
+    background: #000;
+    color: rgba(255, 255, 255, 0.9);
+    font-family: inherit;
+    text-align: left;
+}
+
+.sidenav .recent-tab:hover {
+    background: #202020;
+}
+
+.recent-tab-favicon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    flex: 0 0 24px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.recent-tab-favicon img {
+    width: 16px;
+    height: 16px;
+}
+
+.recent-tab-favicon svg {
+    width: 18px;
+    height: 18px;
+    fill: rgba(255, 255, 255, 0.7);
+}
+
+.recent-tab-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.recent-tab-title,
+.recent-tab-url {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent-tab-title {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+}
+
+.recent-tab-url {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 0.8rem;
+}
+
+.recent-tabs-empty,
+.other-devices-empty {
+    margin-right: 25px;
+    margin-left: 25px;
+    margin-top: 1em;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.4;
+}
+
+.history-filter-empty {
+    display: none;
+    margin: 1em 25px 0;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.4;
 }
