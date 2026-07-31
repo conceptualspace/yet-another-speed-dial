@@ -1028,6 +1028,9 @@ async function printBookmarks(bookmarks, parentId) {
                 a.classList.add('tile');
                 a.href = bookmark.url;
                 a.setAttribute('data-id', bookmark.id);
+                if (settings.folderStyle === 'dials') {
+                    a.draggable = false;
+                }
 
                 let main = document.createElement('div');
                 main.classList.add('tile-main');
