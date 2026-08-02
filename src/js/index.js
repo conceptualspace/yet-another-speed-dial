@@ -856,6 +856,9 @@ function refreshAllThumbnails() {
                     bookmarks.push({ url: child.url, id: child.id, parentId: child.parentId });
                 }
             }
+        }
+        // gate on actual bookmark tiles; a folder of only sub-folders has no thumbs to capture
+        if (bookmarks.length) {
             //tabMessagePort.postMessage({refreshAll: true, urls});
             showToast(capturingImagesMessage)
             // gives the ui time to animate before blocking the process with the bg work
