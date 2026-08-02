@@ -3884,7 +3884,8 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
             // react where are you...
             scrollPos = bookmarksContainerParent.scrollTop;
             //noBookmarks.style.display = 'none';
-            addFolderButton.style.display = 'inline';
+            // clear the inline override so `display: var(--show-folders)` (the "Add Folder Button" setting) governs visibility
+            addFolderButton.style.display = '';
             searchBtn.style.display = '';
 
             //bookmarksContainer.style.opacity = "0";
