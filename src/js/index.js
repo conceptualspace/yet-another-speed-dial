@@ -1085,7 +1085,7 @@ async function printBookmarks(bookmarks, parentId) {
                 continue;
             }
 
-            if (bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:")) {
+            if (isSupportedDial(bookmark)) {
                 //let images = thumbnails[bookmark.url] || {};
                 //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
                 //let thumbBg = images.bgColor || null;
