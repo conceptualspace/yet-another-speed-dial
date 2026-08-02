@@ -158,6 +158,7 @@ let targetFolderName = null;
 let targetFolderLink = null;
 let folders = [];
 let currentFolder = null;
+let pendingFolderId = null;
 let folderNodeMap = new Map();
 let rootFolderIds = [];
 let speedDialRootNode = null;
@@ -695,6 +696,8 @@ function setFolderHistoryState(id, mode) {
 }
 
 async function openFolder(id, { historyMode = 'push' } = {}) {
+    // ignore a slower in-flight navigation once a newer folder has been requested
+    pendingFolderId = id;
     const folderChanged = id !== currentFolder;
 
     if (settings.folderStyle === 'dials' && !document.getElementById(id)) {
@@ -702,7 +705,10 @@ async function openFolder(id, { historyMode = 'push' } = {}) {
         if (!folder) return;
 
         await prepareFolderPreviews(folder.children || []);
+        if (pendingFolderId !== id) return;
+
         await printBookmarks(folder.children || [], id);
+        if (pendingFolderId !== id) return;
     }
 
     showFolder(id);
