@@ -653,12 +653,14 @@ function updateFolderBreadcrumb(id) {
         if (index === path.length - 1) {
             let current = document.createElement('span');
             current.classList.add('folderBreadcrumbCurrent');
+            current.setAttribute('folderId', pathFolder.id);
             current.setAttribute('aria-current', 'page');
             current.textContent = pathFolder.title;
             foldersContainer.appendChild(current);
         } else {
             let link = document.createElement('a');
             link.classList.add('folderBreadcrumbLink');
+            link.setAttribute('folderId', pathFolder.id);
             link.textContent = pathFolder.title;
             link.onclick = function () {
                 openFolder(pathFolder.id);
@@ -2549,6 +2551,7 @@ document.addEventListener("contextmenu", function (e) {
     }
     hideSettings();
     const folderDial = e.target.closest?.('.folderDial');
+    const folderHeader = e.target.closest?.('.folderTitle, .folderBreadcrumbLink, .folderBreadcrumbCurrent');
     if (folderDial) {
         targetFolderLink = folderDial;
         targetFolder = folderDial.dataset.id;
@@ -2563,10 +2566,10 @@ document.addEventListener("contextmenu", function (e) {
         targetTileTitle = e.target.nextElementSibling.innerText;
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
-    } else if (e.target.classList.contains('folderTitle') && e.target.id !== "homeFolderLink") {
-        targetFolderLink = e.target;
-        targetFolder = e.target.attributes.folderId.nodeValue;
-        targetFolderName = e.target.textContent;
+    } else if (folderHeader && folderHeader.id !== "homeFolderLink") {
+        targetFolderLink = folderHeader;
+        targetFolder = folderHeader.getAttribute('folderId');
+        targetFolderName = folderHeader.textContent;
         showContextMenu(folderMenu, e.pageY, e.pageX);
         return false;
     } else if (e.target === document.body || e.target.className === 'folders' || e.target.className === 'folders-content' || e.target.className === 'container' || e.target.className === 'tileContainer' || e.target.className === 'cta-container' || e.target.className === 'default-content' || e.target.className === 'default-content helpText') {

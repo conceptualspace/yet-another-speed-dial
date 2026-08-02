@@ -532,18 +532,13 @@ h1 {
 .folderBreadcrumbLink,
 .folderBreadcrumbCurrent {
     padding: 4px 6px;
-}
-
-.folderBreadcrumbLink {
     opacity: 0.85;
+    font-weight: bold;
+    transition: opacity 160ms ease;
 }
 
-.folderBreadcrumbLink:hover {
-    opacity: 1;
-}
-
-.folderBreadcrumbCurrent {
-    font-weight: 500;
+.folderBreadcrumbLink:hover,
+.folderBreadcrumbCurrent:hover {
     opacity: 1;
 }
 
