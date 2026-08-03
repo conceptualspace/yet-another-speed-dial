@@ -675,6 +675,8 @@ function setFolderHistoryState(id, mode) {
 }
 
 async function openFolder(id, { historyMode = 'push' } = {}) {
+    hideMenus();
+
     // ignore a slower in-flight navigation once a newer folder has been requested
     pendingFolderId = id;
     const folderChanged = id !== currentFolder;
