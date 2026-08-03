@@ -3020,45 +3020,6 @@ document.getElementById('closeSettingsBtn').addEventListener('click', () => {
 });
 
 
-function prepareExportV1() {
-    chrome.storage.local.get(null).then(function (items) {
-        // filter out unused thumbnails to keep exported file efficient
-        let filteredItems = {};
-        for (const [key, value] of Object.entries(items)) {
-            if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
-                let thumbnails = [];
-                let thumbIndex = 0;
-                let bgColor = null;
-
-                const thumbnail = getSelectedThumbnail(value);
-                if (thumbnail) {
-                    thumbnails.push(thumbnail);
-                }
-                if (value.bgColor) {
-                    bgColor = value.bgColor;
-                }
-                filteredItems[key] = {
-                    thumbnails: thumbnails,
-                    thumbIndex: thumbIndex,
-                    bgColor: value.bgColor
-                };
-            } else if (key.startsWith('settings')) {
-                filteredItems[key] = value;
-            }
-        }
-
-        // save as file; requires downloads permission
-        const blob = new Blob([JSON.stringify(filteredItems)], { type: 'application/json' })
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-
-        exportBtn.setAttribute('href', URL.createObjectURL(blob));
-        exportBtn.download = `yasd-export-${dateString}.json`;
-        exportBtn.classList.remove('disabled');
-
-    });
-}
-
 function prepareExport() {
     // exports yasd json file that includes all bookmarks within the root speed dial folder, along with the yasd settings and thumbnails from storage
     // in the following format:
@@ -3308,7 +3269,8 @@ function importFromSD2(json) {
     let bookmarks = json.dials.map(dial => ({
         title: dial.title,
         url: dial.url,
-        idgroup: dial.idgroup
+        idgroup: dial.idgroup,
+        position: dial.position
     }));
 
     let groups = json.groups.map(group => ({
@@ -3336,22 +3298,35 @@ function importFromSD2(json) {
             }
         });
 
-        Promise.all(groupPromises).then(groupIds => {
-            let bookmarkPromises = bookmarks.map(bookmark => {
-                let parentId = groupIds[bookmark.idgroup];
-                return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
-                    let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
-                    if (!existsInFolder) {
-                        return chrome.bookmarks.create({
-                            title: bookmark.title,
-                            url: bookmark.url,
-                            parentId: parentId
-                        });
-                    }
-                });
-            });
+        Promise.all(groupPromises).then(async newGroupIds => {
+            // sd2 lists groups in display order, so map by source id rather than array position
+            const groupIdMap = new Map(newGroupIds.map((newId, i) => [groups[i].id, newId]));
 
-            return Promise.all(bookmarkPromises);
+            const dialsByGroup = new Map();
+            for (const bookmark of bookmarks) {
+                const parentId = groupIdMap.get(bookmark.idgroup) ?? speedDialId;
+                if (!dialsByGroup.has(parentId)) {
+                    dialsByGroup.set(parentId, []);
+                }
+                dialsByGroup.get(parentId).push(bookmark);
+            }
+
+            const createdBookmarks = [];
+            for (const [parentId, dials] of dialsByGroup) {
+                dials.sort((a, b) => a.position - b.position);
+                const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId)).map(child => child.url));
+                for (const bookmark of dials) {
+                    if (existingUrls.has(bookmark.url)) continue;
+                    existingUrls.add(bookmark.url);
+                    createdBookmarks.push(await chrome.bookmarks.create({
+                        title: bookmark.title,
+                        url: bookmark.url,
+                        parentId
+                    }));
+                }
+            }
+
+            return createdBookmarks;
         }).then((createdBookmarks) => {
             hideModals();
             // refresh page
@@ -3405,22 +3380,31 @@ function importFromFVD(json) {
             }
         });
 
-        Promise.all(groupPromises).then(groupIds => {
-            let bookmarkPromises = bookmarks.map(bookmark => {
-                let parentId = groupIds[bookmark.groupId];
-                return chrome.bookmarks.search({ url: bookmark.url }).then(existingBookmarks => {
-                    let existsInFolder = existingBookmarks.some(b => b.parentId === parentId);
-                    if (!existsInFolder) {
-                        return chrome.bookmarks.create({
-                            title: bookmark.title,
-                            url: bookmark.url,
-                            parentId: parentId
-                        });
-                    }
-                });
-            });
+        Promise.all(groupPromises).then(async newGroupIds => {
+            // fvd lists groups in display order, so map by source id rather than array position
+            const groupIdMap = new Map(newGroupIds.map((newId, i) => [groups[i].id, newId]));
 
-            return Promise.all(bookmarkPromises);
+            const dialsByGroup = new Map();
+            for (const bookmark of bookmarks) {
+                const parentId = groupIdMap.get(bookmark.groupId) ?? speedDialId;
+                if (!dialsByGroup.has(parentId)) {
+                    dialsByGroup.set(parentId, []);
+                }
+                dialsByGroup.get(parentId).push(bookmark);
+            }
+
+            for (const [parentId, dials] of dialsByGroup) {
+                const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId)).map(child => child.url));
+                for (const bookmark of dials) {
+                    if (existingUrls.has(bookmark.url)) continue;
+                    existingUrls.add(bookmark.url);
+                    await chrome.bookmarks.create({
+                        title: bookmark.title,
+                        url: bookmark.url,
+                        parentId
+                    });
+                }
+            }
         }).then(() => {
             hideModals();
             // refresh page
