@@ -156,7 +156,6 @@ let targetNode = null;
 let targetFolder = null;
 let targetFolderName = null;
 let targetFolderLink = null;
-let folders = [];
 let currentFolder = null;
 let pendingFolderId = null;
 let folderNodeMap = new Map();
@@ -206,8 +205,6 @@ const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
-
-let folderIds = [];
 
 let defaults = {
     wallpaper: true,
@@ -281,18 +278,6 @@ function displayClock() {
 
 displayClock();
 
-function getBookmarks(folderId) {
-    chrome.bookmarks.getChildren(folderId).then(result => {
-        if (folderId === speedDialId && !result.length && settings.showFolders) {
-            //noBookmarks.style.display = 'block';
-            addFolderButton.style.display = 'none';
-        }
-        printBookmarks(result, folderId)
-    }, error => {
-        console.log(error);
-    });
-}
-
 function isSupportedDial(bookmark) {
     return bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:");
 }
@@ -351,14 +336,12 @@ async function buildDialPages(speedDialId, currentFolderId) {
     const folders = [...directFolders];
 
     folderNodeMap = new Map();
-    folderIds = [];
     rootFolderIds = directFolders.map(folder => folder.id);
 
     function collectFolders(nodes) {
         for (const node of nodes) {
             if (node.url) continue;
             folderNodeMap.set(node.id, node);
-            folderIds.push(node.id);
             collectFolders(node.children || []);
         }
     }
@@ -622,12 +605,6 @@ function getThumbs(bookmarkUrl) {
         });
 }
 
-function printFolderBookmarks() {
-    for (let folder of folders) {
-        getBookmarks(folder)
-    }
-}
-
 function updateFolderBreadcrumb(id) {
     if (settings.folderStyle !== 'dials') return;
 
@@ -821,17 +798,22 @@ function removeFolder() {
         hideModals();
         targetFolderLink?.remove();
         document.getElementById(targetFolder)?.remove();
-        folders.splice(folders.indexOf(targetFolder), 1);
-        if (!folders.length) {
-            //document.getElementById('homeFolderLink').remove();
-            // todo: better manager this state
-        }
 
         if (currentFolder === targetFolder) {
-            openFolder(parentId, { historyMode: 'replace' });
+            if (settings.folderStyle === 'dials') {
+                currentFolder = parentId;
+                pendingFolderId = parentId;
+                scrollPos = 0;
+                bookmarksContainerParent.scrollTop = 0;
+                settings.currentFolder = parentId;
+                if (settings.rememberFolder) {
+                    chrome.storage.local.set({ settings });
+                }
+                processRefresh();
+            } else {
+                openFolder(parentId, { historyMode: 'replace' });
+            }
         }
-
-        processRefresh();
     });
 }
 
