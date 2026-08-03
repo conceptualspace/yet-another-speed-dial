@@ -319,7 +319,7 @@ function removeFolderContainer(container) {
     container.remove();
 }
 
-async function buildDialPages(speedDialId, currentFolderId) {
+async function buildDialPages(speedDialId, currentFolderId, { immediateActiveInsert = false } = {}) {
 
     const [rootNode] = await chrome.bookmarks.getSubTree(speedDialId);
     speedDialRootNode = rootNode;
@@ -382,7 +382,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
         });
 
         await prepareFolderPreviews(currentNode?.children || []);
-        await printBookmarks(currentNode?.children || [], currentFolderId);
+        await printBookmarks(currentNode?.children || [], currentFolderId, { immediateInsert: immediateActiveInsert });
         bookmarksContainerParent.scrollTop = scrollPos;
         setFolderHistoryState(currentFolderId, 'replace');
         return;
@@ -398,7 +398,7 @@ async function buildDialPages(speedDialId, currentFolderId) {
     });
 
     if (currentNode) {
-        await printBookmarks(currentNode.children || [], currentFolderId);
+        await printBookmarks(currentNode.children || [], currentFolderId, { immediateInsert: immediateActiveInsert });
     }
 
     for (const folder of renderFolders) {
@@ -989,7 +989,7 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
-async function printBookmarks(bookmarks, parentId) {
+async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
     let fragment = document.createDocumentFragment();
 
     // Collect URLs for batch thumbnail fetching
@@ -1166,7 +1166,14 @@ async function printBookmarks(bookmarks, parentId) {
     // Optimize container update using batch insert
     unregisterThumbnailPreviews(folderContainerEl);
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
-    const insertionComplete = batchInsert(folderContainerEl, fragment);
+    let insertionComplete;
+    if (immediateInsert) {
+        // View Transition update callbacks suppress the animation frames that batchInsert needs.
+        folderContainerEl.append(fragment);
+        insertionComplete = Promise.resolve();
+    } else {
+        insertionComplete = batchInsert(folderContainerEl, fragment);
+    }
     if (parentId === currentFolder) {
         await insertionComplete;
     }
@@ -3847,7 +3854,7 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
     if (foldersOnly) {
         buildFolderPages(speedDialId)
     } else {
-        const refreshDialPages = async () => {
+        const refreshDialPages = async ({ immediateActiveInsert = false } = {}) => {
             // prevent page scroll on refresh
             // react where are you...
             scrollPos = bookmarksContainerParent.scrollTop;
@@ -3859,7 +3866,7 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
             //bookmarksContainer.style.opacity = "0";
 
             //getBookmarks(speedDialId)
-            await buildDialPages(speedDialId, currentFolder);
+            await buildDialPages(speedDialId, currentFolder, { immediateActiveInsert });
             // re-measure resting positions for the new dom nodes and animate
             scheduleFlip();
         };
@@ -3874,7 +3881,7 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
         }
 
         document.documentElement.classList.add('folder-style-transition');
-        const transition = document.startViewTransition(refreshDialPages);
+        const transition = document.startViewTransition(() => refreshDialPages({ immediateActiveInsert: true }));
         const finishTransition = () => document.documentElement.classList.remove('folder-style-transition');
         transition.finished.then(finishTransition, finishTransition);
     }
