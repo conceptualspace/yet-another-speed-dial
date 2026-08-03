@@ -2736,45 +2736,6 @@ document.getElementById('closeSettingsBtn').addEventListener('click', () => {
 });
 
 
-function prepareExportV1() {
-    chrome.storage.local.get(null).then(function (items) {
-        // filter out unused thumbnails to keep exported file efficient
-        let filteredItems = {};
-        for (const [key, value] of Object.entries(items)) {
-            if (key.startsWith('http') || key.startsWith('file:') || key.startsWith('chrome:')) {
-                let thumbnails = [];
-                let thumbIndex = 0;
-                let bgColor = null;
-
-                const thumbnail = getSelectedThumbnail(value);
-                if (thumbnail) {
-                    thumbnails.push(thumbnail);
-                }
-                if (value.bgColor) {
-                    bgColor = value.bgColor;
-                }
-                filteredItems[key] = {
-                    thumbnails: thumbnails,
-                    thumbIndex: thumbIndex,
-                    bgColor: value.bgColor
-                };
-            } else if (key.startsWith('settings')) {
-                filteredItems[key] = value;
-            }
-        }
-
-        // save as file; requires downloads permission
-        const blob = new Blob([JSON.stringify(filteredItems)], { type: 'application/json' })
-        const today = new Date();
-        const dateString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-
-        exportBtn.setAttribute('href', URL.createObjectURL(blob));
-        exportBtn.download = `yasd-export-${dateString}.json`;
-        exportBtn.classList.remove('disabled');
-
-    });
-}
-
 function prepareExport() {
     // exports yasd json file that includes all bookmarks within the root speed dial folder, along with the yasd settings and thumbnails from storage
     // in the following format:
