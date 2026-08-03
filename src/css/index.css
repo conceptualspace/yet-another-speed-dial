@@ -1236,9 +1236,6 @@ body:not(:has(.folderTitle)) #tileContainer {
     white-space: nowrap;
     line-height: 1;
     align-self: center;
-
-    font-weight: 200;
-    transition: 160ms ease;
 }
 
 #toast {
