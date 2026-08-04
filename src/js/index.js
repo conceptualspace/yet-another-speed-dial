@@ -163,6 +163,8 @@ let rootFolderIds = [];
 let speedDialRootNode = null;
 let thumbnailPreviewElements = new Map();
 let scrollPos = 0;
+let refreshSkipUntil = 0;
+let refreshSkipId = null;
 let homeFolderTitle = chrome.i18n.getMessage('home');
 const capturingImagesMessage = ' ' + chrome.i18n.getMessage('capturingImages');
 // tile reflow (FLIP) animation state. The motion runs on the compositor via the
@@ -195,6 +197,8 @@ const FLIP_STAGGER_LIMIT = 1000;      // large sets animate together to avoid hu
                                      // animations (the same cutoff used by the old GSAP path)
 const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. flipPrevRects is
                                      // re-synced after this settles on a same-folder reorder.
+// window for ignoring the refresh broadcast caused by an edit this tab already applied locally
+const SELF_EDIT_REFRESH_WINDOW = 1000;
 const FOLDER_DIAL_DROP_DELAY = 120;
 const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
 const FOLDER_HISTORY_STATE_KEY = 'yasdFolderId';
@@ -311,6 +315,71 @@ function unregisterThumbnailPreviews(container) {
             thumbnailPreviewElements.delete(preview.dataset.thumbnailId);
         }
     });
+}
+
+// openFolder rebuilds a folder from this cached tree, so dom edits made without a refresh
+// must patch it here or the dial reappears (or goes missing) on the next navigation
+function getCachedFolderNode(id) {
+    return id === speedDialId ? speedDialRootNode : folderNodeMap.get(id);
+}
+
+function detachCachedBookmark(parentId, id) {
+    const children = getCachedFolderNode(parentId)?.children;
+    if (!children) return null;
+
+    const position = children.findIndex(child => child.id === id);
+    if (position === -1) return null;
+
+    const [node] = children.splice(position, 1);
+    children.forEach((child, index) => child.index = index);
+    return node;
+}
+
+function appendCachedBookmark(parentId, node) {
+    const folder = getCachedFolderNode(parentId);
+    if (!folder || !node) return;
+
+    folder.children = folder.children || [];
+    node.parentId = parentId;
+    node.index = folder.children.length;
+    folder.children.push(node);
+}
+
+function renderFolderDialPreviews(content, folder) {
+    content.setAttribute('data-preview-count', folder.previewDials?.length ?? 0);
+
+    for (const previewDial of (folder.previewDials || [])) {
+        let preview = document.createElement('div');
+        preview.classList.add('folderDial-preview');
+        preview.setAttribute('data-thumbnail-id', previewDial.id);
+        if (!thumbnailPreviewElements.has(previewDial.id)) {
+            thumbnailPreviewElements.set(previewDial.id, new Set());
+        }
+        thumbnailPreviewElements.get(previewDial.id).add(preview);
+        preview.style.backgroundColor = previewDial.previewColor || 'rgba(255, 255, 255, 0.12)';
+        if (previewDial.previewThumbnail) {
+            preview.style.backgroundImage = `url('${previewDial.previewThumbnail}')`;
+        }
+        content.appendChild(preview);
+    }
+
+    const placeholderCount = 4 - (folder.previewDials?.length ?? 0);
+    for (let index = 0; index < placeholderCount; index++) {
+        let placeholder = document.createElement('div');
+        placeholder.classList.add('folderDial-preview', 'folderDial-preview--placeholder');
+        content.appendChild(placeholder);
+    }
+}
+
+async function refreshFolderDialPreviews(folderId) {
+    const folder = getCachedFolderNode(folderId);
+    const content = document.querySelector(`.folderDial[data-id="${folderId}"] .folderDial-content`);
+    if (!folder || !content) return;
+
+    await prepareFolderPreviews([folder]);
+    unregisterThumbnailPreviews(content);
+    content.textContent = '';
+    renderFolderDialPreviews(content, folder);
 }
 
 function removeFolderContainer(container) {
@@ -445,6 +514,7 @@ function removeBookmark(url) {
     flip();
     // remove dial
     targetNode.remove();
+    detachCachedBookmark(dewrap(targetTileParentId), id);
     // nb: cache cleanup is handled by handleBookmarkRemoved in background script
     chrome.bookmarks.remove(id).catch(err => {
         console.log(err);
@@ -1029,29 +1099,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
 
                 let content = document.createElement('div');
                 content.classList.add('tile-content', 'folderDial-content');
-                content.setAttribute('data-preview-count', bookmark.previewDials?.length ?? 0);
-
-                for (const previewDial of (bookmark.previewDials || [])) {
-                    let preview = document.createElement('div');
-                    preview.classList.add('folderDial-preview');
-                    preview.setAttribute('data-thumbnail-id', previewDial.id);
-                    if (!thumbnailPreviewElements.has(previewDial.id)) {
-                        thumbnailPreviewElements.set(previewDial.id, new Set());
-                    }
-                    thumbnailPreviewElements.get(previewDial.id).add(preview);
-                    preview.style.backgroundColor = previewDial.previewColor || 'rgba(255, 255, 255, 0.12)';
-                    if (previewDial.previewThumbnail) {
-                        preview.style.backgroundImage = `url('${previewDial.previewThumbnail}')`;
-                    }
-                    content.appendChild(preview);
-                }
-
-                const placeholderCount = 4 - (bookmark.previewDials?.length ?? 0);
-                for (let index = 0; index < placeholderCount; index++) {
-                    let placeholder = document.createElement('div');
-                    placeholder.classList.add('folderDial-preview', 'folderDial-preview--placeholder');
-                    content.appendChild(placeholder);
-                }
+                renderFolderDialPreviews(content, bookmark);
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title', 'folderDial-title');
@@ -3804,7 +3852,19 @@ function onEndHandler(evt) {
         let newIndex = evt.newIndex;
 
         if (folderDropTarget && evt.clone.href) {
-            moveBookmarkToFolder(id, folderDropTarget.dataset.id);
+            const targetFolderId = folderDropTarget.dataset.id;
+            evt.item.style.display = "none";
+            flip();
+            evt.item.remove();
+            // only suppress the refresh if we managed to apply the move locally
+            const movedNode = detachCachedBookmark(fromParentId, id);
+            if (movedNode) {
+                appendCachedBookmark(targetFolderId, movedNode);
+                refreshFolderDialPreviews(targetFolderId);
+                refreshSkipId = id;
+                refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
+            }
+            moveBookmarkToFolder(id, targetFolderId);
             return;
         }
 
@@ -3989,6 +4049,11 @@ function handleMessages(message) {
     }
     if (message.data?.refresh) {
         hideToast();
+        // redundant only when it echoes the move this tab already applied
+        if (message.data.id && message.data.id === refreshSkipId && performance.now() < refreshSkipUntil) {
+            refreshSkipId = null;
+            return;
+        }
         processRefresh();
     } else if(message.data?.reloadFolders) {
         hideToast();

@@ -181,7 +181,7 @@ async function handleBookmarkChanged(id, info) {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
-    			refreshOpen();
+                refreshOpen(bookmarkId);
     		} else {
     			// new bookmark needs images
     			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
@@ -570,7 +570,7 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 	// refresh open new tab page
 	if (forcePageReload) {
 		// we have new sites, reload the page
-		refreshOpen();
+		refreshOpen(id);
 	} else {
 		// just update existing images
 		chrome.runtime.sendMessage({
@@ -587,10 +587,10 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 	}
 }
 
-function refreshOpen() {
+function refreshOpen(id) {
     chrome.runtime.sendMessage({
 		target: 'newtab',
-		data: {refresh:true}
+		data: {refresh:true, id}
 	});
 }
 
