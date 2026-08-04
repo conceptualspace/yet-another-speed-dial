@@ -617,8 +617,11 @@ a {
     visibility: hidden;
 }
 
+/* the dragged clone floats outside the grid, so opt it out of the tile size rules'
+   content-visibility skipping and keep it fully opaque (sortable sets 0.8 inline) */
 .dragging {
     opacity: 1 !important;
+    content-visibility: visible !important;
 }
 
 .menu {

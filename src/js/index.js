@@ -144,6 +144,7 @@ let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
+let fallbackDragHoverFolder = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -821,6 +822,8 @@ async function printBookmarks(bookmarks, parentId) {
                 let a = document.createElement('a');
                 a.classList.add('tile');
                 a.href = bookmark.url;
+                // anchors are natively draggable; suppress it so only sortable's fallback drag runs
+                a.draggable = false;
                 a.setAttribute('data-id', bookmark.id);
 
                 let main = document.createElement('div');
@@ -890,6 +893,13 @@ async function printBookmarks(bookmarks, parentId) {
         filter: ".createDial",
         delay: 500,
         delayOnTouchOnly: true,
+        // Draw the dragged dial ourselves instead of using the native HTML5 drag image:
+        // windows renders that image translucent with feathered edges, mac/linux render it
+        // opaque. The fallback clone is a real DOM node, so it looks identical everywhere.
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackTolerance: 4,
+        onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
     });
@@ -3270,11 +3280,7 @@ function folderContainerDragOver(ev) {
 }
 
 // individual folder title handlers for highlight + navigation
-function dragenterHandler(ev) {
-    ev.preventDefault();
-    const el = ev.currentTarget;
-    if (!el.classList.contains("folderTitle")) return;
-
+function hoverFolderTarget(el) {
     // clear hover from siblings, highlight this one
     document.querySelectorAll('.folderTitle.drag-hover').forEach(t => t.classList.remove('drag-hover'));
     el.classList.add("drag-hover");
@@ -3293,6 +3299,14 @@ function dragenterHandler(ev) {
     }
 }
 
+function dragenterHandler(ev) {
+    ev.preventDefault();
+    const el = ev.currentTarget;
+    if (!el.classList.contains("folderTitle")) return;
+
+    hoverFolderTarget(el);
+}
+
 function dragleaveHandler(ev) {
     const el = ev.currentTarget;
     // ignore if still inside the element (entering a child node)
@@ -3307,6 +3321,35 @@ function dragleaveHandler(ev) {
 }
 
 // Sortable helper fns
+
+// Fallback drag emits no native dragenter/dragleave, so folder targeting is hit-tested
+// from the pointer. The floating clone is pointer-events:none, so it never self-hits.
+function fallbackDragMoveHandler(ev) {
+    const point = ev.touches ? ev.touches[0] : ev;
+    const target = document.elementFromPoint(point.clientX, point.clientY);
+    const foldersContainerEl = document.getElementById('foldersContainer');
+    foldersContainerEl.classList.toggle('folders-drag-active', !!target && foldersContainerEl.contains(target));
+
+    const folderTitle = target ? target.closest('.folderTitle') : null;
+
+    if (folderTitle === fallbackDragHoverFolder) return;
+
+    if (fallbackDragHoverFolder) {
+        fallbackDragHoverFolder.classList.remove('drag-hover');
+        clearTimeout(folderNavTimeout);
+    }
+
+    fallbackDragHoverFolder = folderTitle;
+    if (folderTitle) {
+        hoverFolderTarget(folderTitle);
+    }
+}
+
+function onStartHandler() {
+    fallbackDragHoverFolder = null;
+    document.addEventListener('pointermove', fallbackDragMoveHandler);
+}
+
 function onMoveHandler(evt) {
     if (evt.related) {
         if (evt.to.children.length > 1) {
@@ -3332,6 +3375,9 @@ function dewrap(str) {
 
 function onEndHandler(evt) {
     // clean up folder drag-hover state
+    document.removeEventListener('pointermove', fallbackDragMoveHandler);
+    fallbackDragHoverFolder = null;
+    clearTimeout(folderNavTimeout);
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
 
