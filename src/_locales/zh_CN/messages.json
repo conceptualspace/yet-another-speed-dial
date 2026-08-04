@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "新建在开头"
+  },
+  "folderStyle": {
+    "message": "文件夹样式"
+  },
+  "optionFolderTabs": {
+    "message": "标签页"
+  },
+  "optionFolderDials": {
+    "message": "快速拨号"
   }
 }

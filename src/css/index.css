@@ -515,6 +515,33 @@ h1 {
     opacity: 1;
 }
 
+.folderBreadcrumbSeparator,
+.folderBreadcrumbLink,
+.folderBreadcrumbCurrent {
+    display: inline-flex;
+    align-items: center;
+    margin: 8px 2px;
+    color: var(--color);
+}
+
+.folderBreadcrumbSeparator {
+    padding: 4px 2px;
+    opacity: 0.55;
+}
+
+.folderBreadcrumbLink,
+.folderBreadcrumbCurrent {
+    padding: 4px 6px;
+    opacity: 0.85;
+    font-weight: bold;
+    transition: opacity 160ms ease;
+}
+
+.folderBreadcrumbLink:hover,
+.folderBreadcrumbCurrent:hover {
+    opacity: 1;
+}
+
 /* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
 .folders-drag-active .folderTitle {
     padding: var(--folder-drop-padding, 60px);
@@ -572,6 +599,52 @@ h1 {
     background-size: var(--image-scaling);
 }
 
+.folderDial-content {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: hidden;
+    padding: 8px;
+    box-sizing: border-box;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.folderDial {
+    transition: scale 120ms ease-out, translate 120ms ease-out;
+}
+
+.folderDial.folderDial-drop-hover {
+    z-index: 2;
+    scale: 1.025;
+    translate: -1.25% -1.25%;
+}
+
+.folderDial.folderDial-drop-target {
+    /* .tile uses a top-left transform origin for FLIP. Center independent scale
+       with translate = -(scale - 1) / 2: (1.56 - 1) / -2 = -28%. */
+    scale: 1.56;
+    translate: -28% -28%;
+}
+
+.folderDial.folderDial-drop-target .folderDial-preview {
+    filter: brightness(0.78);
+}
+
+.folderDial-preview {
+    min-width: 0;
+    min-height: 0;
+    border-radius: 4px;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    transition: filter 120ms ease-out;
+}
+
+.folderDial-preview--placeholder {
+    background-color: color-mix(in srgb, currentColor 16%, transparent);
+}
+
 .tile-title {
     opacity: var(--title-opacity);
     text-align: center;
@@ -580,6 +653,29 @@ h1 {
     text-overflow: ellipsis;
     padding: 5px 10px 0 10px;
     transition: opacity 160ms ease;
+}
+
+.folderDial-title::before {
+    flex: 0 0 1.15em;
+    height: 1.15em;
+    margin-right: 5px;
+    background-color: currentColor;
+    content: '';
+    -webkit-mask: url('../img/folder.svg') center / contain no-repeat;
+    mask: url('../img/folder.svg') center / contain no-repeat;
+}
+
+.folderDial-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+}
+
+.folderDial-titleText {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .createDial {
@@ -1042,6 +1138,56 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     justify-content: space-between;
     align-items: start;
     gap: 20px;
+}
+
+.folder-style-transition #foldersContainer {
+    view-transition-name: folder-style-header;
+}
+
+.folder-style-transition #tileContainer {
+    view-transition-name: folder-style-grid;
+}
+
+.folder-style-transition #sidenav {
+    view-transition-name: folder-style-settings;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation: none;
+}
+
+::view-transition-group(folder-style-settings) {
+    z-index: 1;
+}
+
+::view-transition-old(folder-style-settings),
+::view-transition-new(folder-style-settings) {
+    animation: none;
+}
+
+::view-transition-old(folder-style-header),
+::view-transition-old(folder-style-grid) {
+    animation: folder-style-out 120ms ease-in both;
+}
+
+::view-transition-new(folder-style-header),
+::view-transition-new(folder-style-grid) {
+    animation: folder-style-in 200ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+@keyframes folder-style-out {
+    to {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes folder-style-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
 }
 
 /* when the folders header is empty add padding to tileContainer so speed dials appear visually centered  */

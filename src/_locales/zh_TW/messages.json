@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "新的撥號排在最前"
+  },
+  "folderStyle": {
+    "message": "資料夾樣式"
+  },
+  "optionFolderTabs": {
+    "message": "分頁"
+  },
+  "optionFolderDials": {
+    "message": "快速撥號"
   }
 }
