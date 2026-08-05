@@ -1175,7 +1175,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         if (currentFolder === parentId) {
             setTimeout(() => {
                 folderContainerEl.style.opacity = "1";
-                scheduleFlip();
+                if (!immediateInsert) scheduleFlip();
             }, 20);
             document.querySelector(`[folderid="${currentFolder}"]`)?.classList.add('activeFolder');
         }
@@ -2028,6 +2028,14 @@ function recalcFlipRects() {
     }
 
     flipPrevContainerTop = containerRect.top;
+}
+
+function scheduleFlipRectReseed() {
+    if (typeof requestIdleCallback === 'function') {
+        requestIdleCallback(recalcFlipRects, { timeout: 500 });
+    } else {
+        requestAnimationFrame(recalcFlipRects);
+    }
 }
 
 // Resize HOLD. While the window is being dragged the flex grid reflows every
@@ -3931,7 +3939,7 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
             //getBookmarks(speedDialId)
             await buildDialPages(speedDialId, currentFolder, { immediateActiveInsert });
             // re-measure resting positions for the new dom nodes and animate
-            scheduleFlip();
+            if (!transitionFolderStyle) scheduleFlip();
         };
 
         const canTransition = transitionFolderStyle
@@ -3939,13 +3947,19 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
             && !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
         if (!canTransition) {
-            refreshDialPages();
+            const refresh = refreshDialPages();
+            if (transitionFolderStyle) {
+                refresh.then(scheduleFlipRectReseed, scheduleFlipRectReseed);
+            }
             return;
         }
 
         document.documentElement.classList.add('folder-style-transition');
         const transition = document.startViewTransition(() => refreshDialPages({ immediateActiveInsert: true }));
-        const finishTransition = () => document.documentElement.classList.remove('folder-style-transition');
+        const finishTransition = () => {
+            document.documentElement.classList.remove('folder-style-transition');
+            scheduleFlipRectReseed();
+        };
         transition.finished.then(finishTransition, finishTransition);
     }
 }, 650, true);
