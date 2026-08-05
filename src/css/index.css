@@ -568,7 +568,6 @@ h1 {
     height: var(--dial-height);
     border-radius: 7px;
     margin: var(--dial-margin);
-    will-change: transform;
     /* top-left origin so FLIP can pair translate+scale to invert position AND
        size in one compositor transition (dial-size changes morph, never snap) */
     transform-origin: 0 0;
