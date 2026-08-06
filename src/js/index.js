@@ -1068,6 +1068,7 @@ function createNewDialButton(parentId) {
 
 async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
     let fragment = document.createDocumentFragment();
+    let firstDial;
 
     // Collect URLs for batch thumbnail fetching
     //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
@@ -1160,13 +1161,18 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 main.append(content, title);
                 a.appendChild(main);
                 fragment.appendChild(a);
+                if (!firstDial) {
+                    firstDial = a;
+                }
             }
         }
     }
 
     let newDialButton = createNewDialButton(parentId);
 
-    if (settings.defaultSort !== "first") {
+    if (settings.folderStyle === 'dials') {
+        fragment.insertBefore(newDialButton, firstDial || null);
+    } else if (settings.defaultSort !== "first") {
         fragment.appendChild(newDialButton);
     } else {
         fragment.insertBefore(newDialButton, fragment.firstChild);
