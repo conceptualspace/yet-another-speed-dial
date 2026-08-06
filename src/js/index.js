@@ -1066,16 +1066,19 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
 
     // lets message the background script to do it  
-    
-    // reverse the bookmarks if settings.defaultSort === "first")
-    if (settings.defaultSort === "first") {
-        bookmarks = [...bookmarks].reverse();
-    }
+
     if (settings.folderStyle === 'dials') {
+        const folders = bookmarks.filter(bookmark => !bookmark.url);
+        let dials = bookmarks.filter(bookmark => bookmark.url);
+        if (settings.defaultSort === "first") {
+            dials.reverse();
+        }
         bookmarks = [
-            ...bookmarks.filter(bookmark => !bookmark.url),
-            ...bookmarks.filter(bookmark => bookmark.url)
+            ...folders,
+            ...dials
         ];
+    } else if (settings.defaultSort === "first") {
+        bookmarks = [...bookmarks].reverse();
     }
     chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
     //let thumbnails = await chrome.storage.local.get(urls);
@@ -3894,7 +3897,11 @@ function onEndHandler(evt) {
         }
 
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
-            moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId)
+            if (evt.clone.dataset.type === 'folder') {
+                moveFolder(id, oldIndex, newIndex, newSiblingId);
+            } else {
+                moveBookmark(id, fromParentId, toParentId, oldIndex, newIndex, newSiblingId);
+            }
 
             // recalc layout after dnd so flip anim runs properly
             setTimeout(recalcFlipRects, SORTABLE_ANIMATION);
