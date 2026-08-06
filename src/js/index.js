@@ -1053,7 +1053,14 @@ function createNewDialButton(parentId) {
 
     let content = document.createElement('div');
     content.classList.add('tile-content', 'createDial-content');
-    main.appendChild(content);
+    let title = document.createElement('div');
+    title.classList.add('tile-title');
+    if (!settings.showTitles) {
+        title.classList.add('hide');
+    }
+    title.textContent = chrome.i18n.getMessage('newInstallAddSite');
+
+    main.append(content, title);
     aNewDial.appendChild(main);
 
     return aNewDial;
