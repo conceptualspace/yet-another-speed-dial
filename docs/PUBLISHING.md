@@ -58,7 +58,22 @@ Privacy policy URL for store forms (GitHub Pages from `/docs`):
 3. Confirm `browser_specific_settings.gecko.id` is `yet-another-speed-dial-2@antgraf`
 4. Confirm `gecko.data_collection_permissions.required` is `["none"]` (AMO requires this for new listings; matches the privacy policy — no analytics/backend)
 5. Paste privacy policy URL + listing text
-6. After approval, put the AMO URL into README badges
+6. Paste **Notes to Reviewer** (below). Leave the optional source-code upload empty unless AMO asks — this package is readable source (no minify/bundle of first-party code).
+7. After approval, put the AMO URL into README badges
+
+### Notes to Reviewer (Firefox) — paste-ready
+
+AMO’s “Notes to Reviewer” field asks about build processes and [source code submission](https://extensionworkshop.com/documentation/publish/source-code-submission/). Separate source is only required when the uploaded package is hard to read (minifiers, webpack, etc.). For YASD2, the zip is `src/` with Chrome-only bits stripped.
+
+```
+No minification or bundling of first-party code. The uploaded package is the readable source under src/, packaged with scripts/pack-firefox.ps1 (copy src → strip Chrome-only offscreen/service_worker). Reviewers can treat the XPI contents as the source.
+
+Third-party libraries under js/lib/ are unmodified upstream vendor builds (jQuery, Sortable, TweenMax, Coloris, flexCarousel, browser-polyfill). AMO may flag innerHTML in those vendor files; that is expected and not used for remote code execution.
+
+This is an unofficial maintained fork of Yet Another Speed Dial (Conceptualspace). It stores dials as ordinary browser bookmarks, uses optional host permissions only for thumbnail fetch/capture when the user grants them, and collects no analytics (data_collection_permissions: none).
+
+Repo: https://github.com/antgraf/yet-another-speed-dial-2
+```
 
 ## Chrome Web Store
 
