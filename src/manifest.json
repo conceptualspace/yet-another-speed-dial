@@ -16,7 +16,6 @@
   "permissions": [
     "bookmarks",
     "contextMenus",
-    "offscreen",
     "storage",
     "tabs",
     "unlimitedStorage"
@@ -28,7 +27,12 @@
     "newtab": "index.html"
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "scripts": [
+      "js/hostPermissions.js",
+      "background.js",
+      "offscreen.js"
+    ]
   },
   "action": {
     "default_icon": {
