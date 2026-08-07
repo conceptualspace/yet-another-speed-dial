@@ -31,7 +31,7 @@
   <h3>Settings and thumbnails</h3>
   <p>Appearance settings and cached thumbnail images are stored using the browser’s extension storage APIs. This data remains on your device unless your browser syncs extension data.</p>
   <h3>Network access</h3>
-  <p>To build or refresh thumbnails, the extension may request pages or images from the sites you add. Those requests go to the sites themselves (or their CDNs), not to a YASD2 backend. There is no YASD2 server collecting browsing data.</p>
+  <p>To build or refresh thumbnails, the extension may request pages or images from the sites you add. Host access is optional and requested when you add a dial or refresh thumbnails. Those requests go to the sites themselves (or their CDNs), not to a YASD2 backend. There is no YASD2 server collecting browsing data. Without granting access, dials still work; automatic thumbnail capture is skipped.</p>
   <h3>Tabs and context menus</h3>
   <p>Permissions for tabs and context menus are used so you can add the current page to the speed dial and open tiles in new tabs/windows as expected.</p>
 

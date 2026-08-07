@@ -5,6 +5,8 @@
 
 'use strict';
 
+importScripts('js/hostPermissions.js');
+
 
 // EVENT LISTENERS //
 
@@ -174,15 +176,18 @@ async function handleBookmarkRemoved(id, info) {
 	//refreshOpen();
 }
 
-function handleContextMenuClick(info, tab) {
+async function handleContextMenuClick(info, tab) {
 	if (info.menuItemId === 'addToSpeedDial') {
-        createBookmarkFromContextMenu(tab)
-    }
+		// Request before any other await so the user-gesture chain stays valid
+		await ensureHostPermission();
+		createBookmarkFromContextMenu(tab);
+	}
 }
 
-function handleBrowserAction(tab) {
+async function handleBrowserAction(tab) {
 	// if tab is a web page bookmark it to speed dial
 	if (tab.url && (tab.url.startsWith('https://') || tab.url.startsWith('http://') || tab.url.startsWith('file://') || tab.url.startsWith('chrome://'))) {
+		await ensureHostPermission();
 		createBookmarkFromContextMenu(tab);
 		chrome.action.setBadgeText({text:"✔", tabId:tab.id})
 		chrome.action.setBadgeBackgroundColor({ color: '#13ac4e' }); // Green color
@@ -471,6 +476,12 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
+		return
+	}
+
+	// Thumbnail fetch / captureVisibleTab need host access; grant is optional and prompted on user gesture
+	if (!(await hasHostPermission())) {
+		console.log("getThumbnails: host permission not granted, skipping")
 		return
 	}
     

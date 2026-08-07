@@ -23,7 +23,7 @@ Appearance settings and cached thumbnail images are stored using the browser’s
 
 ### Network access
 
-To build or refresh thumbnails, the extension may request pages or images from the sites you add (via host permissions). Those requests go to the sites themselves (or their CDNs), not to a YASD2 backend. There is no YASD2 server collecting browsing data.
+To build or refresh thumbnails, the extension may request pages or images from the sites you add. Host access is optional and requested when you add a dial or refresh thumbnails. Those requests go to the sites themselves (or their CDNs), not to a YASD2 backend. There is no YASD2 server collecting browsing data. Without granting access, dials still work; automatic thumbnail capture is skipped.
 
 ### Tabs and context menus
 

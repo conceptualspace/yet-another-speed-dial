@@ -81,10 +81,10 @@ Required to read and write the user's Speed Dial bookmarks folder so tiles can b
 Adds a right-click "Add to Speed Dial" menu item on web pages so users can bookmark the current page into their speed dial without opening the new tab page first.
 ```
 
-`host permission` (`<all_urls>`)
+`optional_host_permission` (`<all_urls>`)
 
 ```
-Required to fetch Open Graph / page images and related assets from sites the user has added, so the extension can generate and refresh speed-dial thumbnails. Requests go only to those sites (or their CDNs) when the user adds or refreshes a dial; there is no YASD2 backend. Broad host access is needed because users can add any URL.
+Requested at runtime when the user adds a dial or refreshes thumbnails (toolbar button, context menu, new-tab UI). Used to fetch Open Graph / page images and related assets from sites the user has added, and to captureVisibleTab for screenshots. Requests go only to those sites (or their CDNs); there is no YASD2 backend. Broad optional host access is needed because users can add any URL. The extension works without it (dials still save); automatic thumbnails require the user to grant access.
 ```
 
 `offscreen`
