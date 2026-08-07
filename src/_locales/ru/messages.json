@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "современный быстрый набор для Firefox и Chrome"
+    "message": "современный speed dial для Chrome, Edge и Firefox — поддерживаемый форк со вложенными папками"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "еще один быстрый набор"
+    "message": "Yet Another Speed Dial 2"
   },
   "help": {
     "message": "Помощь"
@@ -107,7 +107,7 @@
     "message": "Новая папка..."
   },
   "newInstall1": {
-    "message": "Начни с Yet Another Speed Dial!"
+    "message": "Начни с Yet Another Speed Dial 2!"
   },
   "newInstall2": {
     "message": "⭐ Добавьте сайты, нажав кнопку ниже, или создайте закладку в папке «Быстрый набор»."
@@ -116,7 +116,7 @@
     "message": "✨ Циферблаты можно изменить, щелкнув по ним правой кнопкой мыши."
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Чтобы получить доступ к дополнительным настройкам, нажмите шестеренку в правом верхнем углу."
+    "message": "💎 Чтобы получить доступ к дополнительным настройкам, нажмите шестеренку в правом верхнем углу."
   },
   "newPrivate": {
     "message": "Открыть в новом приватном окне"

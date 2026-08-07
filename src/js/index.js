@@ -1,5 +1,6 @@
 // yet another speed dial
 // copyright 2019 dev@conceptualspace.net
+// copyright 2026 antgraf (modifications)
 // absolutely no warranty is expressed or implied
 
 'use strict';
@@ -146,7 +147,7 @@ let boxes = [];
 let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
-const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const helpUrl = 'https://github.com/antgraf/yet-another-speed-dial-2#faq--help';
 let isToastVisible = false;
 
 let folderIds = [];

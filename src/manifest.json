@@ -3,8 +3,8 @@
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
   "default_locale": "en",
-  "version": "3.12.3",
-  "author": "dev@conceptualspace.net",
+  "version": "4.0.0",
+  "author": "antgraf",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -36,12 +36,12 @@
       "24": "icons/action-icon24.png",
       "32": "icons/action-icon32.png"
     },
-    "default_title": "Add Site to Yet Another Speed Dial"
+    "default_title": "Add Site to Yet Another Speed Dial 2"
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "yet_another_speed_dial@conceptualspace.net",
-      "strict_min_version": "59.0"
+      "id": "yet-another-speed-dial-2@antgraf",
+      "strict_min_version": "109.0"
     }
   }
 }

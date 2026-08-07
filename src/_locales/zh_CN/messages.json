@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "适用于 Chrome、Edge 和 Firefox 的现代快速拨号"
+    "message": "适用于 Chrome、Edge 和 Firefox 的现代新标签页 — 支持嵌套文件夹的维护分支"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "Yet Another Speed Dial 2"
   },
   "help": {
     "message": "帮助"
@@ -107,7 +107,7 @@
     "message": "新建文件夹..."
   },
   "newInstall1": {
-    "message": "开始使用 Yet Another Speed Dial！"
+    "message": "开始使用 Yet Another Speed Dial 2！"
   },
   "newInstall2": {
     "message": "⭐ 只需将书签添加到快速拨号文件夹，它们就会出现在这里"

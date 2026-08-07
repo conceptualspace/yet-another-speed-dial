@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "Chrome、Edge、Firefox向けの最新スピードダイヤル"
+    "message": "Chrome、Edge、Firefox向けのモダンスピードダイヤル — 入れ子フォルダ対応のメンテフォーク"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "Yet Another Speed Dial 2"
   },
   "help": {
     "message": "ヘルプ"
@@ -107,7 +107,7 @@
     "message": "新しいフォルダ..."
   },
   "newInstall1": {
-    "message": "Yet Another Speed Dialを始めましょう！"
+    "message": "Yet Another Speed Dial 2を始めましょう！"
   },
   "newInstall2": {
     "message": "⭐ スピードダイヤルフォルダにブックマークを追加するだけで、ここに表示されます"

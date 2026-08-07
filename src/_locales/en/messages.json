@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "a modern speed dial for chrome, edge, and firefox"
+    "message": "a modern speed dial for chrome, edge, and firefox — maintained fork with nested folders"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "yet another speed dial"
+    "message": "yet another speed dial 2"
   },
   "help": {
     "message": "Help"
@@ -107,7 +107,7 @@
     "message": "New Folder..."
   },
   "newInstall1": {
-    "message": "Get started with Yet Another Speed Dial!"
+    "message": "Get started with Yet Another Speed Dial 2!"
   },
   "newInstall2": {
     "message": "⭐ Just add bookmarks to the Speed Dial folder and they will appear here"
