@@ -470,12 +470,12 @@
 }
 
 .recent-tab-title {
-    color: rgba(255, 255, 255, 0.9);
+    color: #cccccc;
     font-size: 0.95rem;
 }
 
 .recent-tab-url {
-    color: rgba(255, 255, 255, 0.62);
+    color: #8c8c8c;
     font-size: 0.8rem;
 }
 
