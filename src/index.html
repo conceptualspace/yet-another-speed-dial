@@ -523,19 +523,40 @@
 
         <div id="recentTabsView" class="history-panel-view active">
             <section class="history-panel-section">
-                <h2 data-locale="openTabsTitle">Open Tabs</h2>
-                <ul id="openTabsList" class="recent-tabs-list"></ul>
-                <div id="openTabsEmpty" class="recent-tabs-empty" data-locale="noOpenTabs">No open tabs</div>
+                <h2>
+                    <button class="history-section-toggle" type="button" aria-expanded="true" aria-controls="openTabsSectionContent">
+                        <span data-locale="openTabsTitle">Open Tabs</span>
+                        <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M480-360 280-560l56-56 144 144 144-144 56 56-200 200Z"/></svg>
+                    </button>
+                </h2>
+                <div id="openTabsSectionContent" class="history-section-content">
+                    <ul id="openTabsList" class="recent-tabs-list"></ul>
+                    <div id="openTabsEmpty" class="recent-tabs-empty" data-locale="noOpenTabs">No open tabs</div>
+                </div>
             </section>
             <section class="history-panel-section">
-                <h2 data-locale="recentlyClosedSectionTitle">Recently Closed</h2>
-                <ul id="recentTabsList" class="recent-tabs-list"></ul>
-                <div id="recentTabsEmpty" class="recent-tabs-empty" data-locale="noRecentlyClosedTabs">No recently closed tabs</div>
+                <h2>
+                    <button class="history-section-toggle" type="button" aria-expanded="true" aria-controls="recentTabsSectionContent">
+                        <span data-locale="recentlyClosedSectionTitle">Recently Closed</span>
+                        <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M480-360 280-560l56-56 144 144 144-144 56 56-200 200Z"/></svg>
+                    </button>
+                </h2>
+                <div id="recentTabsSectionContent" class="history-section-content">
+                    <ul id="recentTabsList" class="recent-tabs-list"></ul>
+                    <div id="recentTabsEmpty" class="recent-tabs-empty" data-locale="noRecentlyClosedTabs">No recently closed tabs</div>
+                </div>
             </section>
             <section class="history-panel-section">
-                <h2 data-locale="otherDevicesTitle">Synced Tabs</h2>
-                <ul id="otherDevicesList" class="other-devices-list"></ul>
-                <div id="otherDevicesEmpty" class="other-devices-empty" data-locale="noOtherDeviceTabs">No tabs from other devices</div>
+                <h2>
+                    <button class="history-section-toggle" type="button" aria-expanded="true" aria-controls="otherDevicesSectionContent">
+                        <span data-locale="otherDevicesTitle">Synced Tabs</span>
+                        <svg aria-hidden="true" viewBox="0 -960 960 960"><path d="M480-360 280-560l56-56 144 144 144-144 56 56-200 200Z"/></svg>
+                    </button>
+                </h2>
+                <div id="otherDevicesSectionContent" class="history-section-content">
+                    <ul id="otherDevicesList" class="other-devices-list"></ul>
+                    <div id="otherDevicesEmpty" class="other-devices-empty" data-locale="noOtherDeviceTabs">No tabs from other devices</div>
+                </div>
             </section>
             <div class="history-filter-empty" data-locale="noMatchingTabs">No matching tabs</div>
         </div>

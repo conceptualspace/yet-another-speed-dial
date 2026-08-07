@@ -394,12 +394,46 @@
 }
 
 .history-panel-section h2 {
-    margin: 20px;
+    margin: 0;
+}
+
+.sidenav .history-section-toggle {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 20px;
+    border: 0;
+    background: transparent;
     color: rgba(255, 255, 255, 0.62);
+    font-family: inherit;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0;
+    text-align: left;
     text-transform: uppercase;
+}
+
+.sidenav .history-section-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.history-section-toggle svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    fill: currentColor;
+    transition: transform 160ms ease;
+}
+
+.history-section-toggle[aria-expanded="false"] svg {
+    transform: rotate(-90deg);
+}
+
+.sidenav .history .history-section-content {
+    padding: 0;
 }
 
 .recent-tabs-list,

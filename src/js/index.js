@@ -2862,6 +2862,16 @@ historyBtn.addEventListener("click", function() {
     openHistory();
 });
 
+recentTabsView.addEventListener('click', event => {
+    const toggle = event.target.closest('.history-section-toggle');
+    if (!toggle) return;
+
+    const content = document.getElementById(toggle.getAttribute('aria-controls'));
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    content.hidden = expanded;
+});
+
 historySearchInput.addEventListener('input', filterHistoryPanelItems);
 
 function activateExpandableSearch() {
