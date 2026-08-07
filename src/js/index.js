@@ -755,22 +755,55 @@ async function printNewSetup() {
     const noBookmarksDiv = document.createElement('div');
     noBookmarksDiv.className = 'default-content';
     noBookmarksDiv.id = 'noBookmarks';
-    noBookmarksDiv.innerHTML = `
-        <h1 class="default-content" data-locale="newInstall1">${chrome.i18n.getMessage('newInstall1')}</h1>
-        <p class="default-content helpText" data-locale="newInstall2">${chrome.i18n.getMessage('newInstall2')}</p>
-        <p class="default-content helpText" data-locale="newInstall3">${chrome.i18n.getMessage('newInstall3')}</p>
-        <p class="default-content helpText" data-locale="newInstall4">${chrome.i18n.getMessage('newInstall4')}</p>
-        <div class="cta-container">
-        <p id="splashImport" class="default-content helpText cta" >
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z"/></svg>
-            Import
-        </p>
-        <p id="splashAddDial" class="default-content helpText cta" >
-            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"/></svg>
-        Add Site
-        </p>
-        </div>
-    `;
+
+    const title = document.createElement('h1');
+    title.className = 'default-content';
+    title.dataset.locale = 'newInstall1';
+    title.textContent = chrome.i18n.getMessage('newInstall1');
+    noBookmarksDiv.appendChild(title);
+
+    for (const key of ['newInstall2', 'newInstall3', 'newInstall4']) {
+        const p = document.createElement('p');
+        p.className = 'default-content helpText';
+        p.dataset.locale = key;
+        p.textContent = chrome.i18n.getMessage(key);
+        noBookmarksDiv.appendChild(p);
+    }
+
+    const makeSvgIcon = (pathD) => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        svg.setAttribute('height', '24px');
+        svg.setAttribute('viewBox', '0 -960 960 960');
+        svg.setAttribute('width', '24px');
+        svg.setAttribute('fill', '#e3e3e3');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathD);
+        svg.appendChild(path);
+        return svg;
+    };
+
+    const ctaContainer = document.createElement('div');
+    ctaContainer.className = 'cta-container';
+
+    const splashImport = document.createElement('p');
+    splashImport.id = 'splashImport';
+    splashImport.className = 'default-content helpText cta';
+    splashImport.append(
+        makeSvgIcon('M260-160q-91 0-155.5-63T40-377q0-78 47-139t123-78q25-92 100-149t170-57q117 0 198.5 81.5T760-520q69 8 114.5 59.5T920-340q0 75-52.5 127.5T740-160H520q-33 0-56.5-23.5T440-240v-206l-64 62-56-56 160-160 160 160-56 56-64-62v206h220q42 0 71-29t29-71q0-42-29-71t-71-29h-60v-80q0-83-58.5-141.5T480-720q-83 0-141.5 58.5T280-520h-20q-58 0-99 41t-41 99q0 58 41 99t99 41h100v80H260Zm220-280Z'),
+        document.createTextNode(' Import')
+    );
+
+    const splashAddDial = document.createElement('p');
+    splashAddDial.id = 'splashAddDial';
+    splashAddDial.className = 'default-content helpText cta';
+    splashAddDial.append(
+        makeSvgIcon('M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z'),
+        document.createTextNode('Add Site')
+    );
+
+    ctaContainer.append(splashImport, splashAddDial);
+    noBookmarksDiv.appendChild(ctaContainer);
     fragment.appendChild(noBookmarksDiv);
 
     // Optimize container update using batch insert

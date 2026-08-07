@@ -5,9 +5,10 @@
 
 'use strict';
 
-// Chrome MV3 service worker; Firefox event pages load hostPermissions via background.scripts
+// Chrome MV3 service worker; Firefox event pages load these via background.scripts instead.
+// chromeOffscreen.js is Chrome-only and omitted from the Firefox AMO package.
 if (typeof importScripts === 'function') {
-	importScripts('js/hostPermissions.js');
+	importScripts('js/hostPermissions.js', 'js/chromeOffscreen.js');
 }
 
 
@@ -594,28 +595,17 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 		forcePageReload: options.forcePageReload,
 	};
 
-	// Chrome: service worker has no DOM — use offscreen document (requires offscreen permission in Chrome package)
-	// Firefox: event page has DOM — offscreen.js is loaded via background.scripts
-	if (typeof chrome.offscreen?.createDocument === 'function') {
-		await setupOffscreenDocument('offscreen.html');
-
-		try {
-			// Do not await offscreen completion here — its async listener would hold this
-			// call open, and awaiting a round-trip saveThumbnails message can deadlock MV3.
-			chrome.runtime.sendMessage({
-				target: 'offscreen',
-				data: payload
-			}).catch((err) => {
-				console.log('Failed to message offscreen document:', err?.message || err);
-				if (options.forcePageReload) {
-					refreshOpen();
-				}
-			});
-		} catch (err) {
-			console.log('Failed to message offscreen document:', err?.message || err);
-			return false;
-		}
-	} else if (typeof processThumbnails === 'function') {
+	// Chrome: processThumbnailsViaOffscreen from js/chromeOffscreen.js (service worker + offscreen doc)
+	// Firefox: processThumbnails from offscreen.js via background.scripts (event page has DOM)
+	if (typeof processThumbnailsViaOffscreen === 'function') {
+		const ok = await processThumbnailsViaOffscreen(payload, () => {
+			if (options.forcePageReload) {
+				refreshOpen();
+			}
+		});
+		return ok !== false;
+	}
+	if (typeof processThumbnails === 'function') {
 		// Await so Firefox keeps the event page alive until save/refresh finishes
 		try {
 			await processThumbnails(payload);
@@ -626,12 +616,11 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 			}
 			return false;
 		}
-	} else {
-		console.log('getThumbnails: no DOM processing context available');
-		return false;
+		return true;
 	}
 
-	return true;
+	console.log('getThumbnails: no DOM processing context available');
+	return false;
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
@@ -702,33 +691,4 @@ async function handleTabCreated(tab) {
 function isOpera() {
     // navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
     return navigator.userAgent.includes('OPR') || navigator.userAgent.includes('Opera/');
-}
-
-// offscreen document setup
-let creating; // A global promise to avoid concurrency issues
-async function setupOffscreenDocument(path) {
-  // Check all windows controlled by the service worker to see if one
-  // of them is the offscreen document with the given path
-  const offscreenUrl = chrome.runtime.getURL(path);
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT'],
-    documentUrls: [offscreenUrl]
-  });
-
-  if (existingContexts.length > 0) {
-    return;
-  }
-
-  // create offscreen document
-  if (creating) {
-    await creating;
-  } else {
-    creating = chrome.offscreen.createDocument({
-      url: path,
-      reasons: [chrome.offscreen.Reason.DOM_PARSER],
-      justification: 'parse document for image tags to use as thumbnail'
-    });
-    await creating;
-    creating = null;
-  }
 }
