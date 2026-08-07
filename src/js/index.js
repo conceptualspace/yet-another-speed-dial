@@ -918,6 +918,9 @@ async function printBookmarks(bookmarks, parentId) {
         // <a href> tiles implicitly draggable, so hrefless folder tiles wouldn't drag; the fallback
         // drags any element uniformly (bookmark tiles and folder tiles alike).
         forceFallback: true,
+        // without this, any 1px mousemove after mousedown starts a fallback drag and eats the click
+        // (worst right after load while GSAP layout transforms settle). matches folder-tab Sortable.
+        fallbackTolerance: 4,
         onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
