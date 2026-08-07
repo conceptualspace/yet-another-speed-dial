@@ -613,11 +613,18 @@ function editFolder() {
     });
 }
 
-function refreshThumbnails(url, tileid) {
+async function refreshThumbnails(url, tileid) {
     //tabMessagePort.postMessage({refreshThumbs: true, url});
     // the div id is "folderid-boookmarkid"
     let parentId = tileid.split("-")[0];
     let id = tileid.split("-")[1];
+
+    // Must request before setTimeout — permissions.request requires a user gesture
+    const granted = await ensureHostPermission();
+    if (!granted) {
+        showToast(' Site access required for thumbnails');
+        return;
+    }
 
     showToast(' Capturing images...')
     // gives the ui time to animate before blocking the process with the bg work
@@ -661,7 +668,15 @@ function getChildren(folderId) {
     });
 }
 
-function refreshAllThumbnails() {
+async function refreshAllThumbnails() {
+    // Must request before any other await — permissions.request requires a user gesture
+    const granted = await ensureHostPermission();
+    if (!granted) {
+        hideModals();
+        showToast(' Site access required for thumbnails');
+        return;
+    }
+
     let bookmarks = [];
     let parent = currentFolder ? currentFolder : speedDialId;
 
@@ -1190,8 +1205,11 @@ function rectifyUrl(url) {
     }
 }
 
-function createDial() {
+async function createDial() {
     let url = rectifyUrl(createDialModalURL.value.trim());
+
+    // Request before creating the bookmark so onCreated can fetch thumbnails
+    const granted = await ensureHostPermission();
 
     chrome.bookmarks.create({
         title: url,
@@ -1199,7 +1217,11 @@ function createDial() {
         parentId: createDialModalURL.parentId
     }).then(node => {
         hideModals();
-        showToast(' Capturing images...')
+        if (granted) {
+            showToast(' Capturing images...')
+        } else {
+            showToast(' Site access required for thumbnails');
+        }
     });
 }
 
@@ -1378,7 +1400,7 @@ function cssGradientToHex(gradientString) {
     return [r, g, b, a];
 }
 
-function saveBookmarkSettings() {
+async function saveBookmarkSettings() {
     // todo: cleanup this abomination when im not on drugs
     let title = modalTitle.value;
     let url = targetTileHref;
@@ -1388,6 +1410,11 @@ function saveBookmarkSettings() {
     let imageNodes = document.getElementsByClassName('fc-slide');
     let bgColor = null;
     let colorPickerColor = modalBgColorPickerInput.value;
+
+    // Changing the URL can trigger a fresh thumbnail fetch via bookmarks.onChanged
+    if (newUrl !== url) {
+        await ensureHostPermission();
+    }
 
     let customCarousel = document.getElementById('customCarousel');
     if (customCarousel) {

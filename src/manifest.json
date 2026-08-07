@@ -21,7 +21,7 @@
     "tabs",
     "unlimitedStorage"
   ],
-  "host_permissions": [
+  "optional_host_permissions": [
     "<all_urls>"
   ],
   "chrome_url_overrides": {
