@@ -146,7 +146,9 @@ async function handleBookmarkChanged(id, info) {
         			handleBookmarkChanged(child.id)
         		}
         	} else {
-        		reloadFolders()
+        		// new empty folder: full refresh so it renders correctly whether it's a
+        		// top-level folder (a tab) or a nested subfolder (a tile in the current view)
+        		refreshOpen()
         	}
         }
     }
