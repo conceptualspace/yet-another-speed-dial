@@ -290,27 +290,17 @@
     padding: 0.3em 0;
 }
 
-#historyDiv .history-panel-header {
-    margin: 0 20px;
-    padding: 3px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.history-panel-header {
+.history-panel-controls {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
+    margin: 0 20px;
     flex: 0 0 auto;
 }
 
-.history-panel-tabs {
-    display: flex;
-    flex: 1;
-    gap: 4px;
-    min-width: 0;
-    margin: 0;
+#historyDiv .history-panel-controls {
     padding: 0;
+    padding-top: 6px;
 }
 
 #closeHistoryBtn {
@@ -334,40 +324,6 @@
 }
 
 #closeHistoryBtn:hover {
-    background: rgba(255, 255, 255, 0.16);
-    color: #fff;
-}
-
-.sidenav .history-panel-tab {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    min-width: 0;
-    min-height: 34px;
-    gap: 0.3em;
-    padding: 0.45em 0.6em;
-    border-radius: 4px;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.72);
-    font-family: inherit;
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.history-panel-tab svg {
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
-    fill: currentColor;
-}
-
-.history-panel-tab[hidden] {
-    display: none;
-}
-
-.sidenav .history-panel-tab:hover,
-.sidenav .history-panel-tab.active {
     background: rgba(255, 255, 255, 0.16);
     color: #fff;
 }
@@ -396,9 +352,11 @@
     flex: 0 0 auto;
     gap: 9px;
     height: 36px;
-    margin: 10px 20px 2px;
+    margin: 0;
     padding: 0 11px;
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    min-width: 0;
+    flex: 1;
+    border: none;
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.08);
 }

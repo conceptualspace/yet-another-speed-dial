@@ -84,10 +84,7 @@ const recentTabsEmpty = document.getElementById("recentTabsEmpty");
 const historyNav = document.getElementById("historyNav");
 const historySearchInput = document.getElementById("historySearchInput");
 const historyBtn = document.getElementById("historyBtn");
-const recentTabsPanelBtn = document.getElementById("recentTabsPanelBtn");
-const otherDevicesPanelBtn = document.getElementById("otherDevicesPanelBtn");
 const recentTabsView = document.getElementById("recentTabsView");
-const otherDevicesView = document.getElementById("otherDevicesView");
 const otherDevicesList = document.getElementById("otherDevicesList");
 const otherDevicesEmpty = document.getElementById("otherDevicesEmpty");
 const modalTitle = document.getElementById("modalTitle");
@@ -967,51 +964,10 @@ function hideSettings() {
     hideSideNav(sidenav);
 }
 
-function setHistoryPanelView(view) {
-    const showRecentTabs = view === 'recent';
-    const showOtherDevices = view === 'devices';
-    recentTabsPanelBtn.classList.toggle('active', showRecentTabs);
-    otherDevicesPanelBtn.classList.toggle('active', showOtherDevices);
-    recentTabsView.classList.toggle('active', showRecentTabs);
-    otherDevicesView.classList.toggle('active', showOtherDevices);
-    filterHistoryPanelItems();
-}
-
-function setOtherDevicesAvailable(available) {
-    otherDevicesPanelBtn.hidden = !available;
-
-    if (!available && otherDevicesView.classList.contains('active')) {
-        setHistoryPanelView('recent');
-        loadRecentTabs();
-    }
-}
-
-async function refreshOtherDevicesAvailability() {
-    if (!chrome.sessions || !chrome.sessions.getDevices) {
-        setOtherDevicesAvailable(false);
-        return [];
-    }
-
-    try {
-        const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
-        setOtherDevicesAvailable(devices.length > 0);
-        return devices;
-    } catch (error) {
-        setOtherDevicesAvailable(false);
-        return [];
-    }
-}
-
-function openHistory(view = 'recent') {
+function openHistory() {
     hideSettings();
     hideSearch();
-    setHistoryPanelView(view);
-    if (view === 'recent') {
-        loadRecentTabs();
-    } else {
-        loadOtherDeviceTabs();
-    }
-    if (view !== 'devices') refreshOtherDevicesAvailability();
+    loadRecentTabs();
     openSideNav(historyNav);
 }
 
@@ -1260,20 +1216,17 @@ function renderHistoryPanelItems({ items, listEl, emptyEl, emptyMessage, itemFal
 
 function filterHistoryPanelItems() {
     const query = historySearchInput.value.trim().toLocaleLowerCase();
+    const buttons = recentTabsView.querySelectorAll('.recent-tab');
+    let visibleItems = 0;
 
-    for (const view of [recentTabsView, otherDevicesView]) {
-        const buttons = view.querySelectorAll('.recent-tab');
-        let visibleItems = 0;
-
-        for (const button of buttons) {
-            const matches = !query || button.dataset.searchText.includes(query);
-            button.parentElement.hidden = !matches;
-            if (matches) visibleItems++;
-        }
-
-        const filterEmpty = view.querySelector('.history-filter-empty');
-        filterEmpty.style.display = query && buttons.length && !visibleItems ? 'block' : 'none';
+    for (const button of buttons) {
+        const matches = !query || button.dataset.searchText.includes(query);
+        button.parentElement.hidden = !matches;
+        if (matches) visibleItems++;
     }
+
+    const filterEmpty = recentTabsView.querySelector('.history-filter-empty');
+    filterEmpty.style.display = query && buttons.length && !visibleItems ? 'block' : 'none';
 }
 
 function renderOpenTabs(tabs) {
@@ -1359,7 +1312,7 @@ async function loadOpenTabs() {
 }
 
 function loadRecentTabs() {
-    return Promise.all([loadOpenTabs(), loadRecentlyClosedTabs()]);
+    return Promise.all([loadOpenTabs(), loadRecentlyClosedTabs(), loadOtherDeviceTabs()]);
 }
 
 async function loadRecentlyClosedTabs() {
@@ -1403,10 +1356,8 @@ async function loadOtherDeviceTabs() {
 
     try {
         const devices = await chrome.sessions.getDevices({ maxResults: OTHER_DEVICES_MAX_RESULTS });
-        setOtherDevicesAvailable(devices.length > 0);
         renderOtherDeviceTabs(dedupeRecentTabs(getOtherDeviceTabs(devices)));
     } catch (error) {
-        setOtherDevicesAvailable(false);
         console.error('Unable to load tabs from other devices:', error);
         setOtherDevicesStatus(getLocaleMessage('otherDevicesLoadError', 'Unable to load tabs from other devices'));
     }
@@ -2908,15 +2859,7 @@ searchBtn.addEventListener("click", function() {
 });
 
 historyBtn.addEventListener("click", function() {
-    openHistory('recent');
-});
-
-recentTabsPanelBtn.addEventListener("click", function() {
-    openHistory('recent');
-});
-
-otherDevicesPanelBtn.addEventListener("click", function() {
-    openHistory('devices');
+    openHistory();
 });
 
 historySearchInput.addEventListener('input', filterHistoryPanelItems);
