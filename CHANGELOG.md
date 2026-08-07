@@ -14,3 +14,6 @@
 - Add Firefox-compatible `background.scripts` fallback for AMO validation
 - Drop Chromium-only `offscreen` permission from the shared manifest; run thumbnail DOM parsing inline on Firefox
 - Fix Firefox thumbnail capture: avoid `handleMessages` name clash on the shared event page; await processing so the page stays alive
+- Declare Firefox `data_collection_permissions` (`none`); `strict_min_version` 140 (desktop) / 142 (Android)
+- Move Chrome-only `offscreen` APIs into `js/chromeOffscreen.js` (omitted from the Firefox AMO package)
+- Firefox package strips `background.service_worker`; Chrome package drops Firefox `background.scripts`

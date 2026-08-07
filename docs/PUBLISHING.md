@@ -4,30 +4,26 @@ Store submissions must be done from your developer accounts. This repo is prepar
 
 ## Package
 
-Release zips are built from `src/` (manifest at zip root). Firefox and Chrome need slightly different manifests: Chromium requires the `offscreen` permission for thumbnail DOM parsing; Firefox rejects that permission and instead runs `offscreen.js` in the background event page.
+Release zips are built from `src/` (manifest at zip root). Firefox and Chrome need different packages:
 
-**Firefox (AMO) — use `src/` as-is:**
+- Chromium needs `offscreen` + `background.service_worker` + `js/chromeOffscreen.js`
+- Firefox needs `background.scripts` only, and must **not** ship Chrome-only offscreen APIs (AMO warns on them)
 
-```powershell
-New-Item -ItemType Directory -Force dist | Out-Null
-if (Test-Path dist\yasd2-4.0.0-firefox.zip) { Remove-Item dist\yasd2-4.0.0-firefox.zip }
-Compress-Archive -Path src\* -DestinationPath dist\yasd2-4.0.0-firefox.zip
-```
-
-**Chrome Web Store — inject `offscreen` permission:**
+From the repo root:
 
 ```powershell
-New-Item -ItemType Directory -Force dist\chrome-src | Out-Null
-Copy-Item -Path src\* -Destination dist\chrome-src -Recurse -Force
-$manifestPath = "dist\chrome-src\manifest.json"
-$manifest = Get-Content $manifestPath -Raw
-$manifest = $manifest -replace '("contextMenus",\r?\n\s*)', "`$1`"offscreen`",`n    "
-Set-Content $manifestPath -Value $manifest -Encoding utf8NoBOM
-if (Test-Path dist\yasd2-4.0.0-chrome.zip) { Remove-Item dist\yasd2-4.0.0-chrome.zip }
-Compress-Archive -Path dist\chrome-src\* -DestinationPath dist\yasd2-4.0.0-chrome.zip
+pwsh -File scripts/pack-firefox.ps1
+pwsh -File scripts/pack-chrome.ps1
 ```
 
-For local Chrome unpacked testing, temporarily add `"offscreen"` to `permissions` in `src/manifest.json`, or load `dist/chrome-src` after running the Chrome package steps.
+Outputs (version taken from `src/manifest.json`):
+
+- `dist/yasd2-<version>-firefox.zip`
+- `dist/yasd2-<version>-chrome.zip`
+
+Staging folders `dist/firefox-src` and `dist/chrome-src` are also written. For local Chrome unpacked testing, load `dist/chrome-src` after packing (it already includes the `offscreen` permission).
+
+AMO may still warn about `innerHTML` inside vendored `js/lib/*` (jQuery, Coloris); those are expected and non-blocking.
 
 Privacy policy URL for store forms (GitHub Pages from `/docs`):
 
@@ -60,8 +56,9 @@ Privacy policy URL for store forms (GitHub Pages from `/docs`):
 1. Create / sign in at https://addons.mozilla.org/developers/
 2. Submit a new add-on; upload `dist/yasd2-4.0.0-firefox.zip`
 3. Confirm `browser_specific_settings.gecko.id` is `yet-another-speed-dial-2@antgraf`
-4. Paste privacy policy URL + listing text
-5. After approval, put the AMO URL into README badges
+4. Confirm `gecko.data_collection_permissions.required` is `["none"]` (AMO requires this for new listings; matches the privacy policy — no analytics/backend)
+5. Paste privacy policy URL + listing text
+6. After approval, put the AMO URL into README badges
 
 ## Chrome Web Store
 
