@@ -53,13 +53,12 @@ async function handleMessages(message) {
     }
 
     if (resizedImages && resizedImages.length) {
-        // If we have a screenshot, reserve the last spot for it and only take 4 webpage images
+        // Prefer screenshot as default (thumbIndex 0); keep page images for carousel
         const maxWebpageImages = processedScreenshot ? 5 : 6;
         thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
-        
-        // Always add the screenshot as the last image if available
+
         if (processedScreenshot) {
-            thumbs.push(processedScreenshot);
+            thumbs.unshift(processedScreenshot);
         }
     } else if (processedScreenshot) {
         // No webpage images, but we have a screenshot
@@ -96,6 +95,21 @@ function convertUrlToAbsolute(origin, path) {
             return new URL(path, origin).href;
         }
     }
+}
+
+/**
+ * Strip active content before DOMParser. Extension pages have script-src 'self';
+ * and Chromium still attempts to load <script src> from parsed markup (e.g. ya.ru),
+ * which floods the extension error page even though we only need meta/link/img.
+ */
+function sanitizeHtmlForParse(html) {
+    return html
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        .replace(/<script\b[^>]*\/?>/gi, '')
+        .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
+        .replace(/<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>/gi, '')
+        .replace(/<embed\b[^>]*>/gi, '')
+        .replace(/<link\b[^>]*\brel\s*=\s*["']?(?:preload|modulepreload|import)["']?[^>]*>/gi, '');
 }
 
 function colorsAreSimilar(color1, color2, tolerance = 2) {
@@ -497,7 +511,7 @@ async function fetchImages(url, quickRefresh) {
 
             const text = await response.text();
             const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
+            const doc = parser.parseFromString(sanitizeHtmlForParse(text), 'text/html');
 
             // check for svg logo and convert to data url
             let svgElements = doc.querySelectorAll('svg');
