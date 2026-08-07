@@ -21,7 +21,16 @@ chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
-chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+	// Keep the service worker alive until async handlers finish (MV3).
+	handleMessages(message)
+		.then(() => sendResponse({ ok: true }))
+		.catch((err) => {
+			console.log(err);
+			sendResponse({ ok: false });
+		});
+	return true;
+});
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
@@ -39,19 +48,19 @@ async function handleMessages(message) {
 	// Dispatch the message to an appropriate handler.
 	switch (message.type) {
 		case 'refreshThumbs':
-			handleManualRefresh(message.data);
+			await handleManualRefresh(message.data);
 			break;
 		case 'refreshAllThumbs':
-			handleRefreshAll(message.data);
+			await handleRefreshAll(message.data);
 			break;
 		case 'saveThumbnails':
-			handleOffscreenFetchDone(message.data, message.forcePageReload);
+			await handleOffscreenFetchDone(message.data, message.forcePageReload);
 			break;
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
 		case 'getThumbs':
-			handleGetThumbs(message.data);
+			await handleGetThumbs(message.data);
 			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
@@ -210,94 +219,163 @@ function toggleBookmarkCreatedListener(data) {
 
 async function handleOffscreenFetchDone(data, forcePageReload) {
 	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+	await saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
 }
 
+let manualRefreshSafetyTimer = null;
+
 async function handleManualRefresh(data) {
-    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
-        await chrome.storage.local.remove(data.url);
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+    // Fallback so the NTP "Capturing..." toast never sticks if offscreen never calls back
+    if (manualRefreshSafetyTimer) {
+        clearTimeout(manualRefreshSafetyTimer);
+    }
+    manualRefreshSafetyTimer = setTimeout(() => {
+        manualRefreshSafetyTimer = null;
+        refreshOpen();
+    }, 90000);
+
+    try {
+        if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
+            await chrome.storage.local.remove(data.url);
+            const started = await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+            if (!started) {
+                refreshOpen();
+            }
+            // On success, saveThumbnails → refreshOpen clears the toast and safety timer
+            return;
+        }
+        refreshOpen();
+    } catch (err) {
+        console.log('Manual refresh failed:', err?.message || err);
+        refreshOpen();
     }
 }
 
-const capturePopupScreenshot = (url) => {
-  
-  return new Promise((resolve, reject) => {
-    let finished = false;
-    chrome.windows.create({
-        url: url,
-        focused: false,
-        width: 1,
-        height: 1,
-        left: 0,
-        top: 0,
-        type: 'popup'
-      }).then((popup) => {
-        if (!popup.tabs || !popup.tabs.length) {
-          chrome.windows.remove(popup.id)
-          return resolve(null)
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function isHttpLikeUrl(url) {
+    return typeof url === 'string' && (
+        url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('file://') ||
+        url.startsWith('chrome://')
+    );
+}
+
+/**
+ * Wait until the tab has finished loading the real target page.
+ * Important: windows.create often starts at about:blank with status "complete" —
+ * resolving on that leaves us capturing/closing before the site renders.
+ */
+function waitForTabComplete(tabId, expectedUrl, timeoutMs = 15000) {
+    return new Promise((resolve) => {
+        let settled = false;
+
+        const isReady = (tab) => {
+            if (!tab || tab.status !== 'complete') {
+                return false;
+            }
+            const current = tab.url || '';
+            // Ignore the intermediate blank document Chrome uses before navigation
+            if (!current || current === 'about:blank') {
+                return false;
+            }
+            return isHttpLikeUrl(current);
+        };
+
+        const finish = () => {
+            if (settled) return;
+            settled = true;
+            chrome.tabs.onUpdated.removeListener(onUpdated);
+            clearTimeout(timer);
+            resolve();
+        };
+
+        const onUpdated = (updatedTabId, changeInfo) => {
+            if (updatedTabId !== tabId) return;
+            if (changeInfo.status === 'complete' || changeInfo.url) {
+                chrome.tabs.get(tabId).then((tab) => {
+                    if (isReady(tab)) finish();
+                }).catch(() => {});
+            }
+        };
+
+        const timer = setTimeout(finish, timeoutMs);
+        chrome.tabs.onUpdated.addListener(onUpdated);
+
+        chrome.tabs.get(tabId).then((tab) => {
+            if (isReady(tab)) finish();
+        }).catch(() => {});
+    });
+}
+
+async function tryCaptureVisibleTab(windowId) {
+    try {
+        const screenshot = await chrome.tabs.captureVisibleTab(windowId, { format: 'png' });
+        if (typeof screenshot === 'string' && screenshot.startsWith('data:image/')) {
+            return screenshot;
+        }
+    } catch (err) {
+        console.log('Error capturing screenshot:', err?.message || err);
+    }
+    return null;
+}
+
+/**
+ * Open the URL in a temporary popup, capture a screenshot, then close it.
+ * Opens focused — Chrome often refuses captureVisibleTab on background windows,
+ * and the refresh UI already shows a "Capturing..." toast.
+ */
+async function capturePopupScreenshot(url) {
+    let popup = null;
+
+    try {
+        popup = await chrome.windows.create({
+            url,
+            focused: true,
+            width: 1280,
+            height: 720,
+            type: 'popup'
+        });
+
+        if (!popup?.tabs?.length) {
+            // tabs may be missing momentarily; try querying by window id
+            const tabs = popup?.id != null
+                ? await chrome.tabs.query({ windowId: popup.id })
+                : [];
+            if (!tabs.length) {
+                return null;
+            }
+            popup.tabs = tabs;
         }
 
-        const tabId = popup.tabs[0].id
-        let loadingInterval;
-        let hasScreenshot = false;
+        const tabId = popup.tabs[0].id;
+        await chrome.tabs.update(tabId, { muted: true, active: true }).catch(() => {});
 
-        const cleanup = (result = null) => {
-            if (finished) return;
-            finished = true;
+        await waitForTabComplete(tabId, url);
+        // Allow paint / lazy content after load
+        await sleep(2000);
 
-            clearInterval(loadingInterval);
-            clearTimeout(focusTimeout);
-            clearTimeout(timeout);
+        let screenshot = await tryCaptureVisibleTab(popup.id);
 
-            chrome.windows.remove(popup.id).catch(() => {});
-            resolve(result);
-        };
-        
-        chrome.tabs.update(tabId, {
-          muted: true,
-          active: true
-        })
-        chrome.windows.update(popup.id, {
-          focused: false,
-          width: 1280,
-          height: 720,
-          left: 0,
-          top: 0
-        })
+        if (!screenshot) {
+            // Ensure focus and retry once
+            await chrome.windows.update(popup.id, { focused: true }).catch(() => {});
+            await sleep(400);
+            screenshot = await tryCaptureVisibleTab(popup.id);
+        }
 
-        const timeout = setTimeout(() => {
-          cleanup();
-        }, 10000)
-
-        // Focus window after 5s if we don't have a screenshot yet
-        const focusTimeout = setTimeout(() => {
-          if (!hasScreenshot && !finished) {
-            chrome.windows.update(popup.id, { focused: true });
-          }
-        }, 5000);
-
-        loadingInterval = setInterval(() => {
-          chrome.tabs.get(tabId).then((tab) => {
-            'complete' === tab.status &&
-              (clearInterval(loadingInterval),
-              setTimeout(() => {
-                // delay to let page render
-                chrome.tabs
-                  .captureVisibleTab(popup.id)
-                  .then((screenshot) => {
-                    hasScreenshot = true;
-                    cleanup(screenshot);
-                  })
-                  .catch(() => {
-                    console.log("Error capturing screenshot");
-                    cleanup();
-                  })
-              }, 2000))
-          })
-        }, 200)
-      })
-  })
+        return screenshot;
+    } catch (err) {
+        console.log('Error capturing popup screenshot:', err?.message || err);
+        return null;
+    } finally {
+        if (popup?.id != null) {
+            await chrome.windows.remove(popup.id).catch(() => {});
+        }
+    }
 }
 
 async function handleRefreshAll(data) {
@@ -476,13 +554,13 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
-		return
+		return false
 	}
 
 	// Thumbnail fetch / captureVisibleTab need host access; grant is optional and prompted on user gesture
 	if (!(await hasHostPermission())) {
 		console.log("getThumbnails: host permission not granted, skipping")
-		return
+		return false
 	}
     
     let screenshot = null;
@@ -492,27 +570,46 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         screenshot = await capturePopupScreenshot(url);
     } else {
         // take screenshot if applicable (current active tab)
-        const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
-        
-        if (tabs && tabs.length && tabs[0].url === url) {
-            screenshot = await chrome.tabs.captureVisibleTab()
+        try {
+            const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true });
+
+            if (tabs && tabs.length && tabs[0].url === url) {
+                screenshot = await chrome.tabs.captureVisibleTab({ format: 'png' });
+            }
+        } catch (err) {
+            // Don't abort page-image fetch if live capture fails
+            console.log('Error capturing active tab:', err?.message || err);
         }
     }
 
 	// cant parse images from dom in service worker: delegate to offscreen document
 	await setupOffscreenDocument('offscreen.html');
 
-	chrome.runtime.sendMessage({
-		target: 'offscreen',
-		data: {
-            url,
-			id,
-			parentId,
-            screenshot,
-			quickRefresh: options.quickRefresh,
-			forcePageReload: options.forcePageReload,
-        }
-	});
+	try {
+		// Do not await offscreen completion here — its async listener would hold this
+		// call open, and awaiting a round-trip saveThumbnails message can deadlock MV3.
+		chrome.runtime.sendMessage({
+			target: 'offscreen',
+			data: {
+				url,
+				id,
+				parentId,
+				screenshot,
+				quickRefresh: options.quickRefresh,
+				forcePageReload: options.forcePageReload,
+			}
+		}).catch((err) => {
+			console.log('Failed to message offscreen document:', err?.message || err);
+			if (options.forcePageReload) {
+				refreshOpen();
+			}
+		});
+	} catch (err) {
+		console.log('Failed to message offscreen document:', err?.message || err);
+		return false;
+	}
+
+	return true;
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
@@ -547,6 +644,10 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 }
 
 function refreshOpen() {
+    if (manualRefreshSafetyTimer) {
+        clearTimeout(manualRefreshSafetyTimer);
+        manualRefreshSafetyTimer = null;
+    }
     chrome.runtime.sendMessage({
 		target: 'newtab',
 		data: {refresh:true}
