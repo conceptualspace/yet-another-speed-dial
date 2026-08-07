@@ -5,7 +5,10 @@
 
 'use strict';
 
-importScripts('js/hostPermissions.js');
+// Chrome MV3 service worker; Firefox event pages load hostPermissions via background.scripts
+if (typeof importScripts === 'function') {
+	importScripts('js/hostPermissions.js');
+}
 
 
 // EVENT LISTENERS //
@@ -22,8 +25,8 @@ chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-	// Keep the service worker alive until async handlers finish (MV3).
-	handleMessages(message)
+	// Keep the service worker / event page alive until async handlers finish (MV3).
+	handleBackgroundMessages(message)
 		.then(() => sendResponse({ ok: true }))
 		.catch((err) => {
 			console.log(err);
@@ -39,7 +42,7 @@ if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 // EVENT HANDLERS //
 
-async function handleMessages(message) {
+async function handleBackgroundMessages(message) {
 	// Return early if this message isn't meant for the worker
 	if (message.target !== 'background') {
 	  return;
@@ -582,30 +585,49 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         }
     }
 
-	// cant parse images from dom in service worker: delegate to offscreen document
-	await setupOffscreenDocument('offscreen.html');
+	const payload = {
+		url,
+		id,
+		parentId,
+		screenshot,
+		quickRefresh: options.quickRefresh,
+		forcePageReload: options.forcePageReload,
+	};
 
-	try {
-		// Do not await offscreen completion here — its async listener would hold this
-		// call open, and awaiting a round-trip saveThumbnails message can deadlock MV3.
-		chrome.runtime.sendMessage({
-			target: 'offscreen',
-			data: {
-				url,
-				id,
-				parentId,
-				screenshot,
-				quickRefresh: options.quickRefresh,
-				forcePageReload: options.forcePageReload,
-			}
-		}).catch((err) => {
+	// Chrome: service worker has no DOM — use offscreen document (requires offscreen permission in Chrome package)
+	// Firefox: event page has DOM — offscreen.js is loaded via background.scripts
+	if (typeof chrome.offscreen?.createDocument === 'function') {
+		await setupOffscreenDocument('offscreen.html');
+
+		try {
+			// Do not await offscreen completion here — its async listener would hold this
+			// call open, and awaiting a round-trip saveThumbnails message can deadlock MV3.
+			chrome.runtime.sendMessage({
+				target: 'offscreen',
+				data: payload
+			}).catch((err) => {
+				console.log('Failed to message offscreen document:', err?.message || err);
+				if (options.forcePageReload) {
+					refreshOpen();
+				}
+			});
+		} catch (err) {
 			console.log('Failed to message offscreen document:', err?.message || err);
+			return false;
+		}
+	} else if (typeof processThumbnails === 'function') {
+		// Await so Firefox keeps the event page alive until save/refresh finishes
+		try {
+			await processThumbnails(payload);
+		} catch (err) {
+			console.log('Failed to process thumbnails:', err?.message || err);
 			if (options.forcePageReload) {
 				refreshOpen();
 			}
-		});
-	} catch (err) {
-		console.log('Failed to message offscreen document:', err?.message || err);
+			return false;
+		}
+	} else {
+		console.log('getThumbnails: no DOM processing context available');
 		return false;
 	}
 

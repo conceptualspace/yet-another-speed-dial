@@ -4,13 +4,30 @@ Store submissions must be done from your developer accounts. This repo is prepar
 
 ## Package
 
-A release zip is built from `src/` (manifest at zip root):
+Release zips are built from `src/` (manifest at zip root). Firefox and Chrome need slightly different manifests: Chromium requires the `offscreen` permission for thumbnail DOM parsing; Firefox rejects that permission and instead runs `offscreen.js` in the background event page.
+
+**Firefox (AMO) — use `src/` as-is:**
 
 ```powershell
 New-Item -ItemType Directory -Force dist | Out-Null
-if (Test-Path dist\yasd2-4.0.0.zip) { Remove-Item dist\yasd2-4.0.0.zip }
-Compress-Archive -Path src\* -DestinationPath dist\yasd2-4.0.0.zip
+if (Test-Path dist\yasd2-4.0.0-firefox.zip) { Remove-Item dist\yasd2-4.0.0-firefox.zip }
+Compress-Archive -Path src\* -DestinationPath dist\yasd2-4.0.0-firefox.zip
 ```
+
+**Chrome Web Store — inject `offscreen` permission:**
+
+```powershell
+New-Item -ItemType Directory -Force dist\chrome-src | Out-Null
+Copy-Item -Path src\* -Destination dist\chrome-src -Recurse -Force
+$manifestPath = "dist\chrome-src\manifest.json"
+$manifest = Get-Content $manifestPath -Raw
+$manifest = $manifest -replace '("contextMenus",\r?\n\s*)', "`$1`"offscreen`",`n    "
+Set-Content $manifestPath -Value $manifest -Encoding utf8NoBOM
+if (Test-Path dist\yasd2-4.0.0-chrome.zip) { Remove-Item dist\yasd2-4.0.0-chrome.zip }
+Compress-Archive -Path dist\chrome-src\* -DestinationPath dist\yasd2-4.0.0-chrome.zip
+```
+
+For local Chrome unpacked testing, temporarily add `"offscreen"` to `permissions` in `src/manifest.json`, or load `dist/chrome-src` after running the Chrome package steps.
 
 Privacy policy URL for store forms (GitHub Pages from `/docs`):
 
@@ -41,7 +58,7 @@ Privacy policy URL for store forms (GitHub Pages from `/docs`):
 ## Firefox (AMO)
 
 1. Create / sign in at https://addons.mozilla.org/developers/
-2. Submit a new add-on; upload `dist/yasd2-4.0.0.zip`
+2. Submit a new add-on; upload `dist/yasd2-4.0.0-firefox.zip`
 3. Confirm `browser_specific_settings.gecko.id` is `yet-another-speed-dial-2@antgraf`
 4. Paste privacy policy URL + listing text
 5. After approval, put the AMO URL into README badges
@@ -50,7 +67,7 @@ Privacy policy URL for store forms (GitHub Pages from `/docs`):
 
 1. Pay the one-time developer fee if needed: https://chrome.google.com/webstore/devconsole
 2. **Add new item** (new ID — do not update `imohnlganmafcmidafklgkgfgaagiohn`)
-3. Upload the zip; complete Privacy practices (paste the fields below)
+3. Upload `dist/yasd2-4.0.0-chrome.zip`; complete Privacy practices (paste the fields below)
 4. **Settings:** enter and verify the publisher contact email
 5. Certify data usage complies with Developer Program Policies (checkbox on Privacy practices)
 6. After publish, update README badge with the new item ID URL
@@ -87,10 +104,10 @@ Adds a right-click "Add to Speed Dial" menu item on web pages so users can bookm
 Requested at runtime when the user adds a dial or refreshes thumbnails (toolbar button, context menu, new-tab UI). Used to fetch Open Graph / page images and related assets from sites the user has added, and to captureVisibleTab for screenshots. Requests go only to those sites (or their CDNs); there is no YASD2 backend. Broad optional host access is needed because users can add any URL. The extension works without it (dials still save); automatic thumbnails require the user to grant access.
 ```
 
-`offscreen`
+`offscreen` (Chrome package only)
 
 ```
-Manifest V3 service workers cannot parse DOM. An offscreen document (reason: DOM_PARSER) fetches and parses bookmarked pages to extract images/metadata used as thumbnails, without opening visible tabs for every refresh.
+Manifest V3 service workers cannot parse DOM. An offscreen document (reason: DOM_PARSER) fetches and parses bookmarked pages to extract images/metadata used as thumbnails, without opening visible tabs for every refresh. Firefox uses a background event page instead and does not declare this permission.
 ```
 
 `storage`

@@ -1,4 +1,4 @@
-chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onMessage.addListener(handleOffscreenMessages);
 
 const imageRatio = 1.54;
 
@@ -14,22 +14,25 @@ function offscreenCanvasShim(w=1, h=1) {
     }
 }
 
-async function handleMessages(message) {
+async function handleOffscreenMessages(message) {
     if (message.target !== 'offscreen') {
         return;
     }
+    await processThumbnails(message.data);
+}
 
-    let screenshot = message.data.screenshot;
-    let quickRefresh = message.data.quickRefresh;
-    let forcePageReload = message.data.forcePageReload;
-    let id = message.data.id;
-    let parentId = message.data.parentId;
+// Shared by Chrome offscreen document (via message) and Firefox background scripts (direct call)
+async function processThumbnails(data) {
+    let screenshot = data.screenshot;
+    let quickRefresh = data.quickRefresh;
+    let forcePageReload = data.forcePageReload;
+    let id = data.id;
+    let parentId = data.parentId;
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
-    let title = null;
 
-    let url = message.data.url;
+    let url = data.url;
 
     let images = await fetchImages(url, quickRefresh).catch(err => {
         console.log(err);
@@ -67,14 +70,15 @@ async function handleMessages(message) {
 
     if (thumbs.length) {
         bgColor = await getBgColor(thumbs[0])
-        
-        //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
-    //return title; //todo: why did i do this?
-
-      //chrome.runtime.sendMessage(images);
+    // Firefox event page: saveThumbnails is in the same global scope
+    // Chrome offscreen document: message the service worker
+    if (typeof saveThumbnails === 'function') {
+        await saveThumbnails(url, id, parentId, thumbs, bgColor, forcePageReload);
+    } else {
+        chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
+    }
 }
 
 
