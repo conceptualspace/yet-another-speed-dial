@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "una moderna marcación rápida para firefox y chrome"
+    "message": "una moderna marcación rápida para firefox y chrome — fork mantenido con carpetas anidadas"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "otra marcación rápida"
+    "message": "otra marcación rápida 2"
   },
   "help": {
     "message": "Ayudar"
@@ -107,7 +107,7 @@
     "message": "Nueva Carpeta..."
   },
   "newInstall1": {
-    "message": "¡Empiece con Yet Another Speed Dial!"
+    "message": "¡Empiece con Yet Another Speed Dial 2!"
   },
   "newInstall2": {
     "message": "⭐ Agregue sitios haciendo clic en el botón de abajo, o cree un marcador en la carpeta Marcación rápida"
@@ -116,7 +116,7 @@
     "message": "✨ Los diales se pueden modificar haciendo clic derecho sobre ellos"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Acceda a más configuraciones haciendo clic en el engranaje en la esquina superior derecha"
+    "message": "💎 Acceda a más configuraciones haciendo clic en el engranaje en la esquina superior derecha"
   },
   "newPrivate": {
     "message": "Abrir en nueva ventana privada"

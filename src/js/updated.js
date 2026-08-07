@@ -1,3 +1,4 @@
+// copyright 2026 antgraf (modifications)
 // Load the current setting and set checkbox state
 document.addEventListener('DOMContentLoaded', async function() {
   const checkbox = document.getElementById('showReleaseNotes');
@@ -32,9 +33,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     shareLink.addEventListener('click', async (event) => {
       event.preventDefault();
       const shareData = {
-        title: 'Yet Another Speed Dial',
-        text: 'Yet Another Speed Dial - an open source customizable new tab page for Chrome and Firefox.',
-        url: 'https://www.yetanotherspeeddial.com'
+        title: 'Yet Another Speed Dial 2',
+        text: 'Yet Another Speed Dial 2 - an open source customizable new tab page for Chrome and Firefox (maintained fork with nested folders).',
+        url: 'https://github.com/antgraf/yet-another-speed-dial-2'
       };
       if (navigator.share && navigator.canShare(shareData)) {
         try {
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Copy to clipboard function for share buttons
 function copyToClipboard() {
-  const url = 'www.yetanotherspeeddial.com';
+  const url = 'https://github.com/antgraf/yet-another-speed-dial-2';
   const button = document.getElementById('copyButton');
   
   navigator.clipboard.writeText(url).then(function() {

@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "una moderna selezione rapida per firefox e chrome"
+    "message": "una moderna selezione rapida per firefox e chrome — fork mantenuto con cartelle annidate"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "un'altra chiamata rapida"
+    "message": "un'altra chiamata rapida 2"
   },
   "help": {
     "message": "Aiuto"
@@ -107,7 +107,7 @@
     "message": "Nuovo Cartella..."
   },
   "newInstall1": {
-    "message": "Inizia con Yet Another Speed Dial!"
+    "message": "Inizia con Yet Another Speed Dial 2!"
   },
   "newInstall2": {
     "message": "⭐ Aggiungi siti facendo clic sul pulsante in basso o crea un segnalibro nella cartella Chiamata rapida"
@@ -116,7 +116,7 @@
     "message": "✨ I quadranti possono essere modificati facendo clic con il tasto destro su di essi"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
+    "message": "💎 Accedi a più impostazioni facendo clic sull'ingranaggio nell'angolo in alto a destra"
   },
   "newPrivate": {
     "message": "Aprire in una nuova finestra privata"

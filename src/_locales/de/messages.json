@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "Eine moderne Kurzwahl für Firefox und Chrome"
+    "message": "Eine moderne Kurzwahl für Firefox und Chrome — gewarteter Fork mit verschachtelten Ordnern"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "Yet Another Speed Dial"
+    "message": "Yet Another Speed Dial 2"
   },
   "help": {
     "message": "Hilfe"
@@ -107,7 +107,7 @@
     "message": "Neuer Ordner..."
   },
   "newInstall1": {
-    "message": "Erste Schritte mit Yet Another Speed Dial"
+    "message": "Erste Schritte mit Yet Another Speed Dial 2"
   },
   "newInstall2": {
     "message": "⭐ Fügen Sie Websites hinzu, indem Sie auf die Schaltfläche unten klicken, oder erstellen Sie ein Lesezeichen im Speed Dial Ordner"
@@ -116,7 +116,7 @@
     "message": "✨ Zifferblätter können durch Rechtsklick darauf geändert werden"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Weitere Einstellungen sehen Sie, indem Sie auf das Zahnrad in der oberen rechten Ecke klicken"
+    "message": "💎 Weitere Einstellungen sehen Sie, indem Sie auf das Zahnrad in der oberen rechten Ecke klicken"
   },
   "newPrivate": {
     "message": "In neuem privaten Fenster öffnen"
@@ -148,7 +148,7 @@
   "scaleImages": {
     "message": "Bilder passen"
   },
-   "searchButton": {
+  "searchButton": {
     "message": "Suchschaltfläche"
   },
   "searchPlaceholder": {

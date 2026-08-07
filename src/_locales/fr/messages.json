@@ -58,11 +58,11 @@
   },
   "extensionDescription": {
     "description": "description of the app, displayed in store",
-    "message": "un cadran de vitesse moderne pour firefox et chrome"
+    "message": "un cadran de vitesse moderne pour firefox et chrome — fork maintenu avec dossiers imbriqués"
   },
   "extensionName": {
     "description": "title of the app, displayed in store",
-    "message": "encore un autre speed dial"
+    "message": "encore un autre speed dial 2"
   },
   "help": {
     "message": "Aide"
@@ -107,7 +107,7 @@
     "message": "Nouveau Dossier..."
   },
   "newInstall1": {
-    "message": "Lancez-vous avec Yet Another Speed Dial!"
+    "message": "Lancez-vous avec Yet Another Speed Dial 2!"
   },
   "newInstall2": {
     "message": "⭐ Ajoutez des sites en cliquant sur le bouton ci-dessous, ou créez un signet dans le dossier Speed Dial"
@@ -116,7 +116,7 @@
     "message": "✨ Les cadrans peuvent être modifiés en faisant un clic droit"
   },
   "newInstall4": {
-    "message": "\uD83D\uDC8E Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
+    "message": "💎 Accédez à plus de paramètres en cliquant sur l'icône dans le coin supérieur droit"
   },
   "newPrivate": {
     "message": "Ouvrir dans une nouvelle fenêtre privée"

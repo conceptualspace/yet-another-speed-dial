@@ -1,5 +1,6 @@
 // yet another speed dial
 // copyright 2019 dev@conceptualspace.net
+// copyright 2026 antgraf (modifications)
 // absolutely no warranty is expressed or implied
 
 'use strict';
@@ -186,7 +187,7 @@ function handleBrowserAction(tab) {
 		chrome.action.setBadgeText({text:"✔", tabId:tab.id})
 		chrome.action.setBadgeBackgroundColor({ color: '#13ac4e' }); // Green color
 	} else {
-		//chrome.tabs.create({ url: "https://github.com/conceptualspace/yet-another-speed-dial" });
+		//chrome.tabs.create({ url: "https://github.com/antgraf/yet-another-speed-dial-2" });
 	}
 }
 

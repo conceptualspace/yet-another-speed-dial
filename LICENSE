@@ -1,5 +1,13 @@
 Copyright 2019-2020 Conceptualspace
+Copyright 2026 antgraf (modifications)
+
+This software is based on Yet Another Speed Dial by Conceptualspace
+(https://github.com/conceptualspace/yet-another-speed-dial).
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 All third party components incorporated into the Software are licensed under the original license provided by the owner of the applicable component.
+
+Note: The upstream LICENSE file does not include an explicit permission grant.
+This fork preserves the original copyright and terms. Clarification of the
+intended open-source license from the original author is welcome.
