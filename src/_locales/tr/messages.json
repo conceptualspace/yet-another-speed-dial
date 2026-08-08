@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Klasör Ekle Düğmesi"
+    "message": "Klasör Ekle"
   },
   "address": {
     "message": "Adres"
   },
   "addSiteButton": {
-    "message": "Site Ekle Düğmesi"
+    "message": "Site Ekle"
   },
   "addTo": {
     "message": "Hızlı Aramaya Ekle"
@@ -176,7 +176,7 @@
     "message": "Görüntüleri Ölçekle"
   },
   "searchButton": {
-    "message": "Arama Düğmesi"
+    "message": "Arama"
   },
   "searchPlaceholder": {
     "message": "Ara..."
@@ -185,7 +185,7 @@
     "message": "Ayarlar..."
   },
   "settingsButton": {
-    "message": "Ayarlar Düğmesi"
+    "message": "Ayarlar"
   },
   "settingsTitle": {
     "message": "Ayarlar"

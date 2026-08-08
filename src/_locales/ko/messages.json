@@ -1,12 +1,12 @@
 {
     "addFolderButton": {
-      "message": "폴더 추가 버튼"
+      "message": "폴더 추가"
     },
     "address": {
       "message": "주소"
     },
     "addSiteButton": {
-      "message": "사이트 추가 버튼"
+      "message": "사이트 추가"
     },
     "addTo": {
       "message": "스피드 다이얼에 추가"
@@ -176,7 +176,7 @@
       "message": "이미지 크기 조정"
     },
     "searchButton": {
-      "message": "검색 버튼"
+      "message": "검색"
     },
     "searchPlaceholder": {
       "message": "검색..."
@@ -185,7 +185,7 @@
       "message": "설정..."
     },
     "settingsButton": {
-      "message": "설정 버튼"
+      "message": "설정"
     },
     "settingsTitle": {
       "message": "설정"

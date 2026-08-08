@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Кнопка додавання папки"
+    "message": "Додати папку"
   },
   "address": {
     "message": "Адреса"
   },
   "addSiteButton": {
-    "message": "Кнопка додавання сайту"
+    "message": "Додати сайт"
   },
   "addTo": {
     "message": "Додати до швидкого набору"
@@ -176,7 +176,7 @@
     "message": "Масштабувати зображення"
   },
   "searchButton": {
-    "message": "Кнопка пошуку"
+    "message": "Пошук"
   },
   "searchPlaceholder": {
     "message": "Пошук..."
@@ -185,7 +185,7 @@
     "message": "Налаштування..."
   },
   "settingsButton": {
-    "message": "Кнопка налаштувань"
+    "message": "Налаштування"
   },
   "settingsTitle": {
     "message": "Налаштування"

@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "フォルダ追加ボタン"
+    "message": "フォルダ追加"
   },
   "address": {
     "message": "アドレス"
   },
   "addSiteButton": {
-    "message": "サイト追加ボタン"
+    "message": "サイト追加"
   },
   "addTo": {
     "message": "スピードダイヤルに追加"
@@ -176,7 +176,7 @@
     "message": "画像をスケール"
   },
   "searchButton": {
-    "message": "検索ボタン"
+    "message": "検索"
   },
   "searchPlaceholder": {
     "message": "検索..."
@@ -185,7 +185,7 @@
     "message": "設定..."
   },
   "settingsButton": {
-    "message": "設定ボタン"
+    "message": "設定"
   },
   "settingsTitle": {
     "message": "設定"

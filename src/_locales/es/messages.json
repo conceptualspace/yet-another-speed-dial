@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Añadir carpeta botón"
+    "message": "Añadir carpeta"
   },
   "address": {
     "message": "URL"
   },
   "addSiteButton": {
-    "message": "Añadir sitio botón"
+    "message": "Añadir sitio"
   },
   "addTo": {
     "message": "Añadir a Marcación Rápida"
@@ -39,16 +39,16 @@
     "message": "Crear carpeta"
   },
   "defaultSort": {
-    "message": "Clasificar"
+    "message": "Orden predeterminado"
   },
   "delete": {
     "message": "Elimine"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Formato de mosaico"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tamaño de mosaico"
   },
   "edit": {
     "message": "Editar"
@@ -68,7 +68,7 @@
     "message": "otra marcación rápida"
   },
   "help": {
-    "message": "Ayudar"
+    "message": "Ayuda"
   },
   "historyButton": {
     "message": "Panel de pestañas"
@@ -176,7 +176,7 @@
     "message": "Imágenes de fit"
   },
   "searchButton": {
-    "message": "Botón de búsqueda"
+    "message": "Búsqueda"
   },
   "searchPlaceholder": {
     "message": "Buscar..."
@@ -185,7 +185,7 @@
     "message": "Ajustes..."
   },
   "settingsButton": {
-    "message": "Ajustes botón"
+    "message": "Ajustes"
   },
   "settingsTitle": {
     "message": "Ajustes"

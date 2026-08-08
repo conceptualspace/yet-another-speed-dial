@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "添加文件夹按钮"
+    "message": "添加文件夹"
   },
   "address": {
     "message": "地址"
   },
   "addSiteButton": {
-    "message": "添加网站按钮"
+    "message": "添加网站"
   },
   "addTo": {
     "message": "添加到快速拨号"
@@ -176,7 +176,7 @@
     "message": "缩放图片"
   },
   "searchButton": {
-    "message": "搜索按钮"
+    "message": "搜索"
   },
   "searchPlaceholder": {
     "message": "搜索..."
@@ -185,7 +185,7 @@
     "message": "设置..."
   },
   "settingsButton": {
-    "message": "设置按钮"
+    "message": "设置"
   },
   "settingsTitle": {
     "message": "设置"

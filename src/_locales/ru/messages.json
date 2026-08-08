@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Кнопка добавления папки"
+    "message": "Добавить папку"
   },
   "address": {
     "message": "Адрес"
   },
   "addSiteButton": {
-    "message": "Кнопка добавления сайта"
+    "message": "Добавить сайт"
   },
   "addTo": {
     "message": "Добавить в Speed Dial"
@@ -39,7 +39,7 @@
     "message": "Создать папку"
   },
   "defaultSort": {
-    "message": "Сортировать"
+    "message": "Сортировка по умолчанию"
   },
   "delete": {
     "message": "Удалить"
@@ -176,7 +176,7 @@
     "message": "Подогнать изображения"
   },
   "searchButton": {
-    "message": "Кнопка поиска"
+    "message": "Поиск"
   },
   "searchPlaceholder": {
     "message": "Поиск..."
@@ -185,7 +185,7 @@
     "message": "Настройки..."
   },
   "settingsButton": {
-    "message": "Кнопка настроек"
+    "message": "Настройки"
   },
   "settingsTitle": {
     "message": "Настройки"

@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Add Folder Button"
+    "message": "Add Folder"
   },
   "address": {
     "message": "Address"
   },
   "addSiteButton": {
-    "message": "Add Site Button"
+    "message": "Add Site"
   },
   "addTo": {
     "message": "Add to Speed Dial"
@@ -170,7 +170,7 @@
     "message": "Scale Images"
   },
   "searchButton": {
-    "message": "Search Button"
+    "message": "Search"
   },
   "searchPlaceholder": {
     "message": "Search..."
@@ -179,7 +179,7 @@
     "message": "Settings..."
   },
   "settingsButton": {
-    "message": "Settings Button"
+    "message": "Settings"
   },
   "settingsTitle": {
     "message": "Settings"

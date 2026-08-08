@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "新增資料夾按鈕"
+    "message": "新增資料夾"
   },
   "address": {
     "message": "網址"
   },
   "addSiteButton": {
-    "message": "新增網站按鈕"
+    "message": "新增網站"
   },
   "addTo": {
     "message": "新增至快速撥號"
@@ -176,7 +176,7 @@
     "message": "縮放圖片"
   },
   "searchButton": {
-    "message": "搜尋按鈕"
+    "message": "搜尋"
   },
   "searchPlaceholder": {
     "message": "搜尋..."
@@ -185,7 +185,7 @@
     "message": "設定..."
   },
   "settingsButton": {
-    "message": "設定按鈕"
+    "message": "設定"
   },
   "settingsTitle": {
     "message": "設定"

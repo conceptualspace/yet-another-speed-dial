@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Botão Adicionar Pasta"
+    "message": "Adicionar pasta"
   },
   "address": {
     "message": "URL"
   },
   "addSiteButton": {
-    "message": "Botão Adicionar site"
+    "message": "Adicionar site"
   },
   "addTo": {
     "message": "Adicionar à discagem rápida"
@@ -39,16 +39,16 @@
     "message": "Criar Pasta"
   },
   "defaultSort": {
-    "message": "Classificar"
+    "message": "Ordenação padrão"
   },
   "delete": {
     "message": "Excluir"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Formato dos atalhos"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tamanho dos atalhos"
   },
   "edit": {
     "message": "Editar"
@@ -98,7 +98,7 @@
     "message": "Blocos grandes"
   },
   "maxColumns": {
-    "message": "Max Cols"
+    "message": "Máx. de colunas"
   },
   "name": {
     "message": "Nome"
@@ -176,7 +176,7 @@
     "message": "Ajustar escala imagem"
   },
   "searchButton": {
-    "message": "Botão de Pesquisa"
+    "message": "Pesquisa"
   },
   "searchPlaceholder": {
     "message": "Pesquisar..."
@@ -185,7 +185,7 @@
     "message": "Configurações..."
   },
   "settingsButton": {
-    "message": "Botão Configurações"
+    "message": "Configurações"
   },
   "settingsTitle": {
     "message": "Configurações"

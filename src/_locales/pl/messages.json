@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Przycisk dodaj folder"
+    "message": "Dodaj folder"
   },
   "address": {
     "message": "Adres"
   },
   "addSiteButton": {
-    "message": "Przycisk dodaj stronę"
+    "message": "Dodaj stronę"
   },
   "addTo": {
     "message": "Dodaj do szybkiego wybierania"
@@ -45,10 +45,10 @@
     "message": "Usuń"
   },
   "dialRatio": {
-    "message": "Format wybierania"
+    "message": "Format kafelków"
   },
   "dialSize": {
-    "message": "Rozmiar wybierania"
+    "message": "Rozmiar kafelków"
   },
   "edit": {
     "message": "Edytuj"
@@ -176,7 +176,7 @@
     "message": "Skaluj obrazy"
   },
   "searchButton": {
-    "message": "Przycisk wyszukiwania"
+    "message": "Wyszukiwanie"
   },
   "searchPlaceholder": {
     "message": "Szukaj..."
@@ -185,7 +185,7 @@
     "message": "Ustawienia..."
   },
   "settingsButton": {
-    "message": "Przycisk ustawień"
+    "message": "Ustawienia"
   },
   "settingsTitle": {
     "message": "Ustawienia"

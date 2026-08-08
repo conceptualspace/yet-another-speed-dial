@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Ordner hinzufügen Schaltfläche"
+    "message": "Ordner hinzufügen"
   },
   "address": {
     "message": "Adresse"
   },
   "addSiteButton": {
-    "message": "Seite hinzufügen Schaltfläche"
+    "message": "Seite hinzufügen"
   },
   "addTo": {
     "message": "Zu Kurzwahl hinzufügen"
@@ -45,10 +45,10 @@
     "message": "Löschen"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Kachelformat"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Kachelgröße"
   },
   "edit": {
     "message": "Bearbeiten"
@@ -92,7 +92,7 @@
     "message": "Import und Export..."
   },
   "labels": {
-    "message": "Beschriftung"
+    "message": "Beschriftungen"
   },
   "largeTiles": {
     "message": "Große Fliesen"
@@ -176,7 +176,7 @@
     "message": "Bilder passen"
   },
    "searchButton": {
-    "message": "Suchschaltfläche"
+    "message": "Suche"
   },
   "searchPlaceholder": {
     "message": "Suchen..."
@@ -185,7 +185,7 @@
     "message": "Einstellungen..."
   },
   "settingsButton": {
-    "message": "Einstellungs Schaltfläche"
+    "message": "Einstellungen"
   },
   "settingsTitle": {
     "message": "Einstellungen"

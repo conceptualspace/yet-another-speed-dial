@@ -1,18 +1,18 @@
 {
   "addFolderButton": {
-    "message": "Bouton Ajouter un dossier"
+    "message": "Ajouter un dossier"
   },
   "address": {
     "message": "Adresse"
   },
   "addSiteButton": {
-    "message": "Bouton Ajouter de site"
+    "message": "Ajouter un site"
   },
   "addTo": {
     "message": "Ajouter à la Speed Dial"
   },
   "backgroundColor": {
-    "message": "Contexte Couleur"
+    "message": "Couleur d’arrière-plan"
   },
   "bgColor": {
     "message": "Arrière-plan"
@@ -30,7 +30,7 @@
     "message": "Capture des images..."
   },
   "clock": {
-    "message": "L'horloge"
+    "message": "Horloge"
   },
   "confirmDelete": {
     "message": "Êtes-vous sûr de vouloir supprimer définitivement ce dossier?"
@@ -45,10 +45,10 @@
     "message": "Supprimer"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Format des vignettes"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Taille des vignettes"
   },
   "edit": {
     "message": "Éditer"
@@ -158,7 +158,7 @@
     "message": "Actualiser toutes les miniatures..."
   },
   "remember": {
-    "message": "Mémoriser les derniers dossiers"
+    "message": "Mémoriser le dernier dossier"
   },
   "resetSettings": {
     "message": "Réinitialiser les paramètres"
@@ -176,7 +176,7 @@
     "message": "Ajuster les images"
   },
   "searchButton": {
-    "message": "Bouton de recherche"
+    "message": "Recherche"
   },
   "searchPlaceholder": {
     "message": "Rechercher..."
@@ -185,7 +185,7 @@
     "message": "Paramètres..."
   },
   "settingsButton": {
-    "message": "Bouton Paramètres"
+    "message": "Paramètres"
   },
   "settingsTitle": {
     "message": "Paramètres"
@@ -203,7 +203,7 @@
     "message": "Télécharger l'image ..."
   },
   "wallpaper": {
-    "message": "Contexte Image"
+    "message": "Image d’arrière-plan"
   },
   "optionSquare": {
     "message": "Carré"
