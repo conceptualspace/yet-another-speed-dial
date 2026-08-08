@@ -2602,9 +2602,13 @@ document.addEventListener("contextmenu", function (e) {
         return;
     }
     hideSettings();
+    const createDialButton = e.target.closest?.('.createDial');
     const folderDial = e.target.closest?.('.folderDial');
     const folderHeader = e.target.closest?.('.folderTitle, .folderBreadcrumbLink, .folderBreadcrumbCurrent');
-    if (folderDial) {
+    if (createDialButton) {
+        showContextMenu(settingsMenu, e.pageY, e.pageX);
+        return false;
+    } else if (folderDial) {
         targetFolderLink = folderDial;
         targetFolder = folderDial.dataset.id;
         targetFolderName = folderDial.querySelector('.tile-title').textContent;
