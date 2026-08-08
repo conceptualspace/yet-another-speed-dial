@@ -454,8 +454,7 @@
     align-items: center;
     gap: 12px;
     width: 100%;
-    min-height: 56px;
-    padding: 10px 20px;
+    padding: 6px 20px;
     border: none;
     background: #000;
     color: rgba(255, 255, 255, 0.9);
@@ -471,11 +470,11 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    flex: 0 0 24px;
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.13);
     overflow: hidden;
 }
 
@@ -505,12 +504,12 @@
 
 .recent-tab-title {
     color: #cccccc;
-    font-size: 0.95rem;
+    /* font-size: 0.95rem; */
 }
 
 .recent-tab-url {
     color: #8c8c8c;
-    font-size: 0.8rem;
+    font-size: smaller;
 }
 
 .recent-tabs-empty,
