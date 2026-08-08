@@ -527,11 +527,23 @@ h1 {
 .folderBreadcrumbSeparator {
     padding: 4px 2px;
     opacity: 0.55;
+    font-size: 0;
+}
+
+.folderBreadcrumbSeparator::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    box-sizing: border-box;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
+    transform: rotate(45deg);
 }
 
 .folderBreadcrumbLink,
 .folderBreadcrumbCurrent {
     padding: 4px 6px;
+    margin: 8px 6px;
     opacity: 0.85;
     font-weight: bold;
     transition: opacity 160ms ease;
