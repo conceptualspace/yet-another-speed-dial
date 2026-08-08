@@ -70,6 +70,9 @@
   "help": {
     "message": "帮助"
   },
+  "historyButton": {
+    "message": "标签页侧边栏"
+  },
   "home": {
     "message": "主页"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "在新标签组中打开全部"
+  },
+  "otherDevicesTitle": {
+    "message": "其他设备"
   },
   "refresh": {
     "message": "刷新缩略图"

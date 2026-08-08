@@ -70,6 +70,9 @@
   "help": {
     "message": "Aide"
   },
+  "historyButton": {
+    "message": "Volet des onglets"
+  },
   "home": {
     "message": "Accueil"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Tout ouvrir dans un nouveau groupe d'onglets"
+  },
+  "otherDevicesTitle": {
+    "message": "Autres appareils"
   },
   "refresh": {
     "message": "Actualiser les miniatures"

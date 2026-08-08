@@ -70,6 +70,9 @@
   "help": {
     "message": "Yardım"
   },
+  "historyButton": {
+    "message": "Sekme yan paneli"
+  },
   "home": {
     "message": "Ana Sayfa"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Tümünü yeni sekme grubunda aç"
+  },
+  "otherDevicesTitle": {
+    "message": "Diğer cihazlar"
   },
   "refresh": {
     "message": "Küçük Resimleri Yenile"

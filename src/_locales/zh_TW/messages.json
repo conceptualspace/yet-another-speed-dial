@@ -70,6 +70,9 @@
   "help": {
     "message": "說明"
   },
+  "historyButton": {
+    "message": "分頁側邊欄"
+  },
   "home": {
     "message": "首頁"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "在新分頁群組中開啟全部"
+  },
+  "otherDevicesTitle": {
+    "message": "其他裝置"
   },
   "refresh": {
     "message": "重新整理縮圖"

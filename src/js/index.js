@@ -1288,7 +1288,7 @@ function renderOtherDeviceTabs(tabs) {
         emptyEl: otherDevicesEmpty,
         emptyMessage: getLocaleMessage('noOtherDeviceTabs', 'No tabs from other devices'),
         itemFallback: getLocaleMessage('otherDevicesUntitled', 'Untitled tab'),
-        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Synced Tabs'),
+        buttonFallback: getLocaleMessage('otherDevicesTitle', 'Other Devices'),
         onClick: openOtherDeviceTab,
     });
 }

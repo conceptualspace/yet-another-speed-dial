@@ -70,6 +70,9 @@
   "help": {
     "message": "Pomoc"
   },
+  "historyButton": {
+    "message": "Panel boczny kart"
+  },
   "home": {
     "message": "Strona główna"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Otwórz wszystkie w nowej grupie kart"
+  },
+  "otherDevicesTitle": {
+    "message": "Inne urządzenia"
   },
   "refresh": {
     "message": "Odśwież miniatury"

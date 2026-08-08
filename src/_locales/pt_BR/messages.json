@@ -70,6 +70,9 @@
   "help": {
     "message": "Ajuda"
   },
+  "historyButton": {
+    "message": "Painel de abas"
+  },
   "home": {
     "message": "Início"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Abrir tudo em um novo grupo de guias"
+  },
+  "otherDevicesTitle": {
+    "message": "Outros dispositivos"
   },
   "refresh": {
     "message": "Atualizar miniaturas"

@@ -70,6 +70,9 @@
   "help": {
     "message": "Ayudar"
   },
+  "historyButton": {
+    "message": "Panel de pestañas"
+  },
   "home": {
     "message": "Inicio"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Abrir todo en un nuevo grupo de pestañas"
+  },
+  "otherDevicesTitle": {
+    "message": "Otros dispositivos"
   },
   "refresh": {
     "message": "Actualizar Miniaturas"

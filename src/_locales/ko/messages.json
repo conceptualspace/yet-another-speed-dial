@@ -70,6 +70,9 @@
     "help": {
       "message": "도움말"
     },
+    "historyButton": {
+      "message": "탭 사이드 패널"
+    },
     "home": {
       "message": "홈"
     },
@@ -144,6 +147,9 @@
     },
     "openAllTabGroup": {
       "message": "새 탭 그룹에서 모두 열기"
+    },
+    "otherDevicesTitle": {
+      "message": "다른 기기"
     },
     "refresh": {
       "message": "썸네일 새로고침"

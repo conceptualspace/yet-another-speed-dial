@@ -236,7 +236,7 @@
     "message": "New dials first"
   },
   "historyButton": {
-    "message": "History Button"
+    "message": "Tabs Side Panel"
   },
   "historySearchPlaceholder": {
     "message": "Search tabs"
@@ -284,7 +284,7 @@
     "message": "Unable to open tab"
   },
   "otherDevicesTitle": {
-    "message": "Synced"
+    "message": "Other Devices"
   },
   "otherDevicesUnavailable": {
     "message": "Other devices are not available"

@@ -70,6 +70,9 @@
   "help": {
     "message": "Hilfe"
   },
+  "historyButton": {
+    "message": "Tab-Seitenleiste"
+  },
   "home": {
     "message": "Zuhause"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Alle in neuer Tab-Gruppe öffnen"
+  },
+  "otherDevicesTitle": {
+    "message": "Andere Geräte"
   },
   "refresh": {
     "message": "Miniaturansichten Aktualisieren"

@@ -70,6 +70,9 @@
   "help": {
     "message": "Aiuto"
   },
+  "historyButton": {
+    "message": "Pannello schede"
+  },
   "home": {
     "message": "Home"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Apri tutto in un nuovo gruppo di schede"
+  },
+  "otherDevicesTitle": {
+    "message": "Altri dispositivi"
   },
   "refresh": {
     "message": "Aggiorna miniature"

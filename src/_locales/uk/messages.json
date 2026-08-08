@@ -70,6 +70,9 @@
   "help": {
     "message": "Довідка"
   },
+  "historyButton": {
+    "message": "Панель вкладок"
+  },
   "home": {
     "message": "Головна"
   },
@@ -144,6 +147,9 @@
   },
   "openAllTabGroup": {
     "message": "Відкрити все в новій групі вкладок"
+  },
+  "otherDevicesTitle": {
+    "message": "Інші пристрої"
   },
   "refresh": {
     "message": "Оновити мініатюри"
