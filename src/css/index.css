@@ -698,6 +698,10 @@ h1 {
     opacity: 1;
 }
 
+.createDial .tile-title {
+    color: color-mix(in srgb, var(--color) 85%, transparent);
+}
+
 .hide-titles .tile-title {
     pointer-events: none;
 }
