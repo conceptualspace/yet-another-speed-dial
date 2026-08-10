@@ -144,6 +144,8 @@ let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
+let folderDropTargetId = null;
+let droppedFolderTargetId = null;
 let dialDragPreview = null;
 let transparentDragImage = null;
 let targetTileHref = null;
@@ -561,9 +563,6 @@ function folderLink(title, id) {
             //tabMessagePort.postMessage({currentFolder: id});
         }
     };
-
-    a.ondragenter = dragenterHandler;
-    a.ondragleave = dragleaveHandler;
 
     foldersContainer.appendChild(a);
 }
@@ -3269,6 +3268,7 @@ function positionDialDragPreview(ev) {
 
 function createDialDragPreview(evt) {
     removeDialDragPreview();
+    droppedFolderTargetId = null;
     dialDragPreview = evt.item.cloneNode(true);
     dialDragPreview.removeAttribute('id');
     dialDragPreview.removeAttribute('href');
@@ -3288,11 +3288,56 @@ function setDialDragPreviewFolderTargeting(isTargeting) {
     dialDragPreview?.classList.toggle('folder-targeting', isTargeting);
 }
 
+function getNearestFolderTitle(clientX, clientY) {
+    let nearestTitle = null;
+    let nearestDistance = Infinity;
+
+    foldersContainer.querySelectorAll('.folderTitle').forEach(title => {
+        const rect = title.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return;
+
+        const horizontalDistance = Math.max(rect.left - clientX, 0, clientX - rect.right);
+        const verticalDistance = Math.max(rect.top - clientY, 0, clientY - rect.bottom);
+        const distance = horizontalDistance ** 2 + verticalDistance ** 2;
+
+        if (distance < nearestDistance) {
+            nearestDistance = distance;
+            nearestTitle = title;
+        }
+    });
+
+    return nearestTitle;
+}
+
+function setFolderDragTarget(title) {
+    const activeTitle = foldersContainer.querySelector('.folderTitle.drag-hover');
+    if (activeTitle === title) return;
+
+    activeTitle?.classList.remove('drag-hover');
+    clearTimeout(folderNavTimeout);
+    folderDropTargetId = title?.getAttribute('folderid') || null;
+    if (!title) return;
+
+    title.classList.add('drag-hover');
+    if (currentFolder !== folderDropTargetId) {
+        const targetFolderId = folderDropTargetId;
+        folderNavTimeout = setTimeout(() => {
+            currentFolder = targetFolderId;
+            showFolder(currentFolder);
+            scrollPos = 0;
+            bookmarksContainerParent.scrollTop = scrollPos;
+            settings.currentFolder = currentFolder;
+            chrome.storage.local.set({ settings });
+        }, 350);
+    }
+}
+
 // native handlers for folder tab targets
 function folderContainerDragEnter(ev) {
     ev.preventDefault();
     this.classList.add('folders-drag-active');
     setDialDragPreviewFolderTargeting(true);
+    setFolderDragTarget(getNearestFolderTitle(ev.clientX, ev.clientY));
 }
 
 function folderContainerDragLeave(ev) {
@@ -3300,50 +3345,19 @@ function folderContainerDragLeave(ev) {
     if (this.contains(ev.relatedTarget)) return;
     this.classList.remove('folders-drag-active');
     setDialDragPreviewFolderTargeting(false);
-    clearTimeout(folderNavTimeout);
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+    setFolderDragTarget(null);
 }
 
 function folderContainerDragOver(ev) {
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
+    setFolderDragTarget(getNearestFolderTitle(ev.clientX, ev.clientY));
 }
 
-// individual folder title handlers for highlight + navigation
-function dragenterHandler(ev) {
+function folderContainerDrop(ev) {
     ev.preventDefault();
-    const el = ev.currentTarget;
-    if (!el.classList.contains("folderTitle")) return;
-
-    // clear hover from siblings, highlight this one
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(t => t.classList.remove('drag-hover'));
-    el.classList.add("drag-hover");
-
-    const folderId = el.getAttribute("folderid");
-    clearTimeout(folderNavTimeout);
-    if (currentFolder !== folderId) {
-        folderNavTimeout = setTimeout(() => {
-            currentFolder = folderId;
-            showFolder(currentFolder);
-            scrollPos = 0;
-            bookmarksContainerParent.scrollTop = scrollPos;
-            settings.currentFolder = folderId;
-            chrome.storage.local.set({ settings });
-        }, 350);
-    }
-}
-
-function dragleaveHandler(ev) {
-    const el = ev.currentTarget;
-    // ignore if still inside the element (entering a child node)
-    if (el.contains(ev.relatedTarget)) return;
-
-    el.classList.remove("drag-hover");
-
-    // only clear nav timeout if we're not entering another folder title
-    if (!foldersContainer.querySelector('.folderTitle.drag-hover')) {
-        clearTimeout(folderNavTimeout);
-    }
+    setFolderDragTarget(getNearestFolderTitle(ev.clientX, ev.clientY));
+    droppedFolderTargetId = folderDropTargetId;
 }
 
 // Sortable helper fns
@@ -3371,9 +3385,12 @@ function dewrap(str) {
 }
 
 function onEndHandler(evt) {
+    const selectedFolderDropTargetId = droppedFolderTargetId || folderDropTargetId;
+    droppedFolderTargetId = null;
+
     // clean up folder drag-hover state
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+    setFolderDragTarget(null);
     removeDialDragPreview();
 
     if (evt && evt.clone.href) {
@@ -3388,20 +3405,20 @@ function onEndHandler(evt) {
         // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires)
         let dropTarget = evt.originalEvent.target;
         let folderTitleEl = dropTarget.closest ? dropTarget.closest('.folderTitle') : null;
-        let droppedOnFolderId = folderTitleEl ? folderTitleEl.getAttribute('folderid') : null;
+        let droppedOnFolderId = selectedFolderDropTargetId || (folderTitleEl ? folderTitleEl.getAttribute('folderid') : null);
 
         // todo: test if this is needed
-        if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
+        if (droppedOnFolderId) {
+            toParentId = droppedOnFolderId;
+        } else if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
             // for example directly on the folder name, or directly onto the new dial button. so use the folder target if available or else currentFolder
-            toParentId = droppedOnFolderId || currentFolder || speedDialId;
-        }
-
-        if (fromParentId === toParentId && fromParentId !== currentFolder) {
+            toParentId = currentFolder || speedDialId;
+        } else if (fromParentId === toParentId && fromParentId !== currentFolder) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
-            toParentId = droppedOnFolderId || currentFolder || speedDialId;
+            toParentId = currentFolder || speedDialId;
         }
 
         // if the sibling's parent doesnt match the parent we are moving to discard this sibling
@@ -3658,6 +3675,7 @@ function init() {
     foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
     foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
     foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
+    foldersContainerEl.addEventListener('drop', folderContainerDrop);
     document.addEventListener('dragover', positionDialDragPreview, true);
 
     new Sortable(foldersContainer, {
