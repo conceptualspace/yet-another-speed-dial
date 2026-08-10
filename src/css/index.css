@@ -523,9 +523,9 @@ h1 {
 }
 
 .folders-drag-active .folderTitle.drag-hover {
-    background: rgba(255, 255, 255, 0.32);
+    background: color-mix(in srgb, var(--color) 32%, transparent);
     border-radius: 8px;
-    outline: 2px solid rgba(255, 255, 255, 0.24);
+    outline: 2px solid color-mix(in srgb, var(--color) 24%, transparent);
     outline-offset: 2px;
 }
 
