@@ -3290,6 +3290,7 @@ function setDialDragPreviewFolderTargeting(isTargeting) {
 
 // native handlers for folder tab targets
 function folderContainerDragEnter(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     this.classList.add('folders-drag-active');
     setDialDragPreviewFolderTargeting(true);
@@ -3305,12 +3306,14 @@ function folderContainerDragLeave(ev) {
 }
 
 function folderContainerDragOver(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
 }
 
 // individual folder title handlers for highlight + navigation
 function dragenterHandler(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     const el = ev.currentTarget;
     if (!el.classList.contains("folderTitle")) return;
