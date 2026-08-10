@@ -504,9 +504,10 @@ h1 {
 }
 
 .folderTitle {
+    position: relative;
     opacity: 0.85;
     font-weight: bold;
-    transition: padding 160ms ease, margin 160ms ease, outline 160ms ease, background 160ms ease;
+    transition: outline 160ms ease, background 160ms ease;
     padding: 4px 6px;
     margin: 8px 6px;
 }
@@ -554,17 +555,17 @@ h1 {
     opacity: 1;
 }
 
-/* When a tile is dragged over the folders area, expand ALL folder titles uniformly */
-.folders-drag-active .folderTitle {
-    padding: var(--folder-drop-padding, 60px);
-    margin: 0;
-
-    border-radius: 12px;
+.folders-drag-active .folderTitle::before {
+    content: '';
+    position: absolute;
+    inset: -8px -6px;
 }
 
-/* The specific folder title being hovered gets a brighter highlight */
 .folders-drag-active .folderTitle.drag-hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--color) 32%, transparent);
+    border-radius: 8px;
+    outline: 2px solid color-mix(in srgb, var(--color) 24%, transparent);
+    outline-offset: 2px;
 }
 
 .activeFolder {
@@ -731,6 +732,28 @@ a {
 
 .dragging {
     opacity: 1 !important;
+}
+
+.dial-drag-preview {
+    position: fixed !important;
+    z-index: 100;
+    margin: 0 !important;
+    pointer-events: none;
+    visibility: visible !important;
+    opacity: 1 !important;
+    transform: translate(-50%, -50%) !important;
+    content-visibility: visible !important;
+    contain: none !important;
+}
+
+.dial-drag-preview .tile-main {
+    transform-origin: center;
+    transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.dial-drag-preview.folder-targeting .tile-main {
+    opacity: 0.55;
+    transform: scale(0.58);
 }
 
 .menu {

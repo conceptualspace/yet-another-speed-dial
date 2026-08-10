@@ -148,6 +148,8 @@ let folderNavTimeout = null;
 let folderDialDropTarget = null;
 let folderDialDropTimer = null;
 let folderDialDropTracking = null;
+let dialDragPreview = null;
+let transparentDragImage = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -1209,6 +1211,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         filter: ".createDial",
         delay: 500,
         delayOnTouchOnly: true,
+        setData: setDialDragData,
         onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
@@ -2352,7 +2355,7 @@ function applySettings(options = {}) {
             columnsValue = '100%';
         }
 
-        let dialWidth, dialHeight, dialContentHeight, dialMargin, folderDropPadding;
+        let dialWidth, dialHeight, dialContentHeight, dialMargin;
         if (settings.dialSize && settings.dialSize !== "large") {
             switch (settings.dialSize) {
                 case "xx-large":
@@ -2360,54 +2363,46 @@ function applySettings(options = {}) {
                     dialHeight = settings.dialRatio === "square" ? '318px' : '189px';
                     dialContentHeight = settings.dialRatio === "square" ? '300px' : '171px';
                     dialMargin = '14px';
-                    folderDropPadding = '80px';
                     break;
                 case "x-large":
                     dialWidth = '256px';
                     dialHeight = settings.dialRatio === "square" ? '274px' : '162px';
                     dialContentHeight = settings.dialRatio === "square" ? '256px' : '144px';
                     dialMargin = '14px';
-                    folderDropPadding = '70px';
                     break;
                 case "medium":
                     dialWidth = '178px';
                     dialHeight = settings.dialRatio === "square" ? '196px' : '118px';
                     dialContentHeight = settings.dialRatio === "square" ? '178px' : '100px';
                     dialMargin = '14px';
-                    folderDropPadding = '45px';
                     break;
                 case "small":
                     dialWidth = '130px';
                     dialHeight = settings.dialRatio === "square" ? '148px' : '91px';
                     dialContentHeight = settings.dialRatio === "square" ? '130px' : '73px';
                     dialMargin = '14px';
-                    folderDropPadding = '35px';
                     break;
                 case "x-small":
                     dialWidth = '100px';
                     dialHeight = settings.dialRatio === "square" ? '118px' : '74px';
                     dialContentHeight = settings.dialRatio === "square" ? '100px' : '56px';
                     dialMargin = '12px';
-                    folderDropPadding = '25px';
                     break;
                 case "xx-small":
                     dialWidth = '80px';
                     dialHeight = settings.dialRatio === "square" ? '98px' : '63px';
                     dialContentHeight = settings.dialRatio === "square" ? '80px' : '45px';
                     dialMargin = '8px';
-                    folderDropPadding = '20px';
                     break;
                 default:
                     dialWidth = '220px';
                     dialHeight = settings.dialRatio === "square" ? '238px' : '142px';
                     dialContentHeight = settings.dialRatio === "square" ? '220px' : '124px';
                     dialMargin = '14px';
-                    folderDropPadding = '60px';
             }
         } else {
             dialWidth = '220px';
             dialMargin = '14px';
-            folderDropPadding = '60px';
             if (settings.dialRatio === "square") {
                 dialHeight = '238px';
                 dialContentHeight = '220px';
@@ -2439,8 +2434,7 @@ function applySettings(options = {}) {
         dialSizeStyleEl.textContent =
             `.container{max-width:${columnsValue}}` +
             `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${tileMargin};color:${settings.textColor};content-visibility:auto;contain-intrinsic-size:${dialWidth} ${tileHeight}}` +
-            `.tile-content{height:${dialContentHeight}}` +
-            `.folders-drag-active .folderTitle{padding:${folderDropPadding}}`;
+            `.tile-content{height:${dialContentHeight}}`;
 
         // Toggle the createDial (add-site) tile before flip
         if (!settings.showAddSite) {
@@ -3612,28 +3606,78 @@ function importFromOldYASD(json) {
     })
 }
 
-// native handlers for folder tab target
-// container-level handlers to expand/collapse all folder titles
+function setDialDragData(dataTransfer, dragEl) {
+    dataTransfer.setData('Text', dragEl.textContent);
+
+    if (!transparentDragImage) {
+        transparentDragImage = document.createElement('canvas');
+        transparentDragImage.width = 1;
+        transparentDragImage.height = 1;
+        transparentDragImage.style.position = 'fixed';
+        transparentDragImage.style.left = '0';
+        transparentDragImage.style.top = '0';
+        transparentDragImage.style.pointerEvents = 'none';
+        document.body.appendChild(transparentDragImage);
+    }
+
+    dataTransfer.setDragImage(transparentDragImage, 0, 0);
+}
+
+function positionDialDragPreview(ev) {
+    if (!dialDragPreview || !ev || (ev.clientX === 0 && ev.clientY === 0)) return;
+    dialDragPreview.style.left = `${ev.clientX}px`;
+    dialDragPreview.style.top = `${ev.clientY}px`;
+}
+
+function createDialDragPreview(evt) {
+    if (!evt.originalEvent?.dataTransfer) return;
+
+    removeDialDragPreview();
+    dialDragPreview = evt.item.cloneNode(true);
+    dialDragPreview.removeAttribute('id');
+    dialDragPreview.removeAttribute('href');
+    dialDragPreview.classList.remove('selected', 'dragging', 'sortable-chosen', 'sortable-ghost', 'sortable-drag');
+    dialDragPreview.classList.add('dial-drag-preview');
+    dialDragPreview.style.removeProperty('transform');
+    document.body.appendChild(dialDragPreview);
+    positionDialDragPreview(evt.originalEvent);
+}
+
+function removeDialDragPreview() {
+    dialDragPreview?.remove();
+    dialDragPreview = null;
+}
+
+function setDialDragPreviewFolderTargeting(isTargeting) {
+    dialDragPreview?.classList.toggle('folder-targeting', isTargeting);
+}
+
+// native handlers for folder tab targets
 function folderContainerDragEnter(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     this.classList.add('folders-drag-active');
+    setDialDragPreviewFolderTargeting(true);
 }
 
 function folderContainerDragLeave(ev) {
     // only collapse when truly leaving the container (not entering a child)
     if (this.contains(ev.relatedTarget)) return;
     this.classList.remove('folders-drag-active');
+    setDialDragPreviewFolderTargeting(false);
     clearTimeout(folderNavTimeout);
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
 }
 
 function folderContainerDragOver(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
 }
 
 // individual folder title handlers for highlight + navigation
 function dragenterHandler(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
     const el = ev.currentTarget;
     if (!el.classList.contains("folderTitle")) return;
@@ -3771,6 +3815,7 @@ function onStartHandler(evt) {
             document.addEventListener(eventName, trackFolderDialDropTarget, { passive: true });
         });
     }
+    createDialDragPreview(evt);
 }
 
 function stopFolderDialDropTracking() {
@@ -3852,6 +3897,7 @@ function onEndHandler(evt) {
     // clean up folder drag-hover state
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
+    removeDialDragPreview();
 
     if (evt && (evt.clone.href || evt.clone.dataset.type === 'folder')) {
         let id = evt.clone.dataset.id;
@@ -4178,6 +4224,7 @@ function init() {
     foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
     foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
     foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
+    document.addEventListener('dragover', positionDialDragPreview, true);
 
     new Sortable(foldersContainer, {
         animation: 150,
