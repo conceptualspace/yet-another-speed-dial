@@ -21,7 +21,6 @@ Coloris({
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
 const foldersContainer = document.getElementById('folders');
-const foldersContent = document.querySelector('.folders-content');
 const addFolderButton = document.getElementById('addFolderButton');
 
 // Dial sizing is emitted here as concrete px values rather than as inherited
@@ -147,8 +146,6 @@ let sortable = null;
 let folderNavTimeout = null;
 let dialDragPreview = null;
 let transparentDragImage = null;
-let activeFolderDropTarget = null;
-let pendingFolderDropId = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -3269,7 +3266,7 @@ function positionDialDragPreview(ev) {
 
 function createDialDragPreview(evt) {
     removeDialDragPreview();
-    pendingFolderDropId = null;
+    foldersContainer.classList.add('folder-drop-hit-areas');
     dialDragPreview = evt.item.cloneNode(true);
     dialDragPreview.removeAttribute('id');
     dialDragPreview.removeAttribute('href');
@@ -3283,23 +3280,18 @@ function createDialDragPreview(evt) {
 function removeDialDragPreview() {
     dialDragPreview?.remove();
     dialDragPreview = null;
+    foldersContainer.classList.remove('folder-drop-hit-areas', 'folders-drag-active');
 }
 
 function setDialDragPreviewFolderTargeting(isTargeting) {
     dialDragPreview?.classList.toggle('folder-targeting', isTargeting);
 }
 
-function distanceToRect(x, y, rect) {
-    const dx = Math.max(rect.left - x, 0, x - rect.right);
-    const dy = Math.max(rect.top - y, 0, y - rect.bottom);
-    return Math.hypot(dx, dy);
-}
+function setFolderDragTarget(folderTitle) {
+    const activeFolder = foldersContainer.querySelector('.folderTitle.drag-hover');
+    if (activeFolder === folderTitle) return;
 
-function setActiveFolderDropTarget(folderTitle) {
-    if (activeFolderDropTarget === folderTitle) return;
-
-    activeFolderDropTarget?.classList.remove('drag-hover');
-    activeFolderDropTarget = folderTitle;
+    activeFolder?.classList.remove('drag-hover');
     clearTimeout(folderNavTimeout);
 
     if (!folderTitle) return;
@@ -3318,40 +3310,15 @@ function setActiveFolderDropTarget(folderTitle) {
     }
 }
 
-function updateActiveFolderDropTarget(ev) {
-    const folderTitles = [...foldersContainer.querySelectorAll('.folderTitle')];
-    if (!folderTitles.length) {
-        setActiveFolderDropTarget(null);
-        return;
-    }
-
-    let nearestTitle = null;
-    let nearestDistance = Infinity;
-    for (const folderTitle of folderTitles) {
-        const distance = distanceToRect(ev.clientX, ev.clientY, folderTitle.getBoundingClientRect());
-        if (distance < nearestDistance) {
-            nearestTitle = folderTitle;
-            nearestDistance = distance;
-        }
-    }
-
-    if (activeFolderDropTarget && activeFolderDropTarget !== nearestTitle) {
-        const activeDistance = distanceToRect(
-            ev.clientX,
-            ev.clientY,
-            activeFolderDropTarget.getBoundingClientRect()
-        );
-        if (nearestDistance + 8 >= activeDistance) return;
-    }
-
-    setActiveFolderDropTarget(nearestTitle);
-}
-
 // native handlers for folder tab targets
 function folderContainerDragEnter(ev) {
+    const folderTitle = ev.target.closest?.('.folderTitle');
+    if (!dialDragPreview || !folderTitle) return;
+
     ev.preventDefault();
     this.classList.add('folders-drag-active');
     setDialDragPreviewFolderTargeting(true);
+    setFolderDragTarget(folderTitle);
 }
 
 function folderContainerDragLeave(ev) {
@@ -3359,19 +3326,23 @@ function folderContainerDragLeave(ev) {
     if (this.contains(ev.relatedTarget)) return;
     this.classList.remove('folders-drag-active');
     setDialDragPreviewFolderTargeting(false);
-    setActiveFolderDropTarget(null);
+    setFolderDragTarget(null);
 }
 
 function folderContainerDragOver(ev) {
+    const folderTitle = ev.target.closest?.('.folderTitle');
+    if (!dialDragPreview || !folderTitle) return;
+
     ev.preventDefault();
     ev.dataTransfer.dropEffect = "move";
-    updateActiveFolderDropTarget(ev);
+    setFolderDragTarget(folderTitle);
 }
 
-function folderContainerDrop(ev) {
+function rejectAddFolderDrop(ev) {
+    if (!dialDragPreview) return;
     ev.preventDefault();
-    updateActiveFolderDropTarget(ev);
-    pendingFolderDropId = activeFolderDropTarget?.getAttribute('folderid') || null;
+    ev.stopPropagation();
+    ev.dataTransfer.dropEffect = "none";
 }
 
 // Sortable helper fns
@@ -3401,18 +3372,16 @@ function dewrap(str) {
 function onEndHandler(evt) {
     const dropTarget = evt?.originalEvent?.target;
     const folderTitleEl = dropTarget?.closest?.('.folderTitle');
-    const droppedOnFolderId = pendingFolderDropId
-        || activeFolderDropTarget?.getAttribute('folderid')
-        || folderTitleEl?.getAttribute('folderid')
-        || null;
+    const droppedOnFolderId = folderTitleEl?.getAttribute('folderid') || null;
+    const droppedOnAddFolder = Boolean(dropTarget?.closest?.('#addFolderButton'));
 
     // clean up folder drag-hover state
-    foldersContent.classList.remove('folders-drag-active');
-    setActiveFolderDropTarget(null);
-    pendingFolderDropId = null;
+    setFolderDragTarget(null);
     removeDialDragPreview();
 
     if (evt && evt.clone.href) {
+        if (droppedOnAddFolder) return;
+
         let id = evt.clone.dataset.id;
         let fromParentId = dewrap(evt.from.id);
         let toParentId = dewrap(evt.to.id);
@@ -3686,11 +3655,11 @@ function init() {
 
     sidenav.style.display = "flex";
 
-    // Treat the folder shelf and its gaps as stable, nearest-folder drop targets.
-    foldersContent.addEventListener('dragenter', folderContainerDragEnter);
-    foldersContent.addEventListener('dragleave', folderContainerDragLeave);
-    foldersContent.addEventListener('dragover', folderContainerDragOver);
-    foldersContent.addEventListener('drop', folderContainerDrop);
+    foldersContainer.addEventListener('dragenter', folderContainerDragEnter);
+    foldersContainer.addEventListener('dragleave', folderContainerDragLeave);
+    foldersContainer.addEventListener('dragover', folderContainerDragOver);
+    addFolderButton.addEventListener('dragover', rejectAddFolderDrop);
+    addFolderButton.addEventListener('drop', rejectAddFolderDrop);
     document.addEventListener('dragover', positionDialDragPreview, true);
 
     new Sortable(foldersContainer, {

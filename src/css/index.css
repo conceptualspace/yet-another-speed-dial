@@ -504,6 +504,7 @@ h1 {
 }
 
 .folderTitle {
+    position: relative;
     opacity: 0.85;
     font-weight: bold;
     transition: outline 160ms ease, background 160ms ease;
@@ -513,6 +514,22 @@ h1 {
 
 .folderTitle:hover {
     opacity: 1;
+}
+
+.folder-drop-hit-areas .folderTitle::before {
+    content: '';
+    position: absolute;
+    inset: -8px -6px;
+}
+
+#folders.folder-drop-hit-areas + #addFolderButton {
+    position: relative;
+}
+
+#folders.folder-drop-hit-areas + #addFolderButton::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
 }
 
 .folders-drag-active .folderTitle.drag-hover {
