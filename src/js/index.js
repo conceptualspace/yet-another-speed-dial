@@ -3268,6 +3268,8 @@ function positionDialDragPreview(ev) {
 }
 
 function createDialDragPreview(evt) {
+    if (!evt.originalEvent?.dataTransfer) return;
+
     removeDialDragPreview();
     dialDragPreview = evt.item.cloneNode(true);
     dialDragPreview.removeAttribute('id');
