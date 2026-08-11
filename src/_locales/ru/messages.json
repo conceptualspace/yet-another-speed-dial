@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Новые в начале"
+  },
+  "folderStyle": {
+    "message": "Стиль папок"
+  },
+  "optionFolderTabs": {
+    "message": "Вкладки"
+  },
+  "optionFolderDials": {
+    "message": "Плитки"
   }
 }

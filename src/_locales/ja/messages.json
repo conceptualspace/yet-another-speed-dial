@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "新規を最初"
+  },
+  "folderStyle": {
+    "message": "フォルダーのスタイル"
+  },
+  "optionFolderTabs": {
+    "message": "タブ"
+  },
+  "optionFolderDials": {
+    "message": "ダイヤル"
   }
 }

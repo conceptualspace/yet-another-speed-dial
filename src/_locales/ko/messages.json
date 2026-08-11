@@ -234,6 +234,15 @@
     },
     "optionNewDialsFirst": {
       "message": "새 항목 앞에"
+    },
+    "folderStyle": {
+      "message": "폴더 스타일"
+    },
+    "optionFolderTabs": {
+      "message": "탭"
+    },
+    "optionFolderDials": {
+      "message": "다이얼"
     }
   }
   

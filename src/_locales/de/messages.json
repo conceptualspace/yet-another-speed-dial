@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Neue zuerst"
+  },
+  "folderStyle": {
+    "message": "Ordnerstil"
+  },
+  "optionFolderTabs": {
+    "message": "Registerkarten"
+  },
+  "optionFolderDials": {
+    "message": "Kacheln"
   }
 }

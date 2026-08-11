@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "Yeni kısayollar başta"
+  },
+  "folderStyle": {
+    "message": "Klasör stili"
+  },
+  "optionFolderTabs": {
+    "message": "Sekmeler"
+  },
+  "optionFolderDials": {
+    "message": "Kısayollar"
   }
 }

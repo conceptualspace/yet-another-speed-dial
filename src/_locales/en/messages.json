@@ -234,5 +234,14 @@
   },
   "optionNewDialsFirst": {
     "message": "New dials first"
+  },
+  "folderStyle": {
+    "message": "Folder Style"
+  },
+  "optionFolderTabs": {
+    "message": "Tabs"
+  },
+  "optionFolderDials": {
+    "message": "Dials"
   }
 }
