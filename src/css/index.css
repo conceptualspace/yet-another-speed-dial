@@ -92,14 +92,6 @@
 
 @font-face {
     font-family: 'Noto Sans';
-    src: url('../fonts/NotoSans-ExtraLight.woff2') format('woff2');
-    font-weight: 200;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'Noto Sans';
     src: url('../fonts/NotoSans-Medium.woff2') format('woff2');
     font-weight: 500;
     font-style: normal;
@@ -1416,7 +1408,7 @@ body:not(:has(.folderTitle)) #tileContainer {
     color: var(--color);
     opacity: 0.85;
     font-size: x-large;
-    font-weight: 200;
+    font-weight: 300;
     transition: 160ms ease;
     white-space: nowrap;
     line-height: 1;
