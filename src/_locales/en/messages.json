@@ -1,11 +1,13 @@
 {
   "addFolderButton": {
+    "description": "Settings toggle that shows or hides the Add Folder button",
     "message": "Add Folder Button"
   },
   "address": {
     "message": "Address"
   },
   "addSiteButton": {
+    "description": "Settings toggle that shows or hides the Add Site button",
     "message": "Add Site Button"
   },
   "addTo": {
@@ -45,9 +47,11 @@
     "message": "Delete"
   },
   "dialRatio": {
+    "description": "Settings label for the shape of speed-dial tiles, such as square or wide",
     "message": "Dial Format"
   },
   "dialSize": {
+    "description": "Settings label for the size of speed-dial tiles",
     "message": "Dial Size"
   },
   "edit": {
@@ -179,6 +183,7 @@
     "message": "Settings..."
   },
   "settingsButton": {
+    "description": "Settings toggle that shows or hides the Settings button",
     "message": "Settings Button"
   },
   "settingsTitle": {
@@ -197,6 +202,7 @@
     "message": "Add Image ..."
   },
   "wallpaper": {
+    "description": "Settings label for the new-tab page background image",
     "message": "Wallpaper"
   },
   "optionSquare": {
@@ -242,6 +248,7 @@
     "message": "Tabs"
   },
   "optionFolderDials": {
+    "description": "Folder style option that displays folders as speed-dial tiles",
     "message": "Dials"
   }
 }

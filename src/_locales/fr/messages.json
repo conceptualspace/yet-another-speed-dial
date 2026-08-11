@@ -6,13 +6,13 @@
     "message": "Adresse"
   },
   "addSiteButton": {
-    "message": "Bouton Ajouter de site"
+    "message": "Bouton Ajouter un site"
   },
   "addTo": {
     "message": "Ajouter à la Speed Dial"
   },
   "backgroundColor": {
-    "message": "Contexte Couleur"
+    "message": "Couleur d'arrière-plan"
   },
   "bgColor": {
     "message": "Arrière-plan"
@@ -21,7 +21,7 @@
     "message": "Feuilleter..."
   },
   "cancel": {
-    "message": "Annulez"
+    "message": "Annuler"
   },
   "captureMessage": {
     "message": "Cela ouvrira temporairement le site dans un nouvel onglet pour capturer l'image"
@@ -30,7 +30,7 @@
     "message": "Capture des images..."
   },
   "clock": {
-    "message": "L'horloge"
+    "message": "Horloge"
   },
   "confirmDelete": {
     "message": "Êtes-vous sûr de vouloir supprimer définitivement ce dossier?"
@@ -45,10 +45,10 @@
     "message": "Supprimer"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Format des vignettes"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Taille des vignettes"
   },
   "edit": {
     "message": "Éditer"
@@ -152,7 +152,7 @@
     "message": "Actualiser toutes les miniatures..."
   },
   "remember": {
-    "message": "Mémoriser les derniers dossiers"
+    "message": "Mémoriser le dernier dossier"
   },
   "resetSettings": {
     "message": "Réinitialiser les paramètres"
@@ -197,7 +197,7 @@
     "message": "Télécharger l'image ..."
   },
   "wallpaper": {
-    "message": "Contexte Image"
+    "message": "Fond d'écran"
   },
   "optionSquare": {
     "message": "Carré"

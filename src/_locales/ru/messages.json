@@ -39,16 +39,16 @@
     "message": "Создать папку"
   },
   "defaultSort": {
-    "message": "Сортировать"
+    "message": "Сортировка по умолчанию"
   },
   "delete": {
     "message": "Удалить"
   },
   "dialRatio": {
-    "message": "Формат закладок"
+    "message": "Формат плиток"
   },
   "dialSize": {
-    "message": "Размер закладок"
+    "message": "Размер плиток"
   },
   "edit": {
     "message": "Редактировать"
@@ -227,7 +227,7 @@
     "message": "Максимальный"
   },
   "optionUnlimited": {
-    "message": "Неограниченно"
+    "message": "Без ограничений"
   },
   "optionNewDialsLast": {
     "message": "Новые в конце"

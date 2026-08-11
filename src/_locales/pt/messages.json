@@ -45,10 +45,10 @@
     "message": "Excluir"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Formato dos blocos"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tamanho dos blocos"
   },
   "edit": {
     "message": "Editar"
@@ -80,7 +80,7 @@
     "message": "URL da imagem"
   },
   "import": {
-    "message": "Configurações de importação..."
+    "message": "Importar configurações..."
   },
   "importExport": {
     "message": "Isso fará backup ou restaurará as configurações e miniaturas.\n\nObserve que todas as discagens rápidas são gerenciadas pelo navegador como favoritos. Certifique-se de que eles sejam copiados separadamente por meio do gerenciador de favoritos ou sincronização.\n\nAVISO: a importação substituirá suas configurações atuais."
@@ -95,7 +95,7 @@
     "message": "Blocos grandes"
   },
   "maxColumns": {
-    "message": "Max Cols"
+    "message": "Máx. colunas"
   },
   "name": {
     "message": "Nome"
@@ -167,7 +167,7 @@
     "message": "Configurações salvas!"
   },
   "scaleImages": {
-    "message": "Ajustar escala imagem"
+    "message": "Dimensionar imagens"
   },
   "searchButton": {
     "message": "Botão de Pesquisa"
@@ -242,6 +242,6 @@
     "message": "Separadores"
   },
   "optionFolderDials": {
-    "message": "Marcadores"
+    "message": "Blocos"
   }
 }

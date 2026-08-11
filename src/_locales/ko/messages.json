@@ -104,10 +104,10 @@
       "message": "새 백그라운드 탭에서 열기"
     },
     "newDial": {
-      "message": "새로운 스피드 다이얼..."
+      "message": "새 스피드 다이얼..."
     },
     "newFolder": {
-      "message": "새로운 폴더..."
+      "message": "새 폴더..."
     },
     "newInstallTitleLine1": {
       "message": "Yet Another Speed Dial"
@@ -131,7 +131,7 @@
       "message": "가져오기"
     },
     "newPrivate": {
-      "message": "새로운 시크릿 창에서 열기"
+      "message": "새 시크릿 창에서 열기"
     },
     "newTab": {
       "message": "새 탭에서 열기"
@@ -230,10 +230,10 @@
       "message": "무제한"
     },
     "optionNewDialsLast": {
-      "message": "새 항목 뒤에"
+      "message": "새 다이얼을 뒤에"
     },
     "optionNewDialsFirst": {
-      "message": "새 항목 앞에"
+      "message": "새 다이얼을 앞에"
     },
     "folderStyle": {
       "message": "폴더 스타일"

@@ -206,7 +206,7 @@
     "message": "Широкий"
   },
   "optionXXSmall": {
-    "message": "Дуже-дуже малий"
+    "message": "Найменший"
   },
   "optionXSmall": {
     "message": "Дуже малий"
@@ -224,7 +224,7 @@
     "message": "Дуже великий"
   },
   "optionXXLarge": {
-    "message": "Дуже-дуже великий"
+    "message": "Найбільший"
   },
   "optionUnlimited": {
     "message": "Без обмежень"

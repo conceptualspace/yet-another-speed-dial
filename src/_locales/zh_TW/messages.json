@@ -230,10 +230,10 @@
     "message": "不限"
   },
   "optionNewDialsLast": {
-    "message": "新的撥號排在最後"
+    "message": "新撥號在最後"
   },
   "optionNewDialsFirst": {
-    "message": "新的撥號排在最前"
+    "message": "新撥號在最前"
   },
   "folderStyle": {
     "message": "資料夾樣式"

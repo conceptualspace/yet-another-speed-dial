@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Ordner hinzufügen Schaltfläche"
+    "message": "Schaltfläche „Ordner hinzufügen“"
   },
   "address": {
     "message": "Adresse"
   },
   "addSiteButton": {
-    "message": "Seite hinzufügen Schaltfläche"
+    "message": "Schaltfläche „Seite hinzufügen“"
   },
   "addTo": {
     "message": "Zu Kurzwahl hinzufügen"
@@ -45,10 +45,10 @@
     "message": "Löschen"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Kachelformat"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Kachelgröße"
   },
   "edit": {
     "message": "Bearbeiten"
@@ -92,7 +92,7 @@
     "message": "Beschriftung"
   },
   "largeTiles": {
-    "message": "Große Fliesen"
+    "message": "Große Kacheln"
   },
   "maxColumns": {
     "message": "Max. Spalten"
@@ -164,10 +164,10 @@
     "message": "Speichern"
   },
   "saveToast": {
-    "message": "Einstellungen gerettet!"
+    "message": "Einstellungen gespeichert!"
   },
   "scaleImages": {
-    "message": "Bilder passen"
+    "message": "Bilder skalieren"
   },
    "searchButton": {
     "message": "Suchschaltfläche"
@@ -179,7 +179,7 @@
     "message": "Einstellungen..."
   },
   "settingsButton": {
-    "message": "Einstellungs Schaltfläche"
+    "message": "Schaltfläche „Einstellungen“"
   },
   "settingsTitle": {
     "message": "Einstellungen"
@@ -230,10 +230,10 @@
     "message": "Unbegrenzt"
   },
   "optionNewDialsLast": {
-    "message": "Neue zuletzt"
+    "message": "Neue Kacheln zuletzt"
   },
   "optionNewDialsFirst": {
-    "message": "Neue zuerst"
+    "message": "Neue Kacheln zuerst"
   },
   "folderStyle": {
     "message": "Ordnerstil"

@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Añadir carpeta botón"
+    "message": "Botón «Añadir carpeta»"
   },
   "address": {
     "message": "URL"
   },
   "addSiteButton": {
-    "message": "Añadir sitio botón"
+    "message": "Botón «Añadir sitio»"
   },
   "addTo": {
     "message": "Añadir a Marcación Rápida"
@@ -21,7 +21,7 @@
     "message": "Navegar..."
   },
   "cancel": {
-    "message": "Cancele"
+    "message": "Cancelar"
   },
   "captureMessage": {
     "message": "Esto abrirá temporalmente el sitio en una nueva pestaña para capturar la imagen"
@@ -42,13 +42,13 @@
     "message": "Clasificar"
   },
   "delete": {
-    "message": "Elimine"
+    "message": "Eliminar"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Formato de mosaico"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Tamaño del mosaico"
   },
   "edit": {
     "message": "Editar"
@@ -68,7 +68,7 @@
     "message": "otra marcación rápida"
   },
   "help": {
-    "message": "Ayudar"
+    "message": "Ayuda"
   },
   "home": {
     "message": "Inicio"
@@ -92,7 +92,7 @@
     "message": "Etiquetas"
   },
   "largeTiles": {
-    "message": "Large Tiles"
+    "message": "Mosaicos grandes"
   },
   "maxColumns": {
     "message": "Columnas máx"
@@ -161,13 +161,13 @@
     "message": "Eliminar"
   },
   "save": {
-    "message": "Guarde"
+    "message": "Guardar"
   },
   "saveToast": {
-    "message": "Settings saved!"
+    "message": "¡Ajustes guardados!"
   },
   "scaleImages": {
-    "message": "Imágenes de fit"
+    "message": "Ajustar imágenes"
   },
   "searchButton": {
     "message": "Botón de búsqueda"

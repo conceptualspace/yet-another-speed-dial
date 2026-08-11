@@ -1,12 +1,12 @@
 {
   "addFolderButton": {
-    "message": "Aggiungi cartella Button"
+    "message": "Pulsante Aggiungi cartella"
   },
   "address": {
     "message": "URL"
   },
   "addSiteButton": {
-    "message": "Aggiungi sito Button"
+    "message": "Pulsante Aggiungi sito"
   },
   "addTo": {
     "message": "Aggiungi alla Selezione Rapida"
@@ -45,10 +45,10 @@
     "message": "Elimina"
   },
   "dialRatio": {
-    "message": "Dial Format"
+    "message": "Formato riquadro"
   },
   "dialSize": {
-    "message": "Dial Size"
+    "message": "Dimensione riquadro"
   },
   "edit": {
     "message": "Modificare"
@@ -92,7 +92,7 @@
     "message": "Etichette"
   },
   "largeTiles": {
-    "message": "Large Tiles"
+    "message": "Riquadri grandi"
   },
   "maxColumns": {
     "message": "Colonne massime"
@@ -107,7 +107,7 @@
     "message": "Nuova Selezione Rapida..."
   },
   "newFolder": {
-    "message": "Nuovo Cartella..."
+    "message": "Nuova cartella..."
   },
   "newInstallTitleLine1": {
     "message": "Inizia con"
@@ -179,7 +179,7 @@
     "message": "Impostazioni..."
   },
   "settingsButton": {
-    "message": "Impostazioni Button"
+    "message": "Pulsante Impostazioni"
   },
   "settingsTitle": {
     "message": "Impostazioni"
@@ -197,7 +197,7 @@
     "message": "Carica immagine ..."
   },
   "wallpaper": {
-    "message": "Background"
+    "message": "Sfondo"
   },
   "optionSquare": {
     "message": "Quadrato"
