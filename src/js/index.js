@@ -772,6 +772,7 @@ async function openFolder(id, { historyMode = 'push' } = {}) {
     // ignore a slower in-flight navigation once a newer folder has been requested
     pendingFolderId = id;
     const folderChanged = id !== currentFolder;
+    if (folderChanged) hideSearch();
 
     if (settings.folderStyle === 'dials' && !document.getElementById(id)) {
         const folder = id === speedDialId ? speedDialRootNode : folderNodeMap.get(id);
