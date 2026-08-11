@@ -278,12 +278,10 @@ const capturePopupScreenshot = (url) => {
     chrome.windows.create({
         url: url,
         focused: false,
-        width: 1,
-        height: 1,
-        left: 0,
-        top: 0,
+        width: 1280,
+        height: 720,
         type: 'popup'
-      }).then((popup) => {
+    }).then((popup) => {
         if (!popup.tabs || !popup.tabs.length) {
           chrome.windows.remove(popup.id)
           return resolve(null)
@@ -308,13 +306,6 @@ const capturePopupScreenshot = (url) => {
         chrome.tabs.update(tabId, {
           muted: true,
           active: true
-        })
-        chrome.windows.update(popup.id, {
-          focused: false,
-          width: 1280,
-          height: 720,
-          left: 0,
-          top: 0
         })
 
         const timeout = setTimeout(() => {
