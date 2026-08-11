@@ -226,7 +226,7 @@ let defaults = {
     maxCols: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
-    dialSize: 'large',
+    dialSize: 'medium',
     dialRatio: 'wide',
     folderStyle: 'tabs',
     currentFolder: null,

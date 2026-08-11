@@ -473,6 +473,23 @@ async function runMigrations(previousVersion) {
     if (isPreviousVersion(previousVersion, '3.11')) {
         await migrateDialSizes();
     }
+    if (isPreviousVersion(previousVersion, '3.15.2')) {
+        await preserveLegacyDefaultDialSize();
+    }
+}
+
+async function preserveLegacyDefaultDialSize() {
+    try {
+        const result = await chrome.storage.local.get('settings');
+        const settings = result.settings || {};
+
+        if (!Object.prototype.hasOwnProperty.call(settings, 'dialSize')) {
+            settings.dialSize = 'large';
+            await chrome.storage.local.set({ settings });
+        }
+    } catch (error) {
+        console.error('Error preserving legacy dial size:', error);
+    }
 }
 
 async function migrateDialSizes() {
