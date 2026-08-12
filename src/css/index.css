@@ -392,11 +392,6 @@ h1 {
         padding: 7px;
         border-radius: 8px;
     }
-
-    .welcome-cta {
-        flex: 1 1 100%;
-        min-width: 0;
-    }
 }
 
 @media (max-height: 620px) {
@@ -489,6 +484,26 @@ h1 {
         flex: 1 1 100%;
         min-width: 0;
     }
+}
+
+.welcome-link {
+    margin-top: 16px;
+    padding: 4px 6px;
+    font-family: inherit;
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: none;
+    border: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-color: rgba(255, 255, 255, 0.3);
+    cursor: pointer;
+    transition: color 160ms ease, text-decoration-color 160ms ease;
+}
+
+.welcome-link:hover {
+    color: #ffffff;
+    text-decoration-color: rgba(99, 212, 248, 0.7);
 }
 
 .hide {

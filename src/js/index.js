@@ -1050,6 +1050,7 @@ async function printNewSetup() {
                     <span>${chrome.i18n.getMessage('newInstallImport')}</span>
                 </button>
             </div>
+            <button id="splashUseFolder" class="welcome-link" type="button">${chrome.i18n.getMessage('newInstallUseExistingFolder')}</button>
         </div>
     `;
 
@@ -2699,6 +2700,11 @@ window.addEventListener("mousedown", e => {
         e.preventDefault();
         modalShowEffect(importExportModalContent, importExportModal);
         //importFileInput.click();
+        return;
+    }
+    if (e.target.closest('#splashUseFolder')) {
+        e.preventDefault();
+        // placeholder
         return;
     }
 

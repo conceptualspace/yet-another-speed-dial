@@ -126,13 +126,16 @@
     "message": "You can organize your bookmarks into subfolders"
   },
   "newInstall4": {
-    "message": "Right-click on a dial to edit it. You can also drag and drop to arrange them"
+    "message": "Right-click on a dial to edit it. Drag and drop to arrange them"
   },
   "newInstallAddSite": {
     "message": "Add Site"
   },
   "newInstallImport": {
     "message": "Import"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Use an existing bookmarks folder"
   },
   "newPrivate": {
     "message": "Open in new private window"
