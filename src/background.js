@@ -430,7 +430,7 @@ async function handleInstalled(details) {
         await runMigrations(details.previousVersion);
 
         // manually specify the version to show release notes for
-        if (isPreviousVersion(details.previousVersion, '3.14.1')) {
+        if (isPreviousVersion(details.previousVersion, '3.15.0')) {
             // Check if user wants to see release notes
             try {
                 const result = await chrome.storage.sync.get('showReleaseNotes');
