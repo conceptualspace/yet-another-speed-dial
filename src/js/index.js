@@ -147,6 +147,8 @@ let cache = {};
 let settings = null;
 const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
 let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
+// storage key holding the id of a bookmarks folder adopted as the speed dial root
+const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 let speedDialId = null;
 let sortable = null;
 let folderNavTimeout = null;
@@ -1484,11 +1486,74 @@ folderPickerTree.addEventListener('click', e => {
 });
 
 folderPickerSave.addEventListener('click', () => {
-    if (!folderPickerSelectedId) return;
-    // todo: adopt the selected folder as the speed dial folder
-    console.log('folder picker selection:', folderPickerSelectedId);
+    const folderId = folderPickerSelectedId;
     hideModals();
+    adoptSpeedDialFolder(folderId).catch(err => console.log(err));
 });
+
+async function adoptSpeedDialFolder(folderId) {
+    if (!folderId || folderId === speedDialId) return;
+
+    const previousId = speedDialId;
+
+    speedDialId = folderId;
+    currentFolder = folderId;
+    settings.currentFolder = folderId;
+    await chrome.storage.local.set({ [SPEED_DIAL_FOLDER_KEY]: folderId, settings });
+
+    await removeUnusedDefaultFolder(previousId);
+
+    // the whole tree changed; drop the containers rendered for the old root
+    bookmarksContainerParent.querySelectorAll('.container').forEach(container => removeFolderContainer(container));
+
+    // the welcome screen hides these
+    addFolderButton.style.display = '';
+    searchBtn.style.display = '';
+
+    await buildDialPages(speedDialId, currentFolder);
+    scheduleFlip();
+
+    captureMissingThumbnails(folderId).catch(err => console.log(err));
+}
+
+// we create an empty 'Speed Dial' folder on first run; drop it if the user adopts
+// another folder before putting anything in it
+async function removeUnusedDefaultFolder(folderId) {
+    if (!folderId) return;
+
+    try {
+        const [node] = await chrome.bookmarks.get(folderId);
+        if (!node || node.url || node.title !== 'Speed Dial') return;
+
+        const children = await chrome.bookmarks.getChildren(folderId);
+        if (children.length) return;
+
+        await chrome.bookmarks.remove(folderId);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+// an adopted folder may contain sites we have never captured images for
+async function captureMissingThumbnails(folderId) {
+    const [root] = await chrome.bookmarks.getSubTree(folderId);
+    const nodes = [];
+
+    (function collect(children) {
+        for (const child of children || []) {
+            if (child.url) {
+                nodes.push(child);
+            } else {
+                collect(child.children);
+            }
+        }
+    })(root?.children || []);
+
+    if (!nodes.length) return;
+
+    const stored = await chrome.storage.local.get(nodes.map(node => node.url));
+    refreshImportedThumbnails(nodes.filter(node => !getSelectedThumbnail(stored[node.url])));
+}
 
 async function buildModal(url, title) {
     // nuke any previous modal
@@ -4184,31 +4249,33 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
     }
 }, 650, true);
 
-function getSpeedDialId() {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.search({ title: 'Speed Dial' }).then(result => {
-            if (result) {
-                for (let bookmark of result) {
-                    if (!bookmark.url) {
-                        speedDialId = bookmark.id;
-                        break;
-                    }
-                }
-            }
-            if (speedDialId) {
-                resolve();
-            } else {
-                chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
-                    speedDialId = result.id;
-                    resolve();
-                }, error => {
-                    reject(error);
-                });
-            }
-        }, error => {
-            reject(error)
-        });
-    });
+async function getSpeedDialId() {
+    // a folder the user adopted via the folder picker takes precedence over the
+    // default 'Speed Dial' folder. kept out of settings so it isnt carried across
+    // profiles by settings import/export, where bookmark ids are meaningless
+    const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+    const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
+
+    if (adoptedId) {
+        const [node] = await chrome.bookmarks.get(adoptedId).catch(() => []);
+        if (node && !node.url) {
+            speedDialId = adoptedId;
+            return;
+        }
+        // the adopted folder is gone; fall back to the default folder
+        await chrome.storage.local.remove(SPEED_DIAL_FOLDER_KEY);
+    }
+
+    const results = await chrome.bookmarks.search({ title: 'Speed Dial' });
+    const match = (results || []).find(bookmark => !bookmark.url);
+
+    if (match) {
+        speedDialId = match.id;
+        return;
+    }
+
+    const created = await chrome.bookmarks.create({ title: 'Speed Dial' });
+    speedDialId = created.id;
 }
 
 // Preload the image before setting the background
