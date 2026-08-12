@@ -71,6 +71,8 @@ const folderPickerModal = document.getElementById('folderPickerModal');
 const folderPickerModalContent = document.getElementById('folderPickerModalContent');
 const folderPickerTree = document.getElementById('folderPickerTree');
 const folderPickerSave = document.getElementById('folderPickerSave');
+const speedDialFolderButton = document.getElementById('speedDialFolderButton');
+const speedDialFolderName = document.getElementById('speedDialFolderName');
 
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
@@ -421,6 +423,7 @@ async function buildDialPages(speedDialId, currentFolderId, { immediateActiveIns
 
     const [rootNode] = await chrome.bookmarks.getSubTree(speedDialId);
     speedDialRootNode = rootNode;
+    speedDialFolderName.textContent = rootNode.title || homeFolderTitle;
     const children = rootNode.children || [];
     if (!children.length) {
         // new install
@@ -1484,6 +1487,8 @@ folderPickerTree.addEventListener('click', e => {
 
     setFolderPickerSelection(row);
 });
+
+speedDialFolderButton.addEventListener('click', openFolderPicker);
 
 folderPickerSave.addEventListener('click', () => {
     const folderId = folderPickerSelectedId;

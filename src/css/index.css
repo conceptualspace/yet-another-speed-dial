@@ -1050,6 +1050,10 @@ a {
     overflow-y: auto;
 }
 
+#folderPickerModal {
+    z-index: 4;
+}
+
 .folderPickerHint {
     display: block;
     color: #b3b3b3;

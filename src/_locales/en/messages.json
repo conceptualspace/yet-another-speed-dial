@@ -203,6 +203,9 @@
   "searchPlaceholder": {
     "message": "Search..."
   },
+  "speedDialFolder": {
+    "message": "Speed Dial Folder"
+  },
   "settings": {
     "message": "Settings..."
   },
