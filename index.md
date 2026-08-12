@@ -46,5 +46,9 @@ Yes, but you need to override the new tab popup for YASD to work: open `about:co
 ### Does YASD support Opera?
 Yes, but in Opera it works best after editing the default new tab page to be blank, since YASD has to load overtop of it.
 
+### Can I use YASD at work?
+Yes, YASD has a zero data retention (zdr) design, making it compliant with CCPA, GDPR, or SOC2. See our IT deployment guide here:
+[https://yetanotherspeeddial.com/deployment-guide/](https://yetanotherspeeddial.com/deployment-guide/)
+
 ### Can I help to sponsor this project?
 Sure! See my github profile: [https://github.com/sponsors/conceptualspace](https://github.com/sponsors/conceptualspace)
