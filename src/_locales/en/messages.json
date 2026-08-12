@@ -60,6 +60,27 @@
   "editFolder": {
     "message": "Edit Folder..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Choose a bookmarks folder"
+  },
+  "folderPickerDescription": {
+    "message": "Select an existing folder to use as your speed dial. Its bookmarks and subfolders will appear on this page."
+  },
+  "folderPickerConfirm": {
+    "message": "Use this folder"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Current"
+  },
+  "folderPickerEmpty": {
+    "message": "No bookmark folders found"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Untitled folder"
+  },
   "export": {
     "message": "Export Settings..."
   },

@@ -67,6 +67,11 @@ const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
 const importExportModal = document.getElementById('importExportModal');
 const importExportModalContent = document.getElementById('importExportModalContent');
 
+const folderPickerModal = document.getElementById('folderPickerModal');
+const folderPickerModalContent = document.getElementById('folderPickerModalContent');
+const folderPickerTree = document.getElementById('folderPickerTree');
+const folderPickerSave = document.getElementById('folderPickerSave');
+
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
 const refreshAllModalSave = document.getElementById('refreshAllModalSave');
@@ -1298,8 +1303,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal, folderPickerModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent, folderPickerModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -1358,6 +1363,132 @@ function buildCreateDialModal(parentId) {
     createDialModalURL.parentId = parentId ? parentId : speedDialId;
     createDialModalURL.focus();
 }
+
+// bookmark folder picker: lets the user adopt an existing bookmarks folder
+// (bookmarks bar, an old speed dial folder, etc) as the speed dial folder
+const FOLDER_PICKER_ICON = '<svg class="folderPickerIcon" xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H447l-80-80H160v480Z"/></svg>';
+const FOLDER_PICKER_TWISTY = '<svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16" fill="currentColor"><path d="M400-280v-400l200 200-200 200Z"/></svg>';
+
+let folderPickerSelectedId = null;
+
+async function buildFolderPickerModal() {
+    folderPickerTree.textContent = '';
+    setFolderPickerSelection(null);
+
+    const [root] = await chrome.bookmarks.getTree();
+    const roots = (root?.children || []).filter(node => !node.url);
+
+    if (!roots.length) {
+        const empty = document.createElement('div');
+        empty.className = 'folderPickerEmpty';
+        empty.textContent = chrome.i18n.getMessage('folderPickerEmpty');
+        folderPickerTree.append(empty);
+        return;
+    }
+
+    folderPickerTree.append(buildFolderPickerNodes(roots, 0));
+}
+
+function buildFolderPickerNodes(nodes, depth) {
+    const fragment = document.createDocumentFragment();
+
+    for (const node of nodes) {
+        if (node.url) continue;
+
+        const title = node.title || chrome.i18n.getMessage('folderPickerUntitled');
+        const children = node.children || [];
+        const subFolders = children.filter(child => !child.url);
+        const bookmarkCount = children.length - subFolders.length;
+        // top level roots (bookmarks bar, other bookmarks...) start open
+        const expanded = depth === 0 && subFolders.length > 0;
+
+        const li = document.createElement('li');
+        const row = document.createElement('div');
+        row.className = 'folderPickerRow';
+        row.dataset.id = node.id;
+
+        const twisty = document.createElement('span');
+        if (subFolders.length) {
+            twisty.className = expanded ? 'folderPickerTwisty expanded' : 'folderPickerTwisty';
+            twisty.innerHTML = FOLDER_PICKER_TWISTY;
+        } else {
+            twisty.className = 'folderPickerTwistySpacer';
+        }
+        row.append(twisty);
+        row.insertAdjacentHTML('beforeend', FOLDER_PICKER_ICON);
+
+        const label = document.createElement('span');
+        label.className = 'folderPickerLabel';
+        label.textContent = title;
+        row.append(label);
+
+        if (node.id === speedDialId) {
+            row.classList.add('isCurrent');
+            const badge = document.createElement('span');
+            badge.className = 'folderPickerBadge';
+            badge.textContent = chrome.i18n.getMessage('folderPickerCurrentFolder');
+            row.append(badge);
+        }
+
+        if (bookmarkCount) {
+            const count = document.createElement('span');
+            count.className = 'folderPickerCount';
+            count.textContent = bookmarkCount;
+            row.append(count);
+        }
+
+        li.append(row);
+
+        if (subFolders.length) {
+            const group = document.createElement('ul');
+            group.hidden = !expanded;
+            group.append(buildFolderPickerNodes(subFolders, depth + 1));
+            li.append(group);
+        }
+
+        fragment.append(li);
+    }
+
+    return fragment;
+}
+
+function setFolderPickerSelection(row) {
+    folderPickerTree.querySelector('.isSelected')?.classList.remove('isSelected');
+    row?.classList.add('isSelected');
+
+    folderPickerSelectedId = row?.dataset.id || null;
+    folderPickerSave.disabled = !row;
+    folderPickerSave.classList.toggle('disabled', !row);
+}
+
+async function openFolderPicker() {
+    await buildFolderPickerModal();
+    modalShowEffect(folderPickerModalContent, folderPickerModal);
+}
+
+folderPickerTree.addEventListener('click', e => {
+    const row = e.target.closest('.folderPickerRow');
+    if (!row) return;
+
+    const twisty = e.target.closest('.folderPickerTwisty');
+    if (twisty) {
+        const group = row.parentElement.querySelector(':scope > ul');
+        group.hidden = !group.hidden;
+        twisty.classList.toggle('expanded', !group.hidden);
+        return;
+    }
+
+    if (row.classList.contains('isCurrent')) return;
+
+    setFolderPickerSelection(row);
+});
+
+folderPickerSave.addEventListener('click', () => {
+    if (!folderPickerSelectedId) return;
+    // todo: adopt the selected folder as the speed dial folder
+    console.log('folder picker selection:', folderPickerSelectedId);
+    hideModals();
+});
 
 async function buildModal(url, title) {
     // nuke any previous modal
@@ -2704,7 +2835,7 @@ window.addEventListener("mousedown", e => {
     }
     if (e.target.closest('#splashUseFolder')) {
         e.preventDefault();
-        // placeholder
+        openFolderPicker();
         return;
     }
 

@@ -1042,6 +1042,126 @@ a {
     background-color: #444444
 }
 
+/* bookmark folder picker */
+#folderPickerModalContent {
+    width: 460px;
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+}
+
+.folderPickerHint {
+    display: block;
+    color: #b3b3b3;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.folderPickerTree {
+    list-style: none;
+    margin: 0;
+    padding: 4px;
+    /* fixed height so expanding/collapsing folders doesn't resize the modal */
+    height: min(46vh, 256px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background-color: #1a1a1a;
+    border: 1px solid #2a2a2a;
+    border-radius: 6px;
+}
+
+.folderPickerTree ul {
+    list-style: none;
+    margin: 0;
+    padding: 0 0 0 18px;
+}
+
+.folderPickerRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: .4em .5em;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 4px;
+    cursor: default;
+    transition: background-color 120ms ease;
+}
+
+.folderPickerRow:hover {
+    background-color: #262626;
+}
+
+.folderPickerRow.isSelected {
+    background-color: #333333;
+}
+
+.folderPickerRow.isSelected .folderPickerLabel {
+    color: #ffffff;
+}
+
+.folderPickerRow.isCurrent {
+    opacity: 0.5;
+}
+
+.folderPickerTwisty,
+.folderPickerTwistySpacer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: #b3b3b3;
+    transition: transform 140ms ease, color 140ms ease;
+}
+
+.folderPickerTwisty:hover {
+    color: #ffffff;
+}
+
+.folderPickerTwisty.expanded {
+    transform: rotate(90deg);
+}
+
+.folderPickerIcon {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.folderPickerLabel {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.folderPickerBadge {
+    flex-shrink: 0;
+    padding: 1px 6px;
+    font-size: 0.72rem;
+    color: #b3b3b3;
+    border: 1px solid #3a3a3a;
+    border-radius: 10px;
+}
+
+.folderPickerCount {
+    margin-left: auto;
+    padding-left: 8px;
+    flex-shrink: 0;
+    font-size: 0.78rem;
+    color: #8c8c8c;
+    font-variant-numeric: tabular-nums;
+}
+
+.folderPickerEmpty {
+    padding: 1em .6em;
+    color: #8c8c8c;
+    font-size: 0.85rem;
+    text-align: center;
+}
+
 input {
     border: 1px solid #333;
     outline: none;

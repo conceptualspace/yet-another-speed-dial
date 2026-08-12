@@ -259,6 +259,32 @@
     </div>
 </div>
 
+<!-- bookmark folder picker modal window -->
+<div class="modal" id="folderPickerModal">
+    <div class="modal-content" id="folderPickerModalContent">
+        <div class="tileForm">
+            <div id="folderPickerModalName"><strong data-locale="folderPickerTitle">Choose a bookmarks folder</strong><span
+                    class="close closeBtn">✕</span></div>
+
+            <div class="formItem"><label class="folderPickerHint" data-locale="folderPickerDescription">Select an existing
+                folder to use as your speed dial. Its bookmarks and subfolders will appear on this page.</label></div>
+
+            <div class="formItem">
+                <ul class="folderPickerTree" id="folderPickerTree"></ul>
+            </div>
+
+            <div class="formItem">
+                <button class="save disabled" data-locale="folderPickerConfirm" id="folderPickerSave" type="button"
+                        disabled>Use this folder
+                </button>
+            </div>
+            <div class="formItem">
+                <button class="close" data-locale="cancel" type="button">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="toast">
     <svg height="30px" id="loader-1" viewBox="0 0 50 50" width="30px"
          x="0px" xml:space="preserve" xmlns="http://www.w3.org/2000/svg" y="0px">
