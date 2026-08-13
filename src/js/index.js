@@ -67,6 +67,12 @@ const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
 const importExportModal = document.getElementById('importExportModal');
 const importExportModalContent = document.getElementById('importExportModalContent');
 
+const folderPickerModal = document.getElementById('folderPickerModal');
+const folderPickerModalContent = document.getElementById('folderPickerModalContent');
+const folderPickerTree = document.getElementById('folderPickerTree');
+const folderPickerSave = document.getElementById('folderPickerSave');
+const speedDialFolderButton = document.getElementById('speedDialFolderButton');
+
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
 const refreshAllModalSave = document.getElementById('refreshAllModalSave');
@@ -137,12 +143,18 @@ const port = "p-" + new Date().getTime();
 let tabMessagePort = null;
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.storage.onChanged.addListener(handleStorageChanged);
 
 let cache = {};
 let settings = null;
 const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
 let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
+// storage key holding the id of a bookmarks folder adopted as the speed dial root
+const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 let speedDialId = null;
+let speedDialRootRevision = 0;
+let speedDialSyncRequest = 0;
+let speedDialStorageChangeTimer = null;
 let sortable = null;
 let folderNavTimeout = null;
 let folderDialDropTarget = null;
@@ -289,6 +301,10 @@ function isSupportedDial(bookmark) {
     return bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:");
 }
 
+function isBookmarkFolder(node) {
+    return !!node && !node.url && node.type !== 'separator';
+}
+
 async function prepareFolderPreviews(children) {
     const previewFolders = children.filter(child => !child.url);
 
@@ -411,13 +427,30 @@ function removeFolderContainer(container) {
     container.remove();
 }
 
-async function buildDialPages(speedDialId, currentFolderId, { immediateActiveInsert = false } = {}) {
+function isSpeedDialRenderCurrent(rootId, revision) {
+    return rootId === speedDialId && revision === speedDialRootRevision;
+}
 
-    const [rootNode] = await chrome.bookmarks.getSubTree(speedDialId);
+async function buildDialPages(rootId, currentFolderId, { immediateActiveInsert = false } = {}) {
+    const renderRevision = speedDialRootRevision;
+    let rootNode;
+    try {
+        [rootNode] = await chrome.bookmarks.getSubTree(rootId);
+    } catch (error) {
+        if (isSpeedDialRenderCurrent(rootId, renderRevision)) {
+            await syncSpeedDialFolder();
+        }
+        return;
+    }
+    if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
+
     speedDialRootNode = rootNode;
     const children = rootNode.children || [];
     if (!children.length) {
         // new install
+        folderNodeMap = new Map();
+        rootFolderIds = [];
+        foldersContainer.textContent = '';
         addFolderButton.style.display = 'none';
         searchBtn.style.display = 'none';
         printNewSetup();
@@ -441,30 +474,30 @@ async function buildDialPages(speedDialId, currentFolderId, { immediateActiveIns
     collectFolders(children);
 
     // Include speedDial folder
-    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
+    folders.push({ id: rootId, title: homeFolderTitle, index: -1 });
 
     // sort folders
     folders.sort((a, b) => {
         return (a.index || 0) - (b.index || 0);
     });
 
-    if (currentFolderId !== speedDialId && !folderNodeMap.has(currentFolderId)) {
-        currentFolderId = speedDialId;
-        currentFolder = speedDialId;
-        settings.currentFolder = speedDialId;
+    if (currentFolderId !== rootId && !folderNodeMap.has(currentFolderId)) {
+        currentFolderId = rootId;
+        currentFolder = rootId;
+        settings.currentFolder = rootId;
         chrome.storage.local.set({ settings });
     }
 
-    if (settings.folderStyle !== 'dials' && currentFolderId !== speedDialId && !rootFolderIds.includes(currentFolderId)) {
-        currentFolderId = speedDialId;
-        currentFolder = speedDialId;
-        settings.currentFolder = speedDialId;
+    if (settings.folderStyle !== 'dials' && currentFolderId !== rootId && !rootFolderIds.includes(currentFolderId)) {
+        currentFolderId = rootId;
+        currentFolder = rootId;
+        settings.currentFolder = rootId;
         chrome.storage.local.set({ settings });
     }
 
     buildFolderHeader(folders, currentFolderId);
 
-    const currentNode = currentFolderId === speedDialId ? rootNode : folderNodeMap.get(currentFolderId);
+    const currentNode = currentFolderId === rootId ? rootNode : folderNodeMap.get(currentFolderId);
 
     if (settings.folderStyle === 'dials') {
         bookmarksContainerParent.querySelectorAll('.container').forEach(container => {
@@ -474,7 +507,9 @@ async function buildDialPages(speedDialId, currentFolderId, { immediateActiveIns
         });
 
         await prepareFolderPreviews(currentNode?.children || []);
+        if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
         await printBookmarks(currentNode?.children || [], currentFolderId, { immediateInsert: immediateActiveInsert });
+        if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
         bookmarksContainerParent.scrollTop = scrollPos;
         setFolderHistoryState(currentFolderId, 'replace');
         return;
@@ -494,20 +529,34 @@ async function buildDialPages(speedDialId, currentFolderId, { immediateActiveIns
     }
 
     for (const folder of renderFolders) {
+        if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
         if (folder.id !== currentFolderId) {
             await printBookmarks(folder.children || [], folder.id);
         }
     }
 }
 
-async function buildFolderPages(speedDialId) {
+async function buildFolderPages(rootId) {
+    const renderRevision = speedDialRootRevision;
+
     async function getChildren(folderId) {
         return await chrome.bookmarks.getChildren(folderId);
     }
 
-    const children = await getChildren(speedDialId);
+    let children;
+    try {
+        children = await getChildren(rootId);
+    } catch (error) {
+        if (isSpeedDialRenderCurrent(rootId, renderRevision)) {
+            await syncSpeedDialFolder();
+        }
+        return;
+    }
+    if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
+
     if (!children.length) {
         // new install
+        foldersContainer.textContent = '';
         addFolderButton.style.display = 'none';
         searchBtn.style.display = 'none';
         printNewSetup();
@@ -517,7 +566,7 @@ async function buildFolderPages(speedDialId) {
     const folders = children.filter(folder => !folder.url);
 
     // Include speedDial folder
-    folders.push({ id: speedDialId, title: homeFolderTitle, index: -1 });
+    folders.push({ id: rootId, title: homeFolderTitle, index: -1 });
 
     // sort folders
     folders.sort((a, b) => {
@@ -996,6 +1045,9 @@ function batchInsert(parent, fragment, batchSize = 100, onComplete) {
 
 async function printNewSetup() {
     console.log("new install")
+    // an empty root has no subfolders, so a remembered folder from a previous root can't apply
+    currentFolder = speedDialId;
+    settings.currentFolder = speedDialId;
     let fragment = document.createDocumentFragment();
 
     // Ensure the container exists
@@ -1051,6 +1103,7 @@ async function printNewSetup() {
                     <span>${chrome.i18n.getMessage('newInstallImport')}</span>
                 </button>
             </div>
+            <button id="splashUseFolder" class="welcome-link" type="button">${chrome.i18n.getMessage('newInstallUseExistingFolder')}</button>
         </div>
     `;
 
@@ -1296,8 +1349,8 @@ function hideSettings() {
 }
 
 function hideModals() {
-    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal];
-    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent]
+    let modals = [modal, createDialModal, createFolderModal, editFolderModal, deleteFolderModal, refreshAllModal, importExportModal, folderPickerModal];
+    let modalContents = [modalContent, createDialModalContent, createFolderModalContent, editFolderModalContent, deleteFolderModalContent, refreshAllModalContent, importExportModalContent, folderPickerModalContent]
 
     for (let button of document.getElementsByTagName('button')) {
         button.blur();
@@ -1355,6 +1408,192 @@ function buildCreateDialModal(parentId) {
     createDialModalURL.value = '';
     createDialModalURL.parentId = parentId ? parentId : speedDialId;
     createDialModalURL.focus();
+}
+
+// bookmark folder picker: lets the user adopt an existing bookmarks folder
+// (bookmarks bar, an old speed dial folder, etc) as the speed dial folder
+const FOLDER_PICKER_ICON = '<svg class="folderPickerIcon" xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16" fill="currentColor"><path d="M160-160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h240l80 80h320q33 0 56.5 23.5T880-640v400q0 33-23.5 56.5T800-160H160Zm0-80h640v-400H447l-80-80H160v480Z"/></svg>';
+const FOLDER_PICKER_TWISTY = '<svg xmlns="http://www.w3.org/2000/svg" height="16" viewBox="0 -960 960 960" width="16" fill="currentColor"><path d="M400-280v-400l200 200-200 200Z"/></svg>';
+
+let folderPickerSelectedId = null;
+
+async function buildFolderPickerModal() {
+    folderPickerTree.textContent = '';
+    setFolderPickerSelection(null);
+
+    const [root] = await chrome.bookmarks.getTree();
+    const roots = (root?.children || []).filter(isBookmarkFolder);
+
+    if (!roots.length) {
+        const empty = document.createElement('div');
+        empty.className = 'folderPickerEmpty';
+        empty.textContent = chrome.i18n.getMessage('folderPickerEmpty');
+        folderPickerTree.append(empty);
+        return;
+    }
+
+    folderPickerTree.append(buildFolderPickerNodes(roots, 0));
+}
+
+function buildFolderPickerNodes(nodes, depth) {
+    const fragment = document.createDocumentFragment();
+
+    for (const node of nodes) {
+        if (!isBookmarkFolder(node)) continue;
+
+        const title = node.title || chrome.i18n.getMessage('folderPickerUntitled');
+        const children = node.children || [];
+        const subFolders = children.filter(isBookmarkFolder);
+        const bookmarkCount = children.filter(child => !!child.url).length;
+        // top level roots (bookmarks bar, other bookmarks...) start open
+        const expanded = depth === 0 && subFolders.length > 0;
+
+        const li = document.createElement('li');
+        const row = document.createElement('div');
+        row.className = 'folderPickerRow';
+        row.dataset.id = node.id;
+
+        const twisty = document.createElement('span');
+        if (subFolders.length) {
+            twisty.className = expanded ? 'folderPickerTwisty expanded' : 'folderPickerTwisty';
+            twisty.innerHTML = FOLDER_PICKER_TWISTY;
+        } else {
+            twisty.className = 'folderPickerTwistySpacer';
+        }
+        row.append(twisty);
+        row.insertAdjacentHTML('beforeend', FOLDER_PICKER_ICON);
+
+        const label = document.createElement('span');
+        label.className = 'folderPickerLabel';
+        label.textContent = title;
+        row.append(label);
+
+        if (node.id === speedDialId) {
+            row.classList.add('isCurrent');
+            const badge = document.createElement('span');
+            badge.className = 'folderPickerBadge';
+            badge.textContent = chrome.i18n.getMessage('folderPickerCurrentFolder');
+            row.append(badge);
+        }
+
+        if (bookmarkCount) {
+            const count = document.createElement('span');
+            count.className = 'folderPickerCount';
+            count.textContent = bookmarkCount;
+            row.append(count);
+        }
+
+        li.append(row);
+
+        if (subFolders.length) {
+            const group = document.createElement('ul');
+            group.hidden = !expanded;
+            group.append(buildFolderPickerNodes(subFolders, depth + 1));
+            li.append(group);
+        }
+
+        fragment.append(li);
+    }
+
+    return fragment;
+}
+
+function setFolderPickerSelection(row) {
+    folderPickerTree.querySelector('.isSelected')?.classList.remove('isSelected');
+    row?.classList.add('isSelected');
+
+    folderPickerSelectedId = row?.dataset.id || null;
+    folderPickerSave.disabled = !row;
+    folderPickerSave.classList.toggle('disabled', !row);
+}
+
+async function openFolderPicker() {
+    await buildFolderPickerModal();
+    modalShowEffect(folderPickerModalContent, folderPickerModal);
+}
+
+folderPickerTree.addEventListener('click', e => {
+    const row = e.target.closest('.folderPickerRow');
+    if (!row) return;
+
+    const twisty = e.target.closest('.folderPickerTwisty');
+    if (twisty) {
+        const group = row.parentElement.querySelector(':scope > ul');
+        group.hidden = !group.hidden;
+        twisty.classList.toggle('expanded', !group.hidden);
+        return;
+    }
+
+    if (row.classList.contains('isCurrent')) return;
+
+    setFolderPickerSelection(row);
+});
+
+speedDialFolderButton.addEventListener('click', openFolderPicker);
+
+folderPickerSave.addEventListener('click', () => {
+    const folderId = folderPickerSelectedId;
+    hideModals();
+    adoptSpeedDialFolder(folderId).catch(err => console.log(err));
+});
+
+async function adoptSpeedDialFolder(folderId) {
+    if (!folderId || folderId === speedDialId) return;
+
+    const previousId = speedDialId;
+    speedDialSyncRequest++;
+    const renderRevision = activateSpeedDialFolder(folderId);
+
+    await chrome.storage.local.set({ [SPEED_DIAL_FOLDER_KEY]: folderId, settings });
+
+    await removeUnusedDefaultFolder(previousId);
+
+    if (!isSpeedDialRenderCurrent(folderId, renderRevision)) return;
+
+    await buildDialPages(speedDialId, currentFolder);
+    if (!isSpeedDialRenderCurrent(folderId, renderRevision)) return;
+
+    scheduleFlip();
+    captureMissingThumbnails(folderId).catch(err => console.log(err));
+}
+
+// we create an empty 'Speed Dial' folder on first run; drop it if the user adopts
+// another folder before putting anything in it
+async function removeUnusedDefaultFolder(folderId) {
+    if (!folderId) return;
+
+    try {
+        const [node] = await chrome.bookmarks.get(folderId);
+        if (!node || node.url || node.title !== 'Speed Dial') return;
+
+        const children = await chrome.bookmarks.getChildren(folderId);
+        if (children.length) return;
+
+        await chrome.bookmarks.remove(folderId);
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+// an adopted folder may contain sites we have never captured images for
+async function captureMissingThumbnails(folderId) {
+    const [root] = await chrome.bookmarks.getSubTree(folderId);
+    const nodes = [];
+
+    (function collect(children) {
+        for (const child of children || []) {
+            if (child.url) {
+                nodes.push(child);
+            } else {
+                collect(child.children);
+            }
+        }
+    })(root?.children || []);
+
+    if (!nodes.length) return;
+
+    const stored = await chrome.storage.local.get(nodes.map(node => node.url));
+    refreshImportedThumbnails(nodes.filter(node => !getSelectedThumbnail(stored[node.url])));
 }
 
 async function buildModal(url, title) {
@@ -2700,6 +2939,11 @@ window.addEventListener("mousedown", e => {
         //importFileInput.click();
         return;
     }
+    if (e.target.closest('#splashUseFolder')) {
+        e.preventDefault();
+        openFolderPicker();
+        return;
+    }
 
     switch (e.target.className) {
         // todo: invert this
@@ -3245,6 +3489,17 @@ function parseJson(event) {
     }
 }
 
+// importers wipe local storage; the adopted folder id is profile-local state rather than
+// backup data, so it has to survive or we'd lose track of the folder we just imported into
+async function clearStorage() {
+    const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+    await chrome.storage.local.clear();
+
+    if (stored[SPEED_DIAL_FOLDER_KEY]) {
+        await chrome.storage.local.set({ [SPEED_DIAL_FOLDER_KEY]: stored[SPEED_DIAL_FOLDER_KEY] });
+    }
+}
+
 // Add event listener for search input
 searchInput.addEventListener('input', function (e) {
     const searchTerm = e.target.value.toLowerCase();
@@ -3366,7 +3621,7 @@ function importFromSD2(json) {
         title: group.title
     }));
 
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 0) {
@@ -3448,7 +3703,7 @@ function importFromFVD(json) {
     }));
 
     // clear previous settings and import
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 1) {
@@ -3515,7 +3770,7 @@ async function importFromYASD(json) {
 
     try {
         // Clear previous settings and import new data
-        await chrome.storage.local.clear();
+        await clearStorage();
 
         // Store settings
         let settingsPromise = Promise.resolve();
@@ -3609,7 +3864,7 @@ async function importFromYASD(json) {
 
 function importFromOldYASD(json) {
     // import from old yasd format
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         chrome.storage.local.set(json).then(result => {
             hideModals();
             // refresh page
@@ -4048,31 +4303,91 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
     }
 }, 650, true);
 
-function getSpeedDialId() {
-    return new Promise((resolve, reject) => {
-        chrome.bookmarks.search({ title: 'Speed Dial' }).then(result => {
-            if (result) {
-                for (let bookmark of result) {
-                    if (!bookmark.url) {
-                        speedDialId = bookmark.id;
-                        break;
-                    }
-                }
-            }
-            if (speedDialId) {
-                resolve();
-            } else {
-                chrome.bookmarks.create({ title: 'Speed Dial' }).then(result => {
-                    speedDialId = result.id;
-                    resolve();
-                }, error => {
-                    reject(error);
-                });
-            }
-        }, error => {
-            reject(error)
-        });
-    });
+async function getSpeedDialId() {
+    // a folder the user adopted via the folder picker takes precedence over the
+    // default 'Speed Dial' folder. kept out of settings so it isnt carried across
+    // profiles by settings import/export, where bookmark ids are meaningless
+    const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+    const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
+
+    if (adoptedId) {
+        const [node] = await chrome.bookmarks.get(adoptedId).catch(() => []);
+        if (isBookmarkFolder(node)) {
+            return adoptedId;
+        }
+        // the adopted folder is gone; fall back to the default folder
+        await chrome.storage.local.remove(SPEED_DIAL_FOLDER_KEY);
+    }
+
+    const results = await chrome.bookmarks.search({ title: 'Speed Dial' });
+    const match = (results || []).find(isBookmarkFolder);
+
+    if (match) {
+        return match.id;
+    }
+
+    const created = await chrome.bookmarks.create({ title: 'Speed Dial' });
+    return created.id;
+}
+
+function activateSpeedDialFolder(folderId) {
+    speedDialId = folderId;
+    speedDialRootRevision++;
+    currentFolder = folderId;
+    pendingFolderId = folderId;
+    settings.currentFolder = folderId;
+    scrollPos = 0;
+    speedDialRootNode = null;
+    folderNodeMap = new Map();
+    rootFolderIds = [];
+    bookmarksContainerParent.scrollTop = 0;
+    foldersContainer.textContent = '';
+    bookmarksContainerParent.querySelectorAll('.container')
+        .forEach(container => removeFolderContainer(container));
+
+    addFolderButton.style.display = '';
+    searchBtn.style.display = '';
+    setFolderHistoryState(folderId, 'replace');
+    return speedDialRootRevision;
+}
+
+async function syncSpeedDialFolder(folderId = null) {
+    const syncRequest = ++speedDialSyncRequest;
+    let resolvedId = folderId;
+
+    if (resolvedId) {
+        const [node] = await chrome.bookmarks.get(resolvedId).catch(() => []);
+        if (!isBookmarkFolder(node)) {
+            resolvedId = await getSpeedDialId();
+        }
+    } else {
+        resolvedId = await getSpeedDialId();
+    }
+
+    if (syncRequest !== speedDialSyncRequest || resolvedId === speedDialId) return;
+
+    const renderRevision = activateSpeedDialFolder(resolvedId);
+    await buildDialPages(resolvedId, resolvedId);
+    if (!isSpeedDialRenderCurrent(resolvedId, renderRevision)) return;
+
+    scheduleFlip();
+}
+
+function handleStorageChanged(changes, areaName) {
+    if (areaName !== 'local' || !changes[SPEED_DIAL_FOLDER_KEY] || !settings) return;
+
+    clearTimeout(speedDialStorageChangeTimer);
+    speedDialStorageChangeTimer = setTimeout(async () => {
+        const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+        const folderId = stored[SPEED_DIAL_FOLDER_KEY];
+
+        if (!folderId) {
+            const [currentNode] = await chrome.bookmarks.get(speedDialId).catch(() => []);
+            if (isBookmarkFolder(currentNode)) return;
+        }
+
+        syncSpeedDialFolder(folderId).catch(error => console.log(error));
+    }, 50);
 }
 
 // Preload the image before setting the background
@@ -4237,7 +4552,11 @@ function init() {
             */
         }
 
-        getSpeedDialId().then(() => {
+        const initialSyncRequest = ++speedDialSyncRequest;
+        getSpeedDialId().then(resolvedId => {
+            if (initialSyncRequest !== speedDialSyncRequest) return;
+
+            speedDialId = resolvedId;
             if (settings.rememberFolder && settings.currentFolder) {
                 currentFolder = settings.currentFolder;
             } else {

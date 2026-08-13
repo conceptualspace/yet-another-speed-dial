@@ -5,6 +5,12 @@
 'use strict';
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+// storage key holding the id of a bookmarks folder adopted as the speed dial root
+const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
+
+function isBookmarkFolder(node) {
+    return !!node && !node.url && node.type !== 'separator';
+}
 
 function getThumbnailCandidatesKey(url) {
     return `${THUMBNAIL_CANDIDATES_KEY_PREFIX}${url}`;
@@ -213,8 +219,6 @@ async function handleBookmarkChanged(id, info) {
 }
 
 async function handleBookmarkRemoved(id, info) {
-	// todo: handle upsert where speed dial folder is deleted
-	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
 	if (info.node.url) {
 		// remove the thumbnail from local storage if no other bookmarks share this URL
 		const others = await chrome.bookmarks.search({ url: info.node.url });
@@ -223,8 +227,24 @@ async function handleBookmarkRemoved(id, info) {
 				console.log(err)
 			});
 		}
-	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
-        reloadFolders()
+	} else {
+		const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+		const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
+
+		if (adoptedId) {
+			// onRemoved only fires for the top of the subtree, so the adopted root may
+			// have gone as a descendant of info.node rather than as info.node itself
+			const [node] = await chrome.bookmarks.get(adoptedId).catch(() => []);
+			if (!isBookmarkFolder(node)) {
+				// resolve a replacement root before tabs observe the key removal, so they dont each create one
+				await getSpeedDialFolderId();
+				return;
+			}
+		}
+
+		if (info.node.title !== "New Folder") {
+			reloadFolders()
+		}
 	}
 	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
 	//refreshOpen();
@@ -372,18 +392,33 @@ async function handleRefreshAll(data) {
     refreshBatch(data.bookmarks);
 }
 
-async function createBookmarkFromContextMenu(tab) {
-	// get the speed dial folder id
-	let speedDialId = null;
-	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' })
-	if (bookmarks && bookmarks.length) {
-		for (let bookmark of bookmarks) {
-			if (!bookmark.url) {
-				speedDialId = bookmark.id;
-				break;
-			}
+async function getSpeedDialFolderId() {
+	// a folder adopted via the folder picker takes precedence over the default one
+	const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+	const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
+
+	if (adoptedId) {
+		const [node] = await chrome.bookmarks.get(adoptedId).catch(() => []);
+        if (isBookmarkFolder(node)) {
+			return adoptedId;
 		}
 	}
+
+	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' });
+    const match = (bookmarks || []).find(isBookmarkFolder);
+	const folderId = match ? match.id : (await chrome.bookmarks.create({ title: 'Speed Dial' })).id;
+
+	// only reached when an adopted folder is gone
+	if (adoptedId) {
+		await chrome.storage.local.remove(SPEED_DIAL_FOLDER_KEY);
+	}
+
+	return folderId;
+}
+
+async function createBookmarkFromContextMenu(tab) {
+	// get the speed dial folder id
+	const speedDialId = await getSpeedDialFolderId();
 
     // check for doopz
 	if (speedDialId) {
