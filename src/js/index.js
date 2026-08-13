@@ -1449,7 +1449,6 @@ function buildFolderPickerNodes(nodes, depth) {
         const title = node.title || chrome.i18n.getMessage('folderPickerUntitled');
         const children = node.children || [];
         const subFolders = children.filter(isBookmarkFolder);
-        const bookmarkCount = children.filter(child => !!child.url).length;
         // top level roots (bookmarks bar, other bookmarks...) start open
         const expanded = depth === 0 && subFolders.length > 0;
 
@@ -1479,13 +1478,6 @@ function buildFolderPickerNodes(nodes, depth) {
             badge.className = 'folderPickerBadge';
             badge.textContent = chrome.i18n.getMessage('folderPickerCurrentFolder');
             row.append(badge);
-        }
-
-        if (bookmarkCount) {
-            const count = document.createElement('span');
-            count.className = 'folderPickerCount';
-            count.textContent = bookmarkCount;
-            row.append(count);
         }
 
         li.append(row);
