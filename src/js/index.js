@@ -71,6 +71,7 @@ const folderPickerModal = document.getElementById('folderPickerModal');
 const folderPickerModalContent = document.getElementById('folderPickerModalContent');
 const folderPickerTree = document.getElementById('folderPickerTree');
 const folderPickerSave = document.getElementById('folderPickerSave');
+const folderPickerReset = document.getElementById('folderPickerReset');
 const speedDialFolderButton = document.getElementById('speedDialFolderButton');
 
 const refreshAllModal = document.getElementById('refreshAllModal');
@@ -1421,6 +1422,10 @@ async function buildFolderPickerModal() {
     folderPickerTree.textContent = '';
     setFolderPickerSelection(null);
 
+    // plain search, not getDefaultSpeedDialFolderId(), so opening the picker never creates a folder
+    const defaultMatches = await chrome.bookmarks.search({ title: 'Speed Dial' });
+    folderPickerReset.hidden = (defaultMatches || []).find(isBookmarkFolder)?.id === speedDialId;
+
     const [root] = await chrome.bookmarks.getTree();
     const roots = (root?.children || []).filter(isBookmarkFolder);
 
@@ -1535,6 +1540,20 @@ folderPickerSave.addEventListener('click', () => {
     const folderId = folderPickerSelectedId;
     hideModals();
     adoptSpeedDialFolder(folderId).catch(err => console.log(err));
+});
+
+folderPickerReset.addEventListener('click', async () => {
+    folderPickerReset.disabled = true;
+
+    try {
+        const folderId = await getDefaultSpeedDialFolderId();
+        hideModals();
+        await adoptSpeedDialFolder(folderId);
+    } catch (err) {
+        console.log(err);
+    } finally {
+        folderPickerReset.disabled = false;
+    }
 });
 
 async function adoptSpeedDialFolder(folderId) {
@@ -4319,6 +4338,10 @@ async function getSpeedDialId() {
         await chrome.storage.local.remove(SPEED_DIAL_FOLDER_KEY);
     }
 
+    return getDefaultSpeedDialFolderId();
+}
+
+async function getDefaultSpeedDialFolderId() {
     const results = await chrome.bookmarks.search({ title: 'Speed Dial' });
     const match = (results || []).find(isBookmarkFolder);
 

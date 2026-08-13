@@ -1093,6 +1093,38 @@ a {
     padding: 0 0 0 18px;
 }
 
+.formItem > .folderPickerReset {
+    appearance: none;
+    display: block;
+    width: auto;
+    margin: .25em 0 .1em;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    color: rgba(255, 255, 255, 0.48);
+    font: inherit;
+    font-size: 0.78rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: default;
+}
+
+/* display above would otherwise beat the ua [hidden] rule */
+.formItem > .folderPickerReset[hidden] {
+    display: none;
+}
+
+.formItem > .folderPickerReset:hover,
+.formItem > .folderPickerReset:focus-visible {
+    color: rgba(255, 255, 255, 0.72);
+    text-decoration: underline;
+}
+
+.formItem > .folderPickerReset:disabled {
+    opacity: 0.5;
+}
+
 .folderPickerRow {
     display: flex;
     align-items: center;

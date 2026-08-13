@@ -66,6 +66,10 @@
   "folderPickerConfirm": {
     "message": "Usar esta pasta"
   },
+  "folderPickerReset": {
+    "description": "Link that switches back to the default Speed Dial bookmarks folder, creating it if needed",
+    "message": "Usar a pasta Speed Dial padrão"
+  },
   "folderPickerCurrentFolder": {
     "description": "Badge shown next to the folder that is already the speed dial folder",
     "message": "Atual"

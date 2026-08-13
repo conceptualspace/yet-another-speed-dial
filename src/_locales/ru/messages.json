@@ -66,6 +66,10 @@
   "folderPickerConfirm": {
     "message": "Использовать эту папку"
   },
+  "folderPickerReset": {
+    "description": "Link that switches back to the default Speed Dial bookmarks folder, creating it if needed",
+    "message": "Использовать папку Speed Dial по умолчанию"
+  },
   "folderPickerCurrentFolder": {
     "description": "Badge shown next to the folder that is already the speed dial folder",
     "message": "Текущая"
