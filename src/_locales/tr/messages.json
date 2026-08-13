@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Klasörü Düzenle..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Yer imi klasörü seçin"
+  },
+  "folderPickerDescription": {
+    "message": "Hızlı Arama klasörü olarak kullanmak üzere mevcut bir klasör seçin. Bu klasörün yer imleri ve alt klasörleri bu sayfada görünür."
+  },
+  "folderPickerConfirm": {
+    "message": "Bu klasörü kullan"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Geçerli"
+  },
+  "folderPickerEmpty": {
+    "message": "Yer imi klasörü bulunamadı"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Adsız klasör"
+  },
   "export": {
     "message": "Ayarları Dışa Aktar..."
   },
@@ -130,6 +151,9 @@
   "newInstallImport": {
     "message": "İçe Aktar"
   },
+  "newInstallUseExistingFolder": {
+    "message": "Mevcut bir yer imi klasörünü kullan"
+  },
   "newPrivate": {
     "message": "Yeni gizli pencerede aç"
   },
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Ara..."
+  },
+  "speedDialFolder": {
+    "message": "Hızlı Arama Klasörü..."
   },
   "settings": {
     "message": "Ayarlar..."

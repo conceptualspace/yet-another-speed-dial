@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Modifica Cartella..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Seleziona una cartella di segnalibri"
+  },
+  "folderPickerDescription": {
+    "message": "Seleziona una cartella esistente da usare come cartella Chiamata rapida. I segnalibri e le sottocartelle al suo interno verranno visualizzati in questa pagina."
+  },
+  "folderPickerConfirm": {
+    "message": "Usa questa cartella"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Attuale"
+  },
+  "folderPickerEmpty": {
+    "message": "Nessuna cartella di segnalibri trovata"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Cartella senza nome"
+  },
   "export": {
     "message": "Esporta impostazioni..."
   },
@@ -122,13 +143,16 @@
     "message": "Puoi organizzare i segnalibri in sottocartelle"
   },
   "newInstall4": {
-    "message": "Fai clic con il tasto destro su una selezione rapida per modificarla. Puoi anche trascinare e rilasciare per riordinarle"
+    "message": "Fai clic con il tasto destro su una selezione rapida per modificarla. Trascina e rilascia le selezioni rapide per riordinarle"
   },
   "newInstallAddSite": {
     "message": "Aggiungi sito"
   },
   "newInstallImport": {
     "message": "Importa"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Usa una cartella di segnalibri esistente"
   },
   "newPrivate": {
     "message": "Aprire in una nuova finestra privata"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Cerca..."
+  },
+  "speedDialFolder": {
+    "message": "Cartella Chiamata rapida..."
   },
   "settings": {
     "message": "Impostazioni..."

@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Editar Pasta..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Escolher uma pasta de favoritos"
+  },
+  "folderPickerDescription": {
+    "message": "Selecione uma pasta existente para usar como pasta de Discagem Rápida. Os favoritos e as subpastas dela aparecerão nesta página."
+  },
+  "folderPickerConfirm": {
+    "message": "Usar esta pasta"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Atual"
+  },
+  "folderPickerEmpty": {
+    "message": "Nenhuma pasta de favoritos encontrada"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Pasta sem nome"
+  },
   "export": {
     "message": "Exportar Configurações..."
   },
@@ -122,13 +143,16 @@
     "message": "Pode organizar os seus favoritos em subpastas"
   },
   "newInstall4": {
-    "message": "Clique com o botão direito numa discagem para editá-la. Também pode arrastar e largar para organizá-las"
+    "message": "Clique com o botão direito numa discagem para editá-la. Arraste e largue as discagens para organizá-las"
   },
   "newInstallAddSite": {
     "message": "Adicionar site"
   },
   "newInstallImport": {
     "message": "Importar"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Usar uma pasta de favoritos existente"
   },
   "newPrivate": {
     "message": "Abrir em nova janela privada"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Pesquisar..."
+  },
+  "speedDialFolder": {
+    "message": "Pasta de Discagem Rápida..."
   },
   "settings": {
     "message": "Configurações..."

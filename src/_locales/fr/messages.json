@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Modifier le dossier..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Choisir un dossier de favoris"
+  },
+  "folderPickerDescription": {
+    "message": "Sélectionnez un dossier existant à utiliser comme dossier Speed Dial. Ses favoris et sous-dossiers apparaîtront sur cette page."
+  },
+  "folderPickerConfirm": {
+    "message": "Utiliser ce dossier"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Actuel"
+  },
+  "folderPickerEmpty": {
+    "message": "Aucun dossier de favoris trouvé"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Dossier sans nom"
+  },
   "export": {
     "message": "Exporter les paramètres..."
   },
@@ -122,13 +143,16 @@
     "message": "Vous pouvez organiser vos favoris dans des sous-dossiers"
   },
   "newInstall4": {
-    "message": "Faites un clic droit sur un raccourci pour le modifier. Vous pouvez aussi les faire glisser-déposer pour les organiser"
+    "message": "Faites un clic droit sur un raccourci pour le modifier. Faites glisser-déposer les raccourcis pour les organiser"
   },
   "newInstallAddSite": {
     "message": "Ajouter un site"
   },
   "newInstallImport": {
     "message": "Importer"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Utiliser un dossier de favoris existant"
   },
   "newPrivate": {
     "message": "Ouvrir dans une nouvelle fenêtre privée"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Rechercher..."
+  },
+  "speedDialFolder": {
+    "message": "Dossier Speed Dial..."
   },
   "settings": {
     "message": "Paramètres..."

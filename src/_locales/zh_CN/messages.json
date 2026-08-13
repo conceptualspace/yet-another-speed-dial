@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "编辑文件夹..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "选择书签文件夹"
+  },
+  "folderPickerDescription": {
+    "message": "选择一个现有文件夹作为快速拨号文件夹。该文件夹中的书签和子文件夹将显示在此页面上。"
+  },
+  "folderPickerConfirm": {
+    "message": "使用此文件夹"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "当前"
+  },
+  "folderPickerEmpty": {
+    "message": "未找到书签文件夹"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "未命名文件夹"
+  },
   "export": {
     "message": "导出设置..."
   },
@@ -122,13 +143,16 @@
     "message": "您可以将书签整理到子文件夹中"
   },
   "newInstall4": {
-    "message": "右键单击拨号以编辑它。您还可以拖放以重新排列"
+    "message": "右键单击拨号进行编辑。拖放拨号以重新排列"
   },
   "newInstallAddSite": {
     "message": "添加网站"
   },
   "newInstallImport": {
     "message": "导入"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "使用现有书签文件夹"
   },
   "newPrivate": {
     "message": "在新的无痕窗口中打开"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "搜索..."
+  },
+  "speedDialFolder": {
+    "message": "快速拨号文件夹..."
   },
   "settings": {
     "message": "设置..."

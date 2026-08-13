@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Editar Carpeta..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Elegir una carpeta de marcadores"
+  },
+  "folderPickerDescription": {
+    "message": "Seleccione una carpeta existente para usarla como carpeta de marcación rápida. Sus marcadores y subcarpetas aparecerán en esta página."
+  },
+  "folderPickerConfirm": {
+    "message": "Usar esta carpeta"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Actual"
+  },
+  "folderPickerEmpty": {
+    "message": "No se encontraron carpetas de marcadores"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Carpeta sin título"
+  },
   "export": {
     "message": "Exportar configuración..."
   },
@@ -122,13 +143,16 @@
     "message": "Puede organizar sus marcadores en subcarpetas"
   },
   "newInstall4": {
-    "message": "Haga clic derecho en una marcación para editarla. También puede arrastrarlas y soltarlas para ordenarlas"
+    "message": "Haga clic derecho en una marcación para editarla. Arrastre y suelte las marcaciones para ordenarlas"
   },
   "newInstallAddSite": {
     "message": "Agregar sitio"
   },
   "newInstallImport": {
     "message": "Importar"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Usar una carpeta de marcadores existente"
   },
   "newPrivate": {
     "message": "Abrir en nueva ventana privada"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Buscar..."
+  },
+  "speedDialFolder": {
+    "message": "Carpeta de marcación rápida..."
   },
   "settings": {
     "message": "Ajustes..."

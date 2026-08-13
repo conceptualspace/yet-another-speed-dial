@@ -56,6 +56,27 @@
     "editFolder": {
       "message": "폴더 편집..."
     },
+    "folderPickerTitle": {
+      "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+      "message": "북마크 폴더 선택"
+    },
+    "folderPickerDescription": {
+      "message": "스피드 다이얼로 사용할 기존 폴더를 선택하세요. 해당 폴더의 북마크와 하위 폴더가 이 페이지에 표시됩니다."
+    },
+    "folderPickerConfirm": {
+      "message": "이 폴더 사용"
+    },
+    "folderPickerCurrentFolder": {
+      "description": "Badge shown next to the folder that is already the speed dial folder",
+      "message": "현재"
+    },
+    "folderPickerEmpty": {
+      "message": "북마크 폴더를 찾을 수 없음"
+    },
+    "folderPickerUntitled": {
+      "description": "Label used for a bookmarks folder that has no name",
+      "message": "이름 없는 폴더"
+    },
     "export": {
       "message": "설정 내보내기..."
     },
@@ -122,13 +143,16 @@
       "message": "북마크를 하위 폴더로 정리할 수 있습니다"
     },
     "newInstall4": {
-      "message": "다이얼을 오른쪽 클릭하여 편집하세요. 드래그 앤 드롭으로 정렬할 수도 있습니다"
+      "message": "다이얼을 오른쪽 클릭하여 편집하세요. 드래그 앤 드롭으로 정렬하세요"
     },
     "newInstallAddSite": {
       "message": "사이트 추가"
     },
     "newInstallImport": {
       "message": "가져오기"
+    },
+    "newInstallUseExistingFolder": {
+      "message": "기존 북마크 폴더 사용"
     },
     "newPrivate": {
       "message": "새 시크릿 창에서 열기"
@@ -174,6 +198,9 @@
     },
     "searchPlaceholder": {
       "message": "검색..."
+    },
+    "speedDialFolder": {
+      "message": "스피드 다이얼 폴더..."
     },
     "settings": {
       "message": "설정..."

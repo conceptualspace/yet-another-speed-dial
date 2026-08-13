@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Edytuj folder..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Wybierz folder zakładek"
+  },
+  "folderPickerDescription": {
+    "message": "Wybierz istniejący folder, którego chcesz używać jako folderu szybkiego wybierania. Jego zakładki i podfoldery pojawią się na tej stronie."
+  },
+  "folderPickerConfirm": {
+    "message": "Użyj tego folderu"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Bieżący"
+  },
+  "folderPickerEmpty": {
+    "message": "Nie znaleziono folderów zakładek"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Folder bez nazwy"
+  },
   "export": {
     "message": "Eksportuj ustawienia..."
   },
@@ -122,13 +143,16 @@
     "message": "Możesz organizować zakładki w podfoldery"
   },
   "newInstall4": {
-    "message": "Kliknij prawym przyciskiem myszy na wybieranie, aby je edytować. Możesz również przeciągać i upuszczać, aby je układać"
+    "message": "Kliknij prawym przyciskiem myszy kafelek, aby go edytować. Przeciągaj i upuszczaj kafelki, aby je układać"
   },
   "newInstallAddSite": {
     "message": "Dodaj stronę"
   },
   "newInstallImport": {
     "message": "Importuj"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Użyj istniejącego folderu zakładek"
   },
   "newPrivate": {
     "message": "Otwórz w nowym oknie prywatnym"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Szukaj..."
+  },
+  "speedDialFolder": {
+    "message": "Folder szybkiego wybierania..."
   },
   "settings": {
     "message": "Ustawienia..."

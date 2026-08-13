@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Ordner bearbeiten..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Lesezeichenordner auswählen"
+  },
+  "folderPickerDescription": {
+    "message": "Wählen Sie einen vorhandenen Ordner als Speed-Dial-Ordner aus. Seine Lesezeichen und Unterordner werden auf dieser Seite angezeigt."
+  },
+  "folderPickerConfirm": {
+    "message": "Diesen Ordner verwenden"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Aktuell"
+  },
+  "folderPickerEmpty": {
+    "message": "Keine Lesezeichenordner gefunden"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Unbenannter Ordner"
+  },
   "export": {
     "message": "Exporteinstellungen..."
   },
@@ -122,13 +143,16 @@
     "message": "Sie können Ihre Lesezeichen in Unterordnern organisieren"
   },
   "newInstall4": {
-    "message": "Klicken Sie mit der rechten Maustaste auf eine Kurzwahl, um sie zu bearbeiten. Sie können sie auch per Drag-and-drop anordnen"
+    "message": "Klicken Sie mit der rechten Maustaste auf eine Kurzwahl, um sie zu bearbeiten. Ziehen Sie die Kurzwahlen per Drag-and-drop, um sie anzuordnen"
   },
   "newInstallAddSite": {
     "message": "Website hinzufügen"
   },
   "newInstallImport": {
     "message": "Importieren"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Vorhandenen Lesezeichenordner verwenden"
   },
   "newPrivate": {
     "message": "In neuem privaten Fenster öffnen"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Suchen..."
+  },
+  "speedDialFolder": {
+    "message": "Speed-Dial-Ordner..."
   },
   "settings": {
     "message": "Einstellungen..."

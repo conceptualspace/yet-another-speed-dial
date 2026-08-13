@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "フォルダを編集..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "ブックマークフォルダを選択"
+  },
+  "folderPickerDescription": {
+    "message": "スピードダイヤルとして使用する既存のフォルダを選択してください。そのフォルダのブックマークとサブフォルダがこのページに表示されます。"
+  },
+  "folderPickerConfirm": {
+    "message": "このフォルダを使用"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "現在"
+  },
+  "folderPickerEmpty": {
+    "message": "ブックマークフォルダが見つかりません"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "名前のないフォルダ"
+  },
   "export": {
     "message": "設定をエクスポート..."
   },
@@ -122,13 +143,16 @@
     "message": "ブックマークをサブフォルダに整理できます"
   },
   "newInstall4": {
-    "message": "ダイヤルを右クリックすると編集できます。ドラッグ＆ドロップで並べ替えることも可能です"
+    "message": "ダイヤルを右クリックすると編集できます。ドラッグ＆ドロップで並べ替えられます"
   },
   "newInstallAddSite": {
     "message": "サイトを追加"
   },
   "newInstallImport": {
     "message": "インポート"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "既存のブックマークフォルダを使用"
   },
   "newPrivate": {
     "message": "新しいプライベートウィンドウで開く"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "検索..."
+  },
+  "speedDialFolder": {
+    "message": "スピードダイヤルフォルダ..."
   },
   "settings": {
     "message": "設定..."

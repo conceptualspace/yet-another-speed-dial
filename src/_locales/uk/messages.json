@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Редагувати папку..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Виберіть папку закладок"
+  },
+  "folderPickerDescription": {
+    "message": "Виберіть наявну папку для швидкого набору. Її закладки та вкладені папки з’являться на цій сторінці."
+  },
+  "folderPickerConfirm": {
+    "message": "Використовувати цю папку"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Поточна"
+  },
+  "folderPickerEmpty": {
+    "message": "Папок закладок не знайдено"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Папка без назви"
+  },
   "export": {
     "message": "Експортувати налаштування..."
   },
@@ -122,13 +143,16 @@
     "message": "Ви можете впорядковувати закладки у вкладених папках"
   },
   "newInstall4": {
-    "message": "Клацніть правою кнопкою миші плитку, щоб редагувати її. Також можна перетягувати плитки для впорядкування"
+    "message": "Клацніть правою кнопкою миші плитку, щоб редагувати її. Перетягуйте плитки для впорядкування"
   },
   "newInstallAddSite": {
     "message": "Додати сайт"
   },
   "newInstallImport": {
     "message": "Імпорт"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Використовувати наявну папку закладок"
   },
   "newPrivate": {
     "message": "Відкрити в новому приватному вікні"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Пошук..."
+  },
+  "speedDialFolder": {
+    "message": "Папка швидкого набору..."
   },
   "settings": {
     "message": "Налаштування..."

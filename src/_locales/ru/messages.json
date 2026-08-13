@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "Редактировать папку..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "Выберите папку закладок"
+  },
+  "folderPickerDescription": {
+    "message": "Выберите существующую папку для быстрого набора. Её закладки и подпапки появятся на этой странице."
+  },
+  "folderPickerConfirm": {
+    "message": "Использовать эту папку"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "Текущая"
+  },
+  "folderPickerEmpty": {
+    "message": "Папки закладок не найдены"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "Папка без названия"
+  },
   "export": {
     "message": "Экспорт настроек..."
   },
@@ -122,13 +143,16 @@
     "message": "Вы можете организовать закладки по подпапкам"
   },
   "newInstall4": {
-    "message": "Щелкните правой кнопкой мыши по плитке, чтобы изменить ее. Также можно перетаскивать плитки, чтобы менять их порядок"
+    "message": "Щелкните правой кнопкой мыши по плитке, чтобы изменить ее. Перетаскивайте плитки, чтобы менять их порядок"
   },
   "newInstallAddSite": {
     "message": "Добавить сайт"
   },
   "newInstallImport": {
     "message": "Импорт"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "Использовать существующую папку закладок"
   },
   "newPrivate": {
     "message": "Открыть в новом приватном окне"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "Поиск..."
+  },
+  "speedDialFolder": {
+    "message": "Папка быстрого набора..."
   },
   "settings": {
     "message": "Настройки..."

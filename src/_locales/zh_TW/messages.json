@@ -56,6 +56,27 @@
   "editFolder": {
     "message": "編輯資料夾..."
   },
+  "folderPickerTitle": {
+    "description": "Title of the dialog used to pick an existing bookmarks folder as the speed dial folder",
+    "message": "選擇書籤資料夾"
+  },
+  "folderPickerDescription": {
+    "message": "選擇現有資料夾作為快速撥號資料夾，其中的書籤和子資料夾會顯示在此頁面上。"
+  },
+  "folderPickerConfirm": {
+    "message": "使用此資料夾"
+  },
+  "folderPickerCurrentFolder": {
+    "description": "Badge shown next to the folder that is already the speed dial folder",
+    "message": "目前"
+  },
+  "folderPickerEmpty": {
+    "message": "找不到書籤資料夾"
+  },
+  "folderPickerUntitled": {
+    "description": "Label used for a bookmarks folder that has no name",
+    "message": "未命名的資料夾"
+  },
   "export": {
     "message": "匯出設定..."
   },
@@ -122,13 +143,16 @@
     "message": "您可以將書籤整理到子資料夾中"
   },
   "newInstall4": {
-    "message": "在撥號上按右鍵即可編輯，也可以拖放來重新排列"
+    "message": "在撥號上按右鍵即可編輯。拖放撥號即可重新排列"
   },
   "newInstallAddSite": {
     "message": "新增網站"
   },
   "newInstallImport": {
     "message": "匯入"
+  },
+  "newInstallUseExistingFolder": {
+    "message": "使用現有的書籤資料夾"
   },
   "newPrivate": {
     "message": "在新的無痕視窗開啟"
@@ -174,6 +198,9 @@
   },
   "searchPlaceholder": {
     "message": "搜尋..."
+  },
+  "speedDialFolder": {
+    "message": "快速撥號資料夾..."
   },
   "settings": {
     "message": "設定..."
