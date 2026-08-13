@@ -3452,6 +3452,17 @@ function parseJson(event) {
     }
 }
 
+// importers wipe local storage; the adopted folder id is profile-local state rather than
+// backup data, so it has to survive or we'd lose track of the folder we just imported into
+async function clearStorage() {
+    const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+    await chrome.storage.local.clear();
+
+    if (stored[SPEED_DIAL_FOLDER_KEY]) {
+        await chrome.storage.local.set({ [SPEED_DIAL_FOLDER_KEY]: stored[SPEED_DIAL_FOLDER_KEY] });
+    }
+}
+
 // Add event listener for search input
 searchInput.addEventListener('input', function (e) {
     const searchTerm = e.target.value.toLowerCase();
@@ -3573,7 +3584,7 @@ function importFromSD2(json) {
         title: group.title
     }));
 
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 0) {
@@ -3655,7 +3666,7 @@ function importFromFVD(json) {
     }));
 
     // clear previous settings and import
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         // Create groups and bookmarks
         let groupPromises = groups.map(group => {
             if (group.id === 1) {
@@ -3722,7 +3733,7 @@ async function importFromYASD(json) {
 
     try {
         // Clear previous settings and import new data
-        await chrome.storage.local.clear();
+        await clearStorage();
 
         // Store settings
         let settingsPromise = Promise.resolve();
@@ -3816,7 +3827,7 @@ async function importFromYASD(json) {
 
 function importFromOldYASD(json) {
     // import from old yasd format
-    chrome.storage.local.clear().then(() => {
+    clearStorage().then(() => {
         chrome.storage.local.set(json).then(result => {
             hideModals();
             // refresh page
