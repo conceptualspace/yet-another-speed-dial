@@ -111,6 +111,8 @@ function colorsAreSimilar(color1, color2, tolerance = 2) {
 async function fetchImageAsDataURI(imageUrl) {
     if (imageUrl.startsWith('data:')) return imageUrl;
     try {
+        const parsedUrl = new URL(imageUrl);
+        if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') return null;
         const response = await fetch(imageUrl);
         if (!response.ok) throw new Error('Fetch failed');
         const blob = await response.blob();
@@ -628,7 +630,7 @@ async function fetchImages(url, quickRefresh) {
             
             // get large apple touch icon
             for (let size of sizes) {
-                let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
+                let appleIcon = doc.querySelector('link[rel="apple-touch-icon"][sizes="' + size + '"]');
                 if (appleIcon && appleIcon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
                     insert(imageUrl);
@@ -638,7 +640,7 @@ async function fetchImages(url, quickRefresh) {
 
             // get large x-icon
             for (let size of sizes) {
-                let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
+                let icon = doc.querySelector('link[rel="icon"][sizes="' + size + '"]');
                 if (icon && icon.getAttribute('href')) {
                     let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
                     insert(imageUrl);
