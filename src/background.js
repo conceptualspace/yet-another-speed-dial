@@ -215,8 +215,6 @@ async function handleBookmarkChanged(id, info) {
 }
 
 async function handleBookmarkRemoved(id, info) {
-	// todo: handle upsert where speed dial folder is deleted
-	//if (info.node.url && (info.parentId === speedDialId || folderIds.indexOf(info.parentId) !== -1)) {
 	if (info.node.url) {
 		// remove the thumbnail from local storage if no other bookmarks share this URL
 		const others = await chrome.bookmarks.search({ url: info.node.url });
@@ -225,8 +223,14 @@ async function handleBookmarkRemoved(id, info) {
 				console.log(err)
 			});
 		}
-	} else if (info.node.title !== "Speed Dial" && info.node.title !== "New Folder") {
-        reloadFolders()
+	} else {
+		const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
+		// resolve a replacement root before tabs observe the key removal, so they dont each create one
+		if (stored[SPEED_DIAL_FOLDER_KEY] === id) {
+			await getSpeedDialFolderId();
+		} else if (info.node.title !== "New Folder") {
+			reloadFolders()
+		}
 	}
 	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
 	//refreshOpen();
@@ -387,13 +391,15 @@ async function getSpeedDialFolderId() {
 	}
 
 	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' });
-	for (let bookmark of bookmarks || []) {
-		if (!bookmark.url) {
-			return bookmark.id;
-		}
+	const match = (bookmarks || []).find(bookmark => !bookmark.url);
+	const folderId = match ? match.id : (await chrome.bookmarks.create({ title: 'Speed Dial' })).id;
+
+	// only reached when an adopted folder is gone
+	if (adoptedId) {
+		await chrome.storage.local.remove(SPEED_DIAL_FOLDER_KEY);
 	}
 
-	return null;
+	return folderId;
 }
 
 async function createBookmarkFromContextMenu(tab) {
