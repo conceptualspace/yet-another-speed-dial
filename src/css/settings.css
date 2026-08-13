@@ -249,27 +249,6 @@
     white-space: nowrap;
 }
 
-.sidenav .folderPickerSetting {
-    width: auto;
-    max-width: 100%;
-    padding: 0.3em 0;
-    color: rgba(99, 212, 248, 0.8);
-    background: none;
-    text-align: right;
-}
-
-.sidenav .folderPickerSetting:hover {
-    color: rgb(99, 212, 248);
-    background: none;
-}
-
-.folderPickerSetting span {
-    display: block;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
 .settingsLink {
     height: 25px;
     color: #aaaaaa;

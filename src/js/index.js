@@ -72,7 +72,6 @@ const folderPickerModalContent = document.getElementById('folderPickerModalConte
 const folderPickerTree = document.getElementById('folderPickerTree');
 const folderPickerSave = document.getElementById('folderPickerSave');
 const speedDialFolderButton = document.getElementById('speedDialFolderButton');
-const speedDialFolderName = document.getElementById('speedDialFolderName');
 
 const refreshAllModal = document.getElementById('refreshAllModal');
 const refreshAllModalContent = document.getElementById('refreshAllModalContent');
@@ -442,7 +441,6 @@ async function buildDialPages(rootId, currentFolderId, { immediateActiveInsert =
     if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
 
     speedDialRootNode = rootNode;
-    speedDialFolderName.textContent = rootNode.title || homeFolderTitle;
     const children = rootNode.children || [];
     if (!children.length) {
         // new install
