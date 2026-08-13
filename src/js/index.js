@@ -203,6 +203,7 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
 const SELF_EDIT_REFRESH_WINDOW = 1000;
 const FOLDER_DIAL_DROP_DELAY = 120;
 const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
+const DIAL_DRAG_MIME_TYPE = 'application/x-yasd-dial'; // prevent dial dnd interfering with the browser
 const FOLDER_HISTORY_STATE_KEY = 'yasdFolderId';
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
@@ -1159,9 +1160,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 a.classList.add('tile');
                 a.href = bookmark.url;
                 a.setAttribute('data-id', bookmark.id);
-                if (settings.folderStyle === 'dials') {
-                    a.draggable = false;
-                }
+                a.draggable = false;
 
                 let main = document.createElement('div');
                 main.classList.add('tile-main');
@@ -3628,7 +3627,9 @@ function importFromOldYASD(json) {
 }
 
 function setDialDragData(dataTransfer, dragEl) {
-    dataTransfer.setData('Text', dragEl.textContent);
+    // smoother dnd; we dont support dragging into rando browser UI
+    dataTransfer.clearData();
+    dataTransfer.setData(DIAL_DRAG_MIME_TYPE, dragEl.dataset.id || '');
 
     if (!transparentDragImage) {
         transparentDragImage = document.createElement('canvas');
