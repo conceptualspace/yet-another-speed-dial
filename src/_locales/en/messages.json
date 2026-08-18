@@ -159,6 +159,9 @@
   "newInstallImport": {
     "message": "Import"
   },
+  "newInstallImportDescription": {
+    "message": "Restore your speed dials, thumbnails, and settings from a YASD backup. You can also import backups from Speed Dial 2 and FVD (support may vary)."
+  },
   "newInstallUseExistingFolder": {
     "message": "Use an existing bookmarks folder"
   },

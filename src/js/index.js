@@ -66,6 +66,9 @@ const deleteFolderModalSave = document.getElementById('deleteFolderModalSave');
 
 const importExportModal = document.getElementById('importExportModal');
 const importExportModalContent = document.getElementById('importExportModalContent');
+const importExportModalTitle = document.getElementById('importExportModalTitle');
+const importExportDescription = document.getElementById('importExportDescription');
+const exportRow = document.getElementById('exportRow');
 
 const folderPickerModal = document.getElementById('folderPickerModal');
 const folderPickerModalContent = document.getElementById('folderPickerModalContent');
@@ -127,6 +130,7 @@ const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabel = document.getElementById("importFileLabel");
+const importFileLabelText = document.getElementById("importFileLabelText");
 const helpBtn = document.getElementById("help");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
@@ -2946,8 +2950,7 @@ window.addEventListener("mousedown", e => {
     }
     if (e.target.closest('#splashImport')) {
         e.preventDefault();
-        modalShowEffect(importExportModalContent, importExportModal);
-        //importFileInput.click();
+        openImportExportModal(true);
         return;
     }
     if (e.target.closest('#splashUseFolder')) {
@@ -3463,13 +3466,29 @@ function prepareExport() {
     });
 }
 
+function openImportExportModal(importOnly = false) {
+    importExportStatus.innerText = "";
+    importExportModalTitle.textContent = importOnly
+        ? chrome.i18n.getMessage('newInstallImport')
+        : 'Import / Export';
+    importExportDescription.textContent = importOnly
+        ? chrome.i18n.getMessage('newInstallImportDescription') || chrome.i18n.getMessage('importExport')
+        : chrome.i18n.getMessage('importExport');
+    importFileLabelText.textContent = chrome.i18n.getMessage(importOnly ? 'newInstallImport' : 'import');
+    exportRow.hidden = importOnly;
+
+    if (!importOnly) {
+        exportBtn.classList.add('disabled');
+        prepareExport();
+    }
+
+    modalShowEffect(importExportModalContent, importExportModal);
+}
+
 
 importExportBtn.onclick = function () {
     hideSettings();
-    importExportStatus.innerText = "";
-    exportBtn.classList.add('disabled');
-    prepareExport();
-    modalShowEffect(importExportModalContent, importExportModal);
+    openImportExportModal();
 }
 
 helpBtn.onclick = function () {
