@@ -1077,8 +1077,8 @@ a {
 }
 
 .formItem > .close:hover {
-    color: #fff;
-    background-color: #1a1a1a;
+    /* color: #f2f2f2; */
+    background-color: #202020;
 }
 
 /* bookmark folder picker */
