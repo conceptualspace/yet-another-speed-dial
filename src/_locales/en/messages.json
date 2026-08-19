@@ -112,7 +112,7 @@
     "message": "Import Settings..."
   },
   "importExport": {
-    "message": "This will backup or restore YASD bookmarks, thumbnails, and settings.\n\nIt's also a good idea to backup your bookmarks separately via the browser.\n\nNote that YASD can import from most popular speed dials, like Speed Dial 2 and FVD (support may vary)."
+    "message": "This will backup or restore YASD bookmarks, thumbnails, and settings.\n\nIt's also a good idea to backup your bookmarks separately via the browser.\n\nNote that YASD can import from other popular speed dials, like Speed Dial 2 and FVD (support may vary)."
   },
   "importExportLink": {
     "message": "Import and Export..."
@@ -158,6 +158,9 @@
   },
   "newInstallImport": {
     "message": "Import"
+  },
+  "newInstallImportDescription": {
+    "message": "Restore your speed dials, thumbnails, and settings from a YASD backup. You can also import backups from Speed Dial 2 and FVD (support may vary)."
   },
   "newInstallUseExistingFolder": {
     "message": "Use an existing bookmarks folder"

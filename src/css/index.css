@@ -828,7 +828,7 @@ a {
     background-color: #111111;
     color: #ffffff;
     border: 1px solid #000000;
-    border-radius: 6px;
+    border-radius: 12px;
     padding: 5px;
     width: 420px;
     box-shadow: 0 48px 48px rgba(0, 0, 0, 0.2);
@@ -925,12 +925,20 @@ a {
 }
 
 .tileForm {
-    padding: .6em;
+    padding: 1em;
+}
+
+#tileModalContent .tileForm {
+    padding: .8em;
 }
 
 .formItem {
     width: 100%;
-    padding: .4em;
+    padding: .5em;
+}
+
+#exportRow[hidden] {
+    display: none;
 }
 
 .formItem > input,
@@ -939,6 +947,8 @@ a {
     padding: .6em;
     width: 100%;
     border-radius: 6px;
+    min-height: 38px;
+    box-sizing: border-box;
 }
 
 .formItem > button {
@@ -1022,7 +1032,35 @@ a {
 }
 
 .formItem > .close {
-    background-color: #333;
+    background-color: #1a1a1a;
+    color: #ccc;
+}
+
+.formItem > .importExport {
+    background-color: #555;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5em;
+}
+
+.modal [type="file"] + label.importExport {
+    display: inline-flex;
+}
+
+.formItem > .importExport svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    fill: currentColor;
+}
+
+.formItem > .importExport:hover {
+    background-color: #777;
+}
+
+.modal [type="file"] + label.importExport:hover {
+    background-color: #777;
 }
 
 .formItem > .save:hover {
@@ -1039,7 +1077,8 @@ a {
 }
 
 .formItem > .close:hover {
-    background-color: #444444
+    color: #fff;
+    background-color: #1a1a1a;
 }
 
 /* bookmark folder picker */
