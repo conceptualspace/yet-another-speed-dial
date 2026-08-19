@@ -160,7 +160,7 @@
     "message": "Import"
   },
   "newInstallImportDescription": {
-    "message": "Restore your speed dials, thumbnails, and settings from a YASD backup. You can also import backups from Speed Dial 2 and FVD (support may vary)."
+    "message": "Restore your YASD bookmarks, thumbnails, and settings from a file. YASD can also import from other popular speed dials, like Opera, Speed Dial 2 and FVD (support may vary)."
   },
   "newInstallUseExistingFolder": {
     "message": "Use an existing bookmarks folder"
