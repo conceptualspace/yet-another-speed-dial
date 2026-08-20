@@ -3959,6 +3959,29 @@ function captureFolderDialDropZones(container) {
     return zones;
 }
 
+function captureFolderHeaderDropZones() {
+    const containerRect = document.getElementById('foldersContainer').getBoundingClientRect();
+    const zones = Array.from(foldersContainer.querySelectorAll('.folderTitle, .folderBreadcrumbLink'), folderHeader => {
+        const rect = folderHeader.getBoundingClientRect();
+        return {
+            folderHeader,
+            left: rect.left - 6,
+            right: rect.right + 6,
+            top: rect.top - 8,
+            bottom: rect.bottom + 8
+        };
+    });
+
+    return { containerRect, zones };
+}
+
+function isPointerWithinRect(pointer, rect) {
+    return pointer.clientX >= rect.left
+        && pointer.clientX <= rect.right
+        && pointer.clientY >= rect.top
+        && pointer.clientY <= rect.bottom;
+}
+
 function getFolderDialAtPointer(pointer) {
     if (!pointer || !dialDropTracking) return null;
 
@@ -3976,13 +3999,9 @@ function getFolderDialAtPointer(pointer) {
     return null;
 }
 
-function getElementAtPointer(pointer) {
-    if (!pointer) return null;
-    return document.elementFromPoint(pointer.clientX, pointer.clientY);
-}
-
 function getFolderHeaderAtPointer(pointer) {
-    return getElementAtPointer(pointer)?.closest?.('.folderTitle, .folderBreadcrumbLink') || null;
+    if (!pointer || !dialDropTracking) return null;
+    return dialDropTracking.folderHeader.zones.find(zone => isPointerWithinRect(pointer, zone))?.folderHeader || null;
 }
 
 function setFolderHeaderDropTarget(folderHeader, isOverFolders = false) {
@@ -4026,9 +4045,8 @@ function trackDialDropTarget(event) {
         tracking.raf = null;
         if (dialDropTracking !== tracking) return;
 
-        const pointerElement = getElementAtPointer(tracking.pointer);
-        const folderHeader = pointerElement?.closest?.('.folderTitle, .folderBreadcrumbLink') || null;
-        const isOverFolders = Boolean(pointerElement?.closest?.('#foldersContainer'));
+        const folderHeader = getFolderHeaderAtPointer(tracking.pointer);
+        const isOverFolders = isPointerWithinRect(tracking.pointer, tracking.folderHeader.containerRect);
 
         if (settings.folderStyle === 'tabs') {
             setFolderHeaderDropTarget(folderHeader, isOverFolders);
@@ -4069,6 +4087,7 @@ function onStartHandler(evt) {
     if (settings.folderStyle === 'dials' && evt.item.dataset.type === 'folder') return;
 
     dialDropTracking = {
+        folderHeader: captureFolderHeaderDropZones(),
         folderDialZones: settings.folderStyle === 'dials' ? captureFolderDialDropZones(evt.from) : [],
         scrollLeft: bookmarksContainerParent.scrollLeft,
         scrollTop: bookmarksContainerParent.scrollTop,
@@ -4169,7 +4188,9 @@ function onEndHandler(evt) {
     const dragWasCancelled = activeDialDrag?.cancelled === true;
     activeDialDrag = null;
     const releasePointer = getDragPointer(evt?.originalEvent);
-    const releaseTarget = getElementAtPointer(releasePointer) || evt?.originalEvent?.target || null;
+    const releaseTarget = releasePointer
+        ? document.elementFromPoint(releasePointer.clientX, releasePointer.clientY)
+        : evt?.originalEvent?.target || null;
     const folderAtRelease = getFolderDialAtPointer(releasePointer);
     const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
         && folderAtRelease === folderDialDropTarget

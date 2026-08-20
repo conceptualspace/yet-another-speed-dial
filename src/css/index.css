@@ -747,9 +747,14 @@ a {
     opacity: 1 !important;
 }
 
+.dial-drag-fallback {
+    will-change: transform;
+}
+
 .dial-drag-fallback .tile-main {
     transform-origin: center;
     transition: opacity 140ms ease, transform 140ms ease;
+    will-change: opacity, transform;
 }
 
 .folder-header-drop-targeting .dial-drag-fallback .tile-main {
