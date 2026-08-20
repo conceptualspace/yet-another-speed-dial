@@ -4044,11 +4044,9 @@ function trackDialDropTarget(event) {
 }
 
 function onStartHandler(evt) {
-    activeDialDrag = null;
     stopDialDropTracking();
     clearFolderDialDropTarget();
     setFolderTabDropTarget(null);
-    if (settings.folderStyle === 'dials' && evt.item.dataset.type === 'folder') return;
 
     activeDialDrag = {
         item: evt.item,
@@ -4058,6 +4056,10 @@ function onStartHandler(evt) {
         scrollTop: bookmarksContainerParent.scrollTop,
         cancelled: false
     };
+
+    // folder dials only reorder; they have no drop targets to track
+    if (settings.folderStyle === 'dials' && evt.item.dataset.type === 'folder') return;
+
     dialDropTracking = {
         folderDialZones: settings.folderStyle === 'dials' ? captureFolderDialDropZones(evt.from) : [],
         scrollLeft: bookmarksContainerParent.scrollLeft,
