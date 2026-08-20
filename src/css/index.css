@@ -562,17 +562,6 @@ h1 {
     opacity: 1;
 }
 
-.folders-drag-active .folderBreadcrumbLink {
-    position: relative;
-}
-
-.folders-drag-active .folderTitle::before,
-.folders-drag-active .folderBreadcrumbLink::before {
-    content: '';
-    position: absolute;
-    inset: -8px -6px;
-}
-
 .folders-drag-active .folderTitle.drag-hover,
 .folders-drag-active .folderBreadcrumbLink.drag-hover {
     background: color-mix(in srgb, var(--color) 32%, transparent);

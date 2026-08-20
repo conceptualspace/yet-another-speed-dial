@@ -219,6 +219,9 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
 // window for ignoring the refresh broadcast caused by an edit this tab already applied locally
 const SELF_EDIT_REFRESH_WINDOW = 1000;
 const FOLDER_DIAL_DROP_DELAY = 120;
+// slack around folder tabs/breadcrumbs so they are easier to hit while dragging
+const FOLDER_HEADER_DROP_PADDING_X = 6;
+const FOLDER_HEADER_DROP_PADDING_Y = 8;
 const DIAL_DRAG_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
 const FOLDER_HISTORY_STATE_KEY = 'yasdFolderId';
 const TITLE_TOGGLE_FLIP_DURATION = 300;
@@ -3965,10 +3968,10 @@ function captureFolderHeaderDropZones() {
         const rect = folderHeader.getBoundingClientRect();
         return {
             folderHeader,
-            left: rect.left - 6,
-            right: rect.right + 6,
-            top: rect.top - 8,
-            bottom: rect.bottom + 8
+            left: rect.left - FOLDER_HEADER_DROP_PADDING_X,
+            right: rect.right + FOLDER_HEADER_DROP_PADDING_X,
+            top: rect.top - FOLDER_HEADER_DROP_PADDING_Y,
+            bottom: rect.bottom + FOLDER_HEADER_DROP_PADDING_Y
         };
     });
 
