@@ -741,24 +741,12 @@ a {
     opacity: 1 !important;
 }
 
-.dial-drag-preview {
-    position: fixed !important;
-    z-index: 100;
-    margin: 0 !important;
-    pointer-events: none;
-    visibility: visible !important;
-    opacity: 1 !important;
-    transform: translate(-50%, -50%) !important;
-    content-visibility: visible !important;
-    contain: none !important;
-}
-
-.dial-drag-preview .tile-main {
+.dial-drag-fallback .tile-main {
     transform-origin: center;
     transition: opacity 140ms ease, transform 140ms ease;
 }
 
-.dial-drag-preview.folder-targeting .tile-main {
+.folder-tab-drop-targeting .dial-drag-fallback .tile-main {
     opacity: 0.55;
     transform: scale(0.58);
 }

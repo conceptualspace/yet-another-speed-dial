@@ -164,9 +164,9 @@ let sortable = null;
 let folderNavTimeout = null;
 let folderDialDropTarget = null;
 let folderDialDropTimer = null;
-let folderDialDropTracking = null;
-let dialDragPreview = null;
-let transparentDragImage = null;
+let dialDropTracking = null;
+let folderTabDropTarget = null;
+let activeDialDrag = null;
 let targetTileHref = null;
 let targetTileId = null;
 let targetTileParentId = null;
@@ -219,8 +219,7 @@ const SORTABLE_ANIMATION = 160;      // ms; Sortable's drag-shuffle animation. f
 // window for ignoring the refresh broadcast caused by an edit this tab already applied locally
 const SELF_EDIT_REFRESH_WINDOW = 1000;
 const FOLDER_DIAL_DROP_DELAY = 120;
-const FOLDER_DIAL_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
-const DIAL_DRAG_MIME_TYPE = 'application/x-yasd-dial'; // prevent dial dnd interfering with the browser
+const DIAL_DRAG_MOVE_EVENTS = 'PointerEvent' in window ? ['pointermove'] : ['mousemove', 'touchmove'];
 const FOLDER_HISTORY_STATE_KEY = 'yasdFolderId';
 const TITLE_TOGGLE_FLIP_DURATION = 300;
 const TITLE_TOGGLE_STAGGER_WINDOW = 0;
@@ -894,9 +893,6 @@ function folderLink(title, id) {
         openFolder(id);
     };
 
-    a.ondragenter = dragenterHandler;
-    a.ondragleave = dragleaveHandler;
-
     foldersContainer.appendChild(a);
 }
 
@@ -1285,14 +1281,15 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     new Sortable(folderContainerEl, {
         group: 'shared',
         animation: SORTABLE_ANIMATION,
-        forceFallback: settings.folderStyle === 'dials',
+        forceFallback: true,
+        fallbackOnBody: true,
+        fallbackClass: 'dial-drag-fallback',
         fallbackTolerance: 4,
         ghostClass: 'selected',
         dragClass: 'dragging',
         filter: ".createDial",
         delay: 500,
         delayOnTouchOnly: true,
-        setData: setDialDragData,
         onStart: onStartHandler,
         onMove: onMoveHandler,
         onEnd: onEndHandler
@@ -3050,6 +3047,8 @@ window.addEventListener("mousedown", e => {
 
 window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
+        if (cancelActiveDialDrag(event)) return;
+
         // Close search if it's active (prioritize this over other actions)
         if (searchContainer.classList.contains('active')) {
             event.preventDefault();
@@ -3914,115 +3913,6 @@ function importFromOldYASD(json) {
     })
 }
 
-function setDialDragData(dataTransfer, dragEl) {
-    // smoother dnd; we dont support dragging into rando browser UI
-    dataTransfer.clearData();
-    dataTransfer.setData(DIAL_DRAG_MIME_TYPE, dragEl.dataset.id || '');
-
-    if (!transparentDragImage) {
-        transparentDragImage = document.createElement('canvas');
-        transparentDragImage.width = 1;
-        transparentDragImage.height = 1;
-        transparentDragImage.style.position = 'fixed';
-        transparentDragImage.style.left = '0';
-        transparentDragImage.style.top = '0';
-        transparentDragImage.style.pointerEvents = 'none';
-        document.body.appendChild(transparentDragImage);
-    }
-
-    dataTransfer.setDragImage(transparentDragImage, 0, 0);
-}
-
-function positionDialDragPreview(ev) {
-    if (!dialDragPreview || !ev || (ev.clientX === 0 && ev.clientY === 0)) return;
-    dialDragPreview.style.left = `${ev.clientX}px`;
-    dialDragPreview.style.top = `${ev.clientY}px`;
-}
-
-function createDialDragPreview(evt) {
-    if (!evt.originalEvent?.dataTransfer) return;
-
-    removeDialDragPreview();
-    dialDragPreview = evt.item.cloneNode(true);
-    dialDragPreview.removeAttribute('id');
-    dialDragPreview.removeAttribute('href');
-    dialDragPreview.classList.remove('selected', 'dragging', 'sortable-chosen', 'sortable-ghost', 'sortable-drag');
-    dialDragPreview.classList.add('dial-drag-preview');
-    dialDragPreview.style.removeProperty('transform');
-    document.body.appendChild(dialDragPreview);
-    positionDialDragPreview(evt.originalEvent);
-}
-
-function removeDialDragPreview() {
-    dialDragPreview?.remove();
-    dialDragPreview = null;
-}
-
-function setDialDragPreviewFolderTargeting(isTargeting) {
-    dialDragPreview?.classList.toggle('folder-targeting', isTargeting);
-}
-
-// native handlers for folder tab targets
-function folderContainerDragEnter(ev) {
-    if (!dialDragPreview) return;
-    ev.preventDefault();
-    this.classList.add('folders-drag-active');
-    setDialDragPreviewFolderTargeting(true);
-}
-
-function folderContainerDragLeave(ev) {
-    // only collapse when truly leaving the container (not entering a child)
-    if (this.contains(ev.relatedTarget)) return;
-    this.classList.remove('folders-drag-active');
-    setDialDragPreviewFolderTargeting(false);
-    clearTimeout(folderNavTimeout);
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
-}
-
-function folderContainerDragOver(ev) {
-    if (!dialDragPreview) return;
-    ev.preventDefault();
-    ev.dataTransfer.dropEffect = "move";
-}
-
-// individual folder title handlers for highlight + navigation
-function dragenterHandler(ev) {
-    if (!dialDragPreview) return;
-    ev.preventDefault();
-    const el = ev.currentTarget;
-    if (!el.classList.contains("folderTitle")) return;
-
-    // clear hover from siblings, highlight this one
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(t => t.classList.remove('drag-hover'));
-    el.classList.add("drag-hover");
-
-    const folderId = el.getAttribute("folderid");
-    clearTimeout(folderNavTimeout);
-    if (currentFolder !== folderId) {
-        folderNavTimeout = setTimeout(() => {
-            currentFolder = folderId;
-            showFolder(currentFolder);
-            scrollPos = 0;
-            bookmarksContainerParent.scrollTop = scrollPos;
-            settings.currentFolder = folderId;
-            chrome.storage.local.set({ settings });
-        }, 350);
-    }
-}
-
-function dragleaveHandler(ev) {
-    const el = ev.currentTarget;
-    // ignore if still inside the element (entering a child node)
-    if (el.contains(ev.relatedTarget)) return;
-
-    el.classList.remove("drag-hover");
-
-    // only clear nav timeout if we're not entering another folder title
-    if (!foldersContainer.querySelector('.folderTitle.drag-hover')) {
-        clearTimeout(folderNavTimeout);
-    }
-}
-
 // Sortable helper fns
 function clearFolderDialDropTarget() {
     clearTimeout(folderDialDropTimer);
@@ -4066,21 +3956,15 @@ function captureFolderDialDropZones(container) {
         });
     }
 
-    folderDialDropTracking = {
-        zones,
-        scrollLeft: bookmarksContainerParent.scrollLeft,
-        scrollTop: bookmarksContainerParent.scrollTop,
-        pointer: null,
-        raf: null
-    };
+    return zones;
 }
 
 function getFolderDialAtPointer(pointer) {
-    if (!pointer || !folderDialDropTracking) return null;
+    if (!pointer || !dialDropTracking) return null;
 
-    const scrollDeltaX = bookmarksContainerParent.scrollLeft - folderDialDropTracking.scrollLeft;
-    const scrollDeltaY = bookmarksContainerParent.scrollTop - folderDialDropTracking.scrollTop;
-    for (const zone of folderDialDropTracking.zones) {
+    const scrollDeltaX = bookmarksContainerParent.scrollLeft - dialDropTracking.scrollLeft;
+    const scrollDeltaY = bookmarksContainerParent.scrollTop - dialDropTracking.scrollTop;
+    for (const zone of dialDropTracking.folderDialZones) {
         if (pointer.clientX >= zone.left - scrollDeltaX
             && pointer.clientX <= zone.right - scrollDeltaX
             && pointer.clientY >= zone.top - scrollDeltaY
@@ -4092,20 +3976,63 @@ function getFolderDialAtPointer(pointer) {
     return null;
 }
 
-function trackFolderDialDropTarget(event) {
-    if (!folderDialDropTracking) return;
+function getElementAtPointer(pointer) {
+    if (!pointer) return null;
+    return document.elementFromPoint(pointer.clientX, pointer.clientY);
+}
 
-    folderDialDropTracking.pointer = getDragPointer(event);
-    if (!folderDialDropTracking.pointer) {
+function getFolderTabAtPointer(pointer) {
+    return getElementAtPointer(pointer)?.closest?.('.folderTitle') || null;
+}
+
+function setFolderTabDropTarget(folderTitle, isOverFolders = false) {
+    document.getElementById('foldersContainer').classList.toggle('folders-drag-active', isOverFolders);
+    document.body.classList.toggle('folder-tab-drop-targeting', isOverFolders);
+    if (folderTabDropTarget === folderTitle) return;
+
+    clearTimeout(folderNavTimeout);
+    folderNavTimeout = null;
+    folderTabDropTarget?.classList.remove('drag-hover');
+    folderTabDropTarget = folderTitle;
+    if (!folderTitle) return;
+
+    folderTitle.classList.add('drag-hover');
+    const folderId = folderTitle.getAttribute('folderid');
+    if (currentFolder !== folderId) {
+        folderNavTimeout = setTimeout(() => {
+            currentFolder = folderId;
+            showFolder(currentFolder);
+            scrollPos = 0;
+            bookmarksContainerParent.scrollTop = scrollPos;
+            settings.currentFolder = folderId;
+            chrome.storage.local.set({ settings });
+        }, 350);
+    }
+}
+
+function trackDialDropTarget(event) {
+    if (!dialDropTracking) return;
+
+    dialDropTracking.pointer = getDragPointer(event);
+    if (!dialDropTracking.pointer) {
         clearFolderDialDropTarget();
+        setFolderTabDropTarget(null);
         return;
     }
 
-    if (folderDialDropTracking.raf != null) return;
-    const tracking = folderDialDropTracking;
+    if (dialDropTracking.raf != null) return;
+    const tracking = dialDropTracking;
     tracking.raf = requestAnimationFrame(() => {
         tracking.raf = null;
-        if (folderDialDropTracking !== tracking) return;
+        if (dialDropTracking !== tracking) return;
+
+        if (settings.folderStyle === 'tabs') {
+            const pointerElement = getElementAtPointer(tracking.pointer);
+            const folderTitle = pointerElement?.closest?.('.folderTitle') || null;
+            const isOverFolders = Boolean(pointerElement?.closest?.('#foldersContainer'));
+            setFolderTabDropTarget(folderTitle, isOverFolders);
+            return;
+        }
 
         const folderDial = getFolderDialAtPointer(tracking.pointer);
         if (folderDial) {
@@ -4117,25 +4044,68 @@ function trackFolderDialDropTarget(event) {
 }
 
 function onStartHandler(evt) {
-    stopFolderDialDropTracking();
+    activeDialDrag = null;
+    stopDialDropTracking();
     clearFolderDialDropTarget();
-    if (settings.folderStyle === 'dials' && evt.item.dataset.type !== 'folder') {
-        captureFolderDialDropZones(evt.from);
-        FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
-            document.addEventListener(eventName, trackFolderDialDropTarget, { passive: true });
-        });
-    }
-    createDialDragPreview(evt);
+    setFolderTabDropTarget(null);
+    if (settings.folderStyle === 'dials' && evt.item.dataset.type === 'folder') return;
+
+    activeDialDrag = {
+        item: evt.item,
+        from: evt.from,
+        nextSibling: evt.item.nextElementSibling,
+        folderId: currentFolder,
+        scrollTop: bookmarksContainerParent.scrollTop,
+        cancelled: false
+    };
+    dialDropTracking = {
+        folderDialZones: settings.folderStyle === 'dials' ? captureFolderDialDropZones(evt.from) : [],
+        scrollLeft: bookmarksContainerParent.scrollLeft,
+        scrollTop: bookmarksContainerParent.scrollTop,
+        pointer: getDragPointer(evt.originalEvent),
+        raf: null
+    };
+    DIAL_DRAG_MOVE_EVENTS.forEach(eventName => {
+        document.addEventListener(eventName, trackDialDropTarget, { passive: true });
+    });
+    trackDialDropTarget(evt.originalEvent);
 }
 
-function stopFolderDialDropTracking() {
-    FOLDER_DIAL_MOVE_EVENTS.forEach(eventName => {
-        document.removeEventListener(eventName, trackFolderDialDropTarget);
-    });
-    if (folderDialDropTracking?.raf != null) {
-        cancelAnimationFrame(folderDialDropTracking.raf);
+function cancelActiveDialDrag(event) {
+    const drag = activeDialDrag;
+    const activeSortable = Sortable.active;
+    if (!drag || typeof activeSortable?._onDrop !== 'function') return false;
+
+    event.preventDefault();
+    drag.cancelled = true;
+    if (drag.nextSibling?.parentElement === drag.from) {
+        drag.from.insertBefore(drag.item, drag.nextSibling);
+    } else {
+        drag.from.appendChild(drag.item);
     }
-    folderDialDropTracking = null;
+
+    if (settings.folderStyle === 'tabs' && currentFolder !== drag.folderId) {
+        currentFolder = drag.folderId;
+        showFolder(currentFolder);
+        scrollPos = drag.scrollTop;
+        bookmarksContainerParent.scrollTop = scrollPos;
+        settings.currentFolder = currentFolder;
+        chrome.storage.local.set({ settings });
+    }
+
+    // Sortable 1.14 has no public cancel API; rollback first, then use its normal cleanup path.
+    activeSortable._onDrop(event);
+    return true;
+}
+
+function stopDialDropTracking() {
+    DIAL_DRAG_MOVE_EVENTS.forEach(eventName => {
+        document.removeEventListener(eventName, trackDialDropTarget);
+    });
+    if (dialDropTracking?.raf != null) {
+        cancelAnimationFrame(dialDropTracking.raf);
+    }
+    dialDropTracking = null;
 }
 
 function getNextSiblingOfSameType(item) {
@@ -4166,7 +4136,7 @@ function onMoveHandler(evt) {
             const relatedFolder = evt.related.closest?.('.folderDial');
 
             if (!draggedIsFolder && relatedFolder) {
-                trackFolderDialDropTarget(evt.originalEvent);
+                trackDialDropTarget(evt.originalEvent);
                 return false;
             }
 
@@ -4186,22 +4156,29 @@ function onMoveHandler(evt) {
 }
 
 function onEndHandler(evt) {
-    const folderAtRelease = getFolderDialAtPointer(getDragPointer(evt?.originalEvent));
+    const dragWasCancelled = activeDialDrag?.cancelled === true;
+    activeDialDrag = null;
+    const releasePointer = getDragPointer(evt?.originalEvent);
+    const releaseTarget = getElementAtPointer(releasePointer) || evt?.originalEvent?.target || null;
+    const folderAtRelease = getFolderDialAtPointer(releasePointer);
     const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
         && folderAtRelease === folderDialDropTarget
         ? folderDialDropTarget
         : null;
-    stopFolderDialDropTracking();
+    const folderTabAtRelease = releasePointer ? getFolderTabAtPointer(releasePointer) : folderTabDropTarget;
+    const droppedOnFolderId = folderTabAtRelease?.getAttribute('folderid') || null;
+    stopDialDropTracking();
     clearFolderDialDropTarget();
+    setFolderTabDropTarget(null);
 
-    // a successful drop doesnt fire dragleave, so cancel any pending spring-load nav here
+    // cancel any pending spring-load navigation when the drag ends
     clearTimeout(folderNavTimeout);
     folderNavTimeout = null;
 
-    // clean up folder drag-hover state
-    document.getElementById('foldersContainer').classList.remove('folders-drag-active');
-    document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
-    removeDialDragPreview();
+    if (dragWasCancelled) {
+        recalcFlipRects();
+        return;
+    }
 
     if (evt && (evt.clone.href || evt.clone.dataset.type === 'folder')) {
         let id = evt.clone.dataset.id;
@@ -4232,13 +4209,8 @@ function onEndHandler(evt) {
             return;
         }
 
-        // check if dropped directly onto a folder title (may happen before the 350ms nav timeout fires)
-        let dropTarget = evt.originalEvent.target;
-        let folderTitleEl = dropTarget.closest ? dropTarget.closest('.folderTitle') : null;
-        let droppedOnFolderId = folderTitleEl ? folderTitleEl.getAttribute('folderid') : null;
-
         // todo: test if this is needed
-        if (fromParentId !== toParentId && toParentId !== evt.originalEvent.target.id) {
+        if (fromParentId !== toParentId && toParentId !== releaseTarget?.id) {
             // sortable's position doesn't match the dom's drop target
             // this may happen if the tile is dragged over a sortable list but then ultimately dropped somewhere else
             // for example directly on the folder name, or directly onto the new dial button. so use the folder target if available or else currentFolder
@@ -4626,13 +4598,6 @@ function init() {
 
 
     sidenav.style.display = "flex";
-
-    // container-level drag listeners for expanding folder titles
-    const foldersContainerEl = document.getElementById('foldersContainer');
-    foldersContainerEl.addEventListener('dragenter', folderContainerDragEnter);
-    foldersContainerEl.addEventListener('dragleave', folderContainerDragLeave);
-    foldersContainerEl.addEventListener('dragover', folderContainerDragOver);
-    document.addEventListener('dragover', positionDialDragPreview, true);
 
     new Sortable(foldersContainer, {
         animation: 150,
