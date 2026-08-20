@@ -165,7 +165,7 @@ let folderNavTimeout = null;
 let folderDialDropTarget = null;
 let folderDialDropTimer = null;
 let dialDropTracking = null;
-let folderTabDropTarget = null;
+let folderHeaderDropTarget = null;
 let activeDialDrag = null;
 let targetTileHref = null;
 let targetTileId = null;
@@ -3981,24 +3981,24 @@ function getElementAtPointer(pointer) {
     return document.elementFromPoint(pointer.clientX, pointer.clientY);
 }
 
-function getFolderTabAtPointer(pointer) {
-    return getElementAtPointer(pointer)?.closest?.('.folderTitle') || null;
+function getFolderHeaderAtPointer(pointer) {
+    return getElementAtPointer(pointer)?.closest?.('.folderTitle, .folderBreadcrumbLink') || null;
 }
 
-function setFolderTabDropTarget(folderTitle, isOverFolders = false) {
+function setFolderHeaderDropTarget(folderHeader, isOverFolders = false) {
     document.getElementById('foldersContainer').classList.toggle('folders-drag-active', isOverFolders);
-    document.body.classList.toggle('folder-tab-drop-targeting', isOverFolders);
-    if (folderTabDropTarget === folderTitle) return;
+    document.body.classList.toggle('folder-header-drop-targeting', isOverFolders);
+    if (folderHeaderDropTarget === folderHeader) return;
 
     clearTimeout(folderNavTimeout);
     folderNavTimeout = null;
-    folderTabDropTarget?.classList.remove('drag-hover');
-    folderTabDropTarget = folderTitle;
-    if (!folderTitle) return;
+    folderHeaderDropTarget?.classList.remove('drag-hover');
+    folderHeaderDropTarget = folderHeader;
+    if (!folderHeader) return;
 
-    folderTitle.classList.add('drag-hover');
-    const folderId = folderTitle.getAttribute('folderid');
-    if (currentFolder !== folderId) {
+    folderHeader.classList.add('drag-hover');
+    const folderId = folderHeader.getAttribute('folderid');
+    if (settings.folderStyle === 'tabs' && currentFolder !== folderId) {
         folderNavTimeout = setTimeout(() => {
             currentFolder = folderId;
             showFolder(currentFolder);
@@ -4016,7 +4016,7 @@ function trackDialDropTarget(event) {
     dialDropTracking.pointer = getDragPointer(event);
     if (!dialDropTracking.pointer) {
         clearFolderDialDropTarget();
-        setFolderTabDropTarget(null);
+        setFolderHeaderDropTarget(null);
         return;
     }
 
@@ -4026,13 +4026,21 @@ function trackDialDropTarget(event) {
         tracking.raf = null;
         if (dialDropTracking !== tracking) return;
 
+        const pointerElement = getElementAtPointer(tracking.pointer);
+        const folderHeader = pointerElement?.closest?.('.folderTitle, .folderBreadcrumbLink') || null;
+        const isOverFolders = Boolean(pointerElement?.closest?.('#foldersContainer'));
+
         if (settings.folderStyle === 'tabs') {
-            const pointerElement = getElementAtPointer(tracking.pointer);
-            const folderTitle = pointerElement?.closest?.('.folderTitle') || null;
-            const isOverFolders = Boolean(pointerElement?.closest?.('#foldersContainer'));
-            setFolderTabDropTarget(folderTitle, isOverFolders);
+            setFolderHeaderDropTarget(folderHeader, isOverFolders);
             return;
         }
+
+        if (isOverFolders) {
+            clearFolderDialDropTarget();
+            setFolderHeaderDropTarget(folderHeader, true);
+            return;
+        }
+        setFolderHeaderDropTarget(null);
 
         const folderDial = getFolderDialAtPointer(tracking.pointer);
         if (folderDial) {
@@ -4046,7 +4054,7 @@ function trackDialDropTarget(event) {
 function onStartHandler(evt) {
     stopDialDropTracking();
     clearFolderDialDropTarget();
-    setFolderTabDropTarget(null);
+    setFolderHeaderDropTarget(null);
 
     activeDialDrag = {
         item: evt.item,
@@ -4167,11 +4175,17 @@ function onEndHandler(evt) {
         && folderAtRelease === folderDialDropTarget
         ? folderDialDropTarget
         : null;
-    const folderTabAtRelease = releasePointer ? getFolderTabAtPointer(releasePointer) : folderTabDropTarget;
-    const droppedOnFolderId = folderTabAtRelease?.getAttribute('folderid') || null;
+    const canDropOnFolderHeader = Boolean(evt?.clone?.href);
+    const folderHeaderAtRelease = canDropOnFolderHeader
+        ? (releasePointer ? getFolderHeaderAtPointer(releasePointer) : folderHeaderDropTarget)
+        : null;
+    const droppedOnFolderId = folderHeaderAtRelease?.getAttribute('folderid') || null;
+    const droppedOnAncestor = settings.folderStyle === 'dials'
+        && folderHeaderAtRelease
+        && droppedOnFolderId !== evt?.from?.id;
     stopDialDropTracking();
     clearFolderDialDropTarget();
-    setFolderTabDropTarget(null);
+    setFolderHeaderDropTarget(null);
 
     // cancel any pending spring-load navigation when the drag ends
     clearTimeout(folderNavTimeout);
@@ -4208,6 +4222,20 @@ function onEndHandler(evt) {
                 refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
             }
             moveBookmarkToFolder(id, targetFolderId);
+            return;
+        }
+
+        if (droppedOnAncestor && evt.clone.href) {
+            evt.item.style.display = "none";
+            flip();
+            evt.item.remove();
+            const movedNode = detachCachedBookmark(fromParentId, id);
+            if (movedNode) {
+                appendCachedBookmark(droppedOnFolderId, movedNode);
+                refreshSkipId = id;
+                refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
+            }
+            moveBookmarkToFolder(id, droppedOnFolderId);
             return;
         }
 

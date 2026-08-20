@@ -562,13 +562,19 @@ h1 {
     opacity: 1;
 }
 
-.folders-drag-active .folderTitle::before {
+.folders-drag-active .folderBreadcrumbLink {
+    position: relative;
+}
+
+.folders-drag-active .folderTitle::before,
+.folders-drag-active .folderBreadcrumbLink::before {
     content: '';
     position: absolute;
     inset: -8px -6px;
 }
 
-.folders-drag-active .folderTitle.drag-hover {
+.folders-drag-active .folderTitle.drag-hover,
+.folders-drag-active .folderBreadcrumbLink.drag-hover {
     background: color-mix(in srgb, var(--color) 32%, transparent);
     border-radius: 8px;
     outline: 2px solid color-mix(in srgb, var(--color) 24%, transparent);
@@ -746,7 +752,7 @@ a {
     transition: opacity 140ms ease, transform 140ms ease;
 }
 
-.folder-tab-drop-targeting .dial-drag-fallback .tile-main {
+.folder-header-drop-targeting .dial-drag-fallback .tile-main {
     opacity: 0.55;
     transform: scale(0.58);
 }
