@@ -369,6 +369,7 @@ function appendCachedBookmark(parentId, node) {
     folder.children.push(node);
 }
 
+// spring-load nav can swap the visible container mid-drag
 function insertCachedBookmark(parentId, node, nextSiblingId) {
     const folder = getCachedFolderNode(parentId);
     if (!folder || !node) return false;
