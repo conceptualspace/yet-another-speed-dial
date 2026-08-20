@@ -591,7 +591,7 @@ function removeBookmark(url) {
     flip();
     // remove dial
     targetNode.remove();
-    detachCachedBookmark(dewrap(targetTileParentId), id);
+    detachCachedBookmark(targetTileParentId, id);
     // nb: cache cleanup is handled by handleBookmarkRemoved in background script
     chrome.bookmarks.remove(id).catch(err => {
         console.log(err);
@@ -694,6 +694,8 @@ function showFolder(id) {
     let folders = document.getElementsByClassName('container');
     for (let folder of folders) {
         if (folder.id === id) {
+            // already on screen: replaying the fade reads as a page reload
+            if (folder.style.display === "flex" && folder.style.opacity === "1") continue;
             folder.style.display = "flex"
             folder.style.opacity = "0";
             // transition between folders. todo more elegant solution
@@ -4182,16 +4184,6 @@ function onMoveHandler(evt) {
     }
 }
 
-function dewrap(str) {
-    // unlike folder tabs, main dial container doesnt include the folder id
-    // todo: cleanup
-    if (str === "wrap") {
-        return speedDialId
-    } else {
-        return str
-    }
-}
-
 function onEndHandler(evt) {
     const folderAtRelease = getFolderDialAtPointer(getDragPointer(evt?.originalEvent));
     const folderDropTarget = folderDialDropTarget?.classList.contains('folderDial-drop-target')
@@ -4201,6 +4193,10 @@ function onEndHandler(evt) {
     stopFolderDialDropTracking();
     clearFolderDialDropTarget();
 
+    // a successful drop doesnt fire dragleave, so cancel any pending spring-load nav here
+    clearTimeout(folderNavTimeout);
+    folderNavTimeout = null;
+
     // clean up folder drag-hover state
     document.getElementById('foldersContainer').classList.remove('folders-drag-active');
     document.querySelectorAll('.folderTitle.drag-hover').forEach(el => el.classList.remove('drag-hover'));
@@ -4208,13 +4204,13 @@ function onEndHandler(evt) {
 
     if (evt && (evt.clone.href || evt.clone.dataset.type === 'folder')) {
         let id = evt.clone.dataset.id;
-        let fromParentId = dewrap(evt.from.id);
-        let toParentId = dewrap(evt.to.id);
+        let fromParentId = evt.from.id;
+        let toParentId = evt.to.id;
         let nextSibling = settings.folderStyle === 'dials'
             ? getNextSiblingOfSameType(evt.item)
             : evt.item.nextElementSibling;
         let newSiblingId = nextSibling ? nextSibling.dataset.id : null;
-        let newSiblingParentId = newSiblingId ? dewrap(nextSibling.parentElement.id) : null;
+        let newSiblingParentId = newSiblingId ? nextSibling.parentElement.id : null;
         let oldIndex = evt.oldIndex;
         let newIndex = evt.newIndex;
 
@@ -4248,9 +4244,10 @@ function onEndHandler(evt) {
             toParentId = droppedOnFolderId || currentFolder || speedDialId;
         }
 
-        if (fromParentId === toParentId && fromParentId !== currentFolder) {
+        if (fromParentId === toParentId && (droppedOnFolderId || fromParentId !== currentFolder)) {
             // occurs when there is no sortable target -- for example dropping the dial onto the folder name
             // or some space of the page outside the sortable container element
+            // the folder tabs arent a drop target for dials, so a drop on one always lands here
             toParentId = droppedOnFolderId || currentFolder || speedDialId;
         }
 
@@ -4260,13 +4257,36 @@ function onEndHandler(evt) {
             newSiblingId = -1;
         }
 
+        // a folder tab isnt a sortable target, so sortable leaves the dial in its source container
+        const tabDropContainer = droppedOnFolderId === toParentId && toParentId !== fromParentId
+            ? document.getElementById(toParentId)
+            : null;
+
         if ((fromParentId && toParentId && fromParentId !== toParentId) || oldIndex !== newIndex) {
             if (evt.clone.dataset.type === 'folder') {
                 moveFolder(id, oldIndex, newIndex, newSiblingId);
+            } else if (tabDropContainer) {
+                // relocate the dial and append it to the target folder, like a newly added dial
+                const createDialButton = tabDropContainer.querySelector('.createDial');
+                if (settings.defaultSort === 'first') {
+                    // dials render newest first, so the target slot is right after the add button
+                    tabDropContainer.insertBefore(evt.item, createDialButton ? createDialButton.nextSibling : tabDropContainer.firstChild);
+                } else {
+                    tabDropContainer.insertBefore(evt.item, createDialButton);
+                }
+                flip();
+
+                const movedNode = detachCachedBookmark(fromParentId, id);
+                if (movedNode) {
+                    appendCachedBookmark(toParentId, movedNode);
+                    refreshSkipId = id;
+                    refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
+                }
+                moveBookmarkToFolder(id, toParentId);
             } else {
                 const movedBetweenTabContainers = settings.folderStyle !== 'dials'
                     && fromParentId !== toParentId
-                    && dewrap(evt.to.id) === toParentId;
+                    && evt.to.id === toParentId;
                 if (movedBetweenTabContainers) {
                     const movedNode = detachCachedBookmark(fromParentId, id);
                     if (movedNode && insertCachedBookmark(toParentId, movedNode, newSiblingId)) {
