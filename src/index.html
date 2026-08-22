@@ -156,11 +156,13 @@
             <div class="formItem"><input id="createDialModalURL" type="text"></div>
             <div class="formItem"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the
                 site in a new tab to capture the image</em></p></div>
-            <div class="formItem">
-                <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
+                </div>
             </div>
         </form>
     </div>
@@ -172,11 +174,13 @@
         <form action="" class="tileForm">
             <div class="formItem"><label data-locale="name" for="createFolderModalName">Name</label></div>
             <div class="formItem"><input id="createFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
+                </div>
             </div>
         </form>
     </div>
@@ -188,11 +192,13 @@
         <form action="" class="tileForm">
             <div class="formItem"><label data-locale="name" for="editFolderModalName">Name</label></div>
             <div class="formItem"><input id="editFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
+                </div>
             </div>
         </form>
     </div>
@@ -206,11 +212,13 @@
 
             <div class="formItem"><br/><label data-locale="confirmDelete">Are you sure you want to permanently remove
                 this folder?</label><br/><br/></div>
-            <div class="formItem">
-                <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
+                </div>
             </div>
         </form>
     </div>
@@ -225,11 +233,13 @@
                 <p>This will fetch new images for all the dials on this page. It may take a while!<br/><br/>Note: This process runs in the background. Screenshots are not taken in this mode.</p>
             </div>
 
-            <div class="formItem">
-                <button class="save" id="refreshAllModalSave">Continue</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" id="refreshAllModalSave">Continue</button>
+                </div>
             </div>
         </div>
     </div>
@@ -285,13 +295,15 @@
                 </button>
             </div>
 
-            <div class="formItem">
-                <button class="save disabled" data-locale="folderPickerConfirm" id="folderPickerSave" type="button"
-                        disabled>Use this folder
-                </button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel" type="button">Cancel</button>
+            <div class="buttonContainer">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save disabled" data-locale="folderPickerConfirm" id="folderPickerSave" type="button"
+                            disabled>Use this folder
+                    </button>
+                </div>
             </div>
         </div>
     </div>
