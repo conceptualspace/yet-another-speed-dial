@@ -3949,7 +3949,7 @@ function captureFolderDialDropZones(container) {
     for (const folderDial of container.querySelectorAll('.folderDial')) {
         const rect = folderDial.getBoundingClientRect();
         const horizontalInset = rect.width * 0.15;
-        const verticalInset = rect.height * 0.15;
+        const verticalInset = rect.height * 0.10;
         zones.push({
             folderDial,
             left: rect.left + horizontalInset,
@@ -4172,7 +4172,6 @@ function onMoveHandler(evt) {
                 return false;
             }
 
-            clearFolderDialDropTarget();
             if (draggedIsFolder && !relatedFolder) return false;
         }
 
