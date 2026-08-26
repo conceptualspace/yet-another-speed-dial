@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Dadurch werden YASD-Einstellungen und Miniaturansichten gesichert oder wiederhergestellt.\n\nBeachten Sie, dass alle Kurzwahlen vom Browser als Lesezeichen verwaltet werden. Stellen Sie sicher, dass sie separat über den Lesezeichen-Manager gesichert oder synchronisiert werden.\n\nWARNUNG: Durch das Importieren werden Ihre aktuellen Einstellungen ersetzt."
   },
+  "importExportTitle": {
+    "message": "Import und Export"
+  },
   "importExportLink": {
     "message": "Import und Export..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importieren"
+  },
+  "newInstallImportDescription": {
+    "message": "Stellen Sie Ihre Lesezeichen, Miniaturansichten und Einstellungen aus einer YASD-Sicherungsdatei wieder her. YASD kann auch aus anderen beliebten Kurzwahlen wie Opera, Speed Dial 2 und FVD importieren (Unterstützung kann variieren)."
   },
   "newInstallUseExistingFolder": {
     "message": "Vorhandenen Lesezeichenordner verwenden"

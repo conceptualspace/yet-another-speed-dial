@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Cela sauvegardera ou restaurera les paramètres et les vignettes YASD.\n\nNotez que tous les numéros abrégés sont gérés par le navigateur sous forme de signets. Assurez-vous qu'ils sont sauvegardés séparément via le gestionnaire de signets ou la synchronisation.\n\nAVERTISSEMENT : L'importation remplacera vos paramètres actuels."
   },
+  "importExportTitle": {
+    "message": "Importer et exporter"
+  },
   "importExportLink": {
     "message": "Importer et exporter..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importer"
+  },
+  "newInstallImportDescription": {
+    "message": "Restaurez vos favoris, vignettes et paramètres à partir d'un fichier de sauvegarde YASD. YASD peut également importer depuis d'autres outils de numérotation abrégée populaires, comme Opera, Speed Dial 2 et FVD (la prise en charge peut varier)."
   },
   "newInstallUseExistingFolder": {
     "message": "Utiliser un dossier de favoris existant"

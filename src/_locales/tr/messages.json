@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Bu işlem YASD yer imlerini, küçük resimlerini ve ayarlarını yedekler veya geri yükler.\n\nYer imlerinizi tarayıcı aracılığıyla ayrıca yedeklemeniz de iyi bir fikirdir.\n\nYASD; Speed Dial 2 ve FVD gibi yaygın hızlı arama araçlarından içe aktarabilir (destek değişiklik gösterebilir)."
   },
+  "importExportTitle": {
+    "message": "İçe Aktar ve Dışa Aktar"
+  },
   "importExportLink": {
     "message": "İçe Aktar ve Dışa Aktar..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "İçe Aktar"
+  },
+  "newInstallImportDescription": {
+    "message": "Yer imlerinizi, küçük resimlerinizi ve ayarlarınızı bir YASD yedekleme dosyasından geri yükleyin. YASD ayrıca Opera, Speed Dial 2 ve FVD gibi diğer popüler hızlı arama araçlarından da içe aktarabilir (destek değişiklik gösterebilir)."
   },
   "newInstallUseExistingFolder": {
     "message": "Mevcut bir yer imi klasörünü kullan"

@@ -110,6 +110,9 @@
   "importExport": {
     "message": "YASDの設定とサムネイルをバックアップまたは復元します。\n\nブラウザのブックマークは、ブックマークマネージャーまたは同期機能を使用して別途バックアップしてください。インポートすると現在の設定が上書きされます！\n\nYASDは、Speed Dial 2やFVDのバックアップファイルからのインポートも試みることができます（現在は実験的機能）"
   },
+  "importExportTitle": {
+    "message": "インポートとエクスポート"
+  },
   "importExportLink": {
     "message": "インポートとエクスポート..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "インポート"
+  },
+  "newInstallImportDescription": {
+    "message": "YASDのバックアップファイルからブックマーク、サムネイル、設定を復元します。YASDは、Opera、Speed Dial 2、FVDなど、他の一般的なスピードダイヤルからもインポートできます（対応状況は異なる場合があります）。"
   },
   "newInstallUseExistingFolder": {
     "message": "既存のブックマークフォルダを使用"

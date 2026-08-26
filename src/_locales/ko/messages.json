@@ -110,6 +110,9 @@
     "importExport": {
       "message": "YASD 설정 및 썸네일을 백업하거나 복원합니다.\n\n브라우저 북마크는 북마크 관리자 또는 동기화를 통해 별도로 백업하세요. 가져오기를 하면 현재 설정이 덮어씌워집니다!\n\nYASD는 Speed Dial 2 및 FVD 백업 파일에서 가져오기를 시도할 수도 있습니다 (실험적 기능)"
     },
+    "importExportTitle": {
+      "message": "가져오기 및 내보내기"
+    },
     "importExportLink": {
       "message": "가져오기 및 내보내기..."
     },
@@ -154,6 +157,9 @@
     },
     "newInstallImport": {
       "message": "가져오기"
+    },
+    "newInstallImportDescription": {
+      "message": "YASD 백업 파일에서 북마크, 썸네일 및 설정을 복원합니다. YASD는 Opera, Speed Dial 2, FVD와 같은 다른 인기 스피드 다이얼에서도 가져올 수 있습니다(지원 여부는 다를 수 있음)."
     },
     "newInstallUseExistingFolder": {
       "message": "기존 북마크 폴더 사용"

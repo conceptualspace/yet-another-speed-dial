@@ -110,6 +110,9 @@
   "importExport": {
     "message": "To utworzy kopię zapasową lub przywróci ustawienia YASD i miniatury.\n\nUpewnij się, że zakładki przeglądarki są oddzielnie zabezpieczone przez menedżera zakładek lub synchronizację. Uwaga: import zastąpi bieżące ustawienia!\n\nYASD może również spróbować importować z plików kopii zapasowych Speed Dial 2 i FVD (obecnie eksperymentalne)"
   },
+  "importExportTitle": {
+    "message": "Import i eksport"
+  },
   "importExportLink": {
     "message": "Import i eksport..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importuj"
+  },
+  "newInstallImportDescription": {
+    "message": "Przywróć zakładki, miniatury i ustawienia z pliku kopii zapasowej YASD. YASD może także importować dane z innych popularnych narzędzi szybkiego wybierania, takich jak Opera, Speed Dial 2 i FVD (obsługa może się różnić)."
   },
   "newInstallUseExistingFolder": {
     "message": "Użyj istniejącego folderu zakładek"

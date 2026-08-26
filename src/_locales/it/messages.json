@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Ciò eseguirà il backup o il ripristino delle impostazioni e delle miniature YASD.\n\nNota, tutte le chiamate rapide sono gestite dal browser come segnalibri. Assicurati che venga eseguito il backup separatamente tramite il gestore dei segnalibri o la sincronizzazione.\n\nATTENZIONE: l'importazione sostituirà le impostazioni correnti."
   },
+  "importExportTitle": {
+    "message": "Importazione ed esportazione"
+  },
   "importExportLink": {
     "message": "Importazione e esportazione..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importa"
+  },
+  "newInstallImportDescription": {
+    "message": "Ripristina i segnalibri, le miniature e le impostazioni da un file di backup YASD. YASD può anche importare da altri strumenti di selezione rapida popolari, come Opera, Speed Dial 2 e FVD (il supporto può variare)."
   },
   "newInstallUseExistingFolder": {
     "message": "Usa una cartella di segnalibri esistente"

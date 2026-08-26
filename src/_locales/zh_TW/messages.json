@@ -110,6 +110,9 @@
   "importExport": {
     "message": "這會備份或還原 YASD 的書籤、縮圖和設定。\n\n建議您也透過瀏覽器另外備份書籤。\n\n請注意，YASD 可從 Speed Dial 2 和 FVD 等常見快速撥號工具匯入（支援情況可能有所不同）。"
   },
+  "importExportTitle": {
+    "message": "匯入與匯出"
+  },
   "importExportLink": {
     "message": "匯入與匯出..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "匯入"
+  },
+  "newInstallImportDescription": {
+    "message": "從 YASD 備份檔案還原您的書籤、縮圖和設定。YASD 也可以從其他常見的快速撥號工具（例如 Opera、Speed Dial 2 和 FVD）匯入資料（支援情況可能有所不同）。"
   },
   "newInstallUseExistingFolder": {
     "message": "使用現有的書籤資料夾"

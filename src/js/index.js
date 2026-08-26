@@ -130,7 +130,6 @@ const importExportBtn = document.getElementById("importExportBtn");
 const importExportStatus = document.getElementById('statusMessage');
 const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
-const importFileLabel = document.getElementById("importFileLabel");
 const importFileLabelText = document.getElementById("importFileLabelText");
 const helpBtn = document.getElementById("help");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
@@ -2908,7 +2907,7 @@ document.addEventListener("contextmenu", function (e) {
 
 // todo: tidy this up
 window.addEventListener("click", e => {
-    if (typeof e.target.className === 'string' && e.target.className.indexOf('settingsCtl') >= 0) {
+    if (e.target.closest?.('.settingsCtl, #importFileLabel')) {
         return;
     }
     if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
@@ -3476,9 +3475,9 @@ function openImportExportModal(importOnly = false) {
     importExportStatus.innerText = "";
     importExportModalTitle.textContent = importOnly
         ? chrome.i18n.getMessage('newInstallImport')
-        : 'Import / Export';
+        : chrome.i18n.getMessage('importExportTitle');
     importExportDescription.textContent = importOnly
-        ? chrome.i18n.getMessage('newInstallImportDescription') || chrome.i18n.getMessage('importExport')
+        ? chrome.i18n.getMessage('newInstallImportDescription')
         : chrome.i18n.getMessage('importExport');
     importFileLabelText.textContent = chrome.i18n.getMessage(importOnly ? 'newInstallImport' : 'import');
     exportRow.hidden = importOnly;
@@ -3509,10 +3508,6 @@ resetSettingsBtn.onclick = function () {
             applySettings().then(() => processRefresh());
         });
     }
-}
-
-importFileLabel.onclick = function () {
-    importFileInput.click();
 }
 
 function parseJson(event) {

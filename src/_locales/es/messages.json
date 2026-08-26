@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Esto hará una copia de seguridad o restaurará la configuración y las miniaturas de YASD.\n\nTenga en cuenta que el navegador administra todas las marcaciones rápidas como favoritos. Asegúrese de que tengan una copia de seguridad por separado mediante el administrador de marcadores o la sincronización.\n\nADVERTENCIA: la importación reemplazará su configuración actual."
   },
+  "importExportTitle": {
+    "message": "Importar y exportar"
+  },
   "importExportLink": {
     "message": "Importar y exportar..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importar"
+  },
+  "newInstallImportDescription": {
+    "message": "Restaure sus marcadores, miniaturas y ajustes desde un archivo de copia de seguridad de YASD. YASD también puede importar desde otras marcaciones rápidas populares, como Opera, Speed Dial 2 y FVD (la compatibilidad puede variar)."
   },
   "newInstallUseExistingFolder": {
     "message": "Usar una carpeta de marcadores existente"

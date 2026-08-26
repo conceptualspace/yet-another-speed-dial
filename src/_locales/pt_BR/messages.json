@@ -110,6 +110,9 @@
   "importExport": {
     "message": "Isso fará backup ou restaurará as configurações e miniaturas.\n\nObserve que todas as discagens rápidas são gerenciadas pelo navegador como favoritos. Certifique-se de que eles sejam copiados separadamente por meio do gerenciador de favoritos ou sincronização.\n\nAVISO: a importação substituirá suas configurações atuais."
   },
+  "importExportTitle": {
+    "message": "Importar e exportar"
+  },
   "importExportLink": {
     "message": "Importar e Exportar..."
   },
@@ -154,6 +157,9 @@
   },
   "newInstallImport": {
     "message": "Importar"
+  },
+  "newInstallImportDescription": {
+    "message": "Restaure seus favoritos, miniaturas e configurações de um arquivo de backup do YASD. O YASD também pode importar de outras extensões de discagem rápida populares, como Opera, Speed Dial 2 e FVD (o suporte pode variar)."
   },
   "newInstallUseExistingFolder": {
     "message": "Usar uma pasta de favoritos existente"
