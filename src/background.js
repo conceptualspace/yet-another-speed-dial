@@ -43,39 +43,29 @@ function buildThumbnailStorageUpdate(url, images, bgColor) {
     };
 }
 
-async function migrateLegacyThumbnailRecords(results) {
-    const updates = {};
-
-    for (const [url, storedData] of Object.entries(results)) {
-        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
-
-        const thumbnail = getSelectedThumbnail(storedData);
-        if (!thumbnail) continue;
-
-        updates[url] = {
-            thumbnail,
-            bgColor: storedData.bgColor
-        };
-        updates[getThumbnailCandidatesKey(url)] = {
-            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
-                .slice(0, 4)
-        };
-    }
-
-    if (Object.keys(updates).length) {
-        await chrome.storage.local.set(updates);
-    }
-}
-
 
 // EVENT LISTENERS //
 
 // firefox triggers 'moved' for bookmarks saved to different folder than default
 // firefox triggers 'changed' for bookmarks created manually todo: confirm
 // chrome triggers 'created' for bookmarks created manually in bookmark mgr
-chrome.bookmarks.onMoved.addListener(handleBookmarkChanged);
-chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
-chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
+// the event type is tracked so an edit can be patched into open tabs instead of
+// forcing them to rebuild every folder
+function handleBookmarkMoved(id, info) {
+    return handleBookmarkChanged(id, info, 'moved');
+}
+
+function handleBookmarkEdited(id, info) {
+    return handleBookmarkChanged(id, info, 'changed');
+}
+
+function handleBookmarkCreated(id, info) {
+    return handleBookmarkChanged(id, info, 'created');
+}
+
+chrome.bookmarks.onMoved.addListener(handleBookmarkMoved);
+chrome.bookmarks.onChanged.addListener(handleBookmarkEdited);
+chrome.bookmarks.onCreated.addListener(handleBookmarkCreated);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 
 chrome.action.onClicked.addListener(handleBrowserAction);
@@ -110,62 +100,13 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
-		case 'getThumbs':
-			handleGetThumbs(message.data);
-			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
 }
 
-async function handleGetThumbs(data, batchSize = 50) {
-    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
-
-    if (!bookmarks.length) return;
-
-    // Fetch all thumbnails in batches
-    for (let i = 0; i < bookmarks.length; i += batchSize) {
-        let batch = bookmarks.slice(i, i + batchSize);
-
-        // Get multiple URLs at once
-        let urls = batch.map(bookmark => bookmark.url);
-        let results = await chrome.storage.local.get(urls);
-
-        let thumbs = batch
-            .map(bookmark => {
-                let storedData = results[bookmark.url];
-                if (!storedData) return null;
-				const thumbnail = getSelectedThumbnail(storedData);
-				if (!thumbnail) return null;
-
-                return {
-                    id: bookmark.id,
-                    parentId: bookmark.parentId,
-                    url: bookmark.url,
-                    thumbnail,
-                    bgColor: storedData.bgColor
-                };
-            })
-            .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
-
-        if (thumbs.length) {
-            chrome.runtime.sendMessage({
-                target: 'newtab',
-                type: 'thumbBatch',
-                data: thumbs
-            });
-        }
-
-		await migrateLegacyThumbnailRecords(results);
-
-		// todo: maybe replace this with a message port so we dont blast every tab
-    	// Short delay to avoid overwhelming message passing
-    	await new Promise(resolve => setTimeout(resolve, 5));
-    }
-}
-
-async function handleBookmarkChanged(id, info) {
+async function handleBookmarkChanged(id, info, changeType = 'created') {
 	// bookmark was just reordered; noop
 	if (info && !info.url && !info.title && info.parentId === info.oldParentId) {
 		return
@@ -185,12 +126,28 @@ async function handleBookmarkChanged(id, info) {
 		const parentId = bookmark[0].parentId
     	if (bookmarkUrl !== "data:" && bookmarkUrl !== "about:blank") {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
+    		const isEdit = changeType === 'changed';
     		if (bookmarkData[bookmarkUrl]) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
-                refreshOpen(bookmarkId);
+    			if (isEdit) {
+    				notifyBookmarkEdited({
+    					id: bookmarkId,
+    					parentId,
+    					title: bookmark[0].title,
+    					url: bookmarkUrl,
+    					thumbnail: getSelectedThumbnail(bookmarkData[bookmarkUrl]),
+    					bgColor: bookmarkData[bookmarkUrl].bgColor
+    				});
+    			} else {
+    				refreshOpen(bookmarkId);
+    			}
     		} else {
-    			// new bookmark needs images
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
+    			// new bookmark needs images. an edit already has a tile on screen, so it
+    			// only needs the new title/url now and the thumbnail when it arrives
+    			if (isEdit) {
+    				notifyBookmarkEdited({id: bookmarkId, parentId, title: bookmark[0].title, url: bookmarkUrl});
+    			}
+    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: !isEdit});
     		}
     	}
     } else {
@@ -199,9 +156,8 @@ async function handleBookmarkChanged(id, info) {
     		// firefox creates a placeholder for the folder when created via bookmark manager
             return
     	} else if (info && info.title && Object.keys(info).length === 1) {
-	        // folder is just being renamed
-			//refreshOpen()
-			reloadFolders()
+	        // folder is just being renamed; patch the label instead of rebuilding
+	        notifyBookmarkEdited({id, parentId: bookmark[0].parentId, title: bookmark[0].title, isFolder: true});
 	        return
         } else {
         	// folderIds.push(id); todo: chrome.storage.local.set({ folderIds });
@@ -274,9 +230,9 @@ function handleBrowserAction(tab) {
 // Function to enable or disable the bookmarks.onCreated listener
 function toggleBookmarkCreatedListener(data) {
     if (data.enable) {
-        chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
+        chrome.bookmarks.onCreated.addListener(handleBookmarkCreated);
     } else {
-        chrome.bookmarks.onCreated.removeListener(handleBookmarkChanged);
+        chrome.bookmarks.onCreated.removeListener(handleBookmarkCreated);
     }
 }
 
@@ -288,7 +244,8 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        // the dial is already on screen; the new image is pushed to it when ready
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true});
     }
 }
 
@@ -602,9 +559,11 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
+	let thumbnail = null;
 	if (images && images.length) {
         const storageUpdate = buildThumbnailStorageUpdate(url, images, bgColor);
         if (storageUpdate) {
+            thumbnail = storageUpdate[url].thumbnail;
             await chrome.storage.local.set(storageUpdate);
         }
 	}
@@ -613,33 +572,36 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 		// we have new sites, reload the page
 		refreshOpen(id);
 	} else {
-		// just update existing images
+		// just update existing images. an empty batch still clears the capturing toast
 		chrome.runtime.sendMessage({
 			target: 'newtab',
 			type: 'thumbBatch',
-			data: [{
-				id,
-				parentId,
-				url,
-				thumbnail: images[0],
-				bgColor
-			}]
-		});
+			data: thumbnail ? [{id, parentId, url, thumbnail, bgColor}] : []
+		}).catch(() => {});
 	}
+}
+
+// a single dial changed: open tabs patch it in place rather than rebuilding
+function notifyBookmarkEdited(data) {
+	chrome.runtime.sendMessage({
+		target: 'newtab',
+		type: 'bookmarkChanged',
+		data
+	}).catch(() => {});
 }
 
 function refreshOpen(id) {
     chrome.runtime.sendMessage({
 		target: 'newtab',
 		data: {refresh:true, id}
-	});
+	}).catch(() => {});
 }
 
 function reloadFolders() {
 	chrome.runtime.sendMessage({
 		target: 'newtab',
 		data: {reloadFolders:true}
-	});
+	}).catch(() => {});
 }
 
 
