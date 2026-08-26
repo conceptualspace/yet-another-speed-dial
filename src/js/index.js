@@ -595,6 +595,9 @@ function removeBookmark(url) {
     // remove dial
     targetNode.remove();
     detachCachedBookmark(targetTileParentId, id);
+    // suppress the refresh echo in this tab since it already updated
+    refreshSkipId = id;
+    refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
     // nb: cache cleanup is handled by handleBookmarkRemoved in background script
     chrome.bookmarks.remove(id).catch(err => {
         console.log(err);

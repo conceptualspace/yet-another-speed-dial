@@ -227,6 +227,9 @@ async function handleBookmarkRemoved(id, info) {
 				console.log(err)
 			});
 		}
+        if (await isFolderInSpeedDial(info.parentId)) {
+            refreshOpen(id);
+        }
 	} else {
 		const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
 		const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
@@ -246,8 +249,6 @@ async function handleBookmarkRemoved(id, info) {
 			reloadFolders()
 		}
 	}
-	// todo: janky when we delete from the ui so disabled for now -- should only refresh inactive dial tabs, if they exist...
-	//refreshOpen();
 }
 
 function handleContextMenuClick(info, tab) {
@@ -414,6 +415,20 @@ async function getSpeedDialFolderId() {
 	}
 
 	return folderId;
+}
+
+async function isFolderInSpeedDial(folderId) {
+    const speedDialId = await getSpeedDialFolderId();
+    let currentId = folderId;
+
+    while (currentId) {
+        if (currentId === speedDialId) return true;
+
+        const [folder] = await chrome.bookmarks.get(currentId).catch(() => []);
+        currentId = folder?.parentId;
+    }
+
+    return false;
 }
 
 async function createBookmarkFromContextMenu(tab) {
