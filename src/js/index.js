@@ -20,6 +20,7 @@ Coloris({
 // speed dial
 const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
+const foldersHeader = document.getElementById('foldersContainer');
 const foldersContainer = document.getElementById('folders');
 const addFolderButton = document.getElementById('addFolderButton');
 
@@ -3963,7 +3964,7 @@ function captureFolderDialDropZones(container) {
 }
 
 function captureFolderHeaderDropZones() {
-    const containerRect = document.getElementById('foldersContainer').getBoundingClientRect();
+    const containerRect = foldersHeader.getBoundingClientRect();
     const zones = Array.from(foldersContainer.querySelectorAll('.folderTitle, .folderBreadcrumbLink'), folderHeader => {
         const rect = folderHeader.getBoundingClientRect();
         return {
@@ -4008,7 +4009,7 @@ function getFolderHeaderAtPointer(pointer) {
 }
 
 function setFolderHeaderDropTarget(folderHeader, isOverFolders = false) {
-    document.getElementById('foldersContainer').classList.toggle('folders-drag-active', isOverFolders);
+    foldersHeader.classList.toggle('folders-drag-active', isOverFolders);
     document.body.classList.toggle('folder-header-drop-targeting', isOverFolders);
     if (folderHeaderDropTarget === folderHeader) return;
 
@@ -4086,12 +4087,11 @@ function onStartHandler(evt) {
         cancelled: false
     };
 
-    // folder dials only reorder; they have no drop targets to track
-    if (settings.folderStyle === 'dials' && evt.item.dataset.type === 'folder') return;
+    const draggedIsFolder = evt.item.dataset.type === 'folder';
 
     dialDropTracking = {
         folderHeader: captureFolderHeaderDropZones(),
-        folderDialZones: settings.folderStyle === 'dials' ? captureFolderDialDropZones(evt.from) : [],
+        folderDialZones: settings.folderStyle === 'dials' && !draggedIsFolder ? captureFolderDialDropZones(evt.from) : [],
         scrollLeft: bookmarksContainerParent.scrollLeft,
         scrollTop: bookmarksContainerParent.scrollTop,
         pointer: getDragPointer(evt.originalEvent),
@@ -4198,7 +4198,7 @@ function onEndHandler(evt) {
         && folderAtRelease === folderDialDropTarget
         ? folderDialDropTarget
         : null;
-    const canDropOnFolderHeader = Boolean(evt?.clone?.href);
+    const canDropOnFolderHeader = Boolean(evt?.clone?.href || evt?.clone?.dataset.type === 'folder');
     const folderHeaderAtRelease = canDropOnFolderHeader
         ? (releasePointer ? getFolderHeaderAtPointer(releasePointer) : folderHeaderDropTarget)
         : null;
@@ -4248,7 +4248,7 @@ function onEndHandler(evt) {
             return;
         }
 
-        if (droppedOnAncestor && evt.clone.href) {
+        if (droppedOnAncestor) {
             evt.item.style.display = "none";
             flip();
             evt.item.remove();
