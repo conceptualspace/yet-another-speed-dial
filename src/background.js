@@ -115,7 +115,8 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
 	// info may only contain "changed" info -- 
 	// ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
-    const bookmark = await chrome.bookmarks.get(id)
+    const bookmark = await chrome.bookmarks.get(id).catch(() => [])
+    if (!bookmark.length) return
 
     // todo: filter changes that arent in the speed dial or subfolder, like moving site out of speed dial
     // todo: debounce the message to any open tabs to rerender or debounce render side?
@@ -138,7 +139,7 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
     					thumbnail: getSelectedThumbnail(bookmarkData[bookmarkUrl]),
     					bgColor: bookmarkData[bookmarkUrl].bgColor
     				});
-    			} else {
+    			} else if (changeType !== 'folderChild') {
     				refreshOpen(bookmarkId);
     			}
     		} else {
@@ -147,7 +148,7 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
     			if (isEdit) {
     				notifyBookmarkEdited({id: bookmarkId, parentId, title: bookmark[0].title, url: bookmarkUrl});
     			}
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: !isEdit});
+    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: !isEdit && changeType !== 'folderChild'});
     		}
     	}
     } else {
@@ -166,10 +167,14 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
         	const children = await chrome.bookmarks.getChildren(id);
         	if (children.length) {
         		for (let child of children) {
-        			handleBookmarkChanged(child.id)
+        			// the folder reload below covers the whole subtree, so the
+        			// descendants only need their thumbnails captured
+        			handleBookmarkChanged(child.id, null, 'folderChild')
         		}
         	}
-            reloadFolders()
+            if (changeType !== 'folderChild') {
+                reloadFolders()
+            }
         }
     }
 }

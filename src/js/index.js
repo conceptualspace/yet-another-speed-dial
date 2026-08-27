@@ -155,6 +155,7 @@ let cache = {};
 // by this page; keeping them here means a re-render repaints tiles synchronously
 // instead of blanking them while a fresh copy is fetched
 const thumbnailCache = new Map();
+const THUMBNAIL_CACHE_LIMIT = 1000;
 let settings = null;
 const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
 let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
@@ -318,6 +319,10 @@ function isBookmarkFolder(node) {
 
 function cacheThumbnail(url, thumbnail, bgColor) {
     if (!url || !thumbnail) return;
+    // bounded, otherwise browsing folders in dials mode retains every dial ever rendered
+    if (thumbnailCache.size >= THUMBNAIL_CACHE_LIMIT && !thumbnailCache.has(url)) {
+        thumbnailCache.delete(thumbnailCache.keys().next().value);
+    }
     thumbnailCache.set(url, { thumbnail, bgColor });
 }
 
@@ -4611,6 +4616,9 @@ function applyBookmarkChange(change) {
     if (!change?.id || !settings) return;
 
     if (change.isFolder) {
+        // the root's tab is labelled 'Home', not with the bookmark folder's title
+        if (change.id === speedDialId) return;
+
         const folder = folderNodeMap.get(change.id);
         if (folder) folder.title = change.title;
 
