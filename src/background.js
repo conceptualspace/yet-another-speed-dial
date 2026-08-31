@@ -43,6 +43,30 @@ function buildThumbnailStorageUpdate(url, images, bgColor) {
     };
 }
 
+async function migrateLegacyThumbnailRecords(results) {
+    const updates = {};
+
+    for (const [url, storedData] of Object.entries(results)) {
+        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
+
+        const thumbnail = getSelectedThumbnail(storedData);
+        if (!thumbnail) continue;
+
+        updates[url] = {
+            thumbnail,
+            bgColor: storedData.bgColor
+        };
+        updates[getThumbnailCandidatesKey(url)] = {
+            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
+                .slice(0, 4)
+        };
+    }
+
+    if (Object.keys(updates).length) {
+        await chrome.storage.local.set(updates);
+    }
+}
+
 
 // EVENT LISTENERS //
 
@@ -80,7 +104,7 @@ if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 // EVENT HANDLERS //
 
-async function handleMessages(message) {
+function handleMessages(message, sender, sendResponse) {
 	// Return early if this message isn't meant for the worker
 	if (message.target !== 'background') {
 	  return;
@@ -100,10 +124,44 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
+		case 'getThumbs':
+			handleGetThumbs(message.data).then(sendResponse, error => {
+				console.error('Error loading thumbnails:', error);
+				sendResponse([]);
+			});
+			return true;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
+}
+
+async function handleGetThumbs(data) {
+    const bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http")
+        || bookmark.url?.startsWith("file:")
+        || bookmark.url?.startsWith("chrome:"));
+
+    if (!bookmarks.length) return [];
+
+    const results = await chrome.storage.local.get([...new Set(bookmarks.map(bookmark => bookmark.url))]);
+    const thumbs = bookmarks
+        .map(bookmark => {
+            const storedData = results[bookmark.url];
+            const thumbnail = getSelectedThumbnail(storedData);
+            if (!thumbnail) return null;
+
+            return {
+                id: bookmark.id,
+                parentId: bookmark.parentId,
+                url: bookmark.url,
+                thumbnail,
+                bgColor: storedData.bgColor
+            };
+        })
+        .filter(thumb => thumb !== null);
+
+    await migrateLegacyThumbnailRecords(results);
+    return thumbs;
 }
 
 async function handleBookmarkChanged(id, info, changeType = 'created') {
@@ -115,8 +173,7 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
 	// info may only contain "changed" info -- 
 	// ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
-    const bookmark = await chrome.bookmarks.get(id).catch(() => [])
-    if (!bookmark.length) return
+    const bookmark = await chrome.bookmarks.get(id)
 
     // todo: filter changes that arent in the speed dial or subfolder, like moving site out of speed dial
     // todo: debounce the message to any open tabs to rerender or debounce render side?
@@ -139,7 +196,7 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
     					thumbnail: getSelectedThumbnail(bookmarkData[bookmarkUrl]),
     					bgColor: bookmarkData[bookmarkUrl].bgColor
     				});
-    			} else if (changeType !== 'folderChild') {
+                } else {
     				refreshOpen(bookmarkId);
     			}
     		} else {
@@ -148,7 +205,7 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
     			if (isEdit) {
     				notifyBookmarkEdited({id: bookmarkId, parentId, title: bookmark[0].title, url: bookmarkUrl});
     			}
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: !isEdit && changeType !== 'folderChild'});
+                        getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: !isEdit});
     		}
     	}
     } else {
@@ -167,14 +224,10 @@ async function handleBookmarkChanged(id, info, changeType = 'created') {
         	const children = await chrome.bookmarks.getChildren(id);
         	if (children.length) {
         		for (let child of children) {
-        			// the folder reload below covers the whole subtree, so the
-        			// descendants only need their thumbnails captured
-        			handleBookmarkChanged(child.id, null, 'folderChild')
+                    handleBookmarkChanged(child.id)
         		}
         	}
-            if (changeType !== 'folderChild') {
-                reloadFolders()
-            }
+            reloadFolders()
         }
     }
 }

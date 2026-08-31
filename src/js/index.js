@@ -151,11 +151,6 @@ chrome.runtime.onMessage.addListener(handleMessages);
 chrome.storage.onChanged.addListener(handleStorageChanged);
 
 let cache = {};
-// url -> {thumbnail, bgColor}. thumbnails are data URIs read straight from storage
-// by this page; keeping them here means a re-render repaints tiles synchronously
-// instead of blanking them while a fresh copy is fetched
-const thumbnailCache = new Map();
-const THUMBNAIL_CACHE_LIMIT = 1000;
 let settings = null;
 const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
 let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
@@ -317,78 +312,19 @@ function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
 }
 
-function cacheThumbnail(url, thumbnail, bgColor) {
-    if (!url || !thumbnail) return;
-    // bounded, otherwise browsing folders in dials mode retains every dial ever rendered
-    if (thumbnailCache.size >= THUMBNAIL_CACHE_LIMIT && !thumbnailCache.has(url)) {
-        thumbnailCache.delete(thumbnailCache.keys().next().value);
-    }
-    thumbnailCache.set(url, { thumbnail, bgColor });
-}
+function requestThumbnailBatches(bookmarks, batchSize = 50) {
+    const dials = bookmarks.filter(isSupportedDial);
+    const requests = [];
 
-function cacheThumbnailRecords(records) {
-    for (const [url, storedData] of Object.entries(records)) {
-        cacheThumbnail(url, getSelectedThumbnail(storedData), storedData?.bgColor);
-    }
-}
-
-function applyThumbnailStyle(element, thumbnail, bgColor) {
-    element.style.backgroundColor = 'unset';
-    element.style.backgroundImage = bgColor ? `url('${thumbnail}'), ${bgColor}` : `url('${thumbnail}')`;
-}
-
-// thumbnails are read here rather than requested from the service worker: it had to
-// broadcast every batch to every open tab, so the cost of a render grew with the
-// number of open speed dial tabs
-async function loadThumbnails(bookmarks, batchSize = 50) {
-    const pending = bookmarks.filter(bookmark => isSupportedDial(bookmark) && !thumbnailCache.has(bookmark.url));
-    if (!pending.length) return;
-
-    for (let i = 0; i < pending.length; i += batchSize) {
-        const batch = pending.slice(i, i + batchSize);
-        const records = await chrome.storage.local.get([...new Set(batch.map(bookmark => bookmark.url))]);
-        cacheThumbnailRecords(records);
-
-        const thumbs = [];
-        for (const bookmark of batch) {
-            const cached = thumbnailCache.get(bookmark.url);
-            if (!cached) continue;
-            thumbs.push({
-                id: bookmark.id,
-                parentId: bookmark.parentId,
-                url: bookmark.url,
-                thumbnail: cached.thumbnail,
-                bgColor: cached.bgColor
-            });
-        }
-
-        if (thumbs.length) setBackgroundImages(thumbs);
-        migrateLegacyThumbnailRecords(records);
-    }
-}
-
-// rewrite pre-3.16 records, which kept every candidate image on the dial's own key
-async function migrateLegacyThumbnailRecords(records) {
-    const updates = {};
-
-    for (const [url, storedData] of Object.entries(records)) {
-        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
-
-        const thumbnail = getSelectedThumbnail(storedData);
-        if (!thumbnail) continue;
-
-        updates[url] = {
-            thumbnail,
-            bgColor: storedData.bgColor
-        };
-        updates[getThumbnailCandidatesKey(url)] = {
-            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))].slice(0, 4)
-        };
+    for (let i = 0; i < dials.length; i += batchSize) {
+        requests.push(chrome.runtime.sendMessage({
+            target: 'background',
+            type: 'getThumbs',
+            data: dials.slice(i, i + batchSize)
+        }));
     }
 
-    if (Object.keys(updates).length) {
-        await chrome.storage.local.set(updates);
-    }
+    return requests;
 }
 
 async function prepareFolderPreviews(children) {
@@ -400,16 +336,14 @@ async function prepareFolderPreviews(children) {
         folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
     }
 
-    const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))]
-        .filter(url => !thumbnailCache.has(url));
+    const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
     const storedThumbnails = previewUrls.length ? await chrome.storage.local.get(previewUrls) : {};
-    cacheThumbnailRecords(storedThumbnails);
 
     for (const folder of previewFolders) {
         for (const dial of folder.previewDials) {
-            const cached = thumbnailCache.get(dial.url);
-            dial.previewThumbnail = cached?.thumbnail || null;
-            dial.previewColor = cached?.bgColor;
+            const storedData = storedThumbnails[dial.url];
+            dial.previewThumbnail = getSelectedThumbnail(storedData);
+            dial.previewColor = storedData?.bgColor;
         }
     }
 }
@@ -1251,6 +1185,8 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         bookmarks = [...bookmarks].reverse();
     }
 
+    const thumbnailRequests = requestThumbnailBatches(bookmarks);
+
     // Process bookmarks
     if (bookmarks) {
         for (let bookmark of bookmarks) {
@@ -1301,12 +1237,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 let content = document.createElement('div');
                 content.id = bookmark.id;
                 content.classList.add('tile-content');
-                const cachedThumbnail = thumbnailCache.get(bookmark.url);
-                if (cachedThumbnail) {
-                    applyThumbnailStyle(content, cachedThumbnail.thumbnail, cachedThumbnail.bgColor);
-                } else {
-                    content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-                }
+                content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title');
@@ -1396,7 +1327,9 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         await insertionComplete;
     }
 
-    loadThumbnails(bookmarks);
+    for (const request of thumbnailRequests) {
+        request.then(setBackgroundImages).catch(error => console.log(error));
+    }
 
     bookmarksContainerParent.scrollTop = scrollPos;
 }
@@ -2075,7 +2008,6 @@ function saveBookmarkSettings() {
             if (selectedImageSrc) {
                 const alternatives = [...new Set((images?.thumbnails || [])
                     .filter(image => image && image !== selectedImageSrc))];
-                cacheThumbnail(newUrl, selectedImageSrc, bgColor);
                 chrome.storage.local.set({
                     [newUrl]: {
                         thumbnail: selectedImageSrc,
@@ -2106,7 +2038,6 @@ function saveBookmarkSettings() {
             .then(bookmarks => {
                 if (bookmarks.length <= 1 && (url !== newUrl)) {
                     // cleanup unused thumbnails
-                    thumbnailCache.delete(url);
                     chrome.storage.local.remove(getThumbnailStorageKeys(url))
                 }
                 for (let bookmark of bookmarks) {
@@ -3604,7 +3535,6 @@ function parseJson(event) {
 // backup data, so it has to survive or we'd lose track of the folder we just imported into
 async function clearStorage() {
     const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
-    thumbnailCache.clear();
     await chrome.storage.local.clear();
 
     if (stored[SPEED_DIAL_FOLDER_KEY]) {
@@ -4605,7 +4535,8 @@ function setBackgroundImages(thumbnails) {
 function batchApplyImages(elements) {
     requestAnimationFrame(() => {
         elements.forEach(({ element, thumb }) => {
-            applyThumbnailStyle(element, thumb.thumbnail, thumb.bgColor);
+            element.style.backgroundColor = "unset";
+            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
         });
     });
 }
@@ -4616,9 +4547,6 @@ function applyBookmarkChange(change) {
     if (!change?.id || !settings) return;
 
     if (change.isFolder) {
-        // the root's tab is labelled 'Home', not with the bookmark folder's title
-        if (change.id === speedDialId) return;
-
         const folder = folderNodeMap.get(change.id);
         if (folder) folder.title = change.title;
 
@@ -4638,7 +4566,6 @@ function applyBookmarkChange(change) {
     }
 
     if (change.thumbnail) {
-        cacheThumbnail(change.url, change.thumbnail, change.bgColor);
         // also repaints any folder preview tile showing this dial
         setBackgroundImages([change]);
     }
@@ -4683,9 +4610,6 @@ function handleMessages(message) {
         applyBookmarkChange(message.data);
     } else if(message.type === 'thumbBatch') {
         // data is an array of objects containing id, parentId, url, thumbnail and bgColor
-        for (const thumb of message.data) {
-            cacheThumbnail(thumb.url, thumb.thumbnail, thumb.bgColor);
-        }
         setBackgroundImages(message.data);
         hideToast();
     }
