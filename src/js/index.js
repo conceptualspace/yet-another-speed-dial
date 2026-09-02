@@ -144,9 +144,6 @@ const searchBtn = document.getElementById('searchBtn');
 // clock
 const clock = document.getElementById('clock');
 
-const port = "p-" + new Date().getTime();
-let tabMessagePort = null;
-
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.storage.onChanged.addListener(handleStorageChanged);
 
@@ -369,6 +366,59 @@ function appendCachedBookmark(parentId, node) {
     node.parentId = parentId;
     node.index = folder.children.length;
     folder.children.push(node);
+}
+
+function applyBookmarkChange(data) {
+    const { bookmark, thumbnail, bgColor } = data || {};
+    if (!bookmark?.id) return;
+
+    const cachedNode = bookmark.id === speedDialId
+        ? speedDialRootNode
+        : getCachedFolderNode(bookmark.parentId)?.children?.find(node => node.id === bookmark.id)
+            || folderNodeMap.get(bookmark.id);
+    const bookmarkId = CSS.escape(String(bookmark.id));
+    const tiles = [...document.querySelectorAll(`.tile[data-id="${bookmarkId}"]`)];
+    if (!cachedNode && !tiles.length) return;
+
+    if (cachedNode) {
+        Object.assign(cachedNode, bookmark);
+    }
+
+    if (bookmark.url && !isSupportedDial(bookmark)) {
+        tiles.forEach(tile => tile.remove());
+        scheduleFlip();
+        return;
+    }
+
+    tiles.forEach(tile => {
+        if (bookmark.url) tile.href = bookmark.url;
+        const title = tile.querySelector('.tile-title');
+        if (!title) return;
+        const titleText = title.querySelector('.folderDial-titleText');
+        if (titleText) {
+            titleText.textContent = bookmark.title;
+        } else {
+            title.textContent = bookmark.title;
+        }
+    });
+
+    if (thumbnail) {
+        setBackgroundImages([{
+            id: bookmark.id,
+            parentId: bookmark.parentId,
+            thumbnail,
+            bgColor
+        }]);
+    }
+
+    if (bookmark.id !== speedDialId) {
+        document.querySelectorAll(`[folderid="${bookmarkId}"]`).forEach(folder => {
+            folder.textContent = bookmark.title;
+        });
+    }
+
+    if (targetTileId === bookmark.id) targetTileTitle = bookmark.title;
+    if (targetFolder === bookmark.id) targetFolderName = bookmark.title;
 }
 
 // spring-load nav can swap the visible container mid-drag
@@ -1153,6 +1203,19 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
+function requestThumbnailBatches(bookmarks) {
+    const thumbnailPort = chrome.runtime.connect({ name: 'thumbnailBatches' });
+
+    thumbnailPort.onMessage.addListener(message => {
+        if (message.type === 'thumbBatch') {
+            setBackgroundImages(message.data);
+        } else if (message.type === 'thumbBatchDone') {
+            thumbnailPort.disconnect();
+        }
+    });
+    thumbnailPort.postMessage({ type: 'getThumbs', data: bookmarks });
+}
+
 async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
     let fragment = document.createDocumentFragment();
 
@@ -1174,7 +1237,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     } else if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
     }
-    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
+    requestThumbnailBatches(bookmarks);
     //let thumbnails = await chrome.storage.local.get(urls);
 
     // Process bookmarks
@@ -2035,10 +2098,10 @@ function saveBookmarkSettings() {
                 for (let bookmark of bookmarks) {
                     let currentParent = currentFolder ? currentFolder : speedDialId
                     if (bookmark.parentId === currentParent) {
-                        chrome.bookmarks.update(bookmark.id, {
-                            title,
-                            url: newUrl
-                        });
+                        const changes = {};
+                        if (title !== targetTileTitle) changes.title = title;
+                        if (url !== newUrl) changes.url = newUrl;
+                        chrome.bookmarks.update(bookmark.id, changes);
                     }
 
                     if (url !== newUrl && toastContent.innerText === '') {
@@ -4549,6 +4612,8 @@ function handleMessages(message) {
     } else if(message.data?.reloadFolders) {
         hideToast();
         processRefresh({ foldersOnly: settings.folderStyle !== 'dials' });
+    } else if(message.type === 'bookmarkChanged') {
+        applyBookmarkChange(message.data);
     } else if(message.type === 'thumbBatch') {
         // lets update the backgroundImage with the thumbnail for each element using its id (parentId + id)
         // data.thumbs is an array of objects containing id, parentId, thumbnail and bgcolor

@@ -5,6 +5,7 @@
 'use strict';
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+const THUMBNAIL_PORT_NAME = 'thumbnailBatches';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 
@@ -73,15 +74,16 @@ async function migrateLegacyThumbnailRecords(results) {
 // firefox triggers 'moved' for bookmarks saved to different folder than default
 // firefox triggers 'changed' for bookmarks created manually todo: confirm
 // chrome triggers 'created' for bookmarks created manually in bookmark mgr
-chrome.bookmarks.onMoved.addListener(handleBookmarkChanged);
-chrome.bookmarks.onChanged.addListener(handleBookmarkChanged);
-chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
+chrome.bookmarks.onMoved.addListener(handleBookmarkStructuralChange);
+chrome.bookmarks.onChanged.addListener(handleBookmarkMetadataChanged);
+chrome.bookmarks.onCreated.addListener(handleBookmarkStructuralChange);
 chrome.bookmarks.onRemoved.addListener(handleBookmarkRemoved);
 
 chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onConnect.addListener(handleThumbnailPortConnected);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
@@ -110,16 +112,39 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
-		case 'getThumbs':
-			handleGetThumbs(message.data);
-			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
 }
 
-async function handleGetThumbs(data, batchSize = 50) {
+function handleThumbnailPortConnected(port) {
+    if (port.name !== THUMBNAIL_PORT_NAME) return;
+
+    let disconnected = false;
+    port.onDisconnect.addListener(() => disconnected = true);
+    port.onMessage.addListener(async message => {
+        if (message.type !== 'getThumbs') return;
+
+        await handleGetThumbs(message.data, thumbs => {
+            if (disconnected) return;
+            try {
+                port.postMessage({ type: 'thumbBatch', data: thumbs });
+            } catch (error) {
+                disconnected = true;
+            }
+        });
+
+        if (disconnected) return;
+        try {
+            port.postMessage({ type: 'thumbBatchDone' });
+        } catch (error) {
+            disconnected = true;
+        }
+    });
+}
+
+async function handleGetThumbs(data, sendBatch, batchSize = 50) {
     let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
 
     if (!bookmarks.length) return;
@@ -150,22 +175,44 @@ async function handleGetThumbs(data, batchSize = 50) {
             .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
 
         if (thumbs.length) {
-            chrome.runtime.sendMessage({
-                target: 'newtab',
-                type: 'thumbBatch',
-                data: thumbs
-            });
+            sendBatch(thumbs);
         }
 
 		await migrateLegacyThumbnailRecords(results);
 
-		// todo: maybe replace this with a message port so we dont blast every tab
-    	// Short delay to avoid overwhelming message passing
+        // Short delay to avoid overwhelming message passing
     	await new Promise(resolve => setTimeout(resolve, 5));
     }
 }
 
-async function handleBookmarkChanged(id, info) {
+async function handleBookmarkMetadataChanged(id) {
+    const [bookmark] = await chrome.bookmarks.get(id).catch(() => []);
+    if (!bookmark) return;
+
+    let storedData;
+    if (bookmark.url) {
+        const result = await chrome.storage.local.get(bookmark.url);
+        storedData = result[bookmark.url];
+    }
+
+    const thumbnail = getSelectedThumbnail(storedData);
+    chrome.runtime.sendMessage({
+        target: 'newtab',
+        type: 'bookmarkChanged',
+        data: {
+            bookmark,
+            thumbnail,
+            bgColor: storedData?.bgColor
+        }
+    });
+
+    if (bookmark.url && !thumbnail
+        && (bookmark.url.startsWith('http') || bookmark.url.startsWith('file:') || bookmark.url.startsWith('chrome:'))) {
+        getThumbnails(bookmark.url, bookmark.id, bookmark.parentId);
+    }
+}
+
+async function handleBookmarkStructuralChange(id, info) {
 	// bookmark was just reordered; noop
 	if (info && !info.url && !info.title && info.parentId === info.oldParentId) {
 		return
@@ -175,14 +222,15 @@ async function handleBookmarkChanged(id, info) {
 	// ex. it may not contain url for moves, just old and new folder ids
     // so we always "get" the bookmark to access all its info
     const bookmark = await chrome.bookmarks.get(id)
+    const bookmarkNode = bookmark[0];
 
     // todo: filter changes that arent in the speed dial or subfolder, like moving site out of speed dial
     // todo: debounce the message to any open tabs to rerender or debounce render side?
 
-    if (bookmark[0].url) {
-    	const bookmarkUrl = bookmark[0].url
-		const bookmarkId = bookmark[0].id
-		const parentId = bookmark[0].parentId
+    if (bookmarkNode.url) {
+        const bookmarkUrl = bookmarkNode.url
+        const bookmarkId = bookmarkNode.id
+        const parentId = bookmarkNode.parentId
     	if (bookmarkUrl !== "data:" && bookmarkUrl !== "about:blank") {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
@@ -195,14 +243,9 @@ async function handleBookmarkChanged(id, info) {
     	}
     } else {
     	// folder
-    	if (bookmark[0].title === "New Folder") {
+        if (bookmarkNode.title === "New Folder") {
     		// firefox creates a placeholder for the folder when created via bookmark manager
             return
-    	} else if (info && info.title && Object.keys(info).length === 1) {
-	        // folder is just being renamed
-			//refreshOpen()
-			reloadFolders()
-	        return
         } else {
         	// folderIds.push(id); todo: chrome.storage.local.set({ folderIds });
         	// new folder
@@ -210,7 +253,7 @@ async function handleBookmarkChanged(id, info) {
         	const children = await chrome.bookmarks.getChildren(id);
         	if (children.length) {
         		for (let child of children) {
-        			handleBookmarkChanged(child.id)
+                    handleBookmarkStructuralChange(child.id)
         		}
         	}
             reloadFolders()
@@ -274,9 +317,9 @@ function handleBrowserAction(tab) {
 // Function to enable or disable the bookmarks.onCreated listener
 function toggleBookmarkCreatedListener(data) {
     if (data.enable) {
-        chrome.bookmarks.onCreated.addListener(handleBookmarkChanged);
+        chrome.bookmarks.onCreated.addListener(handleBookmarkStructuralChange);
     } else {
-        chrome.bookmarks.onCreated.removeListener(handleBookmarkChanged);
+        chrome.bookmarks.onCreated.removeListener(handleBookmarkStructuralChange);
     }
 }
 
@@ -288,7 +331,7 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: false});
     }
 }
 
