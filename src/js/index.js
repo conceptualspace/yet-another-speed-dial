@@ -309,25 +309,20 @@ function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
 }
 
-async function prepareFolderPreviews(children) {
-    const previewFolders = children.filter(child => !child.url);
+// preview images arrive through the thumbnail port like regular dials, so first paint
+// never waits on a storage read that scales with folder count x thumbnail size
+function prepareFolderPreviews(children) {
+    const previewDials = [];
 
-    for (const folder of previewFolders) {
+    for (const folder of children) {
+        if (folder.url) continue;
         const folderChildren = folder.children || [];
         const displayOrder = settings.defaultSort === "first" ? [...folderChildren].reverse() : folderChildren;
         folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
+        previewDials.push(...folder.previewDials);
     }
 
-    const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
-    const storedThumbnails = previewUrls.length ? await chrome.storage.local.get(previewUrls) : {};
-
-    for (const folder of previewFolders) {
-        for (const dial of folder.previewDials) {
-            const storedData = storedThumbnails[dial.url];
-            dial.previewThumbnail = getSelectedThumbnail(storedData);
-            dial.previewColor = storedData?.bgColor;
-        }
-    }
+    return previewDials;
 }
 
 function unregisterThumbnailPreviews(container) {
@@ -453,10 +448,7 @@ function renderFolderDialPreviews(content, folder) {
             thumbnailPreviewElements.set(previewDial.id, new Set());
         }
         thumbnailPreviewElements.get(previewDial.id).add(preview);
-        preview.style.backgroundColor = previewDial.previewColor || 'rgba(255, 255, 255, 0.12)';
-        if (previewDial.previewThumbnail) {
-            preview.style.backgroundImage = `url('${previewDial.previewThumbnail}')`;
-        }
+        preview.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
         content.appendChild(preview);
     }
 
@@ -468,15 +460,16 @@ function renderFolderDialPreviews(content, folder) {
     }
 }
 
-async function refreshFolderDialPreviews(folderId) {
+function refreshFolderDialPreviews(folderId) {
     const folder = getCachedFolderNode(folderId);
     const content = document.querySelector(`.folderDial[data-id="${folderId}"] .folderDial-content`);
     if (!folder || !content) return;
 
-    await prepareFolderPreviews([folder]);
+    const previewDials = prepareFolderPreviews([folder]);
     unregisterThumbnailPreviews(content);
     content.textContent = '';
     renderFolderDialPreviews(content, folder);
+    if (previewDials.length) requestThumbnailBatches(previewDials);
 }
 
 function removeFolderContainer(container) {
@@ -564,8 +557,6 @@ async function buildDialPages(rootId, currentFolderId, { immediateActiveInsert =
             }
         });
 
-        await prepareFolderPreviews(currentNode?.children || []);
-        if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
         await printBookmarks(currentNode?.children || [], currentFolderId, { immediateInsert: immediateActiveInsert });
         if (!isSpeedDialRenderCurrent(rootId, renderRevision)) return;
         bookmarksContainerParent.scrollTop = scrollPos;
@@ -890,9 +881,6 @@ async function openFolder(id, { historyMode = 'push' } = {}) {
     if (settings.folderStyle === 'dials' && !document.getElementById(id)) {
         const folder = id === speedDialId ? speedDialRootNode : folderNodeMap.get(id);
         if (!folder) return;
-
-        await prepareFolderPreviews(folder.children || []);
-        if (pendingFolderId !== id) return;
 
         await printBookmarks(folder.children || [], id);
         if (pendingFolderId !== id) return;
@@ -1224,6 +1212,8 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
 
     // lets message the background script to do it  
 
+    // folder nodes carry their whole subtree from getSubTree; dont clone that over the port
+    let thumbnailRequests = bookmarks.filter(isSupportedDial);
     if (settings.folderStyle === 'dials') {
         const folders = bookmarks.filter(bookmark => !bookmark.url);
         let dials = bookmarks.filter(bookmark => bookmark.url);
@@ -1234,10 +1224,11 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
             ...folders,
             ...dials
         ];
+        thumbnailRequests.push(...prepareFolderPreviews(folders));
     } else if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
     }
-    requestThumbnailBatches(bookmarks);
+    requestThumbnailBatches(thumbnailRequests);
     //let thumbnails = await chrome.storage.local.get(urls);
 
     // Process bookmarks
