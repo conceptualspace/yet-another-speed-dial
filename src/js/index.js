@@ -1195,7 +1195,8 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     const existingContainer = document.getElementById(parentId);
     if (existingContainer) {
         for (const content of existingContainer.querySelectorAll(':scope > .tile > .tile-main > .tile-content[id]')) {
-            if (content.style.backgroundImage) {
+            // reading backgroundImage serializes the data uri; the placeholder color is cleared once a thumbnail lands
+            if (content.style.backgroundColor === 'unset') {
                 reusableContent.set(content.id, content);
             }
         }
