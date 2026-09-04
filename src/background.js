@@ -5,6 +5,7 @@
 'use strict';
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+const THUMBNAIL_PORT_NAME = 'thumbnailBatches';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 
@@ -82,6 +83,7 @@ chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onConnect.addListener(handleThumbnailPortConnected);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
@@ -110,16 +112,36 @@ async function handleMessages(message) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
-		case 'getThumbs':
-			handleGetThumbs(message.data);
-			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
 }
 
-async function handleGetThumbs(data, batchSize = 50) {
+// thumbnails stream back over the requesting page's port; a broadcast would fan
+// them out to every open tab
+function handleThumbnailPortConnected(port) {
+    if (port.name !== THUMBNAIL_PORT_NAME) return;
+
+    let connected = true;
+    port.onDisconnect.addListener(() => connected = false);
+    const post = (message) => {
+        if (!connected) return;
+        try {
+            port.postMessage(message);
+        } catch (error) {
+            connected = false;
+        }
+    };
+
+    port.onMessage.addListener(async message => {
+        if (message.type !== 'getThumbs') return;
+        await handleGetThumbs(message.data, thumbs => post({ type: 'thumbBatch', data: thumbs }));
+        post({ type: 'thumbBatchDone' });
+    });
+}
+
+async function handleGetThumbs(data, sendBatch, batchSize = 50) {
     let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
 
     if (!bookmarks.length) return;
@@ -150,16 +172,11 @@ async function handleGetThumbs(data, batchSize = 50) {
             .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
 
         if (thumbs.length) {
-            chrome.runtime.sendMessage({
-                target: 'newtab',
-                type: 'thumbBatch',
-                data: thumbs
-            });
+            sendBatch(thumbs);
         }
 
 		await migrateLegacyThumbnailRecords(results);
 
-		// todo: maybe replace this with a message port so we dont blast every tab
     	// Short delay to avoid overwhelming message passing
     	await new Promise(resolve => setTimeout(resolve, 5));
     }
@@ -187,7 +204,9 @@ async function handleBookmarkChanged(id, info) {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
-                refreshOpen(bookmarkId);
+                refreshOpen(bookmarkId, {
+                    bookmark: { id: bookmarkId, parentId, url: bookmarkUrl, title: bookmark[0].title }
+                });
     		} else {
     			// new bookmark needs images
     			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
@@ -288,7 +307,7 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: false});
     }
 }
 
@@ -602,18 +621,18 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
-	if (images && images.length) {
-        const storageUpdate = buildThumbnailStorageUpdate(url, images, bgColor);
-        if (storageUpdate) {
-            await chrome.storage.local.set(storageUpdate);
-        }
+	let stored = images && images.length ? buildThumbnailStorageUpdate(url, images, bgColor) : null;
+	if (stored) {
+		await chrome.storage.local.set(stored);
 	}
 	// refresh open new tab page
 	if (forcePageReload) {
 		// we have new sites, reload the page
-		refreshOpen(id);
+		refreshOpen(id, { url });
 	} else {
-		// just update existing images
+		// just update existing images. echo what is stored: a manual refresh that captured
+		// nothing has already cleared storage, so a null thumbnail resets the tile
+		stored = stored || await chrome.storage.local.get(url);
 		chrome.runtime.sendMessage({
 			target: 'newtab',
 			type: 'thumbBatch',
@@ -621,17 +640,17 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 				id,
 				parentId,
 				url,
-				thumbnail: images[0],
-				bgColor
+				thumbnail: getSelectedThumbnail(stored[url]),
+				bgColor: stored[url]?.bgColor
 			}]
 		});
 	}
 }
 
-function refreshOpen(id) {
+function refreshOpen(id, extra = {}) {
     chrome.runtime.sendMessage({
 		target: 'newtab',
-		data: {refresh:true, id}
+		data: {refresh:true, id, ...extra}
 	});
 }
 
