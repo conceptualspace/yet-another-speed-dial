@@ -184,6 +184,11 @@ let thumbnailPreviewElements = new Map();
 let scrollPos = 0;
 let refreshSkipUntil = 0;
 let refreshSkipId = null;
+// urls whose stored thumbnail changed since the tiles were last drawn; a rebuild must
+// not carry the on-screen image over for these. swapped into buildStale* per build so
+// messages arriving mid-build are picked up by the trailing debounced refresh.
+let staleThumbnailUrls = new Set();
+let buildStaleThumbnailUrls = new Set();
 let homeFolderTitle = chrome.i18n.getMessage('home');
 const capturingImagesMessage = ' ' + chrome.i18n.getMessage('capturingImages');
 // tile reflow (FLIP) animation state. The motion runs on the compositor via the
@@ -369,6 +374,33 @@ function appendCachedBookmark(parentId, node) {
     node.parentId = parentId;
     node.index = folder.children.length;
     folder.children.push(node);
+}
+
+function findCachedBookmark(id) {
+    const folders = speedDialRootNode ? [speedDialRootNode, ...folderNodeMap.values()] : [];
+    for (const folder of folders) {
+        const node = folder.children?.find(child => child.id === id);
+        if (node) return node;
+    }
+    return null;
+}
+
+// a title edit on a dial we already track is patched in place instead of rebuilding
+// every folder. returns true when no refresh is needed.
+function applyBookmarkUpdate(bookmark) {
+    if (!speedDialRootNode) return false;
+
+    const cached = findCachedBookmark(bookmark.id);
+    if (!cached) {
+        // unrelated to the speed dial unless it just landed in one of our folders
+        return !getCachedFolderNode(bookmark.parentId);
+    }
+    if (cached.parentId !== bookmark.parentId || cached.url !== bookmark.url) return false;
+
+    cached.title = bookmark.title;
+    const title = document.querySelector(`[id="${bookmark.parentId}"] > .tile[data-id="${bookmark.id}"] .tile-title`);
+    if (title) title.textContent = bookmark.title;
+    return true;
 }
 
 // spring-load nav can swap the visible container mid-drag
@@ -1156,10 +1188,19 @@ function createNewDialButton(parentId) {
 async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
     let fragment = document.createDocumentFragment();
 
-    // Collect URLs for batch thumbnail fetching
-    //let urls = bookmarks.filter(b => b.url?.startsWith("http")).map(b => b.url);
-
-    // lets message the background script to do it  
+    // carry rendered thumbnails over from the tiles we are about to replace so a
+    // rebuild neither flashes blank nor re-requests images it already has. the node
+    // itself is moved: re-parsing hundreds of data-uri styles is a visible stall
+    const reusableContent = new Map();
+    const existingContainer = document.getElementById(parentId);
+    if (existingContainer) {
+        for (const content of existingContainer.querySelectorAll(':scope > .tile > .tile-main > .tile-content[id]')) {
+            if (content.style.backgroundImage) {
+                reusableContent.set(content.id, content);
+            }
+        }
+    }
+    const thumbRequests = [];
 
     if (settings.folderStyle === 'dials') {
         const folders = bookmarks.filter(bookmark => !bookmark.url);
@@ -1174,8 +1215,6 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     } else if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
     }
-    chrome.runtime.sendMessage({target: 'background', type: 'getThumbs', data: bookmarks})
-    //let thumbnails = await chrome.storage.local.get(urls);
 
     // Process bookmarks
     if (bookmarks) {
@@ -1215,10 +1254,6 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
             }
 
             if (isSupportedDial(bookmark)) {
-                //let images = thumbnails[bookmark.url] || {};
-                //let thumbUrl = images.thumbnails?.[images.thumbIndex] || null;
-                //let thumbBg = images.bgColor || null;
-
                 let a = document.createElement('a');
                 a.classList.add('tile');
                 a.href = bookmark.url;
@@ -1228,12 +1263,14 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 let main = document.createElement('div');
                 main.classList.add('tile-main');
 
-                let content = document.createElement('div');
-                content.id = bookmark.id;
-                content.classList.add('tile-content');
-                //content.style.backgroundImage = thumbBg ? `url('${thumbUrl}'), ${thumbBg}` : '';
-                //content.style.backgroundColor = thumbBg ? '' : 'rgba(255, 255, 255, 0.5)';
-                content.style.backgroundColor =  'rgba(255, 255, 255, 0.5)';
+                let content = buildStaleThumbnailUrls.has(bookmark.url) ? null : reusableContent.get(bookmark.id);
+                if (!content) {
+                    content = document.createElement('div');
+                    content.id = bookmark.id;
+                    content.classList.add('tile-content');
+                    content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+                    thumbRequests.push({ id: bookmark.id, parentId, url: bookmark.url });
+                }
 
                 let title = document.createElement('div');
                 title.classList.add('tile-title');
@@ -1255,6 +1292,10 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         fragment.appendChild(newDialButton);
     } else {
         fragment.insertBefore(newDialButton, fragment.firstChild);
+    }
+
+    if (thumbRequests.length) {
+        chrome.runtime.sendMessage({ target: 'background', type: 'getThumbs', data: thumbRequests });
     }
 
     // Ensure the container exists
@@ -4348,6 +4389,8 @@ const processRefresh = debounce(({ foldersOnly = false, transitionFolderStyle = 
             // prevent page scroll on refresh
             // react where are you...
             scrollPos = bookmarksContainerParent.scrollTop;
+            buildStaleThumbnailUrls = staleThumbnailUrls;
+            staleThumbnailUrls = new Set();
             //noBookmarks.style.display = 'none';
             // clear the inline override so `display: var(--show-folders)` (the "Add Folder Button" setting) governs visibility
             addFolderButton.style.display = '';
@@ -4545,6 +4588,8 @@ function handleMessages(message) {
             refreshSkipId = null;
             return;
         }
+        if (message.data.bookmark && applyBookmarkUpdate(message.data.bookmark)) return;
+        if (message.data.url) staleThumbnailUrls.add(message.data.url);
         processRefresh();
     } else if(message.data?.reloadFolders) {
         hideToast();

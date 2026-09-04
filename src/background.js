@@ -90,7 +90,7 @@ if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 // EVENT HANDLERS //
 
-async function handleMessages(message) {
+async function handleMessages(message, sender) {
 	// Return early if this message isn't meant for the worker
 	if (message.target !== 'background') {
 	  return;
@@ -111,7 +111,7 @@ async function handleMessages(message) {
 			toggleBookmarkCreatedListener(message.data);
 			break;
 		case 'getThumbs':
-			handleGetThumbs(message.data);
+			handleGetThumbs(message.data, sender?.tab?.id);
 			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
@@ -119,10 +119,15 @@ async function handleMessages(message) {
 	}
 }
 
-async function handleGetThumbs(data, batchSize = 50) {
+async function handleGetThumbs(data, tabId, batchSize = 50) {
     let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
 
     if (!bookmarks.length) return;
+
+    // answer only the tab that asked; runtime.sendMessage would fan these out to every open tab
+    const sendToRequester = (message) => tabId != null
+        ? chrome.tabs.sendMessage(tabId, message).catch(() => {})
+        : chrome.runtime.sendMessage(message);
 
     // Fetch all thumbnails in batches
     for (let i = 0; i < bookmarks.length; i += batchSize) {
@@ -150,7 +155,7 @@ async function handleGetThumbs(data, batchSize = 50) {
             .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
 
         if (thumbs.length) {
-            chrome.runtime.sendMessage({
+            sendToRequester({
                 target: 'newtab',
                 type: 'thumbBatch',
                 data: thumbs
@@ -159,7 +164,6 @@ async function handleGetThumbs(data, batchSize = 50) {
 
 		await migrateLegacyThumbnailRecords(results);
 
-		// todo: maybe replace this with a message port so we dont blast every tab
     	// Short delay to avoid overwhelming message passing
     	await new Promise(resolve => setTimeout(resolve, 5));
     }
@@ -187,7 +191,9 @@ async function handleBookmarkChanged(id, info) {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
     		if (bookmarkData[bookmarkUrl]) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
-                refreshOpen(bookmarkId);
+                refreshOpen(bookmarkId, {
+                    bookmark: { id: bookmarkId, parentId, url: bookmarkUrl, title: bookmark[0].title }
+                });
     		} else {
     			// new bookmark needs images
     			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
@@ -611,7 +617,7 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 	// refresh open new tab page
 	if (forcePageReload) {
 		// we have new sites, reload the page
-		refreshOpen(id);
+		refreshOpen(id, { url });
 	} else {
 		// just update existing images
 		chrome.runtime.sendMessage({
@@ -628,10 +634,10 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 	}
 }
 
-function refreshOpen(id) {
+function refreshOpen(id, extra = {}) {
     chrome.runtime.sendMessage({
 		target: 'newtab',
-		data: {refresh:true, id}
+		data: {refresh:true, id, ...extra}
 	});
 }
 
