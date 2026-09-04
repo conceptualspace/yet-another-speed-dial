@@ -3783,13 +3783,19 @@ function importFromFVD(json) {
     let bookmarks = json.db.dials.map(dial => ({
         title: dial.title,
         url: dial.url,
-        groupId: dial.group_id
+        groupId: dial.group_id,
+        // fvd embeds the dial image as a base64 data uri, so custom thumbnails can be preserved
+        thumb: dial.thumb
     }));
 
     let groups = json.db.groups.map(group => ({
         id: group.id,
         title: group.name
     }));
+
+    // collected across both promise stages so we know which dials already have an image
+    const thumbnailUpdates = {};
+    const fvdThumbBg = hexToCssGradient('#ffffff');
 
     // clear previous settings and import
     clearStorage().then(() => {
@@ -3825,25 +3831,46 @@ function importFromFVD(json) {
                 dialsByGroup.get(parentId).push(bookmark);
             }
 
+            const createdBookmarks = [];
             for (const [parentId, dials] of dialsByGroup) {
                 const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId)).map(child => child.url));
                 for (const bookmark of dials) {
                     if (existingUrls.has(bookmark.url)) continue;
                     existingUrls.add(bookmark.url);
-                    await chrome.bookmarks.create({
+                    const node = await chrome.bookmarks.create({
                         title: bookmark.title,
                         url: bookmark.url,
                         parentId
                     });
+                    createdBookmarks.push(node);
+                    if (typeof bookmark.thumb === 'string' && bookmark.thumb.startsWith('data:image')) {
+                        // fvd embeds full-size screenshots; downsize them like our own captures
+                        let thumbnail = bookmark.thumb;
+                        try {
+                            thumbnail = await resizeThumb(bookmark.thumb);
+                        } catch (err) {
+                            console.log(err);
+                        }
+                        thumbnailUpdates[bookmark.url] = { thumbnail, bgColor: fvdThumbBg };
+                    }
                 }
             }
-        }).then(() => {
+
+            if (Object.keys(thumbnailUpdates).length) {
+                await chrome.storage.local.set(thumbnailUpdates);
+            }
+
+            return createdBookmarks;
+        }).then((createdBookmarks) => {
             hideModals();
             // refresh page
             processRefresh();
             chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+            // only fetch fresh thumbs for dials fvd didn't embed an image for
+            refreshImportedThumbnails(createdBookmarks.filter(node => !thumbnailUpdates[node.url]));
         }).catch(err => {
             console.log(err);
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
             importExportStatus.innerText = "FVD import error! Unable to create folders.";
         });
 
