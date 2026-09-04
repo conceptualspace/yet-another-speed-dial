@@ -4584,8 +4584,14 @@ function setBackgroundImages(thumbnails) {
 function batchApplyImages(elements) {
     requestAnimationFrame(() => {
         elements.forEach(({ element, thumb }) => {
-            element.style.backgroundColor = "unset";
-            element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
+            if (thumb.thumbnail) {
+                element.style.backgroundColor = "unset";
+                element.style.backgroundImage = `url('${thumb.thumbnail}'), ${thumb.bgColor}`;
+            } else {
+                // nothing stored anymore: back to the placeholder printBookmarks draws
+                element.style.backgroundImage = '';
+                element.style.backgroundColor = element.classList.contains('folderDial-preview') ? 'rgba(255, 255, 255, 0.12)' : 'rgba(255, 255, 255, 0.5)';
+            }
         });
     });
 }

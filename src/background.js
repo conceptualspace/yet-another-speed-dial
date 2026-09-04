@@ -307,7 +307,7 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 async function handleManualRefresh(data) {
     if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
-        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: true});
+        await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: false});
     }
 }
 
@@ -621,18 +621,18 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 }
 
 async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
-	if (images && images.length) {
-        const storageUpdate = buildThumbnailStorageUpdate(url, images, bgColor);
-        if (storageUpdate) {
-            await chrome.storage.local.set(storageUpdate);
-        }
+	let stored = images && images.length ? buildThumbnailStorageUpdate(url, images, bgColor) : null;
+	if (stored) {
+		await chrome.storage.local.set(stored);
 	}
 	// refresh open new tab page
 	if (forcePageReload) {
 		// we have new sites, reload the page
 		refreshOpen(id, { url });
 	} else {
-		// just update existing images
+		// just update existing images. echo what is stored: a manual refresh that captured
+		// nothing has already cleared storage, so a null thumbnail resets the tile
+		stored = stored || await chrome.storage.local.get(url);
 		chrome.runtime.sendMessage({
 			target: 'newtab',
 			type: 'thumbBatch',
@@ -640,8 +640,8 @@ async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReloa
 				id,
 				parentId,
 				url,
-				thumbnail: images[0],
-				bgColor
+				thumbnail: getSelectedThumbnail(stored[url]),
+				bgColor: stored[url]?.bgColor
 			}]
 		});
 	}
