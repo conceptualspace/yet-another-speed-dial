@@ -5,6 +5,7 @@
 'use strict';
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
+const THUMBNAIL_PORT_NAME = 'thumbnailBatches';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 
@@ -82,6 +83,7 @@ chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
+chrome.runtime.onConnect.addListener(handleThumbnailPortConnected);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
@@ -90,7 +92,7 @@ if (isOpera()) { chrome.tabs.onCreated.addListener(handleTabCreated); }
 
 // EVENT HANDLERS //
 
-async function handleMessages(message, sender) {
+async function handleMessages(message) {
 	// Return early if this message isn't meant for the worker
 	if (message.target !== 'background') {
 	  return;
@@ -110,24 +112,39 @@ async function handleMessages(message, sender) {
 		case 'toggleBookmarkCreatedListener':
 			toggleBookmarkCreatedListener(message.data);
 			break;
-		case 'getThumbs':
-			handleGetThumbs(message.data, sender?.tab?.id);
-			break;
 		default:
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
 }
 
-async function handleGetThumbs(data, tabId, batchSize = 50) {
+// thumbnails stream back over the requesting page's port; a broadcast would fan
+// them out to every open tab
+function handleThumbnailPortConnected(port) {
+    if (port.name !== THUMBNAIL_PORT_NAME) return;
+
+    let connected = true;
+    port.onDisconnect.addListener(() => connected = false);
+    const post = (message) => {
+        if (!connected) return;
+        try {
+            port.postMessage(message);
+        } catch (error) {
+            connected = false;
+        }
+    };
+
+    port.onMessage.addListener(async message => {
+        if (message.type !== 'getThumbs') return;
+        await handleGetThumbs(message.data, thumbs => post({ type: 'thumbBatch', data: thumbs }));
+        post({ type: 'thumbBatchDone' });
+    });
+}
+
+async function handleGetThumbs(data, sendBatch, batchSize = 50) {
     let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
 
     if (!bookmarks.length) return;
-
-    // answer only the tab that asked; runtime.sendMessage would fan these out to every open tab
-    const sendToRequester = (message) => tabId != null
-        ? chrome.tabs.sendMessage(tabId, message).catch(() => {})
-        : chrome.runtime.sendMessage(message);
 
     // Fetch all thumbnails in batches
     for (let i = 0; i < bookmarks.length; i += batchSize) {
@@ -155,11 +172,7 @@ async function handleGetThumbs(data, tabId, batchSize = 50) {
             .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
 
         if (thumbs.length) {
-            sendToRequester({
-                target: 'newtab',
-                type: 'thumbBatch',
-                data: thumbs
-            });
+            sendBatch(thumbs);
         }
 
 		await migrateLegacyThumbnailRecords(results);

@@ -1185,6 +1185,19 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
+function requestThumbnails(bookmarks) {
+    const port = chrome.runtime.connect({ name: 'thumbnailBatches' });
+    port.onMessage.addListener(message => {
+        if (message.type === 'thumbBatch') {
+            setBackgroundImages(message.data);
+            hideToast();
+        } else if (message.type === 'thumbBatchDone') {
+            port.disconnect();
+        }
+    });
+    port.postMessage({ type: 'getThumbs', data: bookmarks });
+}
+
 async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
     let fragment = document.createDocumentFragment();
 
@@ -1296,7 +1309,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     }
 
     if (thumbRequests.length) {
-        chrome.runtime.sendMessage({ target: 'background', type: 'getThumbs', data: thumbRequests });
+        requestThumbnails(thumbRequests);
     }
 
     // Ensure the container exists
