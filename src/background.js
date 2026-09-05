@@ -5,7 +5,6 @@
 'use strict';
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
-const THUMBNAIL_PORT_NAME = 'thumbnailBatches';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
 
@@ -44,30 +43,6 @@ function buildThumbnailStorageUpdate(url, images, bgColor) {
     };
 }
 
-async function migrateLegacyThumbnailRecords(results) {
-    const updates = {};
-
-    for (const [url, storedData] of Object.entries(results)) {
-        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
-
-        const thumbnail = getSelectedThumbnail(storedData);
-        if (!thumbnail) continue;
-
-        updates[url] = {
-            thumbnail,
-            bgColor: storedData.bgColor
-        };
-        updates[getThumbnailCandidatesKey(url)] = {
-            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
-                .slice(0, 4)
-        };
-    }
-
-    if (Object.keys(updates).length) {
-        await chrome.storage.local.set(updates);
-    }
-}
-
 
 // EVENT LISTENERS //
 
@@ -83,7 +58,6 @@ chrome.action.onClicked.addListener(handleBrowserAction);
 chrome.contextMenus.onClicked.addListener(handleContextMenuClick);
 
 chrome.runtime.onMessage.addListener(handleMessages);
-chrome.runtime.onConnect.addListener(handleThumbnailPortConnected);
 chrome.runtime.onInstalled.addListener(handleInstalled);
 
 // Add tab listeners for Opera and browsers that don't support chrome_url_overrides
@@ -116,70 +90,6 @@ async function handleMessages(message) {
 			console.warn(`Unexpected message type received: '${message.type}'.`);
 			break;
 	}
-}
-
-// thumbnails stream back over the requesting page's port; a broadcast would fan
-// them out to every open tab
-function handleThumbnailPortConnected(port) {
-    if (port.name !== THUMBNAIL_PORT_NAME) return;
-
-    let connected = true;
-    port.onDisconnect.addListener(() => connected = false);
-    const post = (message) => {
-        if (!connected) return;
-        try {
-            port.postMessage(message);
-        } catch (error) {
-            connected = false;
-        }
-    };
-
-    port.onMessage.addListener(async message => {
-        if (message.type !== 'getThumbs') return;
-        await handleGetThumbs(message.data, thumbs => post({ type: 'thumbBatch', data: thumbs }));
-        post({ type: 'thumbBatchDone' });
-    });
-}
-
-async function handleGetThumbs(data, sendBatch, batchSize = 50) {
-    let bookmarks = data.filter(bookmark => bookmark.url?.startsWith("http") || bookmark.url?.startsWith("file:") || bookmark.url?.startsWith("chrome:"));
-
-    if (!bookmarks.length) return;
-
-    // Fetch all thumbnails in batches
-    for (let i = 0; i < bookmarks.length; i += batchSize) {
-        let batch = bookmarks.slice(i, i + batchSize);
-
-        // Get multiple URLs at once
-        let urls = batch.map(bookmark => bookmark.url);
-        let results = await chrome.storage.local.get(urls);
-
-        let thumbs = batch
-            .map(bookmark => {
-                let storedData = results[bookmark.url];
-                if (!storedData) return null;
-				const thumbnail = getSelectedThumbnail(storedData);
-				if (!thumbnail) return null;
-
-                return {
-                    id: bookmark.id,
-                    parentId: bookmark.parentId,
-                    url: bookmark.url,
-                    thumbnail,
-                    bgColor: storedData.bgColor
-                };
-            })
-            .filter(thumb => thumb !== null); // Remove nulls if some bookmarks have no stored data
-
-        if (thumbs.length) {
-            sendBatch(thumbs);
-        }
-
-		await migrateLegacyThumbnailRecords(results);
-
-    	// Short delay to avoid overwhelming message passing
-    	await new Promise(resolve => setTimeout(resolve, 5));
-    }
 }
 
 async function handleBookmarkChanged(id, info) {

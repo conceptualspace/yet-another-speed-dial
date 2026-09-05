@@ -1185,17 +1185,46 @@ function createNewDialButton(parentId) {
     return aNewDial;
 }
 
-function requestThumbnails(bookmarks) {
-    const port = chrome.runtime.connect({ name: 'thumbnailBatches' });
-    port.onMessage.addListener(message => {
-        if (message.type === 'thumbBatch') {
-            setBackgroundImages(message.data);
+async function migrateLegacyThumbnailRecords(results) {
+    const updates = {};
+
+    for (const [url, storedData] of Object.entries(results)) {
+        if (!Array.isArray(storedData?.thumbnails) || storedData.thumbnail) continue;
+
+        const thumbnail = getSelectedThumbnail(storedData);
+        if (!thumbnail) continue;
+
+        updates[url] = {
+            thumbnail,
+            bgColor: storedData.bgColor
+        };
+        updates[getThumbnailCandidatesKey(url)] = {
+            thumbnails: [...new Set(storedData.thumbnails.filter(image => image && image !== thumbnail))]
+                .slice(0, 4)
+        };
+    }
+
+    if (Object.keys(updates).length) {
+        await chrome.storage.local.set(updates);
+    }
+}
+
+// read straight from storage: routing through the worker adds a hop and a second
+// deserialization of every data uri, and leaves the page blank if the worker is
+// unreachable (e.g. right after an extension update)
+async function requestThumbnails(bookmarks, batchSize = 50) {
+    for (let i = 0; i < bookmarks.length; i += batchSize) {
+        const batch = bookmarks.slice(i, i + batchSize);
+        const stored = await chrome.storage.local.get(batch.map(bookmark => bookmark.url));
+        const thumbs = batch
+            .map(bookmark => ({ ...bookmark, thumbnail: getSelectedThumbnail(stored[bookmark.url]), bgColor: stored[bookmark.url]?.bgColor }))
+            .filter(thumb => thumb.thumbnail);
+        if (thumbs.length) {
+            setBackgroundImages(thumbs);
             hideToast();
-        } else if (message.type === 'thumbBatchDone') {
-            port.disconnect();
         }
-    });
-    port.postMessage({ type: 'getThumbs', data: bookmarks });
+        migrateLegacyThumbnailRecords(stored).catch(error => console.log(error));
+    }
 }
 
 async function printBookmarks(bookmarks, parentId, { immediateInsert = false } = {}) {
@@ -4564,7 +4593,7 @@ function preloadImage(url) {
 
 function setBackgroundImages(thumbnails) {
     const elementsToUpdate = [];
-    const observers = new Map();
+    const pendingByParent = new Map();
 
     thumbnails.forEach(thumb => {
         const element = document.getElementById(thumb.id);
@@ -4578,28 +4607,34 @@ function setBackgroundImages(thumbnails) {
         if (element) {
             elementsToUpdate.push({ element, thumb });
         } else if (!previewElements?.size) {
-            let observer = observers.get(thumb.parentId);
-            if (!observer) {
+            let pending = pendingByParent.get(thumb.parentId);
+            if (!pending) {
                 const parentElement = document.getElementById(thumb.parentId);
                 if (!parentElement) return; // Skip if parent is missing
 
-                observer = new MutationObserver((mutations, obs) => {
-                    thumbnails.forEach(t => {
-                        const el = document.getElementById(t.id);
+                pending = [];
+                pendingByParent.set(thumb.parentId, pending);
+                // tiles land in batches, so a single mutation may not include every pending tile
+                const observer = new MutationObserver((mutations, obs) => {
+                    const found = [];
+                    for (let i = pending.length - 1; i >= 0; i--) {
+                        const el = document.getElementById(pending[i].id);
                         if (el) {
-                            elementsToUpdate.push({ element: el, thumb: t });
+                            found.push({ element: el, thumb: pending.splice(i, 1)[0] });
                         }
-                    });
+                    }
 
-                    if (elementsToUpdate.length) {
-                        batchApplyImages(elementsToUpdate);
+                    if (found.length) {
+                        batchApplyImages(found);
+                    }
+                    if (!pending.length) {
                         obs.disconnect();
                     }
                 });
 
                 observer.observe(parentElement, { childList: true, subtree: true });
-                observers.set(thumb.parentId, observer);
             }
+            pending.push(thumb);
         }
     });
 
