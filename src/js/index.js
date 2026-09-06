@@ -3702,6 +3702,13 @@ importFileInput.onchange = function (event) {
     let filereader = new FileReader();
 
     filereader.onload = function (event) {
+        // netscape bookmarks html: exported by chrome, edge, brave, opera, vivaldi, firefox, safari
+        if (isNetscapeBookmarksHtml(event.target.result)) {
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: false } });
+            importFromNetscapeHtml(event.target.result);
+            return;
+        }
+
         let json = parseJson(event);
         if (!json) return;
 
@@ -3726,6 +3733,123 @@ importFileInput.onchange = function (event) {
         filereader.readAsText(event.target.files[0]);
     }
 };
+
+function isNetscapeBookmarksHtml(text) {
+    if (typeof text !== 'string' || !text.trimStart().startsWith('<')) return false;
+    const head = text.slice(0, 2048);
+    return /<!DOCTYPE NETSCAPE-Bookmark-file-1>/i.test(head) || (/<DL>/i.test(head) && /<DT>/i.test(text));
+}
+
+// the format nests <DT><H3>title</H3><DL>children</DL> for folders and <DT><A HREF>title</A> for bookmarks.
+// browsers emit the closing </DT> and </p> tags inconsistently, so walk the DOM rather than the markup
+function parseNetscapeFolder(dl) {
+    const children = [];
+    for (const dt of dl.children) {
+        if (dt.tagName !== 'DT') continue;
+        const heading = dt.querySelector(':scope > h3');
+        if (heading) {
+            const childList = dt.querySelector(':scope > dl');
+            children.push({
+                title: heading.textContent.trim(),
+                toolbar: heading.hasAttribute('personal_toolbar_folder'),
+                children: childList ? parseNetscapeFolder(childList) : []
+            });
+            continue;
+        }
+        const anchor = dt.querySelector(':scope > a[href]');
+        if (anchor) {
+            const url = anchor.getAttribute('href').trim();
+            if (!url) continue;
+            children.push({ title: anchor.textContent.trim() || url, url });
+        }
+    }
+    return children;
+}
+
+function findNetscapeFolder(nodes, predicate) {
+    for (const node of nodes) {
+        if (Array.isArray(node.children)) {
+            if (predicate(node)) return node;
+            const match = findNetscapeFolder(node.children, predicate);
+            if (match) return match;
+        }
+    }
+    return null;
+}
+
+function pickNetscapeImportRoot(tree) {
+    // a folder named speed dial is what the user wants regardless of where the browser put it
+    // (opera keeps its dials there; chrome users may have created one for yasd)
+    const speedDial = findNetscapeFolder(tree, node => node.title.toLowerCase() === 'speed dial');
+    if (speedDial) return speedDial.children;
+
+    // otherwise the bookmarks bar is the closest thing to a speed dial
+    const toolbar = findNetscapeFolder(tree, node => node.toolbar);
+    if (toolbar) return toolbar.children;
+
+    // firefox wraps everything in a single root; unwrap it so its top-level folders become subfolders
+    if (tree.length === 1 && Array.isArray(tree[0].children)) return tree[0].children;
+
+    return tree;
+}
+
+function importFromNetscapeHtml(html) {
+    let nodes;
+    try {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const root = doc.querySelector('dl');
+        if (!root) throw new Error('no bookmark list found');
+        nodes = pickNetscapeImportRoot(parseNetscapeFolder(root));
+    } catch (err) {
+        console.log(err);
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        importExportStatus.innerText = "Error! Unable to parse file.";
+        return;
+    }
+
+    const createdBookmarks = [];
+
+    async function createDials(parentId, dials) {
+        const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId)).map(child => child.url));
+        for (const dial of dials) {
+            if (!isSupportedDial(dial) || existingUrls.has(dial.url)) continue;
+            existingUrls.add(dial.url);
+            createdBookmarks.push(await chrome.bookmarks.create({
+                title: dial.title,
+                url: dial.url,
+                parentId
+            }));
+        }
+    }
+
+    async function resolveFolder(parentId, title) {
+        const siblings = await chrome.bookmarks.getChildren(parentId);
+        const existing = siblings.find(node => isBookmarkFolder(node) && node.title === title);
+        if (existing) return existing.id;
+        return (await chrome.bookmarks.create({ title, parentId })).id;
+    }
+
+    async function importNodes(parentId, children) {
+        await createDials(parentId, children.filter(node => !Array.isArray(node.children)));
+
+        for (const folder of children.filter(node => Array.isArray(node.children))) {
+            const folderId = await resolveFolder(parentId, folder.title);
+            await importNodes(folderId, folder.children);
+        }
+    }
+
+    return importNodes(speedDialId, nodes).then(() => {
+        hideModals();
+        processRefresh();
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        // browsers export favicons at best, so fetch proper thumbnails
+        refreshImportedThumbnails(createdBookmarks);
+    }).catch(err => {
+        console.log(err);
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+        importExportStatus.innerText = "Bookmarks import error! Unable to create folders.";
+    });
+}
 
 function importFromSD2(json) {
     let bookmarks = json.dials.map(dial => ({
