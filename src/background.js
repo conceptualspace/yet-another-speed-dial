@@ -322,6 +322,41 @@ async function handleRefreshAll(data) {
     refreshBatch(data.bookmarks);
 }
 
+async function captureMissingSpeedDialThumbnails() {
+    const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' });
+    const folder = (bookmarks || []).find(isBookmarkFolder);
+    if (!folder) return;
+
+    const [root] = await chrome.bookmarks.getSubTree(folder.id);
+    const dials = [];
+    const seenUrls = new Set();
+
+    (function collect(children) {
+        for (const child of children || []) {
+            if (child.url) {
+                if (isSupportedUrl(child.url) && !seenUrls.has(child.url)) {
+                    seenUrls.add(child.url);
+                    dials.push({ url: child.url, id: child.id, parentId: child.parentId });
+                }
+            } else {
+                collect(child.children);
+            }
+        }
+    })(root?.children || []);
+
+    if (!dials.length) return;
+
+    const stored = await chrome.storage.local.get(dials.map(dial => dial.url));
+    const missing = dials.filter(dial => !getSelectedThumbnail(stored[dial.url]));
+    if (missing.length) {
+        handleRefreshAll({ bookmarks: missing });
+    }
+}
+
+function isSupportedUrl(url) {
+    return url.startsWith('https://') || url.startsWith('http://') || url.startsWith('file://') || url.startsWith('chrome://');
+}
+
 async function getSpeedDialFolderId() {
 	// a folder adopted via the folder picker takes precedence over the default one
 	const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
@@ -403,7 +438,8 @@ async function handleInstalled(details) {
     if (details.reason === "install") {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
-        // todo: detect existing speed dial folder
+        // a synced speed dial folder may already exist; its dials have no thumbnails on this device yet
+        captureMissingSpeedDialThumbnails().catch(err => console.log(err));
     } else if (details.reason === 'update') {
         // perform any migrations here...
         await runMigrations(details.previousVersion);
