@@ -542,7 +542,7 @@ function isUrlTitle(title, url) {
 
 async function applyPageTitle(id, url, title) {
 	const [bookmark] = await chrome.bookmarks.get(id).catch(() => []);
-	if (!bookmark || bookmark.url !== url || !isUrlTitle(bookmark.title, url)) return;
+	if (!bookmark || bookmark.url !== url || bookmark.title === title || !isUrlTitle(bookmark.title, url)) return;
 	await chrome.bookmarks.update(id, { title }).catch(() => {});
 }
 
