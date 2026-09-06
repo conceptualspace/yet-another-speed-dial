@@ -27,11 +27,11 @@ async function handleMessages(message) {
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
-    let title = null;
+    let pageInfo = { title: null };
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh).catch(err => {
+    let images = await fetchImages(url, quickRefresh, pageInfo).catch(err => {
         console.log(err);
     })
 
@@ -75,8 +75,7 @@ async function handleMessages(message) {
         //await saveThumbnails(url, thumbs, bgColor)
     }
 
-    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor}, forcePageReload});
-    //return title; //todo: why did i do this?
+    chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor, title: pageInfo.title}, forcePageReload});
 
       //chrome.runtime.sendMessage(images);
 }
@@ -468,7 +467,20 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
-async function fetchImages(url, quickRefresh) {
+function getPageTitle(doc) {
+    const candidates = [
+        doc.querySelector('title')?.textContent,
+        doc.querySelector('meta[property="og:title"]')?.getAttribute('content')
+    ];
+    for (const candidate of candidates) {
+        const title = candidate?.replace(/\s+/g, ' ').trim();
+        if (title) return title;
+    }
+    return null;
+}
+
+// pageInfo receives the parsed page title so it can ride along with the images
+async function fetchImages(url, quickRefresh, pageInfo = {}) {
 
     if (url.startsWith('file://')) {
         return ['img/file.png'];
@@ -555,6 +567,8 @@ async function fetchImages(url, quickRefresh) {
             const text = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(text, 'text/html');
+
+            pageInfo.title = getPageTitle(doc);
 
             // check for svg logo and convert to data url
             let svgElements = doc.querySelectorAll('svg');

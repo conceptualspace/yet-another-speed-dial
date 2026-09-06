@@ -211,7 +211,7 @@ function toggleBookmarkCreatedListener(data) {
 
 async function handleOffscreenFetchDone(data, forcePageReload) {
 	//console.log(data);
-	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload);
+	saveThumbnails(data.url, data.id, data.parentId, data.thumbs, data.bgColor, forcePageReload, data.title);
 }
 
 async function handleManualRefresh(data) {
@@ -530,13 +530,34 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 	});
 }
 
-async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false) {
+// dials added from the new tab page are created with the url as their title
+function isUrlTitle(title, url) {
+	if (!title || title === url) return true;
+	try {
+		return new URL(title).href === url;
+	} catch (err) {
+		return false;
+	}
+}
+
+async function applyPageTitle(id, url, title) {
+	const [bookmark] = await chrome.bookmarks.get(id).catch(() => []);
+	if (!bookmark || bookmark.url !== url || bookmark.title === title || !isUrlTitle(bookmark.title, url)) return;
+	await chrome.bookmarks.update(id, { title }).catch(() => {});
+}
+
+async function saveThumbnails(url, id, parentId, images, bgColor, forcePageReload=false, title=null) {
 	let stored = images && images.length ? buildThumbnailStorageUpdate(url, images, bgColor) : null;
 	if (stored) {
 		await chrome.storage.local.set(stored);
 	}
 	// refresh open new tab page
 	if (forcePageReload) {
+		// new dial: adopt the page title before the reload so it renders in one pass.
+		// runs after the thumbs are stored so the resulting onChanged doesnt refetch
+		if (title) {
+			await applyPageTitle(id, url, title);
+		}
 		// we have new sites, reload the page
 		refreshOpen(id, { url });
 	} else {
