@@ -230,6 +230,27 @@ h1 {
     transition: opacity 240ms;
 }
 
+/* dashboard-style layout: grid hugs the top-left like a browser's default new tab page.
+   the empty-state welcome card stays centered */
+.align-top-left #tileContainer {
+    align-items: flex-start;
+    justify-content: flex-start;
+    /* 30px header padding + 12px tab inset - 14px tile margin: first tile shares the folder tabs' left edge */
+    padding-left: 28px;
+}
+
+.align-top-left .container:not(:has(#noBookmarks)) {
+    align-items: flex-start;
+    align-content: flex-start;
+    justify-content: flex-start;
+    min-height: 0;
+    margin: 0;
+}
+
+.align-top-left body:not(:has(.folderTitle)):not(:has(#noBookmarks)) #tileContainer {
+    padding-bottom: 0;
+}
+
 #noBookmarks {
     display: flex;
     justify-content: center;

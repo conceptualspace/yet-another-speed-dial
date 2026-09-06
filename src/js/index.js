@@ -136,6 +136,7 @@ const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 const folderStyleInput = document.getElementById("folderStyle");
+const alignmentInput = document.getElementById("alignment");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -254,6 +255,7 @@ let defaults = {
     dialSize: 'medium',
     dialRatio: 'wide',
     folderStyle: 'tabs',
+    alignment: 'center',
     currentFolder: null,
 };
 
@@ -2801,6 +2803,8 @@ function applySettings(options = {}) {
             `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${tileMargin};color:${settings.textColor};content-visibility:auto;contain-intrinsic-size:${dialWidth} ${tileHeight}}` +
             `.tile-content{height:${dialContentHeight}}`;
 
+        document.documentElement.classList.toggle('align-top-left', settings.alignment === 'topLeft');
+
         // Toggle the createDial (add-site) tile before flip
         if (!settings.showAddSite) {
             document.documentElement.style.setProperty('--create-dial-display', 'none');
@@ -2870,6 +2874,7 @@ function applySettings(options = {}) {
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
         folderStyleInput.value = settings.folderStyle;
+        alignmentInput.value = settings.alignment;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -2922,6 +2927,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
     settings.folderStyle = folderStyleInput.value;
+    settings.alignment = alignmentInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
@@ -3026,7 +3032,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle' || e.target.id === 'alignment') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -3234,6 +3240,10 @@ dialSizeInput.oninput = function (e) {
 }
 
 dialRatioInput.oninput = function (e) {
+    saveSettings()
+}
+
+alignmentInput.oninput = function () {
     saveSettings()
 }
 
