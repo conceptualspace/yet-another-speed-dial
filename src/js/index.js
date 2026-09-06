@@ -1217,10 +1217,13 @@ async function requestThumbnails(bookmarks, batchSize = 50) {
         const batch = bookmarks.slice(i, i + batchSize);
         const stored = await chrome.storage.local.get(batch.map(bookmark => bookmark.url));
         const thumbs = batch
-            .map(bookmark => ({ ...bookmark, thumbnail: getSelectedThumbnail(stored[bookmark.url]), bgColor: stored[bookmark.url]?.bgColor }))
-            .filter(thumb => thumb.thumbnail);
+            .map(({ element, url }) => ({
+                element,
+                thumb: { thumbnail: getSelectedThumbnail(stored[url]), bgColor: stored[url]?.bgColor }
+            }))
+            .filter(({ thumb }) => thumb.thumbnail);
         if (thumbs.length) {
-            setBackgroundImages(thumbs);
+            batchApplyImages(thumbs);
             hideToast();
         }
         migrateLegacyThumbnailRecords(stored).catch(error => console.log(error));
@@ -1312,7 +1315,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                     content.id = bookmark.id;
                     content.classList.add('tile-content');
                     content.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
-                    thumbRequests.push({ id: bookmark.id, parentId, url: bookmark.url });
+                    thumbRequests.push({ element: content, url: bookmark.url });
                 }
 
                 let title = document.createElement('div');
