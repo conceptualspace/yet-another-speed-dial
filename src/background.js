@@ -294,7 +294,7 @@ const capturePopupScreenshot = (url) => {
 
 async function handleRefreshAll(data) {
     async function refreshBatch(bookmarks, index = 0, retries = 2) {
-        const batchSize = 200;
+        const batchSize = data.batchSize || 200;
         const delay = 10000;
         const batch = bookmarks.slice(index, index + batchSize);
     
@@ -349,7 +349,8 @@ async function captureMissingSpeedDialThumbnails() {
     const stored = await chrome.storage.local.get(dials.map(dial => dial.url));
     const missing = dials.filter(dial => !getSelectedThumbnail(stored[dial.url]));
     if (missing.length) {
-        handleRefreshAll({ bookmarks: missing });
+        // this covers the whole tree rather than one folder, so spread the load out more
+        handleRefreshAll({ bookmarks: missing, batchSize: 100 });
     }
 }
 
