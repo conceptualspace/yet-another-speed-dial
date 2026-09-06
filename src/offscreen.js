@@ -512,9 +512,14 @@ async function fetchImages(url, quickRefresh, pageInfo = {}) {
             return(images);
         }
     } else {
+        // favicon fallback
         images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
         images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
+        images.push(`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(urlObj.origin)}&size=256`);
     }
+
+    // everything above is a generic fallback, not evidence the scrape found anything
+    const fallbackCount = images.length;
 
     // avoid duplicates and preserve the precedence of images
     function insert(imageUrl) {
@@ -683,7 +688,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}) {
 
             // if we havent had much luck with images, lets check the manifest and style sheets
             // we dont do so during a quick refresh to avoid fetching extra resources
-            if (images.length < 5 && !quickRefresh) {
+            if (images.length === fallbackCount && !quickRefresh) {
                 // web application manifest icon
                 let manifestLink = doc.querySelector('link[rel="manifest"]');
                 if (manifestLink && manifestLink.getAttribute('href')) {
