@@ -1850,6 +1850,11 @@ function createDial() {
     }).then(node => {
         hideModals();
         showToast(capturingImagesMessage)
+        chrome.runtime.sendMessage({
+            target: 'background',
+            type: 'resolveDialTitle',
+            data: { id: node.id, url: node.url, title: node.title }
+        }).catch(() => {});
     });
 }
 

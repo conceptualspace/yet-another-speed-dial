@@ -1,6 +1,39 @@
 chrome.runtime.onMessage.addListener(handleMessages);
 
 const imageRatio = 1.54;
+const pageDocuments = new Map();
+
+function fetchPageDocument(url, quickRefresh = false) {
+    if (pageDocuments.has(url)) return pageDocuments.get(url);
+
+    const pending = (async () => {
+        const hostname = new URL(url).hostname;
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
+        try {
+            const omitDomains = ['facebook.com', 'github.com'];
+            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin';
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors',
+                credentials,
+                signal: controller.signal
+            });
+            if (!response.ok) return null;
+            const text = await response.text();
+            return { doc: new DOMParser().parseFromString(text, 'text/html'), url: response.url, signal: controller.signal };
+        } finally {
+            clearTimeout(timeoutId);
+        }
+    })();
+
+    pageDocuments.set(url, pending);
+    const release = () => setTimeout(() => {
+        if (pageDocuments.get(url) === pending) pageDocuments.delete(url);
+    }, 10000);
+    pending.then(release, release);
+    return pending;
+}
 
 function offscreenCanvasShim(w=1, h=1) {
     try {
@@ -19,6 +52,25 @@ async function handleMessages(message) {
         return;
     }
 
+    if (message.type === 'resolveDialTitle') {
+        const { url } = message.data;
+        if (!/^https?:\/\//.test(url)) return;
+        try {
+            const page = await fetchPageDocument(url);
+            const pageTitle = page?.doc.querySelector('title')?.textContent.trim();
+            if (pageTitle) {
+                await chrome.runtime.sendMessage({
+                    target: 'background',
+                    type: 'saveDialTitle',
+                    data: { ...message.data, pageTitle }
+                });
+            }
+        } catch (error) {
+            console.log(error);
+        }
+        return;
+    }
+
     let screenshot = message.data.screenshot;
     let quickRefresh = message.data.quickRefresh;
     let forcePageReload = message.data.forcePageReload;
@@ -27,7 +79,6 @@ async function handleMessages(message) {
     let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
-    let title = null;
 
     let url = message.data.url;
 
@@ -523,38 +574,11 @@ async function fetchImages(url, quickRefresh) {
         return(['img/' + hostname + '.png']);
     } else {
 
-         // Set up fetch timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
-        
         try {
-            // allows og images to work, with creds they are behind js
-            const omitDomains = ['facebook.com', 'github.com'];
-            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                credentials,
-                signal: controller.signal
-            });
-
-            clearTimeout(timeoutId); // Clear timeout if fetch completes in time
-            
-            // Update URL to the final redirected URL for proper relative URL resolution
-            const finalUrl = response.url;
-            if (finalUrl !== url) {
-                //console.log(`[fetchImages] URL redirected from ${url} to ${finalUrl}`);
-                url = finalUrl; // Update the base URL for relative URL conversion
-            }
-
-            if (!response.ok) {
-                return(images);
-            }
-
-            const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
+            const page = await fetchPageDocument(url, quickRefresh);
+            if (!page) return images;
+            const { doc, signal } = page;
+            url = page.url;
 
             // check for svg logo and convert to data url
             let svgElements = doc.querySelectorAll('svg');
@@ -676,7 +700,7 @@ async function fetchImages(url, quickRefresh) {
                     try {
                         let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
                         const manifestResponse = await fetch(manifestUrl, {
-                            signal: controller.signal
+                            signal
                         });
                         if (manifestResponse.ok) {
                             const manifest = await manifestResponse.json();
@@ -711,7 +735,7 @@ async function fetchImages(url, quickRefresh) {
                 for (const sheetUrl of stylesheetLinks) {
                     try {
                         const cssResponse = await fetch(sheetUrl, {
-                            signal: controller.signal
+                            signal
                         });
                         if (!cssResponse.ok) throw new Error(`failed to fetch css`);
                         const cssText = await cssResponse.text();
@@ -737,8 +761,6 @@ async function fetchImages(url, quickRefresh) {
             //console.log("fetch error: ", error)
             // return the images we have:
             return images;
-        } finally {
-            clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
         }
     }
 }

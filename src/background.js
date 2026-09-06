@@ -74,6 +74,13 @@ async function handleMessages(message) {
   
 	// Dispatch the message to an appropriate handler.
 	switch (message.type) {
+        case 'resolveDialTitle':
+            await setupOffscreenDocument('offscreen.html');
+            await chrome.runtime.sendMessage({ target: 'offscreen', type: 'resolveDialTitle', data: message.data });
+            break;
+        case 'saveDialTitle':
+            await saveDialTitle(message.data);
+            break;
 		case 'refreshThumbs':
 			handleManualRefresh(message.data);
 			break;
@@ -112,7 +119,7 @@ async function handleBookmarkChanged(id, info) {
 		const parentId = bookmark[0].parentId
     	if (bookmarkUrl !== "data:" && bookmarkUrl !== "about:blank") {
     		const bookmarkData = await chrome.storage.local.get(bookmarkUrl)
-    		if (bookmarkData[bookmarkUrl]) {
+            if (bookmarkData[bookmarkUrl] || (info?.title !== undefined && info.url === undefined)) {
     			// a pre-existing bookmark is being modified; dont fetch new thumbnails
                 refreshOpen(bookmarkId, {
                     bookmark: { id: bookmarkId, parentId, url: bookmarkUrl, title: bookmark[0].title }
@@ -199,6 +206,13 @@ function handleBrowserAction(tab) {
 
 
 // MESSAGE HANDLERS //
+
+async function saveDialTitle(data) {
+    if (typeof data.pageTitle !== 'string' || !data.pageTitle.trim()) return;
+    const [bookmark] = await chrome.bookmarks.get(data.id).catch(() => []);
+    if (!bookmark || bookmark.url !== data.url || bookmark.title !== data.title) return;
+    await chrome.bookmarks.update(data.id, { title: data.pageTitle.trim() }).catch(() => {});
+}
 
 // Function to enable or disable the bookmarks.onCreated listener
 function toggleBookmarkCreatedListener(data) {
