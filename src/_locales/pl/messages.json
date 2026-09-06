@@ -125,6 +125,9 @@
   "maxColumns": {
     "message": "Maksymalna liczba kolumn"
   },
+  "maxRows": {
+    "message": "Maksymalna liczba wierszy"
+  },
   "name": {
     "message": "Nazwa"
   },

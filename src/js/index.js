@@ -125,6 +125,7 @@ const showClockInput = document.getElementById("showClock");
 const showSettingsBtnInput = document.getElementById("showSettingsBtn");
 const showSearchBtnInput = document.getElementById("showSearchBtn");
 const maxColsInput = document.getElementById("maxcols");
+const maxRowsInput = document.getElementById("maxrows");
 const defaultSortInput = document.getElementById("defaultSort");
 const importExportBtn = document.getElementById("importExportBtn");
 const importExportStatus = document.getElementById('statusMessage');
@@ -249,6 +250,7 @@ let defaults = {
     showClock: false,
     showSearchBtn: true,
     maxCols: '100',
+    maxRows: '100',
     defaultSort: 'first',
     textColor: '#ffffff',
     dialSize: 'medium',
@@ -2783,7 +2785,17 @@ function applySettings(options = {}) {
         // and adjust tile margin correspondingly
         const TITLE_PADDING = 6;
         const tileHeight = settings.showTitles ? `${parseInt(dialHeight, 10) + TITLE_PADDING}px` : dialContentHeight;
-        const tileMargin = settings.showTitles ? `${Math.max(0, parseInt(dialMargin, 10) - (TITLE_PADDING / 2))}px ${dialMargin}` : dialMargin;
+        const tileMarginY = settings.showTitles ? Math.max(0, parseInt(dialMargin, 10) - (TITLE_PADDING / 2)) : parseInt(dialMargin, 10);
+        const tileMargin = settings.showTitles ? `${tileMarginY}px ${dialMargin}` : dialMargin;
+
+        // Max rows caps the scroll viewport itself (not the grid) so #tileContainer stays the
+        // single scroller and centers in the leftover space. Skipped for the welcome card,
+        // which is taller than a row and shouldn't scroll inside a tiny band.
+        let rowsRule = '';
+        if (settings.maxRows && settings.maxRows !== "100") {
+            const rowHeight = parseInt(tileHeight, 10) + tileMarginY * 2;
+            rowsRule = `#tileContainer:not(:has(#noBookmarks)){flex:0 1 auto;max-height:${settings.maxRows * rowHeight}px;margin-top:auto;margin-bottom:auto}`;
+        }
 
         // Capture the scroll anchor BEFORE the size change reflows the grid. Near the
         // bottom of a folder, shrinking the tiles (e.g. hiding labels) makes the content
@@ -2797,6 +2809,7 @@ function applySettings(options = {}) {
         // content-visilibity set here for perf on folder navigation. test flip animations arent borked
         // todo: clean up
         dialSizeStyleEl.textContent =
+            rowsRule +
             `.container{max-width:${columnsValue}}` +
             `.tile,.createDial{width:${dialWidth};height:${tileHeight};margin:${tileMargin};color:${settings.textColor};content-visibility:auto;contain-intrinsic-size:${dialWidth} ${tileHeight}}` +
             `.tile-content{height:${dialContentHeight}}`;
@@ -2867,6 +2880,7 @@ function applySettings(options = {}) {
         showSettingsBtnInput.checked = settings.showSettingsBtn;
         showSearchBtnInput.checked = settings.showSearchBtn;
         maxColsInput.value = settings.maxCols;
+        maxRowsInput.value = settings.maxRows;
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
         folderStyleInput.value = settings.folderStyle;
@@ -2919,6 +2933,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.showSettingsBtn = showSettingsBtn.checked;
     settings.showSearchBtn = showSearchBtnInput.checked;
     settings.maxCols = maxColsInput.value;
+    settings.maxRows = maxRowsInput.value;
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
     settings.folderStyle = folderStyleInput.value;
@@ -3026,7 +3041,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
+    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'maxrows' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -3226,6 +3241,10 @@ modalImgInput.onchange = function () {
 
 
 maxColsInput.oninput = function (e) {
+    saveSettings()
+}
+
+maxRowsInput.oninput = function (e) {
     saveSettings()
 }
 

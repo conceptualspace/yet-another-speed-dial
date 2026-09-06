@@ -125,6 +125,9 @@
   "maxColumns": {
     "message": "En Fazla Sütun"
   },
+  "maxRows": {
+    "message": "En Fazla Satır"
+  },
   "name": {
     "message": "Ad"
   },

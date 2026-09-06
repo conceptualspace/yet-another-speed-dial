@@ -125,6 +125,9 @@
     "maxColumns": {
       "message": "최대 열 수"
     },
+    "maxRows": {
+      "message": "최대 행 수"
+    },
     "name": {
       "message": "이름"
     },
