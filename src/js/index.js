@@ -3735,7 +3735,7 @@ importFileInput.onchange = function (event) {
 };
 
 function isNetscapeBookmarksHtml(text) {
-    if (typeof text !== 'string') return false;
+    if (typeof text !== 'string' || !text.trimStart().startsWith('<')) return false;
     const head = text.slice(0, 2048);
     return /<!DOCTYPE NETSCAPE-Bookmark-file-1>/i.test(head) || (/<DL>/i.test(head) && /<DT>/i.test(text));
 }
@@ -3758,7 +3758,8 @@ function parseNetscapeFolder(dl) {
         }
         const anchor = dt.querySelector(':scope > a[href]');
         if (anchor) {
-            const url = anchor.getAttribute('href');
+            const url = anchor.getAttribute('href').trim();
+            if (!url) continue;
             children.push({ title: anchor.textContent.trim() || url, url });
         }
     }
@@ -3767,7 +3768,7 @@ function parseNetscapeFolder(dl) {
 
 function findNetscapeFolder(nodes, predicate) {
     for (const node of nodes) {
-        if (!node.url) {
+        if (Array.isArray(node.children)) {
             if (predicate(node)) return node;
             const match = findNetscapeFolder(node.children, predicate);
             if (match) return match;
@@ -3787,7 +3788,7 @@ function pickNetscapeImportRoot(tree) {
     if (toolbar) return toolbar.children;
 
     // firefox wraps everything in a single root; unwrap it so its top-level folders become subfolders
-    if (tree.length === 1 && !tree[0].url) return tree[0].children;
+    if (tree.length === 1 && Array.isArray(tree[0].children)) return tree[0].children;
 
     return tree;
 }
@@ -3806,20 +3807,7 @@ function importFromNetscapeHtml(html) {
         return;
     }
 
-    // merge into the current speed dial. yasd renders one level of subfolders, so
-    // deeper folders are flattened into their nearest imported parent
     const createdBookmarks = [];
-
-    async function collectDials(children, out) {
-        for (const child of children) {
-            if (child.url) {
-                out.push(child);
-            } else {
-                await collectDials(child.children, out);
-            }
-        }
-        return out;
-    }
 
     async function createDials(parentId, dials) {
         const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId)).map(child => child.url));
@@ -3834,23 +3822,23 @@ function importFromNetscapeHtml(html) {
         }
     }
 
-    async function resolveFolder(title) {
-        const siblings = await chrome.bookmarks.getChildren(speedDialId);
+    async function resolveFolder(parentId, title) {
+        const siblings = await chrome.bookmarks.getChildren(parentId);
         const existing = siblings.find(node => isBookmarkFolder(node) && node.title === title);
         if (existing) return existing.id;
-        return (await chrome.bookmarks.create({ title, parentId: speedDialId })).id;
+        return (await chrome.bookmarks.create({ title, parentId })).id;
     }
 
-    (async () => {
-        const topLevelDials = nodes.filter(node => node.url);
-        await createDials(speedDialId, topLevelDials);
+    async function importNodes(parentId, children) {
+        await createDials(parentId, children.filter(node => !Array.isArray(node.children)));
 
-        for (const folder of nodes.filter(node => !node.url)) {
-            const dials = await collectDials(folder.children, []);
-            if (!dials.some(isSupportedDial)) continue;
-            await createDials(await resolveFolder(folder.title), dials);
+        for (const folder of children.filter(node => Array.isArray(node.children))) {
+            const folderId = await resolveFolder(parentId, folder.title);
+            await importNodes(folderId, folder.children);
         }
-    })().then(() => {
+    }
+
+    return importNodes(speedDialId, nodes).then(() => {
         hideModals();
         processRefresh();
         chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
