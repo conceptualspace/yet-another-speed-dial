@@ -1209,9 +1209,7 @@ async function migrateLegacyThumbnailRecords(results) {
     }
 }
 
-// read straight from storage: routing through the worker adds a hop and a second
-// deserialization of every data uri, and leaves the page blank if the worker is
-// unreachable (e.g. right after an extension update)
+// read straight from storage (refactored from previous service worker)
 async function requestThumbnails(bookmarks, batchSize = 50) {
     for (let i = 0; i < bookmarks.length; i += batchSize) {
         const batch = bookmarks.slice(i, i + batchSize);
