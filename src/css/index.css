@@ -1287,6 +1287,13 @@ input {
     color: #111111;
 }
 
+.lightMode .clr-cancel,
+.lightMode .clr-clear,
+.lightMode .clr-close {
+    color: #111111;
+    background-color: transparent;
+}
+
 .lightMode #modalBtnContainer .action {
     color: #111111;
 }
