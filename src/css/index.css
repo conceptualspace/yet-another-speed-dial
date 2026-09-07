@@ -1298,6 +1298,14 @@ input {
     color: #111111;
 }
 
+.lightMode .formItem > .close {
+    background-color: #ffffff;
+}
+
+.lightMode .formItem > .close:hover {
+    background-color: #f5f5f5;
+}
+
 .lightMode .formItem > .save {
     background-color: #00e1ff;
     border: none;
@@ -1315,7 +1323,6 @@ input {
 }
 
 .lightMode .formItem > .actionSecondary:hover,
-.lightMode .formItem > .close:hover,
 .lightMode .formItem > .importExport:hover,
 .lightMode .modal [type="file"] + label.importExport:hover {
     background-color: #e7e7e7;
