@@ -103,7 +103,10 @@ async function handleBookmarkChanged(id, info) {
     // so we always "get" the bookmark to access all its info
     const bookmark = await chrome.bookmarks.get(id)
 
-    // todo: filter changes that arent in the speed dial or subfolder, like moving site out of speed dial
+    const isInSpeedDial = await isFolderInSpeedDial(bookmark[0].parentId);
+    const wasInSpeedDial = info?.oldParentId && await isFolderInSpeedDial(info.oldParentId);
+    if (!isInSpeedDial && !wasInSpeedDial) return;
+
     // todo: debounce the message to any open tabs to rerender or debounce render side?
 
     if (bookmark[0].url) {
@@ -358,7 +361,7 @@ function isSupportedUrl(url) {
     return url.startsWith('https://') || url.startsWith('http://') || url.startsWith('file://') || url.startsWith('chrome://');
 }
 
-async function getSpeedDialFolderId() {
+async function getSpeedDialFolderId({ create = true } = {}) {
 	// a folder adopted via the folder picker takes precedence over the default one
 	const stored = await chrome.storage.local.get(SPEED_DIAL_FOLDER_KEY);
 	const adoptedId = stored[SPEED_DIAL_FOLDER_KEY];
@@ -372,6 +375,7 @@ async function getSpeedDialFolderId() {
 
 	const bookmarks = await chrome.bookmarks.search({ title: 'Speed Dial' });
     const match = (bookmarks || []).find(isBookmarkFolder);
+	if (!match && !create) return null;
 	const folderId = match ? match.id : (await chrome.bookmarks.create({ title: 'Speed Dial' })).id;
 
 	// only reached when an adopted folder is gone
@@ -383,7 +387,9 @@ async function getSpeedDialFolderId() {
 }
 
 async function isFolderInSpeedDial(folderId) {
-    const speedDialId = await getSpeedDialFolderId();
+    // scope checks run on every bookmark event; dont create the root here
+    const speedDialId = await getSpeedDialFolderId({ create: false });
+    if (!speedDialId) return false;
     let currentId = folderId;
 
     while (currentId) {
