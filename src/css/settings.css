@@ -311,13 +311,14 @@
 }
 
 .lightMode .sidenav button:not(.closeBtn) {
-    background-color: #00e1ff;
+    background-color: transparent;
     border: none;
-    color: #063642;
+    color: #6941c6;
+    font-weight: 600;
 }
 
 .lightMode .sidenav button:not(.closeBtn):hover {
-    background-color: #00cce8;
+    background-color: #f5f5f5;
 }
 
 .lightMode .sidenav #preview {
