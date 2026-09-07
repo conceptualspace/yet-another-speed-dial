@@ -941,7 +941,8 @@ a {
 
 #tileModalContent .formItem > input[type="text"],
 #createDialModalContent .formItem > input[type="text"],
-#createFolderModalContent .formItem > input[type="text"] {
+#createFolderModalContent .formItem > input[type="text"],
+#editFolderModalContent .formItem > input[type="text"] {
     border-top-color: transparent;
     border-right-color: transparent;
     border-left-color: transparent;
