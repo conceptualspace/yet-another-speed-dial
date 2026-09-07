@@ -13,6 +13,9 @@
   "addTo": {
     "message": "Add to Speed Dial"
   },
+  "appearance": {
+    "message": "Appearance"
+  },
   "backgroundColor": {
     "message": "Background Color"
   },
@@ -277,6 +280,15 @@
   },
   "optionNewDialsFirst": {
     "message": "New dials first"
+  },
+  "optionAuto": {
+    "message": "Auto"
+  },
+  "optionDark": {
+    "message": "Dark"
+  },
+  "optionLight": {
+    "message": "Light"
   },
   "folderStyle": {
     "message": "Folder Style"

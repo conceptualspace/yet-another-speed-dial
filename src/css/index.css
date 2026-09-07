@@ -1260,6 +1260,119 @@ input {
     font-size: medium;
 }
 
+.lightMode .menu,
+.lightMode .modal-content {
+    background-color: #ffffff;
+    border: 1px solid #d6d6d6;
+    color: #111111;
+}
+
+.lightMode .menu-option:hover,
+.lightMode .folderPickerRow:hover {
+    background-color: #efefef;
+}
+
+.lightMode .menu-option svg {
+    color: #111111;
+}
+
+.lightMode input,
+.lightMode textarea {
+    background-color: #ffffff;
+    border-color: #cccccc;
+    color: #111111;
+}
+
+.lightMode #modalBtnContainer .action,
+.lightMode .formItem > .actionSecondary,
+.lightMode .formItem > .close {
+    background-color: #f5f5f5;
+    border: none;
+    color: #111111;
+}
+
+.lightMode .formItem > .save {
+    background-color: #00e1ff;
+    border: none;
+    color: #063642;
+}
+
+.lightMode .formItem > .save:hover {
+    background-color: #00cce8;
+}
+
+.lightMode .formItem > .importExport {
+    background-color: #f5f5f5;
+    border: none;
+    color: #111111;
+}
+
+.lightMode #modalBtnContainer .action:hover,
+.lightMode .formItem > .actionSecondary:hover,
+.lightMode .formItem > .close:hover,
+.lightMode .formItem > .importExport:hover,
+.lightMode .modal [type="file"] + label.importExport:hover {
+    background-color: #e7e7e7;
+}
+
+.lightMode #modalBtnContainer .action svg {
+    fill: currentColor;
+}
+
+.lightMode #statusMessage {
+    color: #805b00;
+}
+
+.lightMode .closeBtn,
+.lightMode .inputCloseBtn {
+    color: #666666;
+}
+
+.lightMode .closeBtn:hover,
+.lightMode .closeBtn:focus,
+.lightMode .inputCloseBtn:hover {
+    color: #111111;
+}
+
+.lightMode .folderPickerHint,
+.lightMode .folderPickerRow,
+.lightMode .formItem > .folderPickerReset {
+    color: #555555;
+}
+
+.lightMode .folderPickerTree {
+    background-color: #fafafa;
+    border-color: #d6d6d6;
+    scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+
+.lightMode .folderPickerRow.isSelected {
+    background-color: #e3e3e3;
+}
+
+.lightMode .folderPickerRow.isSelected .folderPickerLabel,
+.lightMode .folderPickerTwisty:hover {
+    color: #111111;
+}
+
+.lightMode .folderPickerTwisty,
+.lightMode .folderPickerIcon,
+.lightMode .folderPickerBadge {
+    color: #666666;
+}
+
+.lightMode .folderPickerBadge {
+    border-color: #cccccc;
+}
+
+.lightMode .folderPickerTree::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.28);
+}
+
+.lightMode .folderPickerTree::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
 input:focus + .inputBorder, .expand:focus .inputBorder {
     transform: scaleX(1);
   }

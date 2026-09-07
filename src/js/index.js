@@ -136,6 +136,7 @@ const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 const folderStyleInput = document.getElementById("folderStyle");
+const themeModeInput = document.getElementById("themeMode");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -146,6 +147,7 @@ const clock = document.getElementById('clock');
 
 const port = "p-" + new Date().getTime();
 let tabMessagePort = null;
+const preferredColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.storage.onChanged.addListener(handleStorageChanged);
@@ -238,6 +240,7 @@ const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
 let isToastVisible = false;
 
 let defaults = {
+    themeMode: 'dark',
     wallpaper: true,
     backgroundColor: '#111111',
     largeTiles: true,
@@ -256,6 +259,19 @@ let defaults = {
     folderStyle: 'tabs',
     currentFolder: null,
 };
+
+function applyTheme() {
+    const useDarkMode = settings.themeMode === 'dark'
+        || (settings.themeMode === 'auto' && preferredColorScheme.matches);
+    document.body.classList.toggle('lightMode', !useDarkMode);
+    Coloris({ themeMode: useDarkMode ? 'dark' : 'light' });
+}
+
+preferredColorScheme.addEventListener('change', function () {
+    if (settings?.themeMode === 'auto') {
+        applyTheme();
+    }
+});
 
 // Create an invisible overlay to absorb outside clicks when Coloris is open
 const colorisOverlay = document.createElement('div');
@@ -2648,6 +2664,8 @@ function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
+        applyTheme();
+
         if (settings.wallpaper && wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (wallpaperSrc.length < 65) {
@@ -2872,6 +2890,7 @@ function applySettings(options = {}) {
         folderStyleInput.value = settings.folderStyle;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
+        themeModeInput.value = settings.themeMode;
 
         if (wallpaperSrc) {
             //imgPreview.style.display = 'block';
@@ -2924,6 +2943,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.folderStyle = folderStyleInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
+    settings.themeMode = themeModeInput.value;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
     applySettings({
@@ -3026,7 +3046,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
+    if (e.target.type === 'text' || e.target.closest?.('.settingsCtl, #importFileLabel')) {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -3234,6 +3254,10 @@ dialSizeInput.oninput = function (e) {
 }
 
 dialRatioInput.oninput = function (e) {
+    saveSettings()
+}
+
+themeModeInput.oninput = function () {
     saveSettings()
 }
 

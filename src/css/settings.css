@@ -273,3 +273,65 @@
     color: lightgreen;
     transition: opacity 200ms ease-in-out;
 }
+
+.lightMode .sidenav {
+    background: #ffffff;
+    color: #111111;
+}
+
+.lightMode .sidenav hr {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.lightMode .sidenav .closeBtn,
+.lightMode .settingsLink {
+    color: #666666;
+}
+
+.lightMode .sidenav .closeBtn:hover,
+.lightMode .settingsLink:hover {
+    color: #111111;
+}
+
+.lightMode .sidenav a {
+    color: #111111;
+}
+
+.lightMode .sidenav a:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.lightMode .sidenav select {
+    background-color: #ffffff;
+    border: none;
+    border-bottom: 1px solid #cccccc;
+    border-radius: 0;
+    color: #111111;
+}
+
+.lightMode .sidenav button:not(.closeBtn) {
+    background-color: #00e1ff;
+    border: none;
+    color: #063642;
+}
+
+.lightMode .sidenav button:not(.closeBtn):hover {
+    background-color: #00cce8;
+}
+
+.lightMode .sidenav #preview {
+    border: none;
+}
+
+.lightMode .sidenav #previewOverlay {
+    background-color: #ffffff;
+}
+
+.lightMode .sidenav #previewOverlay:hover {
+    opacity: 0.5;
+}
+
+.lightMode .sidenav #color-picker-wrapper,
+.lightMode .sidenav #textColor-picker-wrapper {
+    border-color: rgba(0, 0, 0, 0.2);
+}
