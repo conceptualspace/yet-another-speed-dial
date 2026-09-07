@@ -1484,13 +1484,25 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     border-radius: inherit;
 }
 
-.fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {
-    background-color: rgba(17, 17, 17, 0.9);
+#modalImgContainer .fc-arrows .fc-next.fc-is-active .fc-icon,
+#modalImgContainer .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    background-color: transparent;
     color: #ccc;
 }
 
-.fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
+#modalImgContainer .fc-arrows .fc-prev.fc-is-active:hover .fc-icon,
+#modalImgContainer .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
     color: #fff;
+}
+
+.lightMode #modalImgContainer .fc-arrows .fc-next.fc-is-active .fc-icon,
+.lightMode #modalImgContainer .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    color: #666666;
+}
+
+.lightMode #modalImgContainer .fc-arrows .fc-prev.fc-is-active:hover .fc-icon,
+.lightMode #modalImgContainer .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
+    color: #111111;
 }
 
 .fc.fc-circles.fc-circles-overlay .fc-circles {
