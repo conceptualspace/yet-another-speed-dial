@@ -1300,13 +1300,9 @@ input {
 
 .lightMode .formItem > .actionSecondary,
 .lightMode .formItem > .close {
-    background-color: #f5f5f5;
+    background-color: transparent;
     border: none;
     color: #111111;
-}
-
-.lightMode .formItem > .close {
-    background-color: #ffffff;
 }
 
 .lightMode .formItem > .close:hover {
@@ -1435,7 +1431,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #fetchImageButton svg {
-    fill: rgb(0, 255, 170);
+    fill: currentColor;
+    margin-right: 0;
     opacity: 0.8;
     transition: all 0.3s ease;
 }
