@@ -329,8 +329,14 @@ const capturePopupPage = (url) => {
                 hasScreenshot = !!screenshot;
                 cleanup({ screenshot, pageData });
               }, 2000))
+          }).catch(() => {
+            // popup was closed underneath us
+            cleanup();
           })
         }, 200)
+      }).catch((err) => {
+        console.log("Error opening capture window: ", err.message || err);
+        resolve({ screenshot: null, pageData: null });
       })
   })
 }
