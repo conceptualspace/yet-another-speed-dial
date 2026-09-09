@@ -59,7 +59,9 @@ async function handleMessages(message) {
     if (resizedImages && resizedImages.length) {
         // the screenshot, when present, takes the last of 5 slots
         const maxWebpageImages = processedScreenshot ? 4 : 5;
-        thumbs = resizedImages.filter(item => item).slice(0, maxWebpageImages);
+        // dedupe before capping so a dropped lookalike frees its slot for the next candidate
+        const unique = await dedupeByAppearance(resizedImages.filter(item => item));
+        thumbs = unique.slice(0, maxWebpageImages);
         
         // Always add the screenshot as the last image if available
         if (processedScreenshot) {
@@ -103,6 +105,64 @@ async function fetchImageAsDataURI(imageUrl) {
     } catch (err) {
         return null;
     }
+}
+
+// 64-bit difference hash: brightness gradients across a 9x8 downsample, so scale and
+// compression dont matter. returns { hash, pixels }; hash is null when the image cant be decoded (some svgs)
+function perceptualHash(dataUri) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            const pixels = (img.naturalWidth || 0) * (img.naturalHeight || 0);
+            try {
+                const canvas = offscreenCanvasShim(9, 8);
+                const ctx = canvas.getContext('2d');
+                // transparent icons would otherwise hash as solid black
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, 9, 8);
+                ctx.drawImage(img, 0, 0, 9, 8);
+                const { data } = ctx.getImageData(0, 0, 9, 8);
+                const gray = (i) => data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+                let hash = 0n;
+                for (let y = 0; y < 8; y++) {
+                    for (let x = 0; x < 8; x++) {
+                        const i = (y * 9 + x) * 4;
+                        hash = (hash << 1n) | (gray(i) > gray(i + 4) ? 1n : 0n);
+                    }
+                }
+                resolve({ hash, pixels });
+            } catch (err) {
+                resolve({ hash: null, pixels });
+            }
+        };
+        img.onerror = () => resolve({ hash: null, pixels: 0 });
+        img.src = dataUri;
+    });
+}
+
+function hammingDistance(a, b) {
+    let bits = 0;
+    for (let x = a ^ b; x; x >>= 1n) bits += Number(x & 1n);
+    return bits;
+}
+
+// collapses images that look alike into the slot of the highest ranked one, keeping the largest
+// file (small icons are upscaled at render). same picture at two sizes has landed at 0-7 so far,
+// the nearest genuinely different image at 19
+async function dedupeByAppearance(thumbs, threshold = 7) {
+    const hashed = await Promise.all(thumbs.map(perceptualHash));
+    const kept = [];
+    thumbs.forEach((thumb, index) => {
+        const { hash, pixels } = hashed[index];
+        const match = hash === null ? null : kept.find(other => other.hash !== null && hammingDistance(other.hash, hash) <= threshold);
+        if (!match) {
+            kept.push({ thumb, hash, pixels });
+        } else if (pixels > match.pixels) {
+            match.thumb = thumb;
+            match.pixels = pixels;
+        }
+    });
+    return kept.map(entry => entry.thumb);
 }
 
 function getBgColor(image) {
