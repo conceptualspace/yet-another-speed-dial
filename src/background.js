@@ -7,8 +7,6 @@
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
-// urls of dials being added from the new tab page form; only these may open a popup to capture the site
-const pendingUiDials = new Set();
 
 function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
@@ -79,9 +77,6 @@ async function handleMessages(message) {
 		case 'refreshThumbs':
 			handleManualRefresh(message.data);
 			break;
-		case 'createDial':
-			handleCreateDial(message.data);
-			break;
 		case 'refreshAllThumbs':
 			handleRefreshAll(message.data);
 			break;
@@ -124,8 +119,7 @@ async function handleBookmarkChanged(id, info) {
                 });
     		} else {
     			// new bookmark needs images
-    			const usePopupFallback = pendingUiDials.delete(bookmarkUrl);
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true, usePopupFallback});
+    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
     		}
     	}
     } else {
@@ -225,21 +219,6 @@ async function handleManualRefresh(data) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
         await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: false});
     }
-}
-
-async function handleCreateDial(data) {
-    if (!data || !data.url || !data.parentId || !isSupportedUrl(data.url)) return;
-    pendingUiDials.add(data.url);
-    // the flag is consumed by handleBookmarkChanged; expire it in case the create fails silently
-    setTimeout(() => pendingUiDials.delete(data.url), 30000);
-    chrome.bookmarks.create({
-        title: data.title || data.url,
-        url: data.url,
-        parentId: data.parentId
-    }).catch(err => {
-        pendingUiDials.delete(data.url);
-        console.log(err);
-    });
 }
 
 // runs the shared extractor inside an already rendered page. null when the page is off limits (chrome://, store, etc)
@@ -575,7 +554,7 @@ async function migrateDialSizes() {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false, usePopupFallback: false}) {
+async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
@@ -600,7 +579,8 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
             }
         }
     } else {
-        // the site is usually already open (bookmarked from the page); read images from its dom
+        // the site is usually already open (bookmarked from the page); read images from its dom.
+        // otherwise the offscreen document fetches the html
         const tab = await findOpenTab(url);
         if (tab) {
             pageData = await extractFromTab(tab.id);
@@ -610,8 +590,6 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
                     return null;
                 });
             }
-        } else if (options.usePopupFallback) {
-            ({ screenshot, pageData } = await capturePopupPage(url));
         }
     }
 

@@ -1843,14 +1843,14 @@ function rectifyUrl(url) {
 function createDial() {
     let url = rectifyUrl(createDialModalURL.value.trim());
 
-    // the worker creates the bookmark so it knows this dial may open a popup to capture the site
-    chrome.runtime.sendMessage({
-        target: 'background',
-        type: 'createDial',
-        data: { url, title: url, parentId: createDialModalURL.parentId }
+    chrome.bookmarks.create({
+        title: url,
+        url: url,
+        parentId: createDialModalURL.parentId
+    }).then(node => {
+        hideModals();
+        showToast(capturingImagesMessage)
     });
-    hideModals();
-    showToast(capturingImagesMessage)
 }
 
 async function openAllTabs(folderId = currentFolder, groupTabs = false) {

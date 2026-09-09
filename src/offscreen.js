@@ -679,4 +679,3 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
         clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
     }
 }
-
