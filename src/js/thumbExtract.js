@@ -9,6 +9,7 @@
 function collectPageImages(doc, baseUrl) {
     const candidates = [];
     const seen = new Set();
+    const maxCandidates = 12;
     // known junk that shows up as the first <img> on some sites
     const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
 
@@ -28,6 +29,7 @@ function collectPageImages(doc, baseUrl) {
     }
 
     function add(value) {
+        if (candidates.length >= maxCandidates) return;
         const href = resolve(value);
         if (!href || seen.has(href) || filters.some(filter => href.includes(filter))) return;
         seen.add(href);
@@ -68,6 +70,10 @@ function collectPageImages(doc, baseUrl) {
             return;
         }
         if (typeof node !== 'object') return;
+        const types = Array.isArray(node['@type']) ? node['@type'] : [node['@type']];
+        if (types.includes('ImageObject')) {
+            addStructuredImage(node);
+        }
         addStructuredImage(node.image);
         addStructuredImage(node.logo);
         for (const key of ['@graph', 'mainEntity', 'mainEntityOfPage', 'itemListElement', 'item']) {
