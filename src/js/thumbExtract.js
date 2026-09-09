@@ -117,6 +117,9 @@ function collectPageImages(doc, baseUrl) {
             add(meta.getAttribute('content'));
         }
 
+        // twitter card
+        add(doc.querySelector('meta[name="twitter:image" i], meta[property="twitter:image" i], meta[name="twitter:image:src" i]')?.getAttribute('content'));
+
         // json-ld: one image for the main entity, typically the product or recipe when there is no og:image
         for (const script of doc.querySelectorAll('script[type="application/ld+json" i]')) {
             let image = null;
