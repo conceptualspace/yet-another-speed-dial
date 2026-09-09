@@ -502,35 +502,54 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
 
+    // a live tab whose <head> is stale (spa navigation) still contributes its rendered images,
+    // but the metadata comes from a fresh fetch of the url
+    let liveData = null;
+    if (pageData && pageData.staleMetadata) {
+        liveData = pageData;
+        pageData = null;
+    }
+
     try {
         if (!pageData) {
-            // allows og images to work, with creds they are behind js
-            const omitDomains = ['facebook.com', 'github.com'];
-            const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
+            try {
+                // allows og images to work, with creds they are behind js
+                const omitDomains = ['facebook.com', 'github.com'];
+                const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
 
-            const response = await fetch(url, {
-                method: 'GET',
-                mode: 'cors',
-                credentials,
-                signal: controller.signal
-            });
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors',
+                    credentials,
+                    signal: controller.signal
+                });
 
-            if (!response.ok) {
-                return fallbacks;
+                if (response.ok) {
+                    const text = await response.text();
+                    const doc = new DOMParser().parseFromString(text, 'text/html');
+                    // resolve relative urls against the final redirected url
+                    pageData = collectPageImages(doc, response.url || url);
+                }
+            } catch (fetchError) {
+                // fall through to whatever the live tab gave us
             }
 
-            const text = await response.text();
-            const doc = new DOMParser().parseFromString(text, 'text/html');
-            // resolve relative urls against the final redirected url
-            pageData = collectPageImages(doc, response.url || url);
+            if (!pageData) {
+                if (!liveData) {
+                    return fallbacks;
+                }
+                pageData = liveData;
+                liveData = null;
+            }
         }
 
-        pageInfo.title = pageData.title || null;
+        pageInfo.title = pageData.title || liveData?.title || null;
 
-        const candidates = pageData.candidates || [];
+        const candidates = [...(pageData.candidates || []), ...(liveData?.candidates || [])];
         let images = [...candidates, ...fallbacks];
-        if (pageData.svgLogo) {
-            images.push(pageData.svgLogo);
+        const svgLogo = pageData.svgLogo || liveData?.svgLogo;
+        if (svgLogo) {
+            images.push(svgLogo);
         }
 
         // if we havent had much luck with images, lets check the manifest and style sheets

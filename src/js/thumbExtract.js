@@ -81,23 +81,48 @@ function collectPageImages(doc, baseUrl) {
         }
     }
 
-    // open graph
-    for (const meta of doc.querySelectorAll('meta[property="og:image" i], meta[name="og:image" i], meta[property="og:image:secure_url" i]')) {
-        add(meta.getAttribute('content'));
-    }
-
-    // json-ld: often carries a product image when there is no og:image
-    for (const script of doc.querySelectorAll('script[type="application/ld+json" i]')) {
-        try {
-            walkStructuredData(JSON.parse(script.textContent), 0);
-        } catch (err) {
-            // malformed json-ld is common; ignore it
+    // open graph, json-ld and microdata live in the server-rendered <head>. after an spa navigation
+    // (pushState) they still describe the page that was first loaded, unless the site keeps og:url/canonical current
+    const win = doc.defaultView;
+    let staleMetadata = false;
+    if (win && win.location) {
+        const stripHash = (href) => {
+            try {
+                const parsed = new URL(href);
+                parsed.hash = '';
+                return parsed.href;
+            } catch (err) {
+                return null;
+            }
+        };
+        const current = stripHash(win.location.href);
+        const loaded = stripHash(win.performance?.getEntriesByType?.('navigation')?.[0]?.name);
+        if (current && loaded && current !== loaded) {
+            const headUrl = doc.querySelector('link[rel="canonical" i]')?.getAttribute('href') ||
+                doc.querySelector('meta[property="og:url" i]')?.getAttribute('content');
+            staleMetadata = stripHash(resolve(headUrl)) !== current;
         }
     }
 
-    // schema.org microdata
-    for (const meta of doc.querySelectorAll('meta[itemprop="image"]')) {
-        add(meta.getAttribute('content'));
+    if (!staleMetadata) {
+        // open graph
+        for (const meta of doc.querySelectorAll('meta[property="og:image" i], meta[name="og:image" i], meta[property="og:image:secure_url" i]')) {
+            add(meta.getAttribute('content'));
+        }
+
+        // json-ld: often carries a product image when there is no og:image
+        for (const script of doc.querySelectorAll('script[type="application/ld+json" i]')) {
+            try {
+                walkStructuredData(JSON.parse(script.textContent), 0);
+            } catch (err) {
+                // malformed json-ld is common; ignore it
+            }
+        }
+
+        // schema.org microdata
+        for (const meta of doc.querySelectorAll('meta[itemprop="image"]')) {
+            add(meta.getAttribute('content'));
+        }
     }
 
     // amazon product image, skipping the 'look inside' badge on books
@@ -107,7 +132,6 @@ function collectPageImages(doc, baseUrl) {
     }
 
     // largest image rendered in the viewport; only possible on a live document
-    const win = doc.defaultView;
     if (win && win.innerWidth) {
         let best = null;
         let bestArea = 0;
@@ -177,5 +201,5 @@ function collectPageImages(doc, baseUrl) {
         .map(link => resolve(link.getAttribute('href')))
         .filter(Boolean);
 
-    return { title, candidates, svgLogo, manifestUrl, stylesheets };
+    return { title, candidates, svgLogo, manifestUrl, stylesheets, staleMetadata };
 }
