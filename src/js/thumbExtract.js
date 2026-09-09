@@ -93,21 +93,31 @@ function collectPageImages(doc, baseUrl) {
     const win = doc.defaultView;
     let staleMetadata = false;
     if (win && win.location) {
-        const stripHash = (href) => {
+        const parseUrl = (href) => {
             try {
                 const parsed = new URL(href);
                 parsed.hash = '';
-                return parsed.href;
+                return parsed;
             } catch (err) {
                 return null;
             }
         };
-        const current = stripHash(win.location.href);
-        const loaded = stripHash(win.performance?.getEntriesByType?.('navigation')?.[0]?.name);
-        if (current && loaded && current !== loaded) {
+        const current = parseUrl(win.location.href);
+        const loaded = parseUrl(win.performance?.getEntriesByType?.('navigation')?.[0]?.name);
+        if (current && loaded && current.href !== loaded.href) {
             const headUrl = doc.querySelector('link[rel="canonical" i]')?.getAttribute('href') ||
                 doc.querySelector('meta[property="og:url" i]')?.getAttribute('content');
-            staleMetadata = stripHash(resolve(headUrl)) !== current;
+            const head = parseUrl(resolve(headUrl));
+            const route = (url) => url.origin + url.pathname.replace(/\/+$/, '');
+            // a canonical on the new path may drop the query; same-path query changes (ex. youtube ?v=) still need an exact match
+            const followsRoute = head && route(current) !== route(loaded) && route(head) === route(current) &&
+                [...head.searchParams.keys()].every(key => {
+                    const headValues = head.searchParams.getAll(key);
+                    const currentValues = current.searchParams.getAll(key);
+                    return headValues.length === currentValues.length &&
+                        headValues.every((value, index) => value === currentValues[index]);
+                });
+            staleMetadata = head?.href !== current.href && !followsRoute;
         }
     }
 
