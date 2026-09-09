@@ -9,7 +9,7 @@
 function collectPageImages(doc, baseUrl) {
     const candidates = [];
     const seen = new Set();
-    const maxCandidates = 12;
+    const maxCandidates = 8;
     // known junk that shows up as the first <img> on some sites
     const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
 
@@ -52,33 +52,40 @@ function collectPageImages(doc, baseUrl) {
         return sized.length ? sized[0].link : null;
     }
 
-    function addStructuredImage(value) {
-        if (!value) return;
+    // first url in a json-ld image value: a string, an ImageObject, or an array of either
+    function structuredImageUrl(value) {
         if (Array.isArray(value)) {
-            value.forEach(addStructuredImage);
-        } else if (typeof value === 'object') {
-            add(value.url || value.contentUrl);
-        } else {
-            add(value);
+            for (const entry of value) {
+                const found = structuredImageUrl(entry);
+                if (found) return found;
+            }
+            return null;
         }
+        if (value && typeof value === 'object') {
+            return structuredImageUrl(value.contentUrl || value.url);
+        }
+        return typeof value === 'string' ? value : null;
     }
 
-    function walkStructuredData(node, depth) {
-        if (!node || depth > 3) return;
+    // the one image describing the page's main entity (product, recipe, article, video...)
+    function findStructuredImage(node, depth) {
+        if (!node || depth > 3) return null;
         if (Array.isArray(node)) {
-            node.forEach(child => walkStructuredData(child, depth));
-            return;
+            for (const child of node) {
+                const found = findStructuredImage(child, depth);
+                if (found) return found;
+            }
+            return null;
         }
-        if (typeof node !== 'object') return;
-        const types = Array.isArray(node['@type']) ? node['@type'] : [node['@type']];
-        if (types.includes('ImageObject')) {
-            addStructuredImage(node);
-        }
-        addStructuredImage(node.image);
-        addStructuredImage(node.logo);
+        if (typeof node !== 'object') return null;
+        const types = [].concat(node['@type'] || []);
+        const own = types.includes('ImageObject') ? structuredImageUrl(node) : structuredImageUrl(node.image || node.thumbnailUrl);
+        if (own) return own;
         for (const key of ['@graph', 'mainEntity', 'mainEntityOfPage', 'itemListElement', 'item']) {
-            walkStructuredData(node[key], depth + 1);
+            const found = findStructuredImage(node[key], depth + 1);
+            if (found) return found;
         }
+        return null;
     }
 
     // open graph, json-ld and microdata live in the server-rendered <head>. after an spa navigation
@@ -110,19 +117,22 @@ function collectPageImages(doc, baseUrl) {
             add(meta.getAttribute('content'));
         }
 
-        // json-ld: often carries a product image when there is no og:image
+        // json-ld: one image for the main entity, typically the product or recipe when there is no og:image
         for (const script of doc.querySelectorAll('script[type="application/ld+json" i]')) {
+            let image = null;
             try {
-                walkStructuredData(JSON.parse(script.textContent), 0);
+                image = findStructuredImage(JSON.parse(script.textContent), 0);
             } catch (err) {
                 // malformed json-ld is common; ignore it
+            }
+            if (image) {
+                add(image);
+                break;
             }
         }
 
         // schema.org microdata
-        for (const meta of doc.querySelectorAll('meta[itemprop="image"]')) {
-            add(meta.getAttribute('content'));
-        }
+        add(doc.querySelector('meta[itemprop="image"]')?.getAttribute('content'));
     }
 
     // amazon product image, skipping the 'look inside' badge on books
