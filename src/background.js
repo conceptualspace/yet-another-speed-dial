@@ -7,6 +7,8 @@
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
+// urls of dials being added from the new tab page form; only these may open a popup to capture the site
+const pendingUiDials = new Set();
 
 function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
@@ -77,6 +79,9 @@ async function handleMessages(message) {
 		case 'refreshThumbs':
 			handleManualRefresh(message.data);
 			break;
+		case 'createDial':
+			handleCreateDial(message.data);
+			break;
 		case 'refreshAllThumbs':
 			handleRefreshAll(message.data);
 			break;
@@ -119,7 +124,8 @@ async function handleBookmarkChanged(id, info) {
                 });
     		} else {
     			// new bookmark needs images
-    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true});
+    			const usePopupFallback = pendingUiDials.delete(bookmarkUrl);
+    			getThumbnails(bookmarkUrl, bookmarkId, parentId, {forcePageReload: true, usePopupFallback});
     		}
     	}
     } else {
@@ -215,13 +221,53 @@ async function handleOffscreenFetchDone(data, forcePageReload) {
 }
 
 async function handleManualRefresh(data) {
-    if (data.url && (data.url.startsWith('https://') || data.url.startsWith('http://') || data.url.startsWith('file://') || data.url.startsWith('chrome://'))) {
+    if (data.url && isSupportedUrl(data.url)) {
         await chrome.storage.local.remove(getThumbnailStorageKeys(data.url));
         await getThumbnails(data.url, data.id, data.parentId, {forceScreenshot: true, forcePageReload: false});
     }
 }
 
-const capturePopupScreenshot = (url) => {
+async function handleCreateDial(data) {
+    if (!data || !data.url || !data.parentId || !isSupportedUrl(data.url)) return;
+    pendingUiDials.add(data.url);
+    // the flag is consumed by handleBookmarkChanged; expire it in case the create fails silently
+    setTimeout(() => pendingUiDials.delete(data.url), 30000);
+    chrome.bookmarks.create({
+        title: data.title || data.url,
+        url: data.url,
+        parentId: data.parentId
+    }).catch(err => {
+        pendingUiDials.delete(data.url);
+        console.log(err);
+    });
+}
+
+// runs the shared extractor inside an already rendered page. null when the page is off limits (chrome://, store, etc)
+async function extractFromTab(tabId) {
+    const run = chrome.scripting.executeScript({
+        target: { tabId },
+        files: ['js/thumbExtract.js', 'js/thumbExtractRun.js']
+    }).then(results => (results && results[0] && results[0].result) || null)
+      .catch(err => {
+        console.log("extract error: ", err.message || err);
+        return null;
+    });
+    const timeout = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+    return Promise.race([run, timeout]);
+}
+
+async function findOpenTab(url) {
+    const tabs = (await chrome.tabs.query({}).catch(() => [])).filter(tab => tab.url === url && !tab.discarded);
+    if (!tabs.length) return null;
+    // prefer the tab the user is looking at, then any visible one, then the most recently used
+    const focused = await chrome.windows.getLastFocused().catch(() => null);
+    return tabs.find(tab => tab.active && focused && tab.windowId === focused.id) ||
+        tabs.find(tab => tab.active) ||
+        tabs.sort((a, b) => (b.lastAccessed || 0) - (a.lastAccessed || 0))[0];
+}
+
+// loads the page in a hidden popup, then pulls images from its dom and screenshots it
+const capturePopupPage = (url) => {
   
   return new Promise((resolve, reject) => {
     let finished = false;
@@ -234,14 +280,14 @@ const capturePopupScreenshot = (url) => {
     }).then((popup) => {
         if (!popup.tabs || !popup.tabs.length) {
           chrome.windows.remove(popup.id)
-          return resolve(null)
+          return resolve({ screenshot: null, pageData: null })
         }
 
         const tabId = popup.tabs[0].id
         let loadingInterval;
         let hasScreenshot = false;
 
-        const cleanup = (result = null) => {
+        const cleanup = (result = { screenshot: null, pageData: null }) => {
             if (finished) return;
             finished = true;
 
@@ -260,7 +306,7 @@ const capturePopupScreenshot = (url) => {
 
         const timeout = setTimeout(() => {
           cleanup();
-        }, 10000)
+        }, 15000)
 
         // Focus window after 5s if we don't have a screenshot yet
         const focusTimeout = setTimeout(() => {
@@ -273,18 +319,15 @@ const capturePopupScreenshot = (url) => {
           chrome.tabs.get(tabId).then((tab) => {
             'complete' === tab.status &&
               (clearInterval(loadingInterval),
-              setTimeout(() => {
+              setTimeout(async () => {
                 // delay to let page render
-                chrome.tabs
-                  .captureVisibleTab(popup.id)
-                  .then((screenshot) => {
-                    hasScreenshot = true;
-                    cleanup(screenshot);
-                  })
-                  .catch(() => {
+                const pageData = await extractFromTab(tabId);
+                const screenshot = await chrome.tabs.captureVisibleTab(popup.id).catch(() => {
                     console.log("Error capturing screenshot");
-                    cleanup();
-                  })
+                    return null;
+                });
+                hasScreenshot = !!screenshot;
+                cleanup({ screenshot, pageData });
               }, 2000))
           })
         }, 200)
@@ -526,7 +569,7 @@ async function migrateDialSizes() {
 
 // THUMBNAIL FUNCTIONS //
 
-async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false}) {
+async function getThumbnails(url, id, parentId, options = {quickRefresh: false, forceScreenshot: false, forcePageReload: false, usePopupFallback: false}) {
 
 	if(!url || !id) {
 		console.log("getThumbnails: missing url or id")
@@ -534,12 +577,13 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 	}
     
     let screenshot = null;
+    let pageData = null;
     
     if (options.forceScreenshot) {
-        // Force popup screenshot for manual refresh
-        screenshot = await capturePopupScreenshot(url);
-    } else {
-        // take screenshot if applicable (current active tab)
+        // manual refresh: always load the page fresh in a popup
+        ({ screenshot, pageData } = await capturePopupPage(url));
+    } else if (options.quickRefresh) {
+        // bulk refresh: only screenshot the active tab, never inject or open windows
         const tabs = await chrome.tabs.query({ windowId: chrome.windows.WINDOW_ID_CURRENT, active: true })
         
         if (tabs && tabs.length && tabs[0].url === url) {
@@ -548,6 +592,20 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
             } catch (e) {
                 console.log("screenshot error: ", e.message || e)
             }
+        }
+    } else {
+        // the site is usually already open (bookmarked from the page); read images from its dom
+        const tab = await findOpenTab(url);
+        if (tab) {
+            pageData = await extractFromTab(tab.id);
+            if (tab.active) {
+                screenshot = await chrome.tabs.captureVisibleTab(tab.windowId).catch(e => {
+                    console.log("screenshot error: ", e.message || e);
+                    return null;
+                });
+            }
+        } else if (options.usePopupFallback) {
+            ({ screenshot, pageData } = await capturePopupPage(url));
         }
     }
 
@@ -561,6 +619,7 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
 			id,
 			parentId,
             screenshot,
+            pageData,
 			quickRefresh: options.quickRefresh,
 			forcePageReload: options.forcePageReload,
         }

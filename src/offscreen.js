@@ -28,10 +28,11 @@ async function handleMessages(message) {
     let thumbs = [];
     let bgColor = null;
     let pageInfo = { title: null };
+    let pageData = message.data.pageData || null;
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh, pageInfo).catch(err => {
+    let images = await fetchImages(url, quickRefresh, pageInfo, pageData).catch(err => {
         console.log(err);
     })
 
@@ -78,26 +79,6 @@ async function handleMessages(message) {
     chrome.runtime.sendMessage({target: 'background', type: 'saveThumbnails', data: {url, id, parentId, thumbs, bgColor, title: pageInfo.title}, forcePageReload});
 
       //chrome.runtime.sendMessage(images);
-}
-
-
-
-function convertUrlToAbsolute(origin, path) {
-    if (path.indexOf('://') > 0) {
-        return path
-    } else if (path.indexOf('//') === 0) {
-        return 'https:' + path;
-    } else {
-        let url = new URL(origin);
-        if (path.slice(0,1) === "/") {
-            return url.origin + path;
-        } else {
-            if (url.pathname.slice(-1) !== "/") {
-                url.pathname = url.pathname + "/";
-            }
-            return new URL(path, origin).href;
-        }
-    }
 }
 
 function colorsAreSimilar(color1, color2, tolerance = 2) {
@@ -467,20 +448,9 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
-function getPageTitle(doc) {
-    const candidates = [
-        doc.querySelector('title')?.textContent,
-        doc.querySelector('meta[property="og:title"]')?.getAttribute('content')
-    ];
-    for (const candidate of candidates) {
-        const title = candidate?.replace(/\s+/g, ' ').trim();
-        if (title) return title;
-    }
-    return null;
-}
-
-// pageInfo receives the parsed page title so it can ride along with the images
-async function fetchImages(url, quickRefresh, pageInfo = {}) {
+// pageInfo receives the page title so it can ride along with the images.
+// pageData is the collectPageImages result from a live tab; when absent the page is fetched and parsed here
+async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
     if (url.startsWith('file://')) {
         return ['img/file.png'];
@@ -499,56 +469,45 @@ async function fetchImages(url, quickRefresh, pageInfo = {}) {
     const urlObj = new URL(url);
     const hostname = urlObj.hostname;
 
-    let images = [];
+    // generic fallbacks, not evidence the scrape found anything
+    let fallbacks = [];
 
     // default favicons
-    images.push(urlObj.origin + "/favicon.ico")
+    fallbacks.push(urlObj.origin + "/favicon.ico")
     
     // amazon hack
     if (hostname.includes('amazon')) {
-        images.push('img/amazon.com.png');
+        fallbacks.push('img/amazon.com.png');
         // dont fetch other images for the root page
         if (hostname.startsWith('amazon') && hostname.length < 14) {
-            return(images);
+            return fallbacks;
         }
     } else {
         // favicon fallback
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
-        images.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
-        images.push(`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(urlObj.origin)}&size=256`);
-    }
-
-    // everything above is a generic fallback, not evidence the scrape found anything
-    const fallbackCount = images.length;
-
-    // avoid duplicates and preserve the precedence of images
-    function insert(imageUrl) {
-        let existingIndex = images.indexOf(imageUrl);
-        if (existingIndex !== -1) {
-            images.splice(existingIndex, 1);
-        }
-        images.unshift(imageUrl);
+        fallbacks.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
+        fallbacks.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
+        fallbacks.push(`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(urlObj.origin)}&size=256`);
     }
 
     const googleDriveThumbnailUrl = getGoogleDriveThumbnailUrl(urlObj);
     if (googleDriveThumbnailUrl) {
-        insert(googleDriveThumbnailUrl);
-        return images;
+        return [googleDriveThumbnailUrl, ...fallbacks];
     }
 
     if (whitelist.includes(hostname)) {
         return(['img/' + hostname + '.png']);
-    } else {
+    }
 
-         // Set up fetch timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
-        
-        try {
+    // Set up fetch timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
+
+    try {
+        if (!pageData) {
             // allows og images to work, with creds they are behind js
             const omitDomains = ['facebook.com', 'github.com'];
             const credentials = omitDomains.some(domain => hostname.endsWith(domain)) ? 'omit' : 'same-origin'; // should be include bro?
-            
+
             const response = await fetch(url, {
                 method: 'GET',
                 mode: 'cors',
@@ -556,208 +515,89 @@ async function fetchImages(url, quickRefresh, pageInfo = {}) {
                 signal: controller.signal
             });
 
-            clearTimeout(timeoutId); // Clear timeout if fetch completes in time
-            
-            // Update URL to the final redirected URL for proper relative URL resolution
-            const finalUrl = response.url;
-            if (finalUrl !== url) {
-                //console.log(`[fetchImages] URL redirected from ${url} to ${finalUrl}`);
-                url = finalUrl; // Update the base URL for relative URL conversion
-            }
-
             if (!response.ok) {
-                return(images);
+                return fallbacks;
             }
 
             const text = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
+            const doc = new DOMParser().parseFromString(text, 'text/html');
+            // resolve relative urls against the final redirected url
+            pageData = collectPageImages(doc, response.url || url);
+        }
 
-            pageInfo.title = getPageTitle(doc);
+        pageInfo.title = pageData.title || null;
 
-            // check for svg logo and convert to data url
-            let svgElements = doc.querySelectorAll('svg');
-            for (let svg of svgElements) {
-                // heuristic to find relevant svg (logo class or large size)
-                let isLogo = svg.getAttribute('aria-label')?.toLowerCase().includes(hostname.split('.')[0]) ||
-                        svg.getAttribute('class')?.toLowerCase().includes('logo') ||
-                        svg.id?.toLowerCase().includes('logo') ||
-                        (svg.getAttribute('role') === 'img' && svg.getAttribute('width') && parseInt(svg.getAttribute('width')) >= 96);
-                if (isLogo) { 
-                    try {
-                        // Convert SVG to data URL
-                        let svgString = new XMLSerializer().serializeToString(svg);
-                        let svgDataUrl = 'data:image/svg+xml;base64,' + btoa(svgString);
-                        images.push(svgDataUrl);
-                        break; // take the first svg logo we find
-                    } catch (svgError) {
-                        console.warn(`[fetchImages] Error processing SVG:`, svgError);
-                    }
-                }
-            }
+        const candidates = pageData.candidates || [];
+        let images = [...candidates, ...fallbacks];
+        if (pageData.svgLogo) {
+            images.push(pageData.svgLogo);
+        }
 
-            // get first image from page
-            let firstImage = doc.querySelector('img');
-            if (firstImage && firstImage.src) {
-                // filter known problematic images
-                const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
-                if (!filters.some(element => firstImage.src.includes(element))) {
-                    let imageUrl = convertUrlToAbsolute(url, firstImage.getAttribute('src')); // can't use .src directly in offscreen doc
-                    insert(imageUrl);
-                }
-            }
-
-            // amazon images
-            let mainImage = doc.querySelector('#main-image-container img');
-            if (mainImage && mainImage.src) {
-                // filter for 'look inside' amazon book images; grab the next image
-                if (mainImage.id === 'sitbLogoImg') {
-                    let newMainImage = doc.querySelectorAll('#main-image-container img')[1];
-                    if (newMainImage && newMainImage.src && newMainImage.id !== 'sitbLogoImg') {
-                        insert(newMainImage.src);
-                    }
-                } else {
-                    insert(mainImage.src);
-                }
-            }
-
-            // icon sizes
-            let sizes = [
-                "512x512",
-                "256x256",
-                "192x192",
-                "180x180",
-                "144x144",
-                "96x96"
-            ];
-
-            // get apple touch icon
-            let appleIcon = doc.querySelector('link[rel="apple-touch-icon"]');
-            if (appleIcon && appleIcon.getAttribute('href')) {
-                let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                insert(imageUrl);
-            }
-
-            // get x-icon
-            let xIcon = doc.querySelector('link[rel="icon"]');
-            if (xIcon && xIcon.getAttribute('href')) {
-                let imageUrl = convertUrlToAbsolute(url, xIcon.getAttribute('href'));
-                insert(imageUrl);
-            }
-            
-            // get large apple touch icon
-            for (let size of sizes) {
-                let appleIcon = doc.querySelector(`link[rel="apple-touch-icon"][sizes="${size}"]`);
-                if (appleIcon && appleIcon.getAttribute('href')) {
-                    let imageUrl = convertUrlToAbsolute(url, appleIcon.getAttribute('href'));
-                    insert(imageUrl);
-                    break;
-                }
-            }
-
-            // get large x-icon
-            for (let size of sizes) {
-                let icon = doc.querySelector(`link[rel="icon"][sizes="${size}"]`);
-                if (icon && icon.getAttribute('href')) {
-                    let imageUrl = convertUrlToAbsolute(url, icon.getAttribute('href'));
-                    insert(imageUrl);
-                    break;
-                }
-            }
-
-            // get structured data images (schema.org microdata)
-            let structuredImages = doc.querySelectorAll('meta[itemprop="image"]');
-            for (let meta of structuredImages) {
-                let content = meta.getAttribute('content');
-                if (content) {
-                    let imageUrl = convertUrlToAbsolute(url, content);
-                    insert(imageUrl);
-                    break;
-                }
-            }
-
-            // get open graph images
-            let metas = doc.getElementsByTagName("meta");
-            for (let meta of metas) {
-                const ogType = meta.getAttribute("property") || meta.getAttribute("name");
-                if (ogType?.toLowerCase() === "og:image" && meta.getAttribute("content")) {
-                    let imageUrl = convertUrlToAbsolute(url, meta.getAttribute("content"));
-                    insert(imageUrl);
-                }
-            }
-
-            // if we havent had much luck with images, lets check the manifest and style sheets
-            // we dont do so during a quick refresh to avoid fetching extra resources
-            if (images.length === fallbackCount && !quickRefresh) {
-                // web application manifest icon
-                let manifestLink = doc.querySelector('link[rel="manifest"]');
-                if (manifestLink && manifestLink.getAttribute('href')) {
-                    try {
-                        let manifestUrl = convertUrlToAbsolute(url, manifestLink.getAttribute('href'));
-                        const manifestResponse = await fetch(manifestUrl, {
-                            signal: controller.signal
-                        });
-                        if (manifestResponse.ok) {
-                            const manifest = await manifestResponse.json();
-                            if (manifest.icons && Array.isArray(manifest.icons)) {
-                                // Sort icons by size (largest first) and get the best ones
-                                const sortedIcons = manifest.icons
-                                    .filter(icon => icon.src) // Only icons with src
-                                    .sort((a, b) => {
-                                        // Extract numeric size for comparison
-                                        const getSizeValue = (sizes) => {
-                                            if (!sizes) return 0;
-                                            const match = sizes.match(/(\d+)x(\d+)/);
-                                            return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
-                                        };
-                                        return getSizeValue(b.sizes) - getSizeValue(a.sizes);
-                                    });
-                                // take the largest
-                                if (sortedIcons.length > 0) {
-                                    let iconUrl = convertUrlToAbsolute(manifestUrl, sortedIcons[0].src);
-                                    images.push(iconUrl);
-                                }
+        // if we havent had much luck with images, lets check the manifest and style sheets
+        // we dont do so during a quick refresh to avoid fetching extra resources
+        if (!candidates.length && !quickRefresh) {
+            // web application manifest icon
+            if (pageData.manifestUrl) {
+                try {
+                    const manifestResponse = await fetch(pageData.manifestUrl, {
+                        signal: controller.signal
+                    });
+                    if (manifestResponse.ok) {
+                        const manifest = await manifestResponse.json();
+                        if (manifest.icons && Array.isArray(manifest.icons)) {
+                            // Sort icons by size (largest first) and get the best ones
+                            const sortedIcons = manifest.icons
+                                .filter(icon => icon.src) // Only icons with src
+                                .sort((a, b) => {
+                                    // Extract numeric size for comparison
+                                    const getSizeValue = (sizes) => {
+                                        if (!sizes) return 0;
+                                        const match = sizes.match(/(\d+)x(\d+)/);
+                                        return match ? parseInt(match[1]) * parseInt(match[2]) : 0;
+                                    };
+                                    return getSizeValue(b.sizes) - getSizeValue(a.sizes);
+                                });
+                            // take the largest
+                            if (sortedIcons.length > 0) {
+                                images.push(new URL(sortedIcons[0].src, pageData.manifestUrl).href);
                             }
                         }
-                    } catch (manifestError) {
-                        console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
                     }
-                }
-
-                const stylesheetLinks = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
-                .map(stylesheet => convertUrlToAbsolute(url, stylesheet.getAttribute('href')));
-            
-                for (const sheetUrl of stylesheetLinks) {
-                    try {
-                        const cssResponse = await fetch(sheetUrl, {
-                            signal: controller.signal
-                        });
-                        if (!cssResponse.ok) throw new Error(`failed to fetch css`);
-                        const cssText = await cssResponse.text();
-                        const cssImages = extractBackgroundImages(cssText)
-                            .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
-
-                        if (cssImages.length) {
-                            // todo: fix the absolute url conversion -- i think urls that jump a couple of levels are busted
-                            cssImages.forEach(cssImage => {
-                                images.push(convertUrlToAbsolute(sheetUrl, cssImage));
-                            });
-                        }
-
-                    } catch (err) {
-                        console.warn(`Could not fetch stylesheet: ${sheetUrl}`, err);
-                    }
+                } catch (manifestError) {
+                    console.warn(`[fetchImages] Error fetching manifest:`, manifestError);
                 }
             }
 
-            return images;
+            for (const sheetUrl of pageData.stylesheets || []) {
+                try {
+                    const cssResponse = await fetch(sheetUrl, {
+                        signal: controller.signal
+                    });
+                    if (!cssResponse.ok) throw new Error(`failed to fetch css`);
+                    const cssText = await cssResponse.text();
+                    const cssImages = extractBackgroundImages(cssText)
+                        .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
 
-        } catch (error) {
-            //console.log("fetch error: ", error)
-            // return the images we have:
-            return images;
-        } finally {
-            clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
+                    cssImages.forEach(cssImage => {
+                        try {
+                            images.push(new URL(cssImage, sheetUrl).href);
+                        } catch (err) {}
+                    });
+
+                } catch (err) {
+                    console.warn(`Could not fetch stylesheet: ${sheetUrl}`, err);
+                }
+            }
         }
+
+        return [...new Set(images)];
+
+    } catch (error) {
+        //console.log("fetch error: ", error)
+        // return the images we have:
+        return fallbacks;
+    } finally {
+        clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
     }
 }
+
