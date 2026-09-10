@@ -46,9 +46,15 @@ async function handleMessages(message) {
     }
 
     if (groups && groups.length) {
-        const winners = await Promise.all(groups.map(group => firstUsable(group, topCropGoogleThumb)));
-        // one image per category; collapses across categories when e.g. the og image is the logo
-        thumbs = await dedupeByAppearance(winners.filter(Boolean));
+        const [contextual = [], brand = [], heuristic = []] = groups;
+        // two contextual picks so a generic og card cant shut out a relevant twitter/json-ld image
+        const winners = (await Promise.all([
+            pickUsable(contextual, 2, topCropGoogleThumb),
+            pickUsable(brand, 1, topCropGoogleThumb),
+            pickUsable(heuristic, 1, topCropGoogleThumb)
+        ])).flat();
+        // collapses across categories when e.g. the og image is the logo
+        thumbs = await dedupeByAppearance(winners);
     }
 
     // the screenshot always takes the last slot
@@ -132,17 +138,20 @@ function hammingDistance(a, b) {
     return bits;
 }
 
-// candidates in a group are ranked best first, so the first one that decodes wins.
+// candidates in a group are ranked best first; walks them in order until `keep` distinct ones have decoded.
 // resizeImage drops anything under 96px, so tiny favicons fall through to the next candidate
-async function firstUsable(group, topCropGoogleThumb) {
+async function pickUsable(group, keep, topCropGoogleThumb) {
+    let picked = [];
     for (const image of group) {
+        if (picked.length >= keep) break;
         const topCrop = topCropGoogleThumb && typeof image === 'string' && image.startsWith('https://drive.google.com/thumbnail?id=');
         const thumb = await resizeImage(image, false, false, topCrop).catch(err => {
             console.log(err);
         });
-        if (thumb) return thumb;
+        if (!thumb) continue;
+        picked = picked.length ? await dedupeByAppearance([...picked, thumb]) : [thumb];
     }
-    return null;
+    return picked;
 }
 
 // collapses images that look alike into the slot of the highest ranked one, keeping the largest
@@ -505,7 +514,7 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
-// resolves to ranked candidate groups [contextual, brand, heuristic]; the caller keeps one image per group.
+// resolves to ranked candidate groups [contextual, brand, heuristic]; the caller keeps only the top pick or two of each.
 // pageInfo receives the page title so it can ride along with the images.
 // pageData is the collectPageImages result from a live tab; when absent the page is fetched and parsed here
 async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
@@ -542,9 +551,8 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
         }
     } else {
         // favicon fallback
-        fallbacks.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/logo/fallback/404/?c=key`);
-        fallbacks.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/icon/fallback/404/?c=key`);
         fallbacks.push(`https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${encodeURIComponent(urlObj.origin)}&size=256`);
+        fallbacks.push(`https://cdn.brandfetch.io/domain/${hostname}/w/512/fallback/404/?c=key`);
     }
 
     const googleDriveThumbnailUrl = getGoogleDriveThumbnailUrl(urlObj);
@@ -672,7 +680,9 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
             brand.push(svgLogo);
         }
 
-        return [contextual, brand, heuristic].map(group => [...new Set(group)]);
+        // a random page image is as likely noise as signal, so it only fills in when the page itself offered nothing better
+        const pageHit = contextual.length || pageIcons.length;
+        return [contextual, brand, pageHit ? [] : heuristic].map(group => [...new Set(group)]);
 
     } catch (error) {
         //console.log("fetch error: ", error)

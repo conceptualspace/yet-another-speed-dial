@@ -7,7 +7,7 @@
 // content script world persists per tab and re-injection would trip on const/let.
 
 function collectPageImages(doc, baseUrl) {
-    // ranked best first within each group; the caller keeps one image per group
+    // ranked best first within each group; the caller keeps only the top pick or two of each
     const contextual = []; // og, twitter card, json-ld, microdata, product image
     const brand = []; // icons
     const heuristic = []; // largest and first <img>
