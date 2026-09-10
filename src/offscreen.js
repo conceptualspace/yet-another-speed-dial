@@ -24,7 +24,6 @@ async function handleMessages(message) {
     let forcePageReload = message.data.forcePageReload;
     let id = message.data.id;
     let parentId = message.data.parentId;
-    let resizedImages = [];
     let thumbs = [];
     let bgColor = null;
     let pageInfo = { title: null };
@@ -32,21 +31,11 @@ async function handleMessages(message) {
 
     let url = message.data.url;
 
-    let images = await fetchImages(url, quickRefresh, pageInfo, pageData).catch(err => {
+    let groups = await fetchImages(url, quickRefresh, pageInfo, pageData).catch(err => {
         console.log(err);
     })
 
     const topCropGoogleThumb = shouldTopCropGoogleThumb(url);
-
-    if (images && images.length) {
-        resizedImages = await Promise.all(images.map(async (image, index) => {
-            const topCrop = topCropGoogleThumb && typeof image === 'string' && image.startsWith('https://drive.google.com/thumbnail?id=');
-            const result = await resizeImage(image, false, false, topCrop).catch(err => {
-                console.log(err);
-            });
-            return result
-        }))
-    }
 
     let processedScreenshot = null;
     if (screenshot) {
@@ -56,20 +45,15 @@ async function handleMessages(message) {
         });
     }
 
-    if (resizedImages && resizedImages.length) {
-        // the screenshot, when present, takes the last of 5 slots
-        const maxWebpageImages = processedScreenshot ? 4 : 5;
-        // dedupe before capping so a dropped lookalike frees its slot for the next candidate
-        const unique = await dedupeByAppearance(resizedImages.filter(item => item));
-        thumbs = unique.slice(0, maxWebpageImages);
-        
-        // Always add the screenshot as the last image if available
-        if (processedScreenshot) {
-            thumbs.push(processedScreenshot);
-        }
-    } else if (processedScreenshot) {
-        // No webpage images, but we have a screenshot
-        thumbs = [processedScreenshot];
+    if (groups && groups.length) {
+        const winners = await Promise.all(groups.map(group => firstUsable(group, topCropGoogleThumb)));
+        // one image per category; collapses across categories when e.g. the og image is the logo
+        thumbs = await dedupeByAppearance(winners.filter(Boolean));
+    }
+
+    // the screenshot always takes the last slot
+    if (processedScreenshot) {
+        thumbs.push(processedScreenshot);
     }
 
     if (thumbs.length) {
@@ -146,6 +130,19 @@ function hammingDistance(a, b) {
     let bits = 0;
     for (let x = a ^ b; x; x >>= 1n) bits += Number(x & 1n);
     return bits;
+}
+
+// candidates in a group are ranked best first, so the first one that decodes wins.
+// resizeImage drops anything under 96px, so tiny favicons fall through to the next candidate
+async function firstUsable(group, topCropGoogleThumb) {
+    for (const image of group) {
+        const topCrop = topCropGoogleThumb && typeof image === 'string' && image.startsWith('https://drive.google.com/thumbnail?id=');
+        const thumb = await resizeImage(image, false, false, topCrop).catch(err => {
+            console.log(err);
+        });
+        if (thumb) return thumb;
+    }
+    return null;
 }
 
 // collapses images that look alike into the slot of the highest ranked one, keeping the largest
@@ -508,15 +505,16 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
+// resolves to ranked candidate groups [contextual, brand, heuristic]; the caller keeps one image per group.
 // pageInfo receives the page title so it can ride along with the images.
 // pageData is the collectPageImages result from a live tab; when absent the page is fetched and parsed here
 async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
     if (url.startsWith('file://')) {
-        return ['img/file.png'];
+        return [['img/file.png']];
     }
     if (url.startsWith('chrome://')) {
-        return ['img/widget.png'];
+        return [['img/widget.png']];
     }
 
     const whitelist = [
@@ -540,7 +538,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
         fallbacks.push('img/amazon.com.png');
         // dont fetch other images for the root page
         if (hostname.startsWith('amazon') && hostname.length < 14) {
-            return fallbacks;
+            return [fallbacks];
         }
     } else {
         // favicon fallback
@@ -551,11 +549,11 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
     const googleDriveThumbnailUrl = getGoogleDriveThumbnailUrl(urlObj);
     if (googleDriveThumbnailUrl) {
-        return [googleDriveThumbnailUrl, ...fallbacks];
+        return [[googleDriveThumbnailUrl], fallbacks];
     }
 
     if (whitelist.includes(hostname)) {
-        return(['img/' + hostname + '.png']);
+        return [['img/' + hostname + '.png']];
     }
 
     // Set up fetch timeout
@@ -596,7 +594,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
             if (!pageData) {
                 if (!liveData) {
-                    return fallbacks;
+                    return [fallbacks];
                 }
                 pageData = liveData;
                 liveData = null;
@@ -605,16 +603,16 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
         pageInfo.title = pageData.title || liveData?.title || null;
 
-        const candidates = [...(pageData.candidates || []), ...(liveData?.candidates || [])];
-        let images = [...candidates, ...fallbacks];
+        const merge = (key) => [...(pageData[key] || []), ...(liveData?.[key] || [])];
+        const contextual = merge('contextual');
+        const pageIcons = merge('brand');
+        const heuristic = merge('heuristic');
+        const brand = [...pageIcons, ...fallbacks];
         const svgLogo = pageData.svgLogo || liveData?.svgLogo;
-        if (svgLogo) {
-            images.push(svgLogo);
-        }
 
         // if we havent had much luck with images, lets check the manifest and style sheets
         // we dont do so during a quick refresh to avoid fetching extra resources
-        if (!candidates.length && !quickRefresh) {
+        if (!contextual.length && !pageIcons.length && !heuristic.length && !quickRefresh) {
             // web application manifest icon
             if (pageData.manifestUrl) {
                 try {
@@ -638,7 +636,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
                                 });
                             // take the largest
                             if (sortedIcons.length > 0) {
-                                images.push(new URL(sortedIcons[0].src, pageData.manifestUrl).href);
+                                brand.push(new URL(sortedIcons[0].src, pageData.manifestUrl).href);
                             }
                         }
                     }
@@ -659,7 +657,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
 
                     cssImages.forEach(cssImage => {
                         try {
-                            images.push(new URL(cssImage, sheetUrl).href);
+                            heuristic.push(new URL(cssImage, sheetUrl).href);
                         } catch (err) {}
                     });
 
@@ -669,12 +667,17 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
             }
         }
 
-        return [...new Set(images)];
+        // inline svg logo ranks last: it is a weak heuristic
+        if (svgLogo) {
+            brand.push(svgLogo);
+        }
+
+        return [contextual, brand, heuristic].map(group => [...new Set(group)]);
 
     } catch (error) {
         //console.log("fetch error: ", error)
         // return the images we have:
-        return fallbacks;
+        return [fallbacks];
     } finally {
         clearTimeout(timeoutId); // Ensure timeout is cleared in case of early exit
     }

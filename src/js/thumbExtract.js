@@ -7,9 +7,12 @@
 // content script world persists per tab and re-injection would trip on const/let.
 
 function collectPageImages(doc, baseUrl) {
-    const candidates = [];
+    // ranked best first within each group; the caller keeps one image per group
+    const contextual = []; // og, twitter card, json-ld, microdata, product image
+    const brand = []; // icons
+    const heuristic = []; // largest and first <img>
     const seen = new Set();
-    const maxCandidates = 8;
+    const maxPerGroup = 4;
     // known junk that shows up as the first <img> on some sites
     const filters = ['fxxj3ttftm5ltcqnto1o4baovyl', 'nav-sprite-global'];
 
@@ -28,12 +31,12 @@ function collectPageImages(doc, baseUrl) {
         }
     }
 
-    function add(value) {
-        if (candidates.length >= maxCandidates) return;
+    function add(list, value) {
+        if (list.length >= maxPerGroup) return;
         const href = resolve(value);
         if (!href || seen.has(href) || filters.some(filter => href.includes(filter))) return;
         seen.add(href);
-        candidates.push(href);
+        list.push(href);
     }
 
     // currentSrc is only populated on a live document
@@ -124,11 +127,11 @@ function collectPageImages(doc, baseUrl) {
     if (!staleMetadata) {
         // open graph
         for (const meta of doc.querySelectorAll('meta[property="og:image" i], meta[name="og:image" i], meta[property="og:image:secure_url" i]')) {
-            add(meta.getAttribute('content'));
+            add(contextual, meta.getAttribute('content'));
         }
 
         // twitter card
-        add(doc.querySelector('meta[name="twitter:image" i], meta[property="twitter:image" i], meta[name="twitter:image:src" i]')?.getAttribute('content'));
+        add(contextual, doc.querySelector('meta[name="twitter:image" i], meta[property="twitter:image" i], meta[name="twitter:image:src" i]')?.getAttribute('content'));
 
         // json-ld: one image for the main entity, typically the product or recipe when there is no og:image
         for (const script of doc.querySelectorAll('script[type="application/ld+json" i]')) {
@@ -139,19 +142,19 @@ function collectPageImages(doc, baseUrl) {
                 // malformed json-ld is common; ignore it
             }
             if (image) {
-                add(image);
+                add(contextual, image);
                 break;
             }
         }
 
         // schema.org microdata
-        add(doc.querySelector('meta[itemprop="image"]')?.getAttribute('content'));
+        add(contextual, doc.querySelector('meta[itemprop="image"]')?.getAttribute('content'));
     }
 
     // amazon product image, skipping the 'look inside' badge on books
     const mainImage = [...doc.querySelectorAll('#main-image-container img')].find(img => img.id !== 'sitbLogoImg');
     if (mainImage) {
-        add(imageSource(mainImage));
+        add(contextual, imageSource(mainImage));
     }
 
     // icons
@@ -159,11 +162,11 @@ function collectPageImages(doc, baseUrl) {
     const appleIcons = [...doc.querySelectorAll('link[rel~="apple-touch-icon" i], link[rel~="apple-touch-icon-precomposed" i]')];
     const largeIcon = largestIcon(icons);
     const largeAppleIcon = largestIcon(appleIcons);
-    if (largeIcon) add(largeIcon.getAttribute('href'));
-    if (largeAppleIcon) add(largeAppleIcon.getAttribute('href'));
+    if (largeIcon) add(brand, largeIcon.getAttribute('href'));
+    if (largeAppleIcon) add(brand, largeAppleIcon.getAttribute('href'));
     // apple touch icons default to 180px, so they rank above generic favicons
-    if (appleIcons[0]) add(appleIcons[0].getAttribute('href'));
-    if (icons[0]) add(icons[0].getAttribute('href'));
+    if (appleIcons[0]) add(brand, appleIcons[0].getAttribute('href'));
+    if (icons[0]) add(brand, icons[0].getAttribute('href'));
 
     // largest image rendered in the viewport; only possible on a live document
     if (!mainImage && win && win.innerWidth) {
@@ -180,7 +183,7 @@ function collectPageImages(doc, baseUrl) {
             }
         }
         if (best) {
-            add(imageSource(best));
+            add(heuristic, imageSource(best));
         }
     }
 
@@ -189,7 +192,7 @@ function collectPageImages(doc, baseUrl) {
         for (const img of doc.querySelectorAll('img')) {
             const src = imageSource(img);
             if (src && !filters.some(filter => src.includes(filter))) {
-                add(src);
+                add(heuristic, src);
                 break;
             }
         }
@@ -226,5 +229,5 @@ function collectPageImages(doc, baseUrl) {
         .map(link => resolve(link.getAttribute('href')))
         .filter(Boolean);
 
-    return { title, candidates, svgLogo, manifestUrl, stylesheets, staleMetadata };
+    return { title, contextual, brand, heuristic, svgLogo, manifestUrl, stylesheets, staleMetadata };
 }
