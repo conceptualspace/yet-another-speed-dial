@@ -204,9 +204,11 @@ function collectPageImages(doc, baseUrl) {
     let svgLogo = null;
     const siteName = hostname.split('.')[0];
     for (const svg of doc.querySelectorAll('svg')) {
+        const hasLogoLink = svg.closest('a[class*="logo" i], a[id*="logo" i], a[aria-label*="logo" i]');
         const isLogo = (siteName && svg.getAttribute('aria-label')?.toLowerCase().includes(siteName)) ||
             svg.getAttribute('class')?.toLowerCase().includes('logo') ||
             svg.id?.toLowerCase().includes('logo') ||
+            hasLogoLink ||
             (svg.getAttribute('role') === 'img' && parseInt(svg.getAttribute('width'), 10) >= 96);
         if (isLogo) {
             try {
