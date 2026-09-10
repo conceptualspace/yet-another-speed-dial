@@ -154,6 +154,17 @@ function collectPageImages(doc, baseUrl) {
         add(imageSource(mainImage));
     }
 
+    // icons
+    const icons = [...doc.querySelectorAll('link[rel~="icon" i]')];
+    const appleIcons = [...doc.querySelectorAll('link[rel~="apple-touch-icon" i], link[rel~="apple-touch-icon-precomposed" i]')];
+    const largeIcon = largestIcon(icons);
+    const largeAppleIcon = largestIcon(appleIcons);
+    if (largeIcon) add(largeIcon.getAttribute('href'));
+    if (largeAppleIcon) add(largeAppleIcon.getAttribute('href'));
+    // apple touch icons default to 180px, so they rank above generic favicons
+    if (appleIcons[0]) add(appleIcons[0].getAttribute('href'));
+    if (icons[0]) add(icons[0].getAttribute('href'));
+
     // largest image rendered in the viewport; only possible on a live document
     if (!mainImage && win && win.innerWidth) {
         let best = null;
@@ -172,17 +183,6 @@ function collectPageImages(doc, baseUrl) {
             add(imageSource(best));
         }
     }
-
-    // icons
-    const icons = [...doc.querySelectorAll('link[rel~="icon" i]')];
-    const appleIcons = [...doc.querySelectorAll('link[rel~="apple-touch-icon" i], link[rel~="apple-touch-icon-precomposed" i]')];
-    const largeIcon = largestIcon(icons);
-    const largeAppleIcon = largestIcon(appleIcons);
-    if (largeIcon) add(largeIcon.getAttribute('href'));
-    if (largeAppleIcon) add(largeAppleIcon.getAttribute('href'));
-    // apple touch icons default to 180px, so they rank above generic favicons
-    if (appleIcons[0]) add(appleIcons[0].getAttribute('href'));
-    if (icons[0]) add(icons[0].getAttribute('href'));
 
     // first usable image on the page
     if (!mainImage) {
