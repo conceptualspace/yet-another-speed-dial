@@ -120,6 +120,8 @@ function perceptualHash(dataUri) {
                 // transparent icons would otherwise hash as solid black
                 ctx.fillStyle = '#fff';
                 ctx.fillRect(0, 0, 9, 8);
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(img, 0, 0, 9, 8);
                 const { data } = ctx.getImageData(0, 0, 9, 8);
                 const gray = (i) => data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
@@ -147,9 +149,7 @@ function hammingDistance(a, b) {
 }
 
 // collapses images that look alike into the slot of the highest ranked one, keeping the largest
-// file (small icons are upscaled at render). same picture at two sizes has landed at 0-7 so far,
-// the nearest genuinely different image at 19
-async function dedupeByAppearance(thumbs, threshold = 7) {
+async function dedupeByAppearance(thumbs, threshold = 10) {
     const hashed = await Promise.all(thumbs.map(perceptualHash));
     const kept = [];
     thumbs.forEach((thumb, index) => {
