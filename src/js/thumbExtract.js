@@ -10,7 +10,7 @@ function collectPageImages(doc, baseUrl) {
     // ranked best first within each group; the caller keeps only the top pick or two of each
     const contextual = []; // og, twitter card, json-ld, microdata, product image
     const brand = []; // icons
-    const heuristic = []; // largest and first <img>
+    const heuristic = []; // largest <img> in the viewport
     const seen = new Set();
     const maxPerGroup = 4;
     // known junk that shows up as the first <img> on some sites
@@ -187,12 +187,14 @@ function collectPageImages(doc, baseUrl) {
         }
     }
 
-    // first usable image on the page
+    // first usable image on the page; on most sites this is the header logo, so the caller ranks it with the brand fallbacks
+    let firstImage = null;
     if (!mainImage) {
         for (const img of doc.querySelectorAll('img')) {
             const src = imageSource(img);
             if (src && !filters.some(filter => src.includes(filter))) {
-                add(heuristic, src);
+                const href = resolve(src);
+                if (href && !seen.has(href)) firstImage = href;
                 break;
             }
         }
@@ -229,5 +231,5 @@ function collectPageImages(doc, baseUrl) {
         .map(link => resolve(link.getAttribute('href')))
         .filter(Boolean);
 
-    return { title, contextual, brand, heuristic, svgLogo, manifestUrl, stylesheets, staleMetadata };
+    return { title, contextual, brand, heuristic, firstImage, svgLogo, manifestUrl, stylesheets, staleMetadata };
 }

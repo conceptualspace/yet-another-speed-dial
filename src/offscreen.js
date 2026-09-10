@@ -616,11 +616,12 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
         const pageIcons = merge('brand');
         const heuristic = merge('heuristic');
         const brand = [...pageIcons, ...fallbacks];
+        const firstImage = pageData.firstImage || liveData?.firstImage;
         const svgLogo = pageData.svgLogo || liveData?.svgLogo;
 
         // if we havent had much luck with images, lets check the manifest and style sheets
         // we dont do so during a quick refresh to avoid fetching extra resources
-        if (!contextual.length && !pageIcons.length && !heuristic.length && !quickRefresh) {
+        if (!contextual.length && !pageIcons.length && !heuristic.length && !firstImage && !quickRefresh) {
             // web application manifest icon
             if (pageData.manifestUrl) {
                 try {
@@ -675,14 +676,17 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
             }
         }
 
-        // inline svg logo ranks last: it is a weak heuristic
+        // the header image and inline svg logo are heuristics, so they rank behind the fallbacks
+        if (firstImage) {
+            brand.push(firstImage);
+        }
         if (svgLogo) {
             brand.push(svgLogo);
         }
 
-        // a random page image is as likely noise as signal, so it only fills in when the page itself offered nothing better
-        const pageHit = contextual.length || pageIcons.length;
-        return [contextual, brand, pageHit ? [] : heuristic].map(group => [...new Set(group)]);
+        // a random page image is as likely noise as signal, so it only fills in when the page offered nothing contextual.
+        // icons dont count: nearly every site has them and a logo says nothing about the page
+        return [contextual, brand, contextual.length ? [] : heuristic].map(group => [...new Set(group)]);
 
     } catch (error) {
         //console.log("fetch error: ", error)
