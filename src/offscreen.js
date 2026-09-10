@@ -664,7 +664,7 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
                     const cssResponse = await fetch(sheetUrl, {
                         signal: controller.signal
                     });
-                    if (!cssResponse.ok) throw new Error(`failed to fetch css`);
+                    if (!cssResponse.ok) continue;
                     const cssText = await cssResponse.text();
                     const cssImages = extractBackgroundImages(cssText)
                         .filter(image => /logo|icon|splash|hero|main/i.test(image)); // heuristic filter for icon
