@@ -155,7 +155,7 @@ function collectPageImages(doc, baseUrl) {
     }
 
     // largest image rendered in the viewport; only possible on a live document
-    if (win && win.innerWidth) {
+    if (!mainImage && win && win.innerWidth) {
         let best = null;
         let bestArea = 0;
         for (const img of doc.querySelectorAll('img')) {
@@ -185,11 +185,13 @@ function collectPageImages(doc, baseUrl) {
     if (icons[0]) add(icons[0].getAttribute('href'));
 
     // first usable image on the page
-    for (const img of doc.querySelectorAll('img')) {
-        const src = imageSource(img);
-        if (src && !filters.some(filter => src.includes(filter))) {
-            add(src);
-            break;
+    if (!mainImage) {
+        for (const img of doc.querySelectorAll('img')) {
+            const src = imageSource(img);
+            if (src && !filters.some(filter => src.includes(filter))) {
+                add(src);
+                break;
+            }
         }
     }
 
