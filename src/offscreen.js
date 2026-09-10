@@ -514,6 +514,11 @@ function shouldTopCropGoogleThumb(url) {
     }
 }
 
+function hasUsefulLiveImages(pageData) {
+    // todo maybe just look at pageData.contextual? as enough to trigger the second fetch
+    return Boolean(pageData.contextual?.length || pageData.heuristic?.length);
+}
+
 // resolves to ranked candidate groups [contextual, brand, heuristic]; the caller keeps only the top pick or two of each.
 // pageInfo receives the page title so it can ride along with the images.
 // pageData is the collectPageImages result from a live tab; when absent the page is fetched and parsed here
@@ -568,10 +573,10 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), quickRefresh ? 3000 : 4000);
 
-    // a live tab whose <head> is stale (spa navigation) still contributes its rendered images,
-    // but the metadata comes from a fresh fetch of the url
+    // a live tab still contributes its rendered images, but fetch fresh metadata when its head is stale
+    // or it has neither a contextual image nor a strong rendered-page candidate
     let liveData = null;
-    if (pageData && pageData.staleMetadata) {
+    if (pageData && (pageData.staleMetadata || !hasUsefulLiveImages(pageData))) {
         liveData = pageData;
         pageData = null;
     }
