@@ -3,6 +3,8 @@
     padding: 14px 25px;
     height: 100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 #settingsDiv {
@@ -27,6 +29,10 @@
 .sidenav hr {
     margin: 1em 0;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidenav #switchesContainer hr:last-of-type {
+    margin-top: auto;
 }
 
 .sidenav .settingsBrand {
@@ -136,6 +142,9 @@
 
 .sidenav #switchesContainer {
     transition: all 160ms ease;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidenav .row {
