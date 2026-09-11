@@ -4904,6 +4904,7 @@ function init() {
 
     new Sortable(foldersContainer, {
         animation: 150,
+        direction: 'horizontal',
         forceFallback: true,
         fallbackTolerance: 4,
         filter: "#homeFolderLink, .folderBreadcrumbSeparator, .folderBreadcrumbLink, .folderBreadcrumbCurrent",
