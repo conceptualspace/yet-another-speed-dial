@@ -189,6 +189,7 @@ h1 {
     overflow-x: hidden;
     overflow-y: auto;
     overflow-anchor: none;
+    scrollbar-gutter: stable both-edges;
     scrollbar-color: rgba(255,255,255,0.4) rgba(0,0,0,0.2);
     scrollbar-width: thin;
 }
