@@ -26,8 +26,7 @@
 
 .sidenav hr {
     margin: 1em 0;
-    border: 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidenav .settingsBrand {
@@ -47,29 +46,6 @@
 .sidenav .settingsBrandIcon {
     width: 20px;
     height: 20px;
-}
-
-.sidenav .settingsAction {
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 2.5em;
-    padding: 0.6em;
-    background-color: #1a1a1a;
-    border-radius: 10px;
-    color: #cccccc;
-    cursor: pointer;
-    text-align: center;
-    transition: background-color 200ms ease;
-}
-
-.sidenav .settingsAction:hover {
-    background-color: #202020;
-}
-
-.sidenav .settingsActionDanger {
-    color: #cc6666;
 }
 
 .sidenav div {
@@ -333,19 +309,6 @@
 .lightMode .sidenav .closeBtn,
 .lightMode .settingsLink {
     color: #666666;
-}
-
-.lightMode .sidenav .settingsAction {
-    background-color: #eeeeee;
-    color: #555555;
-}
-
-.lightMode .sidenav .settingsAction:hover {
-    background-color: #e0e0e0;
-}
-
-.lightMode .sidenav .settingsActionDanger {
-    color: #b85050;
 }
 
 .lightMode .sidenav .closeBtn:hover,
