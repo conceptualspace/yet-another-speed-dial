@@ -468,7 +468,8 @@ async function handleInstalled(details) {
         // set uninstall URL
         chrome.runtime.setUninstallURL("https://forms.gle/6vJPx6eaMV5xuxQk9");
         // a synced speed dial folder may already exist; its dials have no thumbnails on this device yet
-        captureMissingSpeedDialThumbnails().catch(err => console.log(err));
+        // todo: prompt user first
+        // captureMissingSpeedDialThumbnails().catch(err => console.log(err));
     } else if (details.reason === 'update') {
         // perform any migrations here...
         await runMigrations(details.previousVersion);
