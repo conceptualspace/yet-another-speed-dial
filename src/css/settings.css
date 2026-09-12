@@ -239,6 +239,7 @@
     width: 50px;
     height: 24px;
     border: none;
+    cursor: pointer;
 }
 
 .sidenav #color-picker-wrapper {
