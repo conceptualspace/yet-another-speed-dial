@@ -280,6 +280,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: background-color 360ms, color 360ms;
 }
 
 .settingsLink {
