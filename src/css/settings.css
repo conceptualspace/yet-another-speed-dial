@@ -32,8 +32,8 @@
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.sidenav #switchesContainer hr:last-of-type {
-    margin-top: auto;
+.sidenav .settingsFooterSpacer {
+    flex: 1 0 0;
 }
 
 .sidenav .settingsBrand {
@@ -288,6 +288,17 @@
 .settingsLink {
     height: 25px;
     color: #aaaaaa;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.settingsLinkIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    fill: currentColor;
 }
 
 .settingsLink:hover {
