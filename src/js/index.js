@@ -113,6 +113,7 @@ const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const previewOverlay = document.getElementById("previewOverlay");
 const switchesContainer = document.getElementById("switchesContainer");
+const settingsBrand = document.querySelector(".settingsBrand");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
@@ -2899,12 +2900,15 @@ function applySettings(options = {}) {
                     backgroundColorContainer.style.display = "none";
                     previewContainer.style.opacity = '1';
                     switchesContainer.style.transform = "translateY(0)";
+                    settingsBrand.style.transform = "translateY(0)";
 
                     //backgroundColorContainer.style.display = 'none';
                 } else {
+                    const previewHeight = previewContainer.offsetHeight;
                     backgroundColorContainer.style.display = "flex";
                     previewContainer.style.opacity = '0';
-                    switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
+                    switchesContainer.style.transform = `translateY(-${previewHeight}px)`;
+                    settingsBrand.style.transform = `translateY(${previewHeight}px)`;
                 }
             }
             imgPreview.onerror = function (e) {

@@ -41,6 +41,7 @@
     color: #888888;
     font-size: small;
     text-align: center;
+    transition: transform 160ms ease;
 }
 
 .sidenav .settingsBrandHeader {
