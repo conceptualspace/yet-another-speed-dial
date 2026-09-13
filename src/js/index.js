@@ -133,6 +133,7 @@ const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabelText = document.getElementById("importFileLabelText");
 const helpBtn = document.getElementById("help");
+const websiteBrand = document.getElementById("websiteBrand");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
@@ -238,6 +239,7 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const websiteUrl = 'https://www.yetanotherspeeddial.com';
 let isToastVisible = false;
 
 let defaults = {
@@ -3612,8 +3614,12 @@ importExportBtn.onclick = function () {
     openImportExportModal();
 }
 
-helpBtn.onclick = function () {
+const openHelp = function () {
     chrome.tabs.create({ url: helpUrl });
+}
+helpBtn.onclick = openHelp;
+websiteBrand.onclick = function () {
+    chrome.tabs.create({ url: websiteUrl });
 }
 
 resetSettingsBtn.onclick = function () {
