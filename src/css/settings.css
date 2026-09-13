@@ -37,9 +37,10 @@
 }
 
 .sidenav .settingsBrand {
-    padding: 0.75em 0 0;
+    padding: 0.4em 0 0;
     color: #888888;
-    font-size: small;
+    font-size: 11px;
+    opacity: 0.65;
     text-align: center;
     transition: transform 160ms ease;
 }
@@ -47,13 +48,13 @@
 .sidenav .settingsBrandHeader {
     display: inline-flex;
     align-items: center;
-    gap: 0.75em;
+    gap: 0.5em;
     cursor: pointer;
 }
 
 .sidenav .settingsBrandIcon {
-    width: 20px;
-    height: 20px;
+    width: 14px;
+    height: 14px;
 }
 
 .sidenav div {
