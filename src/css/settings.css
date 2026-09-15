@@ -272,13 +272,14 @@
     cursor: pointer;
     outline: none;
     padding: 0.3em 1em;
-    border: none;
+    border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 4px;
+    box-sizing: border-box;
     color: #bbbbbb;
     background-color: #000;
     width: 100%;
-    text-align: right;
-    text-align-last: right;
+    text-align: left;
+    text-align-last: left;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -350,7 +351,8 @@
 
 .lightMode .sidenav select {
     background-color: #ffffff;
-    border-radius: 0;
+    border-color: rgba(0, 0, 0, 0.14);
+    border-radius: 4px;
     color: #555555;
 }
 
