@@ -301,6 +301,10 @@
     fill: currentColor;
 }
 
+#help .settingsLinkIcon {
+    fill: none;
+}
+
 .settingsLink:hover {
     color: #ccc;
 }
