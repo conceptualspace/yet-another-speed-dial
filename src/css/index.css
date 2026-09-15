@@ -1624,6 +1624,65 @@ body:not(:has(.folderTitle)) #tileContainer {
     display: contents;
 }
 
+#foldersContainer.folder-tabs .folders-content {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+}
+
+#foldersContainer.folder-tabs #folders {
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-behavior: smooth;
+}
+
+#foldersContainer.folder-tabs #folders::-webkit-scrollbar {
+    display: none;
+}
+
+#foldersContainer.folder-tabs #folders > .folderTitle {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.folder-scroll-button {
+    all: unset;
+    box-sizing: border-box;
+    display: inline-flex;
+    flex: 0 0 24px;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 42px;
+    color: var(--color);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 160ms ease;
+}
+
+.folder-scroll-button[hidden] {
+    display: none;
+}
+
+.folder-scroll-button:hover,
+.folder-scroll-button:focus-visible {
+    opacity: 1;
+}
+
+.folder-scroll-button:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: -4px;
+}
+
+.folder-scroll-button svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+}
+
 #addFolderIcon {
     height: 1.2rem;
     opacity: 0.7;

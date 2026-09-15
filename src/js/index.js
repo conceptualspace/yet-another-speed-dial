@@ -22,6 +22,8 @@ const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
 const foldersHeader = document.getElementById('foldersContainer');
 const foldersContainer = document.getElementById('folders');
+const folderScrollPrevious = document.getElementById('folderScrollPrevious');
+const folderScrollNext = document.getElementById('folderScrollNext');
 const addFolderButton = document.getElementById('addFolderButton');
 
 // Dial sizing is emitted here as concrete px values rather than as inherited
@@ -773,6 +775,7 @@ function showFolder(id) {
             title.classList.remove('activeFolder');
         }
     }
+    ensureActiveFolderTabVisible(id);
 }
 
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
@@ -855,6 +858,9 @@ function updateFolderBreadcrumb(id) {
 
 function buildFolderHeader(folderNodes, currentFolderId) {
     foldersContainer.innerHTML = '';
+    foldersHeader.classList.toggle('folder-tabs', settings.folderStyle === 'tabs');
+    folderScrollPrevious.hidden = true;
+    folderScrollNext.hidden = true;
     if (!folderNodes || folderNodes.length <= 1) return;
 
     if (settings.folderStyle === 'dials') {
@@ -867,6 +873,48 @@ function buildFolderHeader(folderNodes, currentFolderId) {
     for (let folder of folderNodes) {
         folderLink(folder.title, folder.id);
     }
+
+    requestAnimationFrame(() => {
+        ensureActiveFolderTabVisible(currentFolderId, 'auto');
+        updateFolderScrollControls();
+    });
+}
+
+function updateFolderScrollControls() {
+    const isTabs = settings?.folderStyle === 'tabs';
+    const hasOverflow = foldersContainer.scrollWidth > foldersContainer.clientWidth + 1;
+    const atStart = foldersContainer.scrollLeft <= 1;
+    const atEnd = foldersContainer.scrollLeft + foldersContainer.clientWidth >= foldersContainer.scrollWidth - 1;
+
+    folderScrollPrevious.hidden = !isTabs || !hasOverflow || atStart;
+    folderScrollNext.hidden = !isTabs || !hasOverflow || atEnd;
+}
+
+function ensureActiveFolderTabVisible(id, behavior = 'smooth') {
+    if (settings?.folderStyle !== 'tabs') return;
+
+    const activeTab = Array.from(foldersContainer.children)
+        .find(tab => tab.getAttribute('folderid') === id);
+    if (!activeTab) {
+        updateFolderScrollControls();
+        return;
+    }
+
+    const containerRect = foldersContainer.getBoundingClientRect();
+    const tabRect = activeTab.getBoundingClientRect();
+
+    if (tabRect.left < containerRect.left) {
+        foldersContainer.scrollBy({ left: tabRect.left - containerRect.left - 6, behavior });
+    } else if (tabRect.right > containerRect.right) {
+        foldersContainer.scrollBy({ left: tabRect.right - containerRect.right + 6, behavior });
+    } else {
+        updateFolderScrollControls();
+    }
+}
+
+function scrollFolderTabs(direction) {
+    const distance = Math.max(160, foldersContainer.clientWidth * 0.7);
+    foldersContainer.scrollBy({ left: direction * distance, behavior: 'smooth' });
 }
 
 function setFolderHistoryState(id, mode) {
@@ -3185,6 +3233,9 @@ window.addEventListener('popstate', handleFolderHistoryNavigation);
 modalSave.addEventListener("click", saveBookmarkSettings);
 createDialModalSave.addEventListener("click", createDial);
 addFolderButton.addEventListener("click", createFolder);
+folderScrollPrevious.addEventListener('click', () => scrollFolderTabs(-1));
+folderScrollNext.addEventListener('click', () => scrollFolderTabs(1));
+foldersContainer.addEventListener('scroll', updateFolderScrollControls, { passive: true });
 createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
@@ -4863,6 +4914,7 @@ function onResize() {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
             resizeFlipScheduled = false;
+            updateFolderScrollControls();
             flipHold();
         });
     }
