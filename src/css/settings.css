@@ -372,6 +372,14 @@
     background-color: #ffffff;
 }
 
+.lightMode .sidenav #previewOverlay::before {
+    position: absolute;
+    inset: 0;
+    content: '';
+    background: url('../img/upload.png') no-repeat center;
+    filter: invert(1);
+}
+
 .lightMode .sidenav #previewOverlay:hover {
     opacity: 0.5;
 }
