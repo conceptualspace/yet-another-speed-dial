@@ -1,14 +1,14 @@
 {
   "addFolderButton": {
     "description": "Settings toggle that shows or hides the Add Folder button",
-    "message": "Add Folder Button"
+    "message": "Add folder button"
   },
   "address": {
     "message": "Address"
   },
   "addSiteButton": {
     "description": "Settings toggle that shows or hides the Add Site button",
-    "message": "Add Site Button"
+    "message": "Add site button"
   },
   "addTo": {
     "message": "Add to Speed Dial"
@@ -17,7 +17,7 @@
     "message": "Theme"
   },
   "backgroundColor": {
-    "message": "Background Color"
+    "message": "Background color"
   },
   "bgColor": {
     "message": "Background"
@@ -44,18 +44,18 @@
     "message": "Create Folder"
   },
   "defaultSort": {
-    "message": "Default Sort"
+    "message": "Default sort"
   },
   "delete": {
     "message": "Delete"
   },
   "dialRatio": {
     "description": "Settings label for the shape of speed-dial tiles, such as square or wide",
-    "message": "Dial Format"
+    "message": "Dial format"
   },
   "dialSize": {
     "description": "Settings label for the size of speed-dial tiles",
-    "message": "Dial Size"
+    "message": "Dial size"
   },
   "edit": {
     "message": "Edit"
@@ -121,16 +121,16 @@
     "message": "Import / Export"
   },
   "importExportLink": {
-    "message": "Import and Export..."
+    "message": "Import and export..."
   },
   "labels": {
     "message": "Labels"
   },
   "largeTiles": {
-    "message": "Large Tiles"
+    "message": "Large tiles"
   },
   "maxColumns": {
-    "message": "Max Columns"
+    "message": "Columns"
   },
   "name": {
     "message": "Name"
@@ -193,10 +193,10 @@
     "message": "Refresh All Thumbnails..."
   },
   "remember": {
-    "message": "Remember Last Folder"
+    "message": "Remember last folder"
   },
   "resetSettings": {
-    "message": "Reset Settings"
+    "message": "Reset settings"
   },
   "remove": {
     "message": "Remove"
@@ -211,26 +211,26 @@
     "message": "Scale Images"
   },
   "searchButton": {
-    "message": "Search Button"
+    "message": "Search button"
   },
   "searchPlaceholder": {
     "message": "Search..."
   },
   "speedDialFolder": {
-    "message": "Speed Dial Folder..."
+    "message": "Speed Dial folder..."
   },
   "settings": {
     "message": "Settings..."
   },
   "settingsButton": {
     "description": "Settings toggle that shows or hides the Settings button",
-    "message": "Settings Button"
+    "message": "Settings button"
   },
   "settingsTitle": {
     "message": "Settings"
   },
   "textColor": {
-    "message": "Text Color"
+    "message": "Text color"
   },
   "tileTitle": {
     "message": "Title"
@@ -291,7 +291,7 @@
     "message": "Light"
   },
   "folderStyle": {
-    "message": "Folder Style"
+    "message": "Folder style"
   },
   "optionFolderTabs": {
     "message": "Tabs"
