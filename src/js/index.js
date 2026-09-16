@@ -877,8 +877,8 @@ function buildFolderHeader(folderNodes, currentFolderId) {
     }
 
     requestAnimationFrame(() => {
-        ensureActiveFolderTabVisible(currentFolderId, 'auto');
         measureFolderTabsOverflow();
+        ensureActiveFolderTabVisible(currentFolderId, 'auto');
     });
 }
 
@@ -888,6 +888,7 @@ function measureFolderTabsOverflow() {
     folderTabsOverflow = isTabs && foldersContainer.scrollHeight > foldersContainer.clientHeight + 1;
     folderScrollControls.hidden = !folderTabsOverflow;
     updateFolderScrollControls();
+    refreshFolderHeaderDropTarget();
 }
 
 function updateFolderScrollControls() {
@@ -2919,6 +2920,7 @@ function applySettings(options = {}) {
 
         // Position search icon based on what's visible
         updateSearchIconPosition();
+        measureFolderTabsOverflow();
 
         if (!settings.showTitles) {
             document.documentElement.style.setProperty('--title-opacity', '0');
@@ -3245,6 +3247,7 @@ addFolderButton.addEventListener("click", createFolder);
 folderScrollPrevious.addEventListener('click', () => scrollFolderTabs(-1));
 folderScrollNext.addEventListener('click', () => scrollFolderTabs(1));
 foldersContainer.addEventListener('scroll', updateFolderScrollControls, { passive: true });
+foldersContainer.addEventListener('scroll', refreshFolderHeaderDropTarget, { passive: true });
 createFolderModalSave.addEventListener("click", saveFolder)
 editFolderModalSave.addEventListener("click", editFolder)
 deleteFolderModalSave.addEventListener("click", removeFolder);
@@ -4293,18 +4296,24 @@ function captureFolderDialDropZones(container) {
 
 function captureFolderHeaderDropZones() {
     const containerRect = foldersHeader.getBoundingClientRect();
-    const zones = Array.from(foldersContainer.querySelectorAll('.folderTitle, .folderBreadcrumbLink'), folderHeader => {
+    const viewportRect = settings.folderStyle === 'tabs'
+        ? foldersContainer.getBoundingClientRect()
+        : containerRect;
+    const zones = [];
+    for (const folderHeader of foldersContainer.querySelectorAll('.folderTitle, .folderBreadcrumbLink')) {
         const rect = folderHeader.getBoundingClientRect();
-        return {
+        if (rect.right <= viewportRect.left || rect.left >= viewportRect.right
+            || rect.bottom <= viewportRect.top || rect.top >= viewportRect.bottom) continue;
+        zones.push({
             folderHeader,
-            left: rect.left - FOLDER_HEADER_DROP_PADDING_X,
-            right: rect.right + FOLDER_HEADER_DROP_PADDING_X,
-            top: rect.top - FOLDER_HEADER_DROP_PADDING_Y,
-            bottom: rect.bottom + FOLDER_HEADER_DROP_PADDING_Y
-        };
-    });
+            left: Math.max(viewportRect.left, rect.left - FOLDER_HEADER_DROP_PADDING_X),
+            right: Math.min(viewportRect.right, rect.right + FOLDER_HEADER_DROP_PADDING_X),
+            top: Math.max(viewportRect.top, rect.top - FOLDER_HEADER_DROP_PADDING_Y),
+            bottom: Math.min(viewportRect.bottom, rect.bottom + FOLDER_HEADER_DROP_PADDING_Y)
+        });
+    }
 
-    return { containerRect, zones };
+    return { containerRect, zones, scrollTop: foldersContainer.scrollTop, scrollLeft: foldersContainer.scrollLeft };
 }
 
 function isPointerWithinRect(pointer, rect) {
@@ -4333,7 +4342,19 @@ function getFolderDialAtPointer(pointer) {
 
 function getFolderHeaderAtPointer(pointer) {
     if (!pointer || !dialDropTracking) return null;
+    const captured = dialDropTracking.folderHeader;
+    if (captured.scrollTop !== foldersContainer.scrollTop || captured.scrollLeft !== foldersContainer.scrollLeft) {
+        dialDropTracking.folderHeader = captureFolderHeaderDropZones();
+    }
     return dialDropTracking.folderHeader.zones.find(zone => isPointerWithinRect(pointer, zone))?.folderHeader || null;
+}
+
+function refreshFolderHeaderDropTarget() {
+    if (!dialDropTracking) return;
+    dialDropTracking.folderHeader = captureFolderHeaderDropZones();
+    const pointer = dialDropTracking.pointer;
+    setFolderHeaderDropTarget(getFolderHeaderAtPointer(pointer),
+        Boolean(pointer && isPointerWithinRect(pointer, dialDropTracking.folderHeader.containerRect)));
 }
 
 function setFolderHeaderDropTarget(folderHeader, isOverFolders = false) {
