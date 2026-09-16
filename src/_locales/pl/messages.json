@@ -170,6 +170,9 @@
   "newTab": {
     "message": "Otwórz w nowej karcie"
   },
+  "openDialsInNewTab": {
+    "message": "Otwórz szybkie wybieranie w nowej karcie"
+  },
   "newWin": {
     "message": "Otwórz w nowym oknie"
   },

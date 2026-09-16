@@ -170,6 +170,9 @@
   "newTab": {
     "message": "Yeni sekmede aç"
   },
+  "openDialsInNewTab": {
+    "message": "Hızlı aramaları yeni sekmede aç"
+  },
   "newWin": {
     "message": "Yeni pencerede aç"
   },

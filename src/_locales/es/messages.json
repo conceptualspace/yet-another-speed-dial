@@ -170,6 +170,9 @@
   "newTab": {
     "message": "Abrir en nueva pestaña"
   },
+  "openDialsInNewTab": {
+    "message": "Abrir los marcadores rápidos en una pestaña nueva"
+  },
   "newWin": {
     "message": "Abrir en nueva ventana"
   },

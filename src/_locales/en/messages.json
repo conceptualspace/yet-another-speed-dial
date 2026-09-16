@@ -186,6 +186,10 @@
   "openAllTabGroup": {
     "message": "Open all in new tab group"
   },
+  "openDialsInNewTab": {
+    "description": "Settings toggle that opens a selected speed dial in a new tab",
+    "message": "Open dials in new tab"
+  },
   "refresh": {
     "message": "Refresh Thumbnails"
   },

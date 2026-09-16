@@ -170,6 +170,9 @@
     "newTab": {
       "message": "새 탭에서 열기"
     },
+    "openDialsInNewTab": {
+      "message": "새 탭에서 다이얼 열기"
+    },
     "newWin": {
       "message": "새 창에서 열기"
     },
