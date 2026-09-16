@@ -3091,6 +3091,9 @@ window.addEventListener("mousedown", e => {
         openSettings();
         return;
     }
+    if (e.target.closest?.('.welcome-card')) {
+        hideSettings();
+    }
     if (e.target.closest('#splashAddDial')) {
         e.preventDefault();
         buildCreateDialModal(currentFolder);
