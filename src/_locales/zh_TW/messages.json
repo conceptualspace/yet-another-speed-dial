@@ -170,6 +170,9 @@
   "newTab": {
     "message": "在新分頁開啟"
   },
+  "openDialsInNewTab": {
+    "message": "在新分頁中開啟快速撥號"
+  },
   "newWin": {
     "message": "在新視窗開啟"
   },
