@@ -173,7 +173,6 @@ let folderDialDropTarget = null;
 let folderDialDropTimer = null;
 let dialDropTracking = null;
 let folderHeaderDropTarget = null;
-let folderTabsOverflow = false;
 let activeDialDrag = null;
 let targetTileHref = null;
 let targetTileId = null;
@@ -861,7 +860,6 @@ function updateFolderBreadcrumb(id) {
 function buildFolderHeader(folderNodes, currentFolderId) {
     foldersContainer.innerHTML = '';
     foldersHeader.classList.toggle('folder-tabs', settings.folderStyle === 'tabs');
-    folderTabsOverflow = false;
     folderScrollControls.hidden = true;
     if (!folderNodes || folderNodes.length <= 1) return;
 
@@ -878,49 +876,24 @@ function buildFolderHeader(folderNodes, currentFolderId) {
 
     requestAnimationFrame(() => {
         measureFolderTabsOverflow();
-        ensureActiveFolderTabVisible(currentFolderId, 'auto');
+        ensureActiveFolderTabVisible(currentFolderId, 'instant');
     });
 }
 
 function measureFolderTabsOverflow() {
-    const isTabs = settings?.folderStyle === 'tabs';
-    folderScrollControls.hidden = true;
-    folderTabsOverflow = isTabs && foldersContainer.scrollHeight > foldersContainer.clientHeight + 1;
-    folderScrollControls.hidden = !folderTabsOverflow;
+    folderScrollControls.hidden = true; // measure the tabs at full width
+    folderScrollControls.hidden = foldersContainer.scrollHeight <= foldersContainer.clientHeight + 1;
     updateFolderScrollControls();
-    refreshFolderHeaderDropTarget();
 }
 
 function updateFolderScrollControls() {
-    const atStart = foldersContainer.scrollTop <= 1;
-    const atEnd = foldersContainer.scrollTop + foldersContainer.clientHeight >= foldersContainer.scrollHeight - 1;
-
-    folderScrollPrevious.classList.toggle('is-unavailable', !folderTabsOverflow || atStart);
-    folderScrollNext.classList.toggle('is-unavailable', !folderTabsOverflow || atEnd);
-    folderScrollPrevious.disabled = !folderTabsOverflow || atStart;
-    folderScrollNext.disabled = !folderTabsOverflow || atEnd;
+    folderScrollPrevious.disabled = foldersContainer.scrollTop <= 1;
+    folderScrollNext.disabled = foldersContainer.scrollTop + foldersContainer.clientHeight >= foldersContainer.scrollHeight - 1;
 }
 
 function ensureActiveFolderTabVisible(id, behavior = 'smooth') {
-    if (settings?.folderStyle !== 'tabs') return;
-
-    const activeTab = Array.from(foldersContainer.children)
-        .find(tab => tab.getAttribute('folderid') === id);
-    if (!activeTab) {
-        updateFolderScrollControls();
-        return;
-    }
-
-    const containerRect = foldersContainer.getBoundingClientRect();
-    const tabRect = activeTab.getBoundingClientRect();
-
-    if (tabRect.top < containerRect.top) {
-        foldersContainer.scrollBy({ top: tabRect.top - containerRect.top, behavior });
-    } else if (tabRect.bottom > containerRect.bottom) {
-        foldersContainer.scrollBy({ top: tabRect.bottom - containerRect.bottom, behavior });
-    } else {
-        updateFolderScrollControls();
-    }
+    foldersContainer.querySelector(`.folderTitle[folderid="${id}"]`)
+        ?.scrollIntoView({ block: 'nearest', behavior });
 }
 
 function scrollFolderTabs(direction) {
@@ -4313,7 +4286,7 @@ function captureFolderHeaderDropZones() {
         });
     }
 
-    return { containerRect, zones, scrollTop: foldersContainer.scrollTop, scrollLeft: foldersContainer.scrollLeft };
+    return { containerRect, zones };
 }
 
 function isPointerWithinRect(pointer, rect) {
@@ -4342,10 +4315,6 @@ function getFolderDialAtPointer(pointer) {
 
 function getFolderHeaderAtPointer(pointer) {
     if (!pointer || !dialDropTracking) return null;
-    const captured = dialDropTracking.folderHeader;
-    if (captured.scrollTop !== foldersContainer.scrollTop || captured.scrollLeft !== foldersContainer.scrollLeft) {
-        dialDropTracking.folderHeader = captureFolderHeaderDropZones();
-    }
     return dialDropTracking.folderHeader.zones.find(zone => isPointerWithinRect(pointer, zone))?.folderHeader || null;
 }
 

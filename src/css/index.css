@@ -1628,7 +1628,6 @@ body:not(:has(.folderTitle)) #tileContainer {
     flex: 1 1 auto;
     min-width: 0;
     flex-wrap: nowrap;
-    overflow: hidden;
 }
 
 #foldersContainer.folder-tabs #folders {
@@ -1641,11 +1640,6 @@ body:not(:has(.folderTitle)) #tileContainer {
     overflow-x: hidden;
     overflow-y: auto;
     scrollbar-width: none;
-    scroll-behavior: smooth;
-}
-
-#foldersContainer.folder-tabs #folders::-webkit-scrollbar {
-    display: none;
 }
 
 #foldersContainer.folder-tabs #folders > .folderTitle {
@@ -1659,22 +1653,13 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 .folder-scroll-controls {
-    display: flex;
     flex: 0 0 24px;
-    flex-direction: column;
-    width: 24px;
-    height: 42px;
-}
-
-.folder-scroll-controls[hidden] {
-    display: none;
 }
 
 .folder-scroll-button {
     all: unset;
     box-sizing: border-box;
     display: flex;
-    flex: 1 1 0;
     align-items: center;
     justify-content: center;
     width: 24px;
@@ -1685,8 +1670,7 @@ body:not(:has(.folderTitle)) #tileContainer {
     transition: opacity 160ms ease;
 }
 
-.folder-scroll-button.is-unavailable {
-    pointer-events: none;
+.folder-scroll-button:disabled {
     opacity: 0.22;
     cursor: default;
 }
