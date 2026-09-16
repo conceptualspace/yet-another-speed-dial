@@ -3652,7 +3652,6 @@ function openImportExportModal(importOnly = false) {
 
 
 importExportBtn.onclick = function () {
-    hideSettings();
     openImportExportModal();
 }
 
