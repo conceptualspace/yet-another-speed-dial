@@ -3107,6 +3107,9 @@ window.addEventListener("mousedown", e => {
         openFolderPicker();
         return;
     }
+    if (e.target.closest?.('#foldersContainer')) {
+        hideSettings();
+    }
 
     switch (e.target.className) {
         // todo: invert this
