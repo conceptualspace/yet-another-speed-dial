@@ -1633,8 +1633,13 @@ body:not(:has(.folderTitle)) #tileContainer {
 
 #foldersContainer.folder-tabs #folders {
     display: flex;
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+    align-content: flex-start;
     min-width: 0;
-    overflow-x: auto;
+    max-height: 84px;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-width: none;
     scroll-behavior: smooth;
 }
@@ -1645,26 +1650,45 @@ body:not(:has(.folderTitle)) #tileContainer {
 
 #foldersContainer.folder-tabs #folders > .folderTitle {
     flex: 0 0 auto;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    height: 42px;
+    margin-block: 0;
     white-space: nowrap;
+}
+
+.folder-scroll-controls {
+    display: flex;
+    flex: 0 0 24px;
+    flex-direction: column;
+    width: 24px;
+    height: 42px;
+}
+
+.folder-scroll-controls[hidden] {
+    display: none;
 }
 
 .folder-scroll-button {
     all: unset;
     box-sizing: border-box;
-    display: inline-flex;
-    flex: 0 0 24px;
+    display: flex;
+    flex: 1 1 0;
     align-items: center;
     justify-content: center;
     width: 24px;
-    height: 42px;
+    height: 21px;
     color: var(--color);
     cursor: pointer;
     opacity: 0.7;
     transition: opacity 160ms ease;
 }
 
-.folder-scroll-button[hidden] {
-    display: none;
+.folder-scroll-button.is-unavailable {
+    pointer-events: none;
+    opacity: 0.22;
+    cursor: default;
 }
 
 .folder-scroll-button:hover,
@@ -1678,8 +1702,8 @@ body:not(:has(.folderTitle)) #tileContainer {
 }
 
 .folder-scroll-button svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     fill: currentColor;
 }
 

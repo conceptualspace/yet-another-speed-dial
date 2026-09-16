@@ -22,6 +22,7 @@ const bookmarksContainerParent = document.getElementById('tileContainer');
 const bookmarksContainer = bookmarksContainerParent
 const foldersHeader = document.getElementById('foldersContainer');
 const foldersContainer = document.getElementById('folders');
+const folderScrollControls = document.getElementById('folderScrollControls');
 const folderScrollPrevious = document.getElementById('folderScrollPrevious');
 const folderScrollNext = document.getElementById('folderScrollNext');
 const addFolderButton = document.getElementById('addFolderButton');
@@ -172,6 +173,7 @@ let folderDialDropTarget = null;
 let folderDialDropTimer = null;
 let dialDropTracking = null;
 let folderHeaderDropTarget = null;
+let folderTabsOverflow = false;
 let activeDialDrag = null;
 let targetTileHref = null;
 let targetTileId = null;
@@ -859,8 +861,8 @@ function updateFolderBreadcrumb(id) {
 function buildFolderHeader(folderNodes, currentFolderId) {
     foldersContainer.innerHTML = '';
     foldersHeader.classList.toggle('folder-tabs', settings.folderStyle === 'tabs');
-    folderScrollPrevious.hidden = true;
-    folderScrollNext.hidden = true;
+    folderTabsOverflow = false;
+    folderScrollControls.hidden = true;
     if (!folderNodes || folderNodes.length <= 1) return;
 
     if (settings.folderStyle === 'dials') {
@@ -876,18 +878,26 @@ function buildFolderHeader(folderNodes, currentFolderId) {
 
     requestAnimationFrame(() => {
         ensureActiveFolderTabVisible(currentFolderId, 'auto');
-        updateFolderScrollControls();
+        measureFolderTabsOverflow();
     });
 }
 
-function updateFolderScrollControls() {
+function measureFolderTabsOverflow() {
     const isTabs = settings?.folderStyle === 'tabs';
-    const hasOverflow = foldersContainer.scrollWidth > foldersContainer.clientWidth + 1;
-    const atStart = foldersContainer.scrollLeft <= 1;
-    const atEnd = foldersContainer.scrollLeft + foldersContainer.clientWidth >= foldersContainer.scrollWidth - 1;
+    folderScrollControls.hidden = true;
+    folderTabsOverflow = isTabs && foldersContainer.scrollHeight > foldersContainer.clientHeight + 1;
+    folderScrollControls.hidden = !folderTabsOverflow;
+    updateFolderScrollControls();
+}
 
-    folderScrollPrevious.hidden = !isTabs || !hasOverflow || atStart;
-    folderScrollNext.hidden = !isTabs || !hasOverflow || atEnd;
+function updateFolderScrollControls() {
+    const atStart = foldersContainer.scrollTop <= 1;
+    const atEnd = foldersContainer.scrollTop + foldersContainer.clientHeight >= foldersContainer.scrollHeight - 1;
+
+    folderScrollPrevious.classList.toggle('is-unavailable', !folderTabsOverflow || atStart);
+    folderScrollNext.classList.toggle('is-unavailable', !folderTabsOverflow || atEnd);
+    folderScrollPrevious.disabled = !folderTabsOverflow || atStart;
+    folderScrollNext.disabled = !folderTabsOverflow || atEnd;
 }
 
 function ensureActiveFolderTabVisible(id, behavior = 'smooth') {
@@ -903,18 +913,17 @@ function ensureActiveFolderTabVisible(id, behavior = 'smooth') {
     const containerRect = foldersContainer.getBoundingClientRect();
     const tabRect = activeTab.getBoundingClientRect();
 
-    if (tabRect.left < containerRect.left) {
-        foldersContainer.scrollBy({ left: tabRect.left - containerRect.left - 6, behavior });
-    } else if (tabRect.right > containerRect.right) {
-        foldersContainer.scrollBy({ left: tabRect.right - containerRect.right + 6, behavior });
+    if (tabRect.top < containerRect.top) {
+        foldersContainer.scrollBy({ top: tabRect.top - containerRect.top, behavior });
+    } else if (tabRect.bottom > containerRect.bottom) {
+        foldersContainer.scrollBy({ top: tabRect.bottom - containerRect.bottom, behavior });
     } else {
         updateFolderScrollControls();
     }
 }
 
 function scrollFolderTabs(direction) {
-    const distance = Math.max(160, foldersContainer.clientWidth * 0.7);
-    foldersContainer.scrollBy({ left: direction * distance, behavior: 'smooth' });
+    foldersContainer.scrollBy({ top: direction * foldersContainer.clientHeight, behavior: 'smooth' });
 }
 
 function setFolderHistoryState(id, mode) {
@@ -4914,7 +4923,7 @@ function onResize() {
         resizeFlipScheduled = true;
         requestAnimationFrame(() => {
             resizeFlipScheduled = false;
-            updateFolderScrollControls();
+            measureFolderTabsOverflow();
             flipHold();
         });
     }
