@@ -1675,7 +1675,7 @@ body:not(:has(.folderTitle)) #tileContainer {
     cursor: default;
 }
 
-.folder-scroll-button:hover,
+.folder-scroll-button:enabled:hover,
 .folder-scroll-button:focus-visible {
     opacity: 1;
 }

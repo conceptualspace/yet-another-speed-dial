@@ -4517,6 +4517,9 @@ function onEndHandler(evt) {
         ? folderDialDropTarget
         : null;
     const canDropOnFolderHeader = Boolean(evt?.clone?.href || evt?.clone?.dataset.type === 'folder');
+    if (canDropOnFolderHeader && dialDropTracking) {
+        dialDropTracking.folderHeader = captureFolderHeaderDropZones();
+    }
     const folderHeaderAtRelease = canDropOnFolderHeader
         ? (releasePointer ? getFolderHeaderAtPointer(releasePointer) : folderHeaderDropTarget)
         : null;
