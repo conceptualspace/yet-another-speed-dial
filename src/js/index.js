@@ -272,7 +272,8 @@ document.querySelectorAll('.settingsCtl[data-coloris]').forEach(picker => {
 
 const debounce = (func, delay = 500, immediate = false) => {
     let inDebounce
-    return function () {
+    let pending = null
+    const debounced = function () {
         const context = this
         const args = arguments
         if (immediate && !inDebounce) {
@@ -282,12 +283,24 @@ const debounce = (func, delay = 500, immediate = false) => {
             }, delay)
         } else {
             clearTimeout(inDebounce)
+            pending = { context, args };
             inDebounce = setTimeout(() => {
                 inDebounce = null;
+                pending = null;
                 func.apply(context, args);
             }, delay)
         }
     }
+    // run a waiting trailing call now instead of when its (possibly throttled) timer fires
+    debounced.flush = function () {
+        if (!pending) return;
+        clearTimeout(inDebounce);
+        inDebounce = null;
+        const { context, args } = pending;
+        pending = null;
+        func.apply(context, args);
+    }
+    return debounced
 }
 
 let filterHideTimer = null;
@@ -1058,16 +1071,27 @@ function refreshImportedThumbnails(nodes) {
 }
 
 
+// container -> token of the batchInsert currently filling it
+const batchInsertTokens = new WeakMap();
+
 // assumes 'bookmarks' param is content of a folder (from getBookmarks)
 function batchInsert(parent, fragment, batchSize = 100, onComplete) {
     const nodes = Array.from(fragment.childNodes);
     let index = 0;
+    const token = Symbol();
+    batchInsertTokens.set(parent, token);
 
     return new Promise(resolve => {
         function insertBatch() {
-            let slice = nodes.slice(index, index + batchSize);
+            // a newer rebuild has cleared the container; dont append this stale remainder after it
+            if (batchInsertTokens.get(parent) !== token) {
+                resolve();
+                return;
+            }
+            // hidden tabs get no animation frames, so batching would stall the rebuild until the tab is shown
+            let slice = document.hidden ? nodes.slice(index) : nodes.slice(index, index + batchSize);
             parent.append(...slice);
-            index += batchSize;
+            index += slice.length;
 
             if (index < nodes.length) {
                 requestAnimationFrame(insertBatch);
@@ -1396,6 +1420,8 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     // Optimize container update using batch insert
     unregisterThumbnailPreviews(folderContainerEl);
     folderContainerEl.textContent = ''; // todo: is this even required here? would innerHTML = '' be preferable?
+    // whatever batch was still filling this container is stale now that it is empty
+    batchInsertTokens.delete(folderContainerEl);
     let insertionComplete;
     if (immediateInsert) {
         // View Transition update callbacks suppress the animation frames that batchInsert needs.
@@ -4916,6 +4942,12 @@ function init() {
     });
 
     window.addEventListener('resize', onResize);
+
+    // timers are throttled while the tab is hidden, so a refresh coalesced from a burst of
+    // bookmark changes (e.g. deleting dials in another tab) may still be waiting when the tab is shown
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) processRefresh.flush();
+    });
 
 }
 
