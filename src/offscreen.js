@@ -681,12 +681,13 @@ async function fetchImages(url, quickRefresh, pageInfo = {}, pageData = null) {
             }
         }
 
-        // the header image and inline svg logo are heuristics, so they rank behind the fallbacks
-        if (firstImage) {
-            brand.push(firstImage);
-        }
+        // the inline svg logo and header image are heuristics, so they rank behind the fallbacks.
+        // the svg was matched as a logo; the first <img> is only assumed to be one, so it goes last
         if (svgLogo) {
             brand.push(svgLogo);
+        }
+        if (firstImage) {
+            brand.push(firstImage);
         }
 
         // a random page image is as likely noise as signal, so it only fills in when the page offered nothing contextual.

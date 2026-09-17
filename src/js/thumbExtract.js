@@ -200,7 +200,7 @@ function collectPageImages(doc, baseUrl) {
         }
     }
 
-    // inline svg logo; ranked last by the caller since it is a weak heuristic
+    // inline svg logo; ranked by the caller behind the icon fallbacks but ahead of firstImage
     let svgLogo = null;
     const siteName = hostname.split('.')[0];
     for (const svg of doc.querySelectorAll('svg')) {
