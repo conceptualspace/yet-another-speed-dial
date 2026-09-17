@@ -1,14 +1,14 @@
 {
   "addFolderButton": {
     "description": "Settings toggle that shows or hides the Add Folder button",
-    "message": "Add folder button"
+    "message": "Show 'Add Folder'"
   },
   "address": {
     "message": "Address"
   },
   "addSiteButton": {
     "description": "Settings toggle that shows or hides the Add Site button",
-    "message": "Add site button"
+    "message": "Show 'Add Site'"
   },
   "addTo": {
     "message": "Add to Speed Dial"
@@ -35,7 +35,7 @@
     "message": "Capturing images..."
   },
   "clock": {
-    "message": "Clock"
+    "message": "Show clock"
   },
   "confirmDelete": {
     "message": "Are you sure you want to permanently remove this folder?"
@@ -215,7 +215,7 @@
     "message": "Scale Images"
   },
   "searchButton": {
-    "message": "Search button"
+    "message": "Show search"
   },
   "searchPlaceholder": {
     "message": "Search..."
@@ -228,7 +228,7 @@
   },
   "settingsButton": {
     "description": "Settings toggle that shows or hides the Settings button",
-    "message": "Settings button"
+    "message": "Show settings"
   },
   "settingsTitle": {
     "message": "Settings"
