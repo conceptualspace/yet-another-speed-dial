@@ -215,7 +215,7 @@
     "message": "Scale Images"
   },
   "searchButton": {
-    "message": "Show search"
+    "message": "Show search icon"
   },
   "searchPlaceholder": {
     "message": "Search..."
@@ -228,7 +228,7 @@
   },
   "settingsButton": {
     "description": "Settings toggle that shows or hides the Settings button",
-    "message": "Show settings"
+    "message": "Show settings icon"
   },
   "settingsTitle": {
     "message": "Settings"
