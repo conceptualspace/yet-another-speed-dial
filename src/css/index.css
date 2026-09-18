@@ -27,6 +27,25 @@
     margin: .6em 0;
 }
 
+.modalActions {
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.lightMode .modalActions {
+    flex-direction: row;
+}
+
+.lightMode .modalActions > .formItem {
+    display: flex;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.lightMode .modalActions > .formItem > button {
+    overflow-wrap: anywhere;
+}
+
 #modalBtnContainer {
     gap: .5em;
     align-items: stretch;
@@ -940,6 +959,15 @@ a {
     box-sizing: border-box;
 }
 
+#tileModalContent .formItem > input[type="text"],
+#createDialModalContent .formItem > input[type="text"],
+#createFolderModalContent .formItem > input[type="text"],
+#editFolderModalContent .formItem > input[type="text"] {
+    border-top-color: transparent;
+    border-right-color: transparent;
+    border-left-color: transparent;
+}
+
 .formItem > button {
     color: #ffffff;
     border: none;
@@ -959,7 +987,7 @@ a {
     line-height: 1.2;
     white-space: normal;
     text-align: center;
-    background-color: #171717;
+    background-color: transparent;
     /* border: 1px solid #2a2a2a; */
 }
 
@@ -1059,10 +1087,6 @@ a {
 
 .formItem > .action:hover::after {
     transform: scaleX(1);
-}
-
-#modalBtnContainer .action:hover {
-    background-color: #1b1f24;
 }
 
 .formItem > .close:hover {
@@ -1261,6 +1285,132 @@ input {
     font-size: medium;
 }
 
+.lightMode .menu,
+.lightMode .modal-content {
+    background-color: #ffffff;
+    border: 1px solid #d6d6d6;
+    color: #111111;
+}
+
+.lightMode .menu-option:hover,
+.lightMode .folderPickerRow:hover {
+    background-color: #efefef;
+}
+
+.lightMode .menu-option svg {
+    color: #111111;
+}
+
+.lightMode input,
+.lightMode textarea {
+    background-color: #ffffff;
+    border-color: #cccccc;
+    color: #111111;
+}
+
+.lightMode .clr-cancel,
+.lightMode .clr-clear,
+.lightMode .clr-close {
+    color: #111111;
+    background-color: transparent;
+}
+
+.lightMode #modalBtnContainer .action {
+    color: #111111;
+}
+
+.lightMode .formItem > .actionSecondary,
+.lightMode .formItem > .close {
+    background-color: transparent;
+    border: none;
+    color: #111111;
+}
+
+.lightMode .formItem > .close:hover {
+    background-color: #f5f5f5;
+}
+
+.lightMode .formItem > .save {
+    background-color: transparent;
+    border: none;
+    color: #2196F3;
+    font-weight: 600;
+}
+
+.lightMode .formItem > .save:hover {
+    background-color: #f5f5f5;
+}
+
+.lightMode .formItem > .importExport {
+    background-color: #f5f5f5;
+    border: none;
+    color: #111111;
+}
+
+.lightMode .formItem > .actionSecondary:hover,
+.lightMode .formItem > .importExport:hover,
+.lightMode .modal [type="file"] + label.importExport:hover {
+    background-color: #e7e7e7;
+}
+
+.lightMode #modalBtnContainer .action svg {
+    fill: currentColor;
+}
+
+.lightMode #statusMessage {
+    color: #805b00;
+}
+
+.lightMode .closeBtn,
+.lightMode .inputCloseBtn {
+    color: #666666;
+}
+
+.lightMode .closeBtn:hover,
+.lightMode .closeBtn:focus,
+.lightMode .inputCloseBtn:hover {
+    color: #111111;
+}
+
+.lightMode .folderPickerHint,
+.lightMode .folderPickerRow,
+.lightMode .formItem > .folderPickerReset {
+    color: #555555;
+}
+
+.lightMode .folderPickerTree {
+    background-color: #fafafa;
+    border-color: #d6d6d6;
+    scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+}
+
+.lightMode .folderPickerRow.isSelected {
+    background-color: #e3e3e3;
+}
+
+.lightMode .folderPickerRow.isSelected .folderPickerLabel,
+.lightMode .folderPickerTwisty:hover {
+    color: #111111;
+}
+
+.lightMode .folderPickerTwisty,
+.lightMode .folderPickerIcon,
+.lightMode .folderPickerBadge {
+    color: #666666;
+}
+
+.lightMode .folderPickerBadge {
+    border-color: #cccccc;
+}
+
+.lightMode .folderPickerTree::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.28);
+}
+
+.lightMode .folderPickerTree::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(0, 0, 0, 0.4);
+}
+
 input:focus + .inputBorder, .expand:focus .inputBorder {
     transform: scaleX(1);
   }
@@ -1303,7 +1453,8 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
 }
 
 #fetchImageButton svg {
-    fill: rgb(0, 255, 170);
+    fill: currentColor;
+    margin-right: 0;
     opacity: 0.8;
     transition: all 0.3s ease;
 }
@@ -1359,13 +1510,25 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     border-radius: inherit;
 }
 
-.fc-arrows .fc-next.fc-is-active .fc-icon, .fc-arrows .fc-prev.fc-is-active .fc-icon {
-    background-color: rgba(17, 17, 17, 0.9);
+#modalImgContainer .fc-arrows .fc-next.fc-is-active .fc-icon,
+#modalImgContainer .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    background-color: transparent;
     color: #ccc;
 }
 
-.fc-arrows .fc-prev.fc-is-active:hover .fc-icon, .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
+#modalImgContainer .fc-arrows .fc-prev.fc-is-active:hover .fc-icon,
+#modalImgContainer .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
     color: #fff;
+}
+
+.lightMode #modalImgContainer .fc-arrows .fc-next.fc-is-active .fc-icon,
+.lightMode #modalImgContainer .fc-arrows .fc-prev.fc-is-active .fc-icon {
+    color: #666666;
+}
+
+.lightMode #modalImgContainer .fc-arrows .fc-prev.fc-is-active:hover .fc-icon,
+.lightMode #modalImgContainer .fc-arrows .fc-next.fc-is-active:hover .fc-icon {
+    color: #111111;
 }
 
 .fc.fc-circles.fc-circles-overlay .fc-circles {
@@ -1383,7 +1546,7 @@ input:focus + .inputBorder, .expand:focus .inputBorder {
     background: rgba(0,0,0,1);
     box-shadow: none;
     overflow-x: hidden; /* Disable horizontal scroll */
-    transition: 360ms; /* 0.5 second transition effect to slide in the sidenav */
+    transition: transform 360ms ease, background-color 360ms ease, color 360ms ease;
     color: white;
     display: none;
     justify-content: center;

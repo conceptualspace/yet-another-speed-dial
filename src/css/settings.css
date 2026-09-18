@@ -1,8 +1,11 @@
 .sidenav .settings {
+    position: relative;
     width: 100%;
     padding: 14px 25px;
     height: 100%;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 #settingsDiv {
@@ -25,7 +28,32 @@
 }
 
 .sidenav hr {
+    margin: 1em 0;
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidenav .settingsFooterSpacer {
+    flex: 1 0 0;
+}
+
+.sidenav .settingsBrand {
+    padding: 0.4em 0 0;
+    color: #888888;
+    font-size: 11px;
+    text-align: center;
+    transition: transform 160ms ease;
+}
+
+.sidenav .settingsBrandHeader {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5em;
+    cursor: pointer;
+}
+
+.sidenav .settingsBrandIcon {
+    width: 14px;
+    height: 14px;
 }
 
 .sidenav div {
@@ -116,6 +144,9 @@
 
 .sidenav #switchesContainer {
     transition: all 160ms ease;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .sidenav .row {
@@ -210,6 +241,7 @@
     width: 50px;
     height: 24px;
     border: none;
+    cursor: pointer;
 }
 
 .sidenav #color-picker-wrapper {
@@ -237,25 +269,44 @@
 
 .sidenav select {
     position: relative;
+    cursor: pointer;
     outline: none;
     padding: 0.3em 1em;
-    border: 1px solid #333;
+    border: none;
     border-radius: 4px;
-    color: #fff;
-    background-color: #222;
+    color: #aaaaaa;
+    background-color: #000;
     width: 100%;
+    text-align: right;
+    text-align-last: right;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: background-color 360ms, color 360ms;
 }
 
 .settingsLink {
     height: 25px;
     color: #aaaaaa;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.settingsLinkIcon {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    fill: currentColor;
+}
+
+#help .settingsLinkIcon {
+    fill: none;
 }
 
 .settingsLink:hover {
-    color: #ccc;
+    color: #e6e6e6;
 }
 
 .settingsLinkDanger {
@@ -272,4 +323,72 @@
     opacity: 0;
     color: lightgreen;
     transition: opacity 200ms ease-in-out;
+}
+
+.lightMode .sidenav {
+    background: #ffffff;
+    color: #111111;
+}
+
+.lightMode .sidenav hr {
+    border-top-color: rgba(0, 0, 0, 0.08);
+}
+
+.lightMode .sidenav .closeBtn,
+.lightMode .settingsLink {
+    color: #666666;
+}
+
+.lightMode .sidenav .closeBtn:hover,
+.lightMode .settingsLink:hover {
+    color: #111111;
+}
+
+.lightMode .sidenav a {
+    color: #111111;
+}
+
+.lightMode .sidenav a:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+.lightMode .sidenav select {
+    background-color: #ffffff;
+    color: #555555;
+}
+
+.lightMode .sidenav button:not(.closeBtn) {
+    background-color: transparent;
+    border: none;
+    color: #6941c6;
+    font-weight: 600;
+}
+
+.lightMode .sidenav button:not(.closeBtn):hover {
+    background-color: #f5f5f5;
+}
+
+.lightMode .sidenav #preview {
+    border: none;
+}
+
+.lightMode .sidenav #previewOverlay {
+    background-color: #ffffff;
+}
+
+.lightMode .sidenav #previewOverlay::before {
+    position: absolute;
+    inset: 0;
+    content: '';
+    background: url('../img/upload.png') no-repeat center;
+    filter: invert(1);
+}
+
+.lightMode .sidenav #previewOverlay:hover {
+    opacity: 0.5;
+}
+
+.lightMode .sidenav #color-picker-wrapper,
+.lightMode .sidenav #textColor-picker-wrapper {
+    border-color: rgba(0, 0, 0, 0.2);
 }

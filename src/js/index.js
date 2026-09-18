@@ -113,11 +113,13 @@ const imgInput = document.getElementById("file");
 const imgPreview = document.getElementById("preview");
 const previewOverlay = document.getElementById("previewOverlay");
 const switchesContainer = document.getElementById("switchesContainer");
+const settingsBrand = document.querySelector(".settingsBrand");
 const wallPaperEnabled = document.getElementById("wallpaper");
 const previewContainer = document.getElementById("previewContainer");
 const backgroundColorContainer = document.getElementById("backgroundColorContainer");
 const largeTilesInput = document.getElementById("largeTiles");
 const rememberFolderInput = document.getElementById("rememberFolder");
+const openDialsInNewTabInput = document.getElementById("openDialsInNewTab");
 const showTitlesInput = document.getElementById("showTitles");
 const showCreateDialInput = document.getElementById("showCreateDial");
 const showFoldersInput = document.getElementById("showFolders");
@@ -132,10 +134,12 @@ const exportBtn = document.getElementById("exportBtn");
 const importFileInput = document.getElementById("importFile");
 const importFileLabelText = document.getElementById("importFileLabelText");
 const helpBtn = document.getElementById("help");
+const websiteBrand = document.getElementById("websiteBrand");
 const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 const folderStyleInput = document.getElementById("folderStyle");
+const themeModeInput = document.getElementById("themeMode");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -146,6 +150,7 @@ const clock = document.getElementById('clock');
 
 const port = "p-" + new Date().getTime();
 let tabMessagePort = null;
+const preferredColorScheme = window.matchMedia('(prefers-color-scheme: dark)');
 
 chrome.runtime.onMessage.addListener(handleMessages);
 chrome.storage.onChanged.addListener(handleStorageChanged);
@@ -235,9 +240,11 @@ let hourCycle = 'h12';
 const locale = navigator.language;
 const imageRatio = 1.54;
 const helpUrl = 'https://conceptualspace.github.io/yet-another-speed-dial/';
+const websiteUrl = 'https://www.yetanotherspeeddial.com';
 let isToastVisible = false;
 
 let defaults = {
+    themeMode: 'dark',
     wallpaper: true,
     backgroundColor: '#111111',
     largeTiles: true,
@@ -254,8 +261,22 @@ let defaults = {
     dialSize: 'medium',
     dialRatio: 'wide',
     folderStyle: 'tabs',
+    openDialsInNewTab: false,
     currentFolder: null,
 };
+
+function applyTheme() {
+    const useDarkMode = settings.themeMode === 'dark'
+        || (settings.themeMode === 'auto' && preferredColorScheme.matches);
+    document.body.classList.toggle('lightMode', !useDarkMode);
+    Coloris({ themeMode: useDarkMode ? 'dark' : 'light' });
+}
+
+preferredColorScheme.addEventListener('change', function () {
+    if (settings?.themeMode === 'auto') {
+        applyTheme();
+    }
+});
 
 // Create an invisible overlay to absorb outside clicks when Coloris is open
 const colorisOverlay = document.createElement('div');
@@ -1301,6 +1322,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 let a = document.createElement('a');
                 a.classList.add('tile');
                 a.href = bookmark.url;
+                a.target = settings.openDialsInNewTab ? '_blank' : '';
                 a.setAttribute('data-id', bookmark.id);
                 a.draggable = false;
 
@@ -2648,6 +2670,8 @@ function applySettings(options = {}) {
     return new Promise(function (resolve, reject) {
         // apply settings to speed dial
 
+        applyTheme();
+
         if (settings.wallpaper && wallpaperSrc) {
             // perf hack for default gradient bg image. user selected images are data URIs
             if (wallpaperSrc.length < 65) {
@@ -2872,6 +2896,8 @@ function applySettings(options = {}) {
         folderStyleInput.value = settings.folderStyle;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
+        openDialsInNewTabInput.checked = settings.openDialsInNewTab;
+        themeModeInput.value = settings.themeMode;
 
         if (wallpaperSrc) {
             //imgPreview.style.display = 'block';
@@ -2880,12 +2906,15 @@ function applySettings(options = {}) {
                     backgroundColorContainer.style.display = "none";
                     previewContainer.style.opacity = '1';
                     switchesContainer.style.transform = "translateY(0)";
+                    settingsBrand.style.transform = "translateY(0)";
 
                     //backgroundColorContainer.style.display = 'none';
                 } else {
+                    const previewHeight = previewContainer.offsetHeight;
                     backgroundColorContainer.style.display = "flex";
                     previewContainer.style.opacity = '0';
-                    switchesContainer.style.transform = `translateY(-${previewContainer.offsetHeight}px)`;
+                    switchesContainer.style.transform = `translateY(-${previewHeight}px)`;
+                    settingsBrand.style.transform = `translateY(${previewHeight}px)`;
                 }
             }
             imgPreview.onerror = function (e) {
@@ -2924,7 +2953,13 @@ function saveSettings(nextWallpaperSrc) {
     settings.folderStyle = folderStyleInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
+    settings.openDialsInNewTab = openDialsInNewTabInput.checked;
+    settings.themeMode = themeModeInput.value;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
+
+    document.querySelectorAll('.tile[href]').forEach(dial => {
+        dial.target = settings.openDialsInNewTab ? '_blank' : '';
+    });
 
     applySettings({
         scaleTiles: !showTitlesChanged,
@@ -3004,6 +3039,8 @@ window.addEventListener("click", e => {
             e.preventDefault();
             if (e.ctrlKey || e.metaKey) {
                 chrome.tabs.create({ url: tile.href, active: false });
+            } else if (settings.openDialsInNewTab) {
+                chrome.tabs.create({ url: tile.href, active: true });
             } else {
                 chrome.tabs.update({ url: tile.href });
             }
@@ -3026,12 +3063,15 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.id === 'maxcols' || e.target.id === 'defaultSort' || e.target.id === 'dialSize' || e.target.id === 'dialRatio' || e.target.id === 'folderStyle') {
+    if (e.target.type === 'text' || e.target.closest?.('.settingsCtl, #importFileLabel')) {
         return
     }
     if (e.target.className.baseVal === 'gear') {
         openSettings();
         return;
+    }
+    if (e.target.closest?.('.welcome-card')) {
+        hideSettings();
     }
     if (e.target.closest('#splashAddDial')) {
         e.preventDefault();
@@ -3237,6 +3277,10 @@ dialRatioInput.oninput = function (e) {
     saveSettings()
 }
 
+themeModeInput.oninput = function () {
+    saveSettings()
+}
+
 folderStyleInput.oninput = function () {
     if (settings.folderStyle === folderStyleInput.value) return;
 
@@ -3285,6 +3329,10 @@ showClockInput.oninput = function (e) {
 }
 
 rememberFolderInput.oninput = function (e) {
+    saveSettings()
+}
+
+openDialsInNewTabInput.oninput = function (e) {
     saveSettings()
 }
 
@@ -3580,12 +3628,15 @@ function openImportExportModal(importOnly = false) {
 
 
 importExportBtn.onclick = function () {
-    hideSettings();
     openImportExportModal();
 }
 
-helpBtn.onclick = function () {
+const openHelp = function () {
     chrome.tabs.create({ url: helpUrl });
+}
+helpBtn.onclick = openHelp;
+websiteBrand.onclick = function () {
+    chrome.tabs.create({ url: websiteUrl });
 }
 
 resetSettingsBtn.onclick = function () {

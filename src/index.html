@@ -156,11 +156,13 @@
             <div class="formItem"><input id="createDialModalURL" type="text"></div>
             <div class="formItem"><p style="color:grey;"><em data-locale="captureMessage">This will temporarily open the
                 site in a new tab to capture the image</em></p></div>
-            <div class="formItem">
-                <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="addTo" id="createDialModalSave">Add to Speed Dial</button>
+                </div>
             </div>
         </form>
     </div>
@@ -172,11 +174,13 @@
         <form action="" class="tileForm">
             <div class="formItem"><label data-locale="name" for="createFolderModalName">Name</label></div>
             <div class="formItem"><input id="createFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="createFolder" id="createFolderModalSave">Create Folder</button>
+                </div>
             </div>
         </form>
     </div>
@@ -188,11 +192,13 @@
         <form action="" class="tileForm">
             <div class="formItem"><label data-locale="name" for="editFolderModalName">Name</label></div>
             <div class="formItem"><input id="editFolderModalName" type="text"></div>
-            <div class="formItem">
-                <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" data-locale="save" id="editFolderModalSave">Save</button>
+                </div>
             </div>
         </form>
     </div>
@@ -206,11 +212,13 @@
 
             <div class="formItem"><br/><label data-locale="confirmDelete">Are you sure you want to permanently remove
                 this folder?</label><br/><br/></div>
-            <div class="formItem">
-                <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="delete" data-locale="delete" id="deleteFolderModalSave">Delete</button>
+                </div>
             </div>
         </form>
     </div>
@@ -225,11 +233,13 @@
                 <p>This will fetch new images for all the dials on this page. It may take a while!<br/><br/>Note: This process runs in the background. Screenshots are not taken in this mode.</p>
             </div>
 
-            <div class="formItem">
-                <button class="save" id="refreshAllModalSave">Continue</button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save" id="refreshAllModalSave">Continue</button>
+                </div>
             </div>
         </div>
     </div>
@@ -286,13 +296,15 @@
                 </button>
             </div>
 
-            <div class="formItem">
-                <button class="save disabled" data-locale="folderPickerConfirm" id="folderPickerSave" type="button"
-                        disabled>Use this folder
-                </button>
-            </div>
-            <div class="formItem">
-                <button class="close" data-locale="cancel" type="button">Cancel</button>
+            <div class="modalActions">
+                <div class="formItem">
+                    <button class="close" data-locale="cancel" type="button">Cancel</button>
+                </div>
+                <div class="formItem">
+                    <button class="save disabled" data-locale="folderPickerConfirm" id="folderPickerSave" type="button"
+                            disabled>Use this folder
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -313,6 +325,18 @@
 
         <button id="closeSettingsBtn" class="closeBtn" title="Close Settings">&times;</button>
 
+        <div class='row'>
+            <div class='column'>
+                <label data-locale="appearance">Theme</label>
+            </div>
+            <div class='column controls'>
+                <select class="settingsCtl" id="themeMode" name="themeMode">
+                    <option value="dark" data-locale="optionDark">Dark</option>
+                    <option value="light" data-locale="optionLight">Light</option>
+                    <option value="auto" data-locale="optionAuto">Auto</option>
+                </select>
+            </div>
+        </div>
         <div class='row'>
             <div class='column'>
                 <label data-locale="wallpaper">Wallpaper</label>
@@ -339,7 +363,7 @@
 
             <div class='row' id="backgroundColorContainer">
                 <div class='column'>
-                    <label data-locale="backgroundColor">Background Color</label>
+                    <label data-locale="backgroundColor">Background color</label>
                 </div>
                 <div class='column controls'>
                     <div id="color-picker-wrapper">
@@ -349,7 +373,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="textColor">Text Color</label>
+                    <label data-locale="textColor">Text color</label>
                 </div>
                 <div class='column controls'>
                     <div id="textColor-picker-wrapper">
@@ -359,7 +383,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="dialRatio">Dial Ratio</label>
+                    <label data-locale="dialRatio">Dial format</label>
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="dialRatio" name="dialRatio">
@@ -370,7 +394,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="dialSize">Dial Size</label>
+                    <label data-locale="dialSize">Dial size</label>
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="dialSize" name="dialSize">
@@ -386,7 +410,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="maxColumns">Max Columns</label>
+                    <label data-locale="maxColumns">Columns</label>
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="maxcols" name="maxcols">
@@ -404,7 +428,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="defaultSort">Default Sort</label>
+                    <label data-locale="defaultSort">Default sort</label>
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="defaultSort" name="defaultSort">
@@ -415,7 +439,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="folderStyle">Folder Style</label>
+                    <label data-locale="folderStyle">Folder style</label>
                 </div>
                 <div class='column controls'>
                     <select class="settingsCtl" id="folderStyle" name="folderStyle">
@@ -426,7 +450,7 @@
             </div>
             <div class='row' style="display:none">
                 <div class='column'>
-                    <label data-locale="largeTiles">Large Tiles</label>
+                    <label data-locale="largeTiles">Large tiles</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -437,11 +461,22 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="remember">Remember Last Folder</label>
+                    <label data-locale="remember">Remember last folder</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
                         <input class="settingsCtl" id="rememberFolder" type="checkbox">
+                        <span class="slider round settingsCtl"></span>
+                    </label>
+                </div>
+            </div>
+            <div class='row'>
+                <div class='column'>
+                    <label data-locale="openDialsInNewTab">Open dials in new tab</label>
+                </div>
+                <div class='column controls'>
+                    <label class="switch">
+                        <input class="settingsCtl" id="openDialsInNewTab" type="checkbox">
                         <span class="slider round settingsCtl"></span>
                     </label>
                 </div>
@@ -459,7 +494,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="addSiteButton">Add Site Button</label>
+                    <label data-locale="addSiteButton">Show 'Add Site'</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -470,7 +505,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="addFolderButton">Add Folder Button</label>
+                    <label data-locale="addFolderButton">Show 'Add Folder'</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -481,7 +516,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="settingsButton">Settings Button</label>
+                    <label data-locale="settingsButton">Show settings</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -492,7 +527,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="searchButton">Search Button</label>
+                    <label data-locale="searchButton">Show search</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -503,7 +538,7 @@
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label data-locale="clock">Clock</label>
+                    <label data-locale="clock">Show clock</label>
                 </div>
                 <div class='column controls'>
                     <label class="switch">
@@ -512,27 +547,34 @@
                     </label>
                 </div>
             </div>
-
             <hr>
             <div class='row'>
                 <div class='column'>
-                    <label id="speedDialFolderButton" data-locale="speedDialFolder" class="settingsCtl settingsLink">Speed Dial Folder...</label>
+                    <label id="speedDialFolderButton" class="settingsCtl settingsLink"><svg class="settingsLinkIcon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M120-120v-640h287l80 80h353v560H120Zm80-80h560v-400H453l-80-80H200v480Zm0 0v-480 480Z"/></svg><span data-locale="speedDialFolder">Speed Dial folder...</span></label>
                 </div>
             </div>
             <div class='row'>
                 <div class='column'>
-                <label id="importExportBtn" data-locale="importExportLink" class="settingsCtl settingsLink" >Import and Export...</label>
+                <label id="importExportBtn" class="settingsCtl settingsLink"><svg class="settingsLinkIcon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M280-120 80-320l200-200v120h320v160H280v120Zm400-320v-120H360v-160h320v-120l200 200-200 200Z"/></svg><span data-locale="importExportLink">Import and export...</span></label>
                     </div>
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label id="resetSettingsBtn" data-locale="resetSettings" class="settingsCtl settingsLink">Reset Settings</label>
+                    <label id="resetSettingsBtn" class="settingsCtl settingsLink"><svg class="settingsLinkIcon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-160q-134 0-227-93t-93-227q0-134 93-227t227-93q69 0 132 28.5T720-690v-110h80v280H520v-80h168q-32-56-87.5-88T480-720q-100 0-170 70t-70 170q0 100 70 170t170 70q77 0 139-44t87-116h84q-28 106-114 173t-196 67Z"/></svg><span data-locale="resetSettings">Reset settings</span></label>
                 </div>
             </div>
             <div class='row'>
                 <div class='column'>
-                    <label id="help" data-locale="help" class="settingsCtl settingsLink" >Help</label>
+                    <label id="help" class="settingsCtl settingsLink"><svg class="settingsLinkIcon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg><span data-locale="help">Help</span></label>
                 </div>
+            </div>
+            <span class="settingsFooterSpacer" aria-hidden="true"></span>
+            <hr>
+            <div class="settingsBrand">
+                <label id="websiteBrand" class="settingsBrandHeader settingsCtl">
+                    <img class="settingsBrandIcon" src="icons/icon48.png" alt="">
+                    <div>Yet Another Speed Dial</div>
+                </label>
             </div>
         </div>
 

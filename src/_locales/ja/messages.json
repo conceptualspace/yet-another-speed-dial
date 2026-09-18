@@ -170,6 +170,9 @@
   "newTab": {
     "message": "新しいタブで開く"
   },
+  "openDialsInNewTab": {
+    "message": "ダイヤルを新しいタブで開く"
+  },
   "newWin": {
     "message": "新しいウィンドウで開く"
   },

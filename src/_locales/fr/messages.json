@@ -170,6 +170,9 @@
   "newTab": {
     "message": "Ouvrir dans un nouvel onglet"
   },
+  "openDialsInNewTab": {
+    "message": "Ouvrir les raccourcis dans un nouvel onglet"
+  },
   "newWin": {
     "message": "Ouvrir dans une nouvelle fenêtre"
   },
