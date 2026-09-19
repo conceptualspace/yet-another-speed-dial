@@ -3771,12 +3771,17 @@ importFileInput.onchange = function (event) {
 
         if (json.dials && json.groups) {
             importFromSD2(json);
+        } else if (isGroupSpeedDialBackup(json)) {
+            importFromGroupSpeedDial(json);
         } else if (json.db) {
             importFromFVD(json);
         } else if (json.yasd) {
             importFromYASD(json);
-        } else {
+        } else if (isLegacyYasdBackup(json)) {
             importFromOldYASD(json);
+        } else {
+            importExportStatus.innerText = "Error! Unrecognized backup format.";
+            chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
         }
     };
 
@@ -3984,6 +3989,101 @@ function importFromSD2(json) {
     });
 }
 
+function isGroupSpeedDialBackup(json) {
+    return Number.isInteger(json?.dataVersion)
+        && Array.isArray(json.groups)
+        && json.groups.length > 0
+        && json.groups.every(group => group && Array.isArray(group.dials));
+}
+
+async function importFromGroupSpeedDial(json) {
+    const groups = json.groups;
+    const rootGroup = groups.find(group => group.id === 0) || groups[0];
+    const importedThumbnails = new Map();
+
+    for (const thumbnail of Array.isArray(json.___thumbnails) ? json.___thumbnails : []) {
+        if (!thumbnail || typeof thumbnail.url !== 'string') continue;
+
+        const image = [thumbnail.img, thumbnail.icon]
+            .find(value => typeof value === 'string' && value.startsWith('data:image/'));
+        if (!image) continue;
+
+        importedThumbnails.set(`${thumbnail.group}\n${thumbnail.url}`, image);
+        if (!importedThumbnails.has(thumbnail.url)) {
+            importedThumbnails.set(thumbnail.url, image);
+        }
+    }
+
+    try {
+        await clearStorage();
+
+        const groupIdMap = new Map([[rootGroup.id, speedDialId]]);
+        for (const group of groups) {
+            if (group === rootGroup) continue;
+
+            const title = typeof group.name === 'string' && group.name.trim()
+                ? group.name.trim()
+                : `Group ${group.id}`;
+            const existingGroups = await chrome.bookmarks.search({ title });
+            const matchingGroup = existingGroups.find(node => node.parentId === speedDialId && !node.url);
+            const folder = matchingGroup || await chrome.bookmarks.create({ title, parentId: speedDialId });
+            groupIdMap.set(group.id, folder.id);
+        }
+
+        const thumbnailUpdates = {};
+        const createdWithoutThumbnails = [];
+        const thumbnailBg = hexToCssGradient('#ffffff');
+
+        for (const group of groups) {
+            const parentId = groupIdMap.get(group.id) || speedDialId;
+            const existingUrls = new Set((await chrome.bookmarks.getChildren(parentId))
+                .filter(node => node.url)
+                .map(node => node.url));
+
+            for (const dial of group.dials) {
+                if (dial?.type !== 0 || typeof dial.url !== 'string' || !dial.url.trim()) continue;
+
+                const url = dial.url.trim();
+                const thumbnail = importedThumbnails.get(`${group.id}\n${url}`)
+                    || importedThumbnails.get(url);
+                if (thumbnail && !thumbnailUpdates[url]) {
+                    thumbnailUpdates[url] = { thumbnail, bgColor: thumbnailBg };
+                }
+
+                if (existingUrls.has(url)) continue;
+                existingUrls.add(url);
+
+                let node;
+                try {
+                    node = await chrome.bookmarks.create({
+                        title: typeof dial.name === 'string' ? dial.name : url,
+                        url,
+                        parentId
+                    });
+                } catch (err) {
+                    // the bookmarks api rejects some schemes (javascript: etc); skip the dial rather than abort the import
+                    console.log(err);
+                    continue;
+                }
+                if (!thumbnail) createdWithoutThumbnails.push(node);
+            }
+        }
+
+        if (Object.keys(thumbnailUpdates).length) {
+            await chrome.storage.local.set(thumbnailUpdates);
+        }
+
+        hideModals();
+        processRefresh();
+        refreshImportedThumbnails(createdWithoutThumbnails);
+    } catch (err) {
+        console.log(err);
+        importExportStatus.innerText = "Group Speed Dial import error! Unable to import bookmarks and dials.";
+    } finally {
+        chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
+    }
+}
+
 function importFromFVD(json) {
     let bookmarks = json.db.dials.map(dial => ({
         title: dial.title,
@@ -4181,6 +4281,14 @@ async function importFromYASD(json) {
         importExportStatus.innerText = "Error! Unable to import bookmarks and dials.";
         chrome.runtime.sendMessage({ target: 'background', type: 'toggleBookmarkCreatedListener', data: { enable: true } });
     }
+}
+
+// the pre-v3 exporter only ever wrote the settings object and http-keyed thumbnail records
+function isLegacyYasdBackup(json) {
+    if (!json || typeof json !== 'object' || Array.isArray(json)) return false;
+    const keys = Object.keys(json);
+    return keys.length > 0 && keys.every(key => key.startsWith('settings')
+        || (key.startsWith('http') && json[key] && typeof json[key] === 'object'));
 }
 
 function importFromOldYASD(json) {
