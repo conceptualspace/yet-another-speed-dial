@@ -6,6 +6,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+mkdir -p dist
 rm -rf dist/chrome
 cp -a src dist/chrome
 rm -f dist/chrome/*.zip
