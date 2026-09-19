@@ -167,6 +167,15 @@
     align-items: flex-end;
 }
 
+.sidenav .setting-toggle {
+    flex-wrap: nowrap;
+}
+
+.sidenav .setting-toggle > .column:first-child {
+    flex: 2;
+    min-width: 0;
+}
+
 
 /* The switch - the box around the slider */
 .sidenav .switch {
