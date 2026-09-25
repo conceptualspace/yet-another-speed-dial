@@ -26,7 +26,7 @@
 #tabsPanel h1 { margin: 12px 0; }
 #tabsPanel .closeBtn { top: 18px; right: 16px; }
 #openTabsCount { margin-inline-start: 0.35em; opacity: 0.55; font-weight: normal; }
-#openTabsSearch { box-sizing: border-box; width: 100%; flex: 0 0 auto; font: inherit; }
+#openTabsSearch { box-sizing: border-box; width: 100%; flex: 0 0 auto; font: inherit; background: transparent; border: 0; }
 #openTabsStatus { margin: 0; opacity: 0.7; }
 
 #tabsPanel #openTabsGrid {
