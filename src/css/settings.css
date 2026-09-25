@@ -51,6 +51,36 @@
     opacity: 0.6;
 }
 
+#tabsPanel .openTabGroup { grid-column: 1 / -1; min-width: 0; }
+#tabsPanel .openTabGroup summary {
+    padding: 4px 0;
+    cursor: pointer;
+    font-size: 12px;
+    list-style-position: inside;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tabsPanel .openTabGroup summary::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tab-group-color);
+    margin-inline-end: 6px;
+}
+
+#tabsPanel .openTabGroupGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px 14px;
+    padding: 10px 0 0;
+}
+
+#tabsPanel .openTabGroup summary:focus-visible { outline: 2px solid #1681d9; outline-offset: -2px; }
+
 #tabsPanel .openTab { position: relative; min-width: 0; padding: 0; }
 #tabsPanel .openTabActivate {
     all: unset;
@@ -141,6 +171,7 @@
 
 @media (max-width: 360px) {
     #tabsPanel #openTabsGrid { grid-template-columns: minmax(0, 178px); }
+    #tabsPanel .openTabGroupGrid { grid-template-columns: minmax(0, 1fr); }
 }
 
 .sidenav .settings {

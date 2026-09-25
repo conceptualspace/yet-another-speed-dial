@@ -1,5 +1,6 @@
 {
   "openTabs": { "message": "Open Tabs" },
+  "unnamedTabGroup": { "message": "Unnamed group" },
   "searchTabs": { "message": "Search..." },
   "closeTabsPanel": { "message": "Close Open Tabs" },
   "closeTab": {

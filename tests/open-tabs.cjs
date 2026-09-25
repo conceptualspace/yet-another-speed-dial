@@ -129,12 +129,17 @@ test('tab panel context menus are suppressed without closing the panel or changi
     assert.equal(menusShown, 1);
 });
 
-test('tab list: ordering, filtering, duplicate URLs, activation and independent closure', async () => {
+test('tab list: ordering, filtering, actions, group display and local collapse', async () => {
     const chrome = mockChrome();
     const elements = new Map();
     class Element {
-        constructor(tag) { this.tag = tag; this.children = []; this.dataset = {}; this.listeners = {}; this.value = ''; }
+        constructor(tag) {
+            this.tag = tag; this.children = []; this.dataset = {}; this.listeners = {}; this.value = '';
+            this.isConnected = true;
+            this.style = { setProperty(name, value) { this[name] = value; } };
+        }
         setAttribute() {}
+        focus() { document.activeElement = this; }
         addEventListener(name, callback) { this.listeners[name] = callback; }
         append(...children) { this.children.push(...children); }
         replaceChildren(fragment) { this.children = fragment.children; }
@@ -168,7 +173,15 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
     chrome.tabs.remove = async id => actions.push(['close', id]);
     chrome.stored['tabPreview:2'] = { url: 'https://old.example/', image: 'stale-image' };
     chrome.stored['tabPreview:3'] = { url: tabs[2].url, image: 'current-image' };
-    const context = vm.createContext({ chrome, document, URL, setTimeout, clearTimeout });
+    let groups = [];
+    chrome.tabGroups = {
+        query: async () => groups,
+        onCreated: event(), onUpdated: event(), onMoved: event(), onRemoved: event()
+    };
+    let scheduledRefresh;
+    const context = vm.createContext({ chrome, document, URL, clearTimeout,
+        setTimeout(callback) { scheduledRefresh = callback; return 0; }
+    });
     vm.runInContext(readFileSync('src/js/openTabs.js', 'utf8'), context);
     await vm.runInContext('refreshOpenTabs()', context);
     const grid = elements.get('openTabsGrid');
@@ -231,6 +244,71 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
     assert.equal(elements.get('openTabsCount').textContent, '0');
     assert.equal(elements.get('openTabsStatus').textContent, 'noOpenTabs');
 
+    groups = [
+        { id: 0, windowId: 1, title: '<b>Work</b>', color: 'blue', collapsed: true },
+        { id: 20, windowId: 2, title: '', color: 'green' }
+    ];
+    const groupedTabs = [
+        tabs[0],
+        { ...tabs[3], groupId: -1 },
+        { ...tabs[2], groupId: 0 },
+        { id: 13, windowId: 1, index: 3, groupId: 0, title: 'Another document', url: 'https://work.example/' },
+        { id: 14, windowId: 1, index: 4, groupId: -1, title: 'Ungrouped', url: 'https://ungrouped.example/' },
+        { ...tabs[1], groupId: 20 }
+    ];
+    chrome.tabs.query = async () => groupedTabs;
+    await vm.runInContext('refreshOpenTabs()', context);
+    assert.deepEqual(grid.children.map(child => child.tag === 'h2' ? 'window' :
+        child.tag === 'details' ? 'group' : child.children[0].dataset.tabId), ['window', '2', 'group', '14', 'window', 'group']);
+    let sections = grid.querySelectorAll('details');
+    assert.equal(sections.length, 2);
+    assert.equal(sections[0].children[0].textContent, '<b>Work</b>');
+    assert.equal(sections[0].style['--tab-group-color'], '#1a73e8');
+    assert.equal(sections[1].children[0].textContent, 'unnamedTabGroup');
+    assert.equal(sections[1].style['--tab-group-color'], '#188038');
+    assert.deepEqual(sections[0].children[1].children.map(tile => tile.children[0].dataset.tabId), ['3', '13']);
+    assert.equal(sections[0].open, true);
+    sections[0].open = false;
+    sections[0].listeners.toggle();
+    document.activeElement = sections[0].children[0];
+    await vm.runInContext('refreshOpenTabs()', context);
+    sections = grid.querySelectorAll('details');
+    assert.equal(sections[0].open, false);
+    assert.equal(document.activeElement, sections[0].children[0]);
+    assert.equal(elements.get('openTabsCount').textContent, '5');
+
+    document.activeElement = elements.get('openTabsSearch');
+    elements.get('openTabsSearch').value = 'second';
+    await vm.runInContext('refreshOpenTabs()', context);
+    sections = grid.querySelectorAll('details');
+    assert.equal(sections.length, 1);
+    assert.equal(sections[0].open, true);
+    assert.equal(sections[0].children[1].children.length, 1);
+    sections[0].listeners.toggle();
+    elements.get('openTabsSearch').value = '';
+    await vm.runInContext('refreshOpenTabs()', context);
+    assert.equal(grid.querySelectorAll('details')[0].open, false);
+
+    groups[0].title = 'Renamed';
+    groups[0].color = 'orange';
+    chrome.tabGroups.onUpdated.listeners[0](groups[0]);
+    await scheduledRefresh();
+    sections = grid.querySelectorAll('details');
+    assert.equal(sections[0].children[0].textContent, 'Renamed');
+    assert.equal(sections[0].style['--tab-group-color'], '#fa903e');
+    for (const groupId of [-1, 0]) {
+        scheduledRefresh = null;
+        chrome.tabs.onUpdated.listeners[0](13, { groupId });
+        assert.equal(typeof scheduledRefresh, 'function');
+    }
+    chrome.tabGroups.query = async () => { throw new Error('Group metadata unavailable'); };
+    await vm.runInContext('refreshOpenTabs()', context);
+    assert.equal(grid.querySelectorAll('details').length, 0);
+    assert.equal(grid.children.filter(child => child.className === 'openTab').length, 5);
+    delete chrome.tabGroups;
+    await vm.runInContext('refreshOpenTabs()', context);
+    assert.equal(grid.children.filter(child => child.className === 'openTab').length, 5);
+
     context.faviconTab = { url: 'https://example.com/?first=1&next=2#section', favIconUrl: 'https://example.com/icon.png' };
     const encodedUrl = new URL(vm.runInContext('getOpenTabFavicon(faviconTab)', context));
     assert.equal(encodedUrl.searchParams.get('pageUrl'), context.faviconTab.url);
@@ -243,4 +321,5 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
     assert.equal(vm.runInContext('getOpenTabFavicon({})', context), 'icons/icon48.png');
     const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'));
     assert.ok(manifest.permissions.includes('favicon'));
+    assert.ok(manifest.permissions.includes('tabGroups'));
 });

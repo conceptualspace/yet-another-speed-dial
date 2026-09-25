@@ -5,6 +5,11 @@ const openTabsButton = document.getElementById('openTabsBtn');
 const openTabsSearch = document.getElementById('openTabsSearch');
 const openTabsGrid = document.getElementById('openTabsGrid');
 const openTabsStatus = document.getElementById('openTabsStatus');
+const collapsedTabGroups = new Set();
+const tabGroupColors = {
+    grey: '#80868b', blue: '#1a73e8', red: '#d93025', yellow: '#f9ab00', green: '#188038',
+    pink: '#d01884', purple: '#a142f4', cyan: '#007b83', orange: '#fa903e'
+};
 let openTabsRevision = 0;
 let openTabsRefreshTimer;
 
@@ -57,9 +62,11 @@ async function refreshOpenTabs() {
     if (openTabsPanel.inert) return;
     const revision = ++openTabsRevision;
     try {
-        const [ownTab, allTabs] = await Promise.all([
-            chrome.tabs.getCurrent(), chrome.tabs.query({ windowType: 'normal' })
+        const [ownTab, allTabs, allGroups] = await Promise.all([
+            chrome.tabs.getCurrent(), chrome.tabs.query({ windowType: 'normal' }),
+            chrome.tabGroups?.query ? chrome.tabGroups.query({}).catch(() => []) : []
         ]);
+        const groups = new Map(allGroups.map(group => [group.id, group]));
         const tabs = allTabs.filter(tab => tab.id !== ownTab?.id && !tab.incognito && !isSpeedDialNewTab(tab))
             .sort((first, second) => (first.windowId !== ownTab?.windowId) - (second.windowId !== ownTab?.windowId)
                 || first.windowId - second.windowId || first.index - second.index);
@@ -70,19 +77,47 @@ async function refreshOpenTabs() {
         const fragment = document.createDocumentFragment();
         const windowIds = [...new Set(tabs.map(tab => tab.windowId))];
         let previousWindow;
+        let previousGroup;
+        let groupGrid;
         for (const tab of visible) {
             if (windowIds.length > 1 && previousWindow !== tab.windowId) {
                 const heading = document.createElement('h2');
                 heading.textContent = chrome.i18n.getMessage('tabsWindow', String(windowIds.indexOf(tab.windowId) + 1));
                 fragment.append(heading);
             }
+            const group = groups.get(tab.groupId);
+            if (group && (previousGroup !== group.id || previousWindow !== tab.windowId)) {
+                const section = document.createElement('details');
+                section.className = 'openTabGroup';
+                section.open = !!query || !collapsedTabGroups.has(group.id);
+                section.style.setProperty('--tab-group-color', tabGroupColors[group.color] || tabGroupColors.grey);
+                const heading = document.createElement('summary');
+                heading.dataset.groupId = String(group.id);
+                heading.textContent = group.title || chrome.i18n.getMessage('unnamedTabGroup');
+                heading.title = heading.textContent;
+                groupGrid = document.createElement('div');
+                groupGrid.className = 'openTabGroupGrid';
+                groupGrid.setAttribute('role', 'list');
+                section.append(heading, groupGrid);
+                section.addEventListener('toggle', () => {
+                    if (query || !section.isConnected) return;
+                    if (section.open) collapsedTabGroups.delete(group.id);
+                    else collapsedTabGroups.add(group.id);
+                });
+                fragment.append(section);
+            }
             previousWindow = tab.windowId;
-            fragment.append(buildOpenTab(tab, stored['tabPreview:' + tab.id]));
+            previousGroup = group?.id;
+            (group ? groupGrid : fragment).append(buildOpenTab(tab, stored['tabPreview:' + tab.id]));
         }
         const focused = document.activeElement;
+        const focusedGroup = focused?.dataset?.groupId;
         const focusIndex = [...openTabsGrid.querySelectorAll('button')].indexOf(focused);
         openTabsGrid.replaceChildren(fragment);
-        if (focusIndex >= 0) {
+        if (focusedGroup) {
+            [...openTabsGrid.querySelectorAll('summary')].find(heading => heading.dataset.groupId === focusedGroup)
+                ?.focus({ preventScroll: true });
+        } else if (focusIndex >= 0) {
             const buttons = [...openTabsGrid.querySelectorAll('button')];
             const replacement = buttons.find(button => button.dataset.tabId === focused.dataset.tabId
                 && button.dataset.action === focused.dataset.action) || buttons[Math.min(focusIndex, buttons.length - 1)];
@@ -174,8 +209,14 @@ for (const event of [chrome.tabs.onCreated, chrome.tabs.onRemoved, chrome.tabs.o
     event.addListener(queueOpenTabsRefresh);
 }
 chrome.tabs.onUpdated.addListener((tabId, change) => {
-    if (change.title || change.url || change.favIconUrl || change.status) queueOpenTabsRefresh();
+    if (change.title || change.url || change.favIconUrl || change.status || change.groupId !== undefined) queueOpenTabsRefresh();
 });
+if (chrome.tabGroups?.query) {
+    for (const event of [chrome.tabGroups.onCreated, chrome.tabGroups.onUpdated,
+        chrome.tabGroups.onMoved, chrome.tabGroups.onRemoved]) {
+        event.addListener(queueOpenTabsRefresh);
+    }
+}
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'session' && Object.keys(changes).some(key => key.startsWith('tabPreview:'))) queueOpenTabsRefresh();
 });
