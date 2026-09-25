@@ -70,7 +70,6 @@
     overflow: hidden;
     border-radius: 5px;
     background: #292929;
-    border: 1px solid rgba(128, 128, 128, 0.2);
 }
 
 .lightMode #tabsPanel .openTabPreview { background: #eee; }
@@ -130,8 +129,7 @@
     cursor: pointer;
 }
 
-#tabsPanel .openTabClose:hover { background: #b3261e; }
-#tabsPanel .openTabActivate:hover .openTabPreview { border-color: #888; }
+#tabsPanel .openTabClose:hover { background: rgba(0, 0, 0, 0.9); }
 #tabsPanel button:focus-visible, #openTabsBtn:focus-visible { outline: 2px solid #1681d9; outline-offset: 2px; }
 #tabsPanel #openTabsGrid button:focus-visible { outline-offset: -2px; }
 
