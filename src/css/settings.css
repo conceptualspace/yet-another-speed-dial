@@ -81,8 +81,8 @@
     box-sizing: border-box;
     gap: 10px;
     min-height: 40px;
-    padding: 2px;
-    margin-top: 1px;
+    padding: 0;
+    margin-top: 0;
 }
 
 #tabsPanel .openTabLabel {
@@ -90,7 +90,7 @@
     min-width: 0;
 }
 
-#tabsPanel .openTabTitleIcon { width: 16px; height: 16px; object-fit: contain; }
+#tabsPanel .openTabTitleIcon { width: 16px; height: 16px; object-fit: contain; opacity: 0.88; }
 #tabsPanel .openTabTitle {
     display: block;
     overflow: hidden;
