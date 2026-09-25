@@ -2989,7 +2989,10 @@ function saveSettings(nextWallpaperSrc) {
 
 // override context menu
 document.addEventListener("contextmenu", function (e) {
-    if (e.target.closest?.('#tabsPanel')) return;
+    if (e.target.closest?.('#tabsPanel')) {
+        e.preventDefault();
+        return;
+    }
     if (e.target.type === 'text' && (e.target.id === 'modalTitle' || e.target.id === 'modalURL' || e.target.id === 'modalImageURLInput' || e.target.id === 'createDialModalURL')) {
         return;
     }

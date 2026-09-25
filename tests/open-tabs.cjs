@@ -94,7 +94,7 @@ test('preview capture: before panel opens, cooldown, privacy, invalidation, queu
     assert.equal(chrome.stored['tabPreview:9'], undefined);
 });
 
-test('tab panel context menus stay native without changing the bookmark menu', () => {
+test('tab panel context menus are suppressed without closing the panel or changing the bookmark menu', () => {
     const source = readFileSync('src/js/index.js', 'utf8');
     const start = source.indexOf('document.addEventListener("contextmenu"');
     const end = source.indexOf('// todo: tidy this up', start);
@@ -119,12 +119,12 @@ test('tab panel context menus stay native without changing the bookmark menu', (
         target.closest = selector => selector === '#tabsPanel' ? {} : null;
         handler({ target, preventDefault() { prevented++; } });
     }
-    assert.equal(prevented, 0);
+    assert.equal(prevented, 3);
     assert.equal(hidden, 0);
     assert.equal(menusShown, 0);
     document.body.closest = () => null;
     handler({ target: document.body, pageX: 10, pageY: 20, preventDefault() { prevented++; } });
-    assert.equal(prevented, 1);
+    assert.equal(prevented, 4);
     assert.equal(hidden, 1);
     assert.equal(menusShown, 1);
 });
