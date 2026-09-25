@@ -141,14 +141,14 @@ function buildOpenTab(tab, preview) {
     const title = document.createElement('span');
     title.className = 'openTabTitle';
     title.textContent = tab.title || tab.url;
-    label.append(favicon, title);
     const hostname = document.createElement('span');
     hostname.className = 'openTabHost';
     try { hostname.textContent = new URL(tab.url).hostname || tab.url; }
     catch (error) { hostname.textContent = tab.url || ''; }
+    label.append(title, hostname);
     const details = document.createElement('span');
     details.className = 'openTabDetails';
-    details.append(label, hostname);
+    details.append(favicon, label);
     activate.append(picture, details);
     activate.addEventListener('click', async () => {
         try {
