@@ -37,6 +37,8 @@
     overflow-y: auto;
     min-height: 0;
     padding: 0;
+    padding-inline-end: 12px;
+    margin-inline-end: -12px;
     align-content: start;
     scrollbar-width: thin;
 }

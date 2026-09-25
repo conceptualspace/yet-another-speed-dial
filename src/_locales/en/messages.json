@@ -1,6 +1,6 @@
 {
   "openTabs": { "message": "Open Tabs" },
-  "searchTabs": { "message": "Search tabs..." },
+  "searchTabs": { "message": "Search..." },
   "closeTabsPanel": { "message": "Close Open Tabs" },
   "closeTab": {
     "message": "Close tab: $TITLE$",
