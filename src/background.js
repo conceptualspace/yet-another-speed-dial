@@ -4,6 +4,8 @@
 
 'use strict';
 
+importScripts('js/tabPreviews.js');
+
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
@@ -301,7 +303,7 @@ const capturePopupPage = (url) => {
               setTimeout(async () => {
                 // delay to let page render
                 const pageData = await extractFromTab(tabId);
-                const screenshot = await chrome.tabs.captureVisibleTab(popup.id).catch(() => {
+                const screenshot = await captureVisibleWindow(popup.id).catch(() => {
                     console.log("Error capturing screenshot");
                     return null;
                 });
@@ -574,7 +576,7 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         
         if (tabs && tabs.length && tabs[0].url === url) {
             try {
-                screenshot = await chrome.tabs.captureVisibleTab()
+                screenshot = await captureVisibleWindow(tabs[0].windowId, undefined, tabs[0])
             } catch (e) {
                 console.log("screenshot error: ", e.message || e)
             }
@@ -586,7 +588,7 @@ async function getThumbnails(url, id, parentId, options = {quickRefresh: false, 
         if (tab) {
             pageData = await extractFromTab(tab.id);
             if (tab.active) {
-                screenshot = await chrome.tabs.captureVisibleTab(tab.windowId).catch(e => {
+                screenshot = await captureVisibleWindow(tab.windowId, undefined, tab).catch(e => {
                     console.log("screenshot error: ", e.message || e);
                     return null;
                 });

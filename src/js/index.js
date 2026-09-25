@@ -1457,11 +1457,13 @@ function hideMenus() {
 }
 
 function openSettings() {
+    hideOpenTabs();
     sidenav.style.boxShadow = "0px 2px 8px 0px rgba(0,0,0,0.5)";
     sidenav.style.transform = "translateX(0%)";
 }
 
 function hideSettings() {
+    hideOpenTabs();
     sidenav.style.transform = "translateX(100%)";
     sidenav.style.boxShadow = "none";
 }
@@ -3030,7 +3032,7 @@ document.addEventListener("contextmenu", function (e) {
 
 // todo: tidy this up
 window.addEventListener("click", e => {
-    if (e.target.closest?.('.settingsCtl, #importFileLabel')) {
+    if (e.target.closest?.('.settingsCtl, #importFileLabel, #tabsPanel, #openTabsBtn')) {
         return;
     }
     if (e.target.className === 'tile-content' || e.target.className === 'tile-title') {
@@ -3063,7 +3065,7 @@ window.addEventListener("auxclick", e => {
 // listen for menu item
 window.addEventListener("mousedown", e => {
     hideMenus();
-    if (e.target.type === 'text' || e.target.closest?.('.settingsCtl, #importFileLabel')) {
+    if (e.target.type === 'text' || e.target.closest?.('.settingsCtl, #importFileLabel, #tabsPanel, #openTabsBtn')) {
         return
     }
     if (e.target.className.baseVal === 'gear') {
@@ -3179,6 +3181,10 @@ window.addEventListener("mousedown", e => {
 window.addEventListener("keydown", event => {
     if (event.code === "Escape") {
         if (cancelActiveDialDrag(event)) return;
+        if (!document.getElementById('tabsPanel').inert) {
+            hideOpenTabs(true);
+            return;
+        }
 
         // Close search if it's active (prioritize this over other actions)
         if (searchContainer.classList.contains('active')) {
@@ -3190,6 +3196,10 @@ window.addEventListener("keydown", event => {
         hideModals();
     } else if ((event.ctrlKey || event.metaKey) && event.key === 'f') {
         event.preventDefault(); // Prevent the default browser behavior
+        if (!document.getElementById('tabsPanel').inert) {
+            document.getElementById('openTabsSearch').focus();
+            return;
+        }
         activateExpandableSearch();
     }
 });

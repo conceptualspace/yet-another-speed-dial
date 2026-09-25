@@ -1,4 +1,18 @@
 {
+  "openTabs": { "message": "Open Tabs" },
+  "searchTabs": { "message": "Search tabs..." },
+  "closeTabsPanel": { "message": "Close Open Tabs" },
+  "closeTab": {
+    "message": "Close tab: $TITLE$",
+    "placeholders": { "title": { "content": "$1" } }
+  },
+  "tabsWindow": {
+    "message": "Window $NUMBER$",
+    "placeholders": { "number": { "content": "$1" } }
+  },
+  "noOpenTabs": { "message": "No other tabs open" },
+  "noMatchingTabs": { "message": "No matching tabs" },
+  "tabsUnavailable": { "message": "Could not load open tabs" },
   "addFolderButton": {
     "description": "Settings toggle that shows or hides the Add Folder button",
     "message": "Show 'Add Folder'"

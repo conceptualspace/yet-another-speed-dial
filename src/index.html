@@ -29,6 +29,9 @@
     
     <!-- Header controls container -->
     <div class="header-controls">
+        <button id="openTabsBtn" class="settingsIcon" type="button" aria-controls="tabsPanel" aria-expanded="false">
+            <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"><path d="M320-240q-33 0-56.5-23.5T240-320v-480q0-33 23.5-56.5T320-880h480q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H320Zm0-80h480v-320H520v-160H320v480ZM160-80q-33 0-56.5-23.5T80-160v-560h80v560h560v80H160Z"/></svg>
+        </button>
         <div class="searchIcon" id="searchBtn">
             <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#e3e3e3"><path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z"/></svg>
         </div>
@@ -590,9 +593,20 @@
     </div>
 </div>
 
+<aside class="sidenav" id="tabsPanel" aria-labelledby="tabsPanelTitle" inert>
+    <header>
+        <h1 id="tabsPanelTitle"><span data-locale="openTabs">Open Tabs</span> <span id="openTabsCount"></span></h1>
+        <button id="closeTabsBtn" class="closeBtn" type="button">&times;</button>
+    </header>
+    <input id="openTabsSearch" type="search" data-locale-placeholder="searchTabs" autocomplete="off">
+    <p id="openTabsStatus" role="status" hidden></p>
+    <div id="openTabsGrid" role="list"></div>
+</aside>
+
 <script src="js/lib/Sortable.min.js"></script>
 <script src="js/lib/jquery-4.0.0.slim.min.js"></script>
 <script src="js/lib/flexCarousel.min.js"></script>
 <script src="js/lib/coloris.min.js"></script>
 <script src="js/index.js"></script>
+<script src="js/openTabs.js"></script>
 </body>
