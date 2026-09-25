@@ -41,6 +41,18 @@ function queueOpenTabsRefresh() {
     openTabsRefreshTimer = setTimeout(refreshOpenTabs, 100);
 }
 
+function isSpeedDialNewTab(tab) {
+    try {
+        const url = new URL(tab.url);
+        url.search = '';
+        url.hash = '';
+        return url.href === chrome.runtime.getURL('index.html')
+            || url.href === 'chrome://newtab/' || url.href === 'chrome://newtab';
+    } catch (error) {
+        return false;
+    }
+}
+
 async function refreshOpenTabs() {
     if (openTabsPanel.inert) return;
     const revision = ++openTabsRevision;
@@ -48,7 +60,7 @@ async function refreshOpenTabs() {
         const [ownTab, allTabs] = await Promise.all([
             chrome.tabs.getCurrent(), chrome.tabs.query({ windowType: 'normal' })
         ]);
-        const tabs = allTabs.filter(tab => tab.id !== ownTab?.id && !tab.incognito)
+        const tabs = allTabs.filter(tab => tab.id !== ownTab?.id && !tab.incognito && !isSpeedDialNewTab(tab))
             .sort((first, second) => (first.windowId !== ownTab?.windowId) - (second.windowId !== ownTab?.windowId)
                 || first.windowId - second.windowId || first.index - second.index);
         const query = openTabsSearch.value.trim().toLowerCase();
@@ -86,6 +98,16 @@ async function refreshOpenTabs() {
     }
 }
 
+function getOpenTabFavicon(tab, size = 32) {
+    const url = new URL(chrome.runtime.getURL('/_favicon/'));
+    if (url.protocol !== 'chrome-extension:' || !tab.url) {
+        return tab.favIconUrl || 'icons/icon48.png';
+    }
+    url.searchParams.set('pageUrl', tab.url);
+    url.searchParams.set('size', String(size));
+    return url.href;
+}
+
 function buildOpenTab(tab, preview) {
     const tile = document.createElement('div');
     tile.className = 'openTab';
@@ -103,17 +125,31 @@ function buildOpenTab(tab, preview) {
     image.alt = '';
     image.loading = 'lazy';
     image.className = hasPreview ? 'openTabScreenshot' : 'openTabFavicon';
-    image.src = hasPreview || tab.favIconUrl || 'icons/icon48.png';
+    image.src = hasPreview || getOpenTabFavicon(tab, 64);
     image.onerror = () => { image.onerror = null; image.src = 'icons/icon48.png'; image.className = 'openTabFavicon'; };
     picture.append(image);
+    const label = document.createElement('span');
+    label.className = 'openTabLabel';
+    const favicon = document.createElement('img');
+    favicon.className = 'openTabTitleIcon';
+    favicon.alt = '';
+    favicon.width = 16;
+    favicon.height = 16;
+    favicon.loading = 'lazy';
+    favicon.src = getOpenTabFavicon(tab);
+    favicon.onerror = () => { favicon.onerror = null; favicon.src = 'icons/icon48.png'; };
     const title = document.createElement('span');
     title.className = 'openTabTitle';
     title.textContent = tab.title || tab.url;
+    label.append(favicon, title);
     const hostname = document.createElement('span');
     hostname.className = 'openTabHost';
     try { hostname.textContent = new URL(tab.url).hostname || tab.url; }
     catch (error) { hostname.textContent = tab.url || ''; }
-    activate.append(picture, title, hostname);
+    const details = document.createElement('span');
+    details.className = 'openTabDetails';
+    details.append(label, hostname);
+    activate.append(picture, details);
     activate.addEventListener('click', async () => {
         try {
             await chrome.tabs.update(tab.id, { active: true });

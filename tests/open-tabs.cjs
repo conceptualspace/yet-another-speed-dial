@@ -11,6 +11,7 @@ function mockChrome() {
     const stored = {};
     return {
         stored,
+        runtime: { getURL: path => new URL(path, 'chrome-extension://test/').href },
         i18n: { getMessage: (key, substitution) => key + (substitution || '') },
         storage: { onChanged: event(), session: {
             get: async key => key === null ? { ...stored } : Object.fromEntries(
@@ -106,11 +107,18 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
         addEventListener() {}, activeElement: null
     };
     const tabs = [
-        { id: 1, windowId: 1, index: 0, url: 'chrome-extension://own/index.html' },
+        { id: 1, windowId: 1, index: 0, url: 'chrome-extension://test/index.html' },
         { id: 4, windowId: 2, index: 0, title: 'Other window', url: 'https://other.example/' },
-        { id: 3, windowId: 1, index: 2, title: 'Second document', url: 'https://same.example/' },
+        { id: 3, windowId: 1, index: 2, title: 'Second document', url: 'https://same.example/', favIconUrl: 'https://same.example/favicon.ico' },
         { id: 2, windowId: 1, index: 1, title: '<b>First document</b>', url: 'https://same.example/' },
-        { id: 5, windowId: 3, index: 0, incognito: true, title: 'Private', url: 'https://private.example/' }
+        { id: 5, windowId: 3, index: 0, incognito: true, title: 'Private', url: 'https://private.example/' },
+        { id: 6, windowId: 1, index: 3, url: 'chrome-extension://test/index.html' },
+        { id: 7, windowId: 2, index: 1, url: 'chrome-extension://test/index.html?folder=123' },
+        { id: 8, windowId: 4, index: 0, url: 'chrome-extension://test/index.html#folder-123' },
+        { id: 9, windowId: 4, index: 1, url: 'chrome-extension://test/index.html?folder=123#folder-123' },
+        { id: 10, windowId: 4, index: 2, url: 'chrome://newtab/' },
+        { id: 11, windowId: 4, index: 3, url: 'chrome://newtab/?folder=123#folder-123' },
+        { id: 12, windowId: 4, index: 4, url: 'chrome://newtab' }
     ];
     chrome.tabs.getCurrent = async () => tabs[0];
     chrome.tabs.query = async () => tabs;
@@ -127,8 +135,35 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
     let tiles = grid.children.filter(child => child.className === 'openTab');
     assert.deepEqual(tiles.map(tile => tile.children[0].dataset.tabId), ['2', '3', '4']);
     assert.equal(elements.get('openTabsCount').textContent, '3');
-    assert.equal(tiles[0].children[0].children[1].textContent, '<b>First document</b>');
-    assert.equal(tiles[0].children[0].children[0].children[0].src, 'icons/icon48.png');
+    assert.equal(grid.children.filter(child => child.tag === 'h2').length, 2);
+    const firstDetails = tiles[0].children[0].children[1];
+    const firstLabel = firstDetails.children[0];
+    assert.equal(firstDetails.className, 'openTabDetails');
+    assert.equal(firstLabel.className, 'openTabLabel');
+    assert.equal(firstLabel.children[1].textContent, '<b>First document</b>');
+    assert.equal(firstDetails.children[1].className, 'openTabHost');
+    assert.equal(firstDetails.children[1].textContent, 'same.example');
+    const titleIcon = tiles[1].children[0].children[1].children[0].children[0];
+    const faviconUrl = new URL(titleIcon.src);
+    assert.equal(faviconUrl.protocol, 'chrome-extension:');
+    assert.equal(faviconUrl.host, 'test');
+    assert.equal(faviconUrl.pathname, '/_favicon/');
+    assert.equal(faviconUrl.searchParams.get('pageUrl'), 'https://same.example/');
+    assert.equal(faviconUrl.searchParams.get('size'), '32');
+    assert.equal(firstLabel.children[0].src, titleIcon.src);
+    assert.equal(titleIcon.alt, '');
+    assert.equal(titleIcon.width, 16);
+    assert.equal(titleIcon.height, 16);
+    titleIcon.onerror();
+    assert.equal(titleIcon.src, 'icons/icon48.png');
+    assert.equal(titleIcon.onerror, null);
+    const placeholder = tiles[0].children[0].children[0].children[0];
+    const placeholderUrl = new URL(placeholder.src);
+    assert.equal(placeholderUrl.searchParams.get('pageUrl'), 'https://same.example/');
+    assert.equal(placeholderUrl.searchParams.get('size'), '64');
+    placeholder.onerror();
+    assert.equal(placeholder.src, 'icons/icon48.png');
+    assert.equal(placeholder.onerror, null);
     assert.equal(tiles[1].children[0].children[0].children[0].src, 'current-image');
     await tiles[0].children[0].listeners.click();
     await tiles[0].children[1].listeners.click();
@@ -142,4 +177,30 @@ test('tab list: ordering, filtering, duplicate URLs, activation and independent 
     await vm.runInContext('refreshOpenTabs()', context);
     assert.equal(elements.get('openTabsStatus').hidden, false);
     assert.equal(elements.get('openTabsStatus').textContent, 'noMatchingTabs');
+
+    for (const url of ['chrome-extension://other/index.html', 'chrome-extension://test/updated.html',
+        'chrome-extension://test/index.html.backup', 'chrome://settings/', 'chrome://newtab/other',
+        'chrome://newtab-other/', 'https://newtab/', 'https://example.com/index.html', undefined]) {
+        context.candidateTab = { url };
+        assert.equal(vm.runInContext('isSpeedDialNewTab(candidateTab)', context), false);
+    }
+    elements.get('openTabsSearch').value = '';
+    chrome.tabs.query = async () => tabs.filter(tab => tab.id === 1 || tab.id >= 6);
+    await vm.runInContext('refreshOpenTabs()', context);
+    assert.equal(grid.children.length, 0);
+    assert.equal(elements.get('openTabsCount').textContent, '0');
+    assert.equal(elements.get('openTabsStatus').textContent, 'noOpenTabs');
+
+    context.faviconTab = { url: 'https://example.com/?first=1&next=2#section', favIconUrl: 'https://example.com/icon.png' };
+    const encodedUrl = new URL(vm.runInContext('getOpenTabFavicon(faviconTab)', context));
+    assert.equal(encodedUrl.searchParams.get('pageUrl'), context.faviconTab.url);
+    chrome.runtime.getURL = path => new URL(path, 'moz-extension://test/').href;
+    context.candidateTab = { url: 'moz-extension://test/index.html?folder=123#folder-123' };
+    assert.equal(vm.runInContext('isSpeedDialNewTab(candidateTab)', context), true);
+    context.candidateTab = { url: 'moz-extension://other/index.html' };
+    assert.equal(vm.runInContext('isSpeedDialNewTab(candidateTab)', context), false);
+    assert.equal(vm.runInContext('getOpenTabFavicon(faviconTab)', context), context.faviconTab.favIconUrl);
+    assert.equal(vm.runInContext('getOpenTabFavicon({})', context), 'icons/icon48.png');
+    const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'));
+    assert.ok(manifest.permissions.includes('favicon'));
 });
