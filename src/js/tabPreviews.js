@@ -81,6 +81,6 @@ chrome.tabs.onUpdated.addListener((tabId, change, tab) => {
     if (tab.active && (change.url || change.status)) scheduleTabPreview();
 });
 chrome.tabs.onRemoved.addListener(tabId => {
-    ++previewGeneration;
+    scheduleTabPreview();
     chrome.storage.session.remove(TAB_PREVIEW_PREFIX + tabId).catch(() => {});
 });
