@@ -9,6 +9,7 @@ importScripts('js/tabPreviews.js');
 const THUMBNAIL_CANDIDATES_KEY_PREFIX = 'thumbnailCandidates:';
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
+const PINNED_DIALS_KEY = 'pinnedDials';
 
 function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
@@ -150,6 +151,21 @@ async function handleBookmarkChanged(id, info) {
 }
 
 async function handleBookmarkRemoved(id, info) {
+    const removedIds = new Set();
+    (function collectRemovedIds(node) {
+        if (!node) return;
+        removedIds.add(node.id);
+        for (const child of node.children || []) collectRemovedIds(child);
+    })(info.node);
+    const storedPins = await chrome.storage.local.get(PINNED_DIALS_KEY);
+    const pinnedDials = storedPins[PINNED_DIALS_KEY];
+    if (Array.isArray(pinnedDials)) {
+        const remainingPins = pinnedDials.filter(pin => !removedIds.has(typeof pin === 'string' ? pin : pin?.id));
+        if (remainingPins.length !== pinnedDials.length) {
+            await chrome.storage.local.set({ [PINNED_DIALS_KEY]: remainingPins });
+        }
+    }
+
 	if (info.node.url) {
 		// remove the thumbnail from local storage if no other bookmarks share this URL
 		const others = await chrome.bookmarks.search({ url: info.node.url });

@@ -205,6 +205,9 @@
     "description": "Settings toggle that opens a selected speed dial in a new tab",
     "message": "Open dials in new tab"
   },
+  "pinDial": {
+    "message": "Pin to start"
+  },
   "refresh": {
     "message": "Refresh Thumbnails"
   },
@@ -225,6 +228,9 @@
   },
   "saveToast": {
     "message": "Settings saved!"
+  },
+  "unpinDial": {
+    "message": "Unpin"
   },
   "scaleImages": {
     "message": "Scale Images"

@@ -34,6 +34,8 @@ const dialSizeStyleEl = document.createElement('style');
 dialSizeStyleEl.id = 'dialSizeStyles';
 document.head.appendChild(dialSizeStyleEl);
 const menu = document.getElementById('contextMenu');
+const pinDialOption = document.getElementById('pinDial');
+const pinDialLabel = pinDialOption.querySelector('.menu-label');
 const folderMenu = document.getElementById('folderMenu');
 const settingsMenu = document.getElementById('settingsMenu');
 const openAllFolderGroup = document.getElementById('openAllFolderGroup');
@@ -161,7 +163,9 @@ const DEFAULT_WALLPAPER_SRC = 'img/bg.jpg';
 let wallpaperSrc = DEFAULT_WALLPAPER_SRC;
 // storage key holding the id of a bookmarks folder adopted as the speed dial root
 const SPEED_DIAL_FOLDER_KEY = 'speedDialFolderId';
+const PINNED_DIALS_KEY = 'pinnedDials';
 let speedDialId = null;
+let pinnedDials = [];
 let speedDialRootRevision = 0;
 let speedDialSyncRequest = 0;
 let speedDialStorageChangeTimer = null;
@@ -338,13 +342,75 @@ function isBookmarkFolder(node) {
     return !!node && !node.url && node.type !== 'separator';
 }
 
+function normalizePinnedDials(value) {
+    if (!Array.isArray(value)) return [];
+
+    const seen = new Set();
+    return value
+        .map((pin, index) => typeof pin === 'string'
+            ? { id: pin, order: index }
+            : { id: pin?.id, order: Number.isInteger(pin?.position) ? pin.position : index })
+        .filter(pin => {
+            if (typeof pin.id !== 'string' || seen.has(pin.id)) return false;
+            seen.add(pin.id);
+            return true;
+        })
+        .sort((a, b) => a.order - b.order)
+        .map(pin => pin.id);
+}
+
+function applyPinnedDials(dials) {
+    if (!pinnedDials.length || dials.length < 2) return dials;
+
+    const dialsById = new Map(dials.map(dial => [dial.id, dial]));
+    const pinned = pinnedDials.map(id => dialsById.get(id)).filter(Boolean);
+    const pinnedIds = new Set(pinned.map(dial => dial.id));
+    return [...pinned, ...dials.filter(dial => !pinnedIds.has(dial.id))];
+}
+
+function isDialPinned(id) {
+    return pinnedDials.includes(id);
+}
+
+async function setDialPinned(id, pinned) {
+    pinnedDials = pinnedDials.filter(pinnedId => pinnedId !== id);
+    if (pinned) pinnedDials.push(id);
+    await chrome.storage.local.set({ [PINNED_DIALS_KEY]: pinnedDials });
+}
+
+async function moveDialToFrontOfUnpinnedOrder(id, parentId) {
+    const children = await chrome.bookmarks.getChildren(parentId);
+    const currentIndex = children.findIndex(child => child.id === id);
+    if (currentIndex < 0 || children.length < 2) return;
+
+    const targetIndex = settings.defaultSort === 'first' ? children.length - 1 : 0;
+    if (currentIndex === targetIndex) return;
+
+    const requestedIndex = currentIndex < targetIndex && !chrome.runtime.getBrowserInfo
+        ? targetIndex + 1
+        : targetIndex;
+    refreshSkipId = id;
+    refreshSkipUntil = performance.now() + SELF_EDIT_REFRESH_WINDOW;
+    await chrome.bookmarks.move(id, { index: requestedIndex });
+}
+
+async function togglePinnedDial() {
+    const wasPinned = isDialPinned(targetTileId);
+    if (wasPinned) {
+        await moveDialToFrontOfUnpinnedOrder(targetTileId, targetTileParentId);
+    }
+    await setDialPinned(targetTileId, !wasPinned);
+    await buildDialPages(speedDialId, currentFolder);
+    scheduleFlip();
+}
+
 async function prepareFolderPreviews(children) {
     const previewFolders = children.filter(child => !child.url);
 
     for (const folder of previewFolders) {
         const folderChildren = folder.children || [];
         const displayOrder = settings.defaultSort === "first" ? [...folderChildren].reverse() : folderChildren;
-        folder.previewDials = displayOrder.filter(isSupportedDial).slice(0, 4);
+        folder.previewDials = applyPinnedDials(displayOrder.filter(isSupportedDial)).slice(0, 4);
     }
 
     const previewUrls = [...new Set(previewFolders.flatMap(folder => folder.previewDials.map(dial => dial.url)))];
@@ -642,6 +708,9 @@ async function buildFolderPages(rootId) {
 
 function removeBookmark(url) {
     let id = targetNode.dataset.id;
+    if (isDialPinned(id)) {
+        setDialPinned(id, false).catch(err => console.log(err));
+    }
     // animate removal
     targetNode.style.display = "none";
     flip();
@@ -1267,19 +1336,11 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
     }
     const thumbRequests = [];
 
-    if (settings.folderStyle === 'dials') {
-        const folders = bookmarks.filter(bookmark => !bookmark.url);
-        let dials = bookmarks.filter(bookmark => bookmark.url);
-        if (settings.defaultSort === "first") {
-            dials.reverse();
-        }
-        bookmarks = [
-            ...folders,
-            ...dials
-        ];
-    } else if (settings.defaultSort === "first") {
-        bookmarks = [...bookmarks].reverse();
-    }
+    const folders = bookmarks.filter(bookmark => !bookmark.url);
+    let dials = bookmarks.filter(isSupportedDial);
+    if (settings.defaultSort === "first") dials.reverse();
+    dials = applyPinnedDials(dials);
+    bookmarks = settings.folderStyle === 'dials' ? [...folders, ...dials] : dials;
 
     // Process bookmarks
     if (bookmarks) {
@@ -1325,6 +1386,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 a.target = settings.openDialsInNewTab ? '_blank' : '';
                 a.setAttribute('data-id', bookmark.id);
                 a.draggable = false;
+                if (isDialPinned(bookmark.id)) a.classList.add('pinnedDial');
 
                 let main = document.createElement('div');
                 main.classList.add('tile-main');
@@ -1346,6 +1408,13 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
                 title.textContent = bookmark.title;
 
                 main.append(content, title);
+                if (isDialPinned(bookmark.id)) {
+                    const pinIndicator = document.createElement('span');
+                    pinIndicator.className = 'pinIndicator';
+                    pinIndicator.setAttribute('aria-hidden', 'true');
+                    pinIndicator.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M8 9V6a4 4 0 0 1 8 0v3M7 9h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"/></svg>';
+                    main.appendChild(pinIndicator);
+                }
                 a.appendChild(main);
                 fragment.appendChild(a);
             }
@@ -1400,7 +1469,7 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         fallbackTolerance: 4,
         ghostClass: 'selected',
         dragClass: 'dragging',
-        filter: ".createDial",
+        filter: ".createDial, .pinnedDial",
         delay: 500,
         delayOnTouchOnly: true,
         onStart: onStartHandler,
@@ -3020,6 +3089,9 @@ document.addEventListener("contextmenu", function (e) {
         targetTileId = targetNode.dataset.id;
         targetTileParentId = targetNode.closest('.container').id;
         targetTileTitle = e.target.nextElementSibling.innerText;
+        const pinned = isDialPinned(targetTileId);
+        pinDialLabel.textContent = chrome.i18n.getMessage(pinned ? 'unpinDial' : 'pinDial')
+            || (pinned ? 'Unpin' : 'Pin to start');
         showContextMenu(menu, e.pageY, e.pageX);
         return false;
     } else if (folderHeader && folderHeader.id !== "homeFolderLink") {
@@ -3147,6 +3219,9 @@ window.addEventListener("mousedown", e => {
                     break;
                 case 'refresh':
                     refreshThumbnails(targetTileHref, targetTileId, targetTileParentId);
+                    break;
+                case 'pinDial':
+                    togglePinnedDial().catch(err => console.log(err));
                     break;
                 case 'refreshAll':
                     modalShowEffect(refreshAllModalContent, refreshAllModal);
@@ -4485,6 +4560,7 @@ function onStartHandler(evt) {
     clearFolderDialDropTarget();
     setFolderHeaderDropTarget(null);
 
+    const draggedIsFolder = evt.item.dataset.type === 'folder';
     activeDialDrag = {
         item: evt.item,
         from: evt.from,
@@ -4493,8 +4569,6 @@ function onStartHandler(evt) {
         scrollTop: bookmarksContainerParent.scrollTop,
         cancelled: false
     };
-
-    const draggedIsFolder = evt.item.dataset.type === 'folder';
 
     dialDropTracking = {
         folderHeader: captureFolderHeaderDropZones(),
@@ -4570,8 +4644,13 @@ function moveBookmarkToFolder(id, folderId) {
 
 function onMoveHandler(evt) {
     if (evt.related) {
+        const draggedIsFolder = evt.dragged.dataset.type === 'folder';
+        const relatedDial = evt.related.closest?.('.tile[href]');
+        if (!draggedIsFolder && relatedDial?.classList.contains('pinnedDial')) {
+            return false;
+        }
+
         if (settings.folderStyle === 'dials') {
-            const draggedIsFolder = evt.dragged.dataset.type === 'folder';
             const relatedFolder = evt.related.closest?.('.folderDial');
 
             if (!draggedIsFolder && relatedFolder) {
@@ -4702,8 +4781,8 @@ function onEndHandler(evt) {
                 // relocate the dial and append it to the target folder, like a newly added dial
                 const createDialButton = tabDropContainer.querySelector('.createDial');
                 if (settings.defaultSort === 'first') {
-                    // dials render newest first, so the target slot is right after the add button
-                    tabDropContainer.insertBefore(evt.item, createDialButton ? createDialButton.nextSibling : tabDropContainer.firstChild);
+                    const firstUnpinnedDial = tabDropContainer.querySelector('.tile[href]:not(.pinnedDial)');
+                    tabDropContainer.insertBefore(evt.item, firstUnpinnedDial || createDialButton?.nextSibling || null);
                 } else {
                     tabDropContainer.insertBefore(evt.item, createDialButton);
                 }
@@ -4863,7 +4942,17 @@ async function syncSpeedDialFolder(folderId = null) {
 }
 
 function handleStorageChanged(changes, areaName) {
-    if (areaName !== 'local' || !changes[SPEED_DIAL_FOLDER_KEY] || !settings) return;
+    if (areaName !== 'local' || !settings) return;
+
+    if (changes[PINNED_DIALS_KEY]) {
+        const nextPinnedDials = normalizePinnedDials(changes[PINNED_DIALS_KEY].newValue);
+        if (JSON.stringify(nextPinnedDials) !== JSON.stringify(pinnedDials)) {
+            pinnedDials = nextPinnedDials;
+            buildDialPages(speedDialId, currentFolder).then(scheduleFlip).catch(error => console.log(error));
+        }
+    }
+
+    if (!changes[SPEED_DIAL_FOLDER_KEY]) return;
 
     clearTimeout(speedDialStorageChangeTimer);
     speedDialStorageChangeTimer = setTimeout(async () => {
@@ -5028,13 +5117,14 @@ function init() {
     // init what used to be background work"
     // build a thumbnail cache of url:thumbUrl pairs
     // todo: slow; lets get the current tab first
-    chrome.storage.local.get(['settings', 'wallpaperSrc']).then(async result => {
+    chrome.storage.local.get(['settings', 'wallpaperSrc', PINNED_DIALS_KEY]).then(async result => {
         if (result) {
             if (result.settings) {
                 settings = Object.assign({}, defaults, result.settings);
             } else {
                 settings = defaults;
             }
+            pinnedDials = normalizePinnedDials(result[PINNED_DIALS_KEY]);
 
             const hasLegacyWallpaper = Object.prototype.hasOwnProperty.call(settings, 'wallpaperSrc');
             wallpaperSrc = result.wallpaperSrc || settings.wallpaperSrc || DEFAULT_WALLPAPER_SRC;
