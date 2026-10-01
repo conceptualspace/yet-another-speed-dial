@@ -394,14 +394,47 @@ async function moveDialToFrontOfUnpinnedOrder(id, parentId) {
     await chrome.bookmarks.move(id, { index: requestedIndex });
 }
 
+function captureRebuiltTileFlipState(parentId) {
+    const nodes = document.querySelectorAll(`[id="${parentId}"] > .tile[data-id]`);
+    if (!nodes.length) return null;
+
+    const containerRect = bookmarksContainerParent.getBoundingClientRect();
+    const scrollLeft = bookmarksContainerParent.scrollLeft;
+    const scrollTop = bookmarksContainerParent.scrollTop;
+    const rects = new Map();
+    for (const node of nodes) {
+        const rect = getTileContentRect(node, containerRect, scrollLeft, scrollTop);
+        if (rect.width || rect.height) rects.set(node.dataset.id, rect);
+    }
+
+    return { rects, containerTop: containerRect.top };
+}
+
+function seedRebuiltTileFlipState(parentId, state) {
+    if (!state) return false;
+
+    flipPrevRects.clear();
+    for (const node of document.querySelectorAll(`[id="${parentId}"] > .tile[data-id]`)) {
+        const rect = state.rects.get(node.dataset.id);
+        if (rect) flipPrevRects.set(node, rect);
+    }
+    flipPrevContainerTop = state.containerTop;
+    return flipPrevRects.size > 0;
+}
+
 async function togglePinnedDial() {
     const wasPinned = isDialPinned(targetTileId);
     if (wasPinned) {
         await moveDialToFrontOfUnpinnedOrder(targetTileId, targetTileParentId);
     }
+    const flipState = captureRebuiltTileFlipState(targetTileParentId);
     await setDialPinned(targetTileId, !wasPinned);
-    await buildDialPages(speedDialId, currentFolder);
-    scheduleFlip();
+    await buildDialPages(speedDialId, currentFolder, { immediateActiveInsert: true });
+    if (seedRebuiltTileFlipState(targetTileParentId, flipState)) {
+        flip();
+    } else {
+        scheduleFlip();
+    }
 }
 
 async function prepareFolderPreviews(children) {
