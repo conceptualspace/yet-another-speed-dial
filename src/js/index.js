@@ -136,6 +136,8 @@ const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 const folderStyleInput = document.getElementById("folderStyle");
+const showDialsFirstInput = document.getElementById("showDialsFirst");
+const dialsFolderOrderRow = document.getElementById("dialsFolderOrderRow");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -254,6 +256,7 @@ let defaults = {
     dialSize: 'medium',
     dialRatio: 'wide',
     folderStyle: 'tabs',
+    showDialsFirst: false,
     currentFolder: null,
 };
 
@@ -1252,10 +1255,10 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         if (settings.defaultSort === "first") {
             dials.reverse();
         }
-        bookmarks = [
-            ...folders,
-            ...dials
-        ];
+        // showDialsFirst: place link dials before folder dials when enabled (default: folders first)
+        bookmarks = settings.showDialsFirst
+            ? [...dials, ...folders]
+            : [...folders, ...dials];
     } else if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
     }
@@ -2870,6 +2873,8 @@ function applySettings(options = {}) {
         dialSizeInput.value = settings.dialSize;
         dialRatioInput.value = settings.dialRatio;
         folderStyleInput.value = settings.folderStyle;
+        showDialsFirstInput.checked = !!settings.showDialsFirst;
+        dialsFolderOrderRow.style.display = settings.folderStyle === 'dials' ? '' : 'none';
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
 
@@ -2922,6 +2927,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.dialSize = dialSizeInput.value;
     settings.dialRatio = dialRatioInput.value;
     settings.folderStyle = folderStyleInput.value;
+    settings.showDialsFirst = showDialsFirstInput.checked;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
@@ -3241,8 +3247,16 @@ folderStyleInput.oninput = function () {
     if (settings.folderStyle === folderStyleInput.value) return;
 
     settings.folderStyle = folderStyleInput.value;
+    // show/hide the Dials First row — only relevant in Dials folder style
+    dialsFolderOrderRow.style.display = settings.folderStyle === 'dials' ? '' : 'none';
     chrome.storage.local.set({ settings });
     processRefresh({ transitionFolderStyle: true });
+}
+
+showDialsFirstInput.oninput = function () {
+    if (!!settings.showDialsFirst === showDialsFirstInput.checked) return;
+    saveSettings();
+    processRefresh();
 }
 
 defaultSortInput.oninput = function (e) {
@@ -4919,3 +4933,4 @@ function init() {
 }
 
 init();
+
