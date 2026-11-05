@@ -136,6 +136,8 @@ const resetSettingsBtn = document.getElementById("resetSettingsBtn");
 const dialSizeInput = document.getElementById("dialSize");
 const dialRatioInput = document.getElementById("dialRatio");
 const folderStyleInput = document.getElementById("folderStyle");
+const linksBeforeFoldersInput = document.getElementById("linksBeforeFolders");
+const linksBeforeFoldersRow = document.getElementById("linksBeforeFoldersRow");
 
 const searchInput = document.getElementById('searchInput');
 const searchContainer = document.getElementById('searchContainer');
@@ -254,6 +256,7 @@ let defaults = {
     dialSize: 'medium',
     dialRatio: 'wide',
     folderStyle: 'tabs',
+    linksBeforeFolders: false,
     currentFolder: null,
 };
 
@@ -1252,10 +1255,11 @@ async function printBookmarks(bookmarks, parentId, { immediateInsert = false } =
         if (settings.defaultSort === "first") {
             dials.reverse();
         }
-        bookmarks = [
-            ...folders,
-            ...dials
-        ];
+        // When linksBeforeFolders is enabled, place link tiles ahead of folder tiles;
+        // otherwise folders lead (the historical default for Dials style).
+        bookmarks = settings.linksBeforeFolders
+            ? [...dials, ...folders]
+            : [...folders, ...dials];
     } else if (settings.defaultSort === "first") {
         bookmarks = [...bookmarks].reverse();
     }
@@ -2872,6 +2876,8 @@ function applySettings(options = {}) {
         folderStyleInput.value = settings.folderStyle;
         defaultSortInput.value = settings.defaultSort;
         rememberFolderInput.checked = settings.rememberFolder;
+        linksBeforeFoldersInput.checked = !!settings.linksBeforeFolders;
+        linksBeforeFoldersRow.style.display = settings.folderStyle === 'dials' ? '' : 'none';
 
         if (wallpaperSrc) {
             //imgPreview.style.display = 'block';
@@ -2924,6 +2930,7 @@ function saveSettings(nextWallpaperSrc) {
     settings.folderStyle = folderStyleInput.value;
     settings.defaultSort = defaultSortInput.value;
     settings.rememberFolder = rememberFolderInput.checked;
+    settings.linksBeforeFolders = linksBeforeFoldersInput.checked;
     settings.currentFolder = currentFolder ? currentFolder : speedDialId;
 
     applySettings({
@@ -3241,6 +3248,7 @@ folderStyleInput.oninput = function () {
     if (settings.folderStyle === folderStyleInput.value) return;
 
     settings.folderStyle = folderStyleInput.value;
+    linksBeforeFoldersRow.style.display = settings.folderStyle === 'dials' ? '' : 'none';
     chrome.storage.local.set({ settings });
     processRefresh({ transitionFolderStyle: true });
 }
@@ -3250,6 +3258,11 @@ defaultSortInput.oninput = function (e) {
         processRefresh();
         saveSettings()
     }
+}
+
+linksBeforeFoldersInput.oninput = function (e) {
+    saveSettings();
+    processRefresh();
 }
 
 wallPaperEnabled.oninput = function (e) {
@@ -3796,7 +3809,10 @@ function pickNetscapeImportRoot(tree) {
 function importFromNetscapeHtml(html) {
     let nodes;
     try {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const sanitizedHtml = typeof html === 'string'
+            ? html.replace(/<script\b[\s\S]*?<\/script>/gi, '').replace(/\s+on[a-z0-9_\-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+            : html;
+        const doc = new DOMParser().parseFromString(sanitizedHtml, 'text/html');
         const root = doc.querySelector('dl');
         if (!root) throw new Error('no bookmark list found');
         nodes = pickNetscapeImportRoot(parseNetscapeFolder(root));

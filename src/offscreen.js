@@ -570,8 +570,12 @@ async function fetchImages(url, quickRefresh, pageInfo = {}) {
             }
 
             const text = await response.text();
+            // Strip script tags and inline event handlers to prevent CSP violations when parsing external HTML
+            const sanitizedHtml = text
+                .replace(/<script\b[\s\S]*?<\/script>/gi, '')
+                .replace(/\s+on[a-z0-9_\-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
             const parser = new DOMParser();
-            const doc = parser.parseFromString(text, 'text/html');
+            const doc = parser.parseFromString(sanitizedHtml, 'text/html');
 
             pageInfo.title = getPageTitle(doc);
 
